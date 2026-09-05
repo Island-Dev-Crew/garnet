@@ -2346,7 +2346,7 @@ class MarkerTrustSurfaceDerivationTests(GitRepoFixture):
     def test_a_later_stone_moves_only_later_landings(self) -> None:
         earlier = self._land("before-v3")
         wider = (tuple(mod.TRUST_KERNEL_PREFIXES) + ("future-trust/",), tuple(mod.TRUST_KERNEL_FILES))
-        with mock.patch.dict(mod.TRUST_SURFACES, {"v3": wider}), mock.patch.object(mod, "CURRENT_TRUST_SURFACE", "v3"):
+        with mock.patch.dict(mod.TRUST_SURFACES, {"v3": wider}), mock.patch.object(mod, "CURRENT_TRUST_SURFACE", "v3"), mock.patch.object(mod, "TRUST_KERNEL_PREFIXES", wider[0]):
             stone = self._lay("v3")
             later = self._land("after-v3")
             self.assertEqual(("v2", []), mod.trust_surface_at_commit(self.root, earlier))
@@ -2386,6 +2386,52 @@ class MarkerTrustSurfaceDerivationTests(GitRepoFixture):
                 self._git("checkout", "-q", "main")
                 self._git("update-ref", "refs/remotes/origin/main", commit)
 
+    def test_a_stone_moved_away_and_back_is_not_append_only(self) -> None:
+        # Review v5 (R559-v5-2): rename-out, twelve commits, rename-back showed
+        # no D/M under rename detection and bisection then found the return
+        # as the introduction, deriving v1 for a v2 landing.
+        landing = self._land("v2-landing")
+        self._git("mv", mod.era_stone_path("v2"), "F_Project_Management/W_TRUST/eras/parked.json")
+        self._git("commit", "-m", "park the stone")
+        for i in range(12):
+            self._land(f"filler-{i}")
+        self._git("mv", "F_Project_Management/W_TRUST/eras/parked.json", mod.era_stone_path("v2"))
+        self._git("commit", "-m", "restore the stone")
+        self._git("update-ref", "refs/remotes/origin/main", self._git("rev-parse", "HEAD"))
+        name, findings = mod.trust_surface_at_commit(self.root, landing)
+        self.assertIsNone(name)
+        self.assertTrue(any("append-only" in item for item in findings), findings)
+
+    def test_an_unreadable_historical_stone_is_never_absence(self) -> None:
+        # Review v5 (R559-v5-2): a failed read was treated as absence.
+        landing = self._land()
+        real = mod._read_blob
+        def failing(root, ref, path):
+            if path.startswith(mod.ERA_STONE_DIR):
+                return None, [f"blob lookup timed out for {path}"]
+            return real(root, ref, path)
+        with mock.patch.object(mod, "_read_blob", failing):
+            stones, findings = mod.era_stones_in_tree(self.root, "HEAD")
+            self.assertEqual({}, stones)
+            self.assertTrue(any("could not be read" in item for item in findings), findings)
+            self.assertFalse(any("has no era stone" in item for item in findings), findings)
+
+    def test_only_exact_root_stones_count_and_anything_else_is_a_finding(self) -> None:
+        for name in ("nested/v9.era.json", "v9.json", "notes.txt", "v2.era.json.bak"):
+            path = self.root / mod.ERA_STONE_DIR / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(b"{}\n")
+        self._git("add", "-A")
+        self._git("commit", "-m", "clutter")
+        stones, findings = mod.era_stones_in_tree(self.root, "HEAD")
+        self.assertEqual({"v2"}, set(stones))
+        for name in ("nested", "v9.json", "notes.txt", "v2.era.json.bak"):
+            self.assertTrue(any(name in item and "is not a stone" in item for item in findings), (name, findings))
+
+    def test_an_era_failure_resolves_to_the_widest_surface(self) -> None:
+        name, findings = mod.resolve_marker_trust_surface({}, {}, 3, era_ok=False)
+        self.assertEqual((mod.CURRENT_TRUST_SURFACE, []), (name, findings))
+
     def test_a_stone_for_an_unregistered_version_is_a_finding(self) -> None:
         self._lay("v9")
         stones, findings = mod.era_stones_in_tree(self.root, "HEAD")
@@ -2412,6 +2458,24 @@ class TrustSurfaceWideningTests(LandedMarkerTests):
 
     WIDER = (tuple(mod.TRUST_KERNEL_PREFIXES) + ("future-trust/",), tuple(mod.TRUST_KERNEL_FILES))
 
+    def _widened_to_v3(self):
+        """A real widening: the registered entry, the live label and the alias
+        tuples move together (the gate compares all three inside every run)."""
+        class _Widen:
+            def __enter__(inner):
+                inner.patches = [
+                    mock.patch.dict(mod.TRUST_SURFACES, {"v3": self.WIDER}),
+                    mock.patch.object(mod, "CURRENT_TRUST_SURFACE", "v3"),
+                    mock.patch.object(mod, "TRUST_KERNEL_PREFIXES", self.WIDER[0]),
+                ]
+                for patch in inner.patches:
+                    patch.start()
+                return inner
+            def __exit__(inner, *exc):
+                for patch in reversed(inner.patches):
+                    patch.stop()
+        return _Widen()
+
     def _register(self, marker: dict[str, object]) -> None:
         self._commit_repository_marker(marker)
         self._git("update-ref", "refs/remotes/origin/main", self._git("rev-parse", "HEAD"))
@@ -2429,13 +2493,13 @@ class TrustSurfaceWideningTests(LandedMarkerTests):
         del marker["trust_surface"]
         self._register(marker)
         self.assertEqual([], mod.verify_repository_landed_markers(self.root))
-        with mock.patch.dict(mod.TRUST_SURFACES, {"v3": self.WIDER}), mock.patch.object(mod, "CURRENT_TRUST_SURFACE", "v3"):
+        with self._widened_to_v3():
             self._lay_v3()
             self.assertEqual([], mod.verify_repository_landed_markers(self.root))
 
     def test_a_declared_version_that_agrees_survives_the_widening_too(self) -> None:
         self._register(self._marker())
-        with mock.patch.dict(mod.TRUST_SURFACES, {"v3": self.WIDER}), mock.patch.object(mod, "CURRENT_TRUST_SURFACE", "v3"):
+        with self._widened_to_v3():
             self._lay_v3()
             self.assertEqual([], mod.verify_repository_landed_markers(self.root))
 
@@ -2448,10 +2512,45 @@ class TrustSurfaceWideningTests(LandedMarkerTests):
         self.assertIn("registered trust surface v3 has no era stone at " + self._git("rev-parse", "HEAD"), findings)
         self.assertIn("the live trust surface 'v3' is not the latest era stone 'v2' in the candidate tree", findings)
 
+    def test_widening_the_live_classifier_without_a_version_cannot_run_green(self) -> None:
+        # Review v5 (R559-v5-1): a copy that rebinds TRUST_KERNEL_PREFIXES at
+        # its entry point widened the live classifier while every label still
+        # said v2. The classifier reads the registered entry, and the aliases
+        # are compared to it inside every run.
+        self._register(self._marker())
+        with mock.patch.object(mod, "TRUST_KERNEL_PREFIXES", tuple(mod.TRUST_KERNEL_PREFIXES) + ("future-v3/",)):
+            self.assertFalse(mod.is_trust_kernel("future-v3/probe.txt"))
+            findings = mod.verify_repository_landed_markers(self.root)
+        self.assertTrue(any("live classifier tuples do not equal the registered entry" in item for item in findings), findings)
+
+    def test_a_candidate_that_edits_a_stone_is_red_before_it_lands(self) -> None:
+        # Review v5 (R559-v5-4): the ledger is on the surface and stone
+        # mutation on any candidate edge is a finding, record or not.
+        self.assertTrue(mod.is_trust_kernel(mod.era_stone_path("v2")))
+        self._git("checkout", "-q", "-b", "poison", self.merged_commit)
+        self._write_stone("v2", pull=560)
+        self._git("add", "-A")
+        self._git("commit", "-m", "edit the stone")
+        head = self._git("rev-parse", "HEAD")
+        findings = mod._era_stone_append_only_findings(self.root, self.merged_commit, head)
+        self.assertTrue(any("era stones are append-only: M" in item for item in findings), findings)
+        (self.root / mod.era_stone_path("v2")).unlink()
+        self._git("add", "-A")
+        self._git("commit", "-m", "delete the stone")
+        findings = mod._era_stone_append_only_findings(self.root, self.merged_commit, self._git("rev-parse", "HEAD"))
+        self.assertTrue(any("era stones are append-only: D" in item for item in findings), findings)
+        self._git("checkout", "-q", "main")
+
+    def test_print_trust_surface_never_combines_with_gate(self) -> None:
+        # Review v5 (R559-v5-3): the diagnostic returned 0 before gate policy.
+        with self.assertRaises(SystemExit) as raised:
+            mod.main(["--gate", "--print-trust-surface"], root=self.root)
+        self.assertEqual(2, raised.exception.code)
+
     def test_a_landing_after_the_v3_stone_cannot_omit_a_v3_only_path(self) -> None:
         # The regression the contract promises: a landing in the v3 era whose
         # record and marker omit a v3-only path is reported.
-        with mock.patch.dict(mod.TRUST_SURFACES, {"v3": self.WIDER}), mock.patch.object(mod, "CURRENT_TRUST_SURFACE", "v3"):
+        with self._widened_to_v3():
             self._lay_v3()
             self._git("checkout", "-q", "-b", "v3-landing")
             self._commit_file("future-trust/probe.txt", b"v3-only authority\n", "v3-only change")

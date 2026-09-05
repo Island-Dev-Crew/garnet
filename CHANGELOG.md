@@ -17,16 +17,19 @@
   laid by the change that introduced it (this change lays `v2`); a landing's
   surface is the latest stone introduced at or before it on main's
   append-only first-parent history, and a landing before every stone is v1 —
-  which is what the two pre-versioning markers (#514, #517) are. Stone
-  history must be append-only. Inside every gate run the live
-  `CURRENT_TRUST_SURFACE` must equal the latest stone in the candidate tree,
-  and `--print-trust-surface` reports what the actual entry applies, so a copy
-  that widens the constant anywhere without laying its stone cannot run green.
-  Six rejected designs are recorded in the rolling-review contract — a
-  declaration, a pin, a closed pin map, a regular expression, a parse and a
-  seal comment, each reproduced against by the cross-family review; all of
-  them read the landing's copy, and any static reading can be made to
-  disagree with what the copy does.
+  which is what the two pre-versioning markers (#514, #517) are. The ledger
+  directory is on the trust surface; stone history is append-only on main and
+  on every candidate edge, judged with renames disabled; a stone is
+  introduced by exactly one first-parent commit and no historical blob is
+  read. Inside every gate run the live label, the tuples the classifier uses
+  (the registered entry, not the alias constants) and the latest stone in the
+  candidate tree must agree, and `--print-trust-surface` (never combined with
+  `--gate`) reports the same, so a copy that widens any of them without
+  laying its stone cannot run green. Six rejected designs are recorded in
+  the rolling-review contract — a declaration, a pin, a closed pin map, a
+  regular expression, a parse and a seal comment, each reproduced against by
+  the cross-family review; the last four read the landing's copy, and any
+  static reading can be made to disagree with what the copy does.
 - **Fail-closed on the version field:** a declared `trust_surface` may only
   agree with the derivation; an explicit non-version value, JSON `null`
   included, is a finding; an unregistered historical version is a finding; a

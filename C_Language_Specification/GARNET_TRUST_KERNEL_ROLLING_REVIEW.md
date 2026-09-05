@@ -54,24 +54,35 @@ has an **era stone**, a canonical JSON file
 introduced the version. A landing's surface is the latest version whose stone
 was introduced at or before that landing on main's first-parent history, which
 is append-only under the ruleset; a landing before every stone is v1 (that is
-what the two pre-versioning markers, PRs #514 and #517, are). Stone history
-must itself be append-only — a modified or deleted stone anywhere on the line
-is a finding — so presence is monotone and the boundary is found by bisection.
-Every registered version after v1 must have a stone, a stone for an
+what the two pre-versioning markers, PRs #514 and #517, are). A stone is
+introduced by exactly one `A` on the first-parent line, judged with renames
+disabled, and that commit is the boundary; no historical blob is read and
+nothing is bisected, so an unavailable object can never pass for absence.
+Stone history must be append-only — a stone modified, deleted or moved on the
+line is a finding, and so is one on any candidate commit edge, because the
+ledger directory is itself on the trust surface. A stone is exactly
+`eras/<vN>.era.json` at the root of that directory; any other entry there is
+a finding. Every registered version after v1 must have a stone, a stone for an
 unregistered version is a finding, and a marker may carry `trust_surface`
 only in agreement with the era in force (an explicit non-version value,
 `null` included, is a finding; a `merged_commit` registered twice is a
-finding). Every failure resolves to the current, widest surface.
+finding). Every failure resolves to the current, widest surface, an
+unreadable ledger included.
 
 The **runtime entry consistency boundary** runs inside every gate invocation:
-the surface this process applies to live candidates (`CURRENT_TRUST_SURFACE`,
-as bound at the entry point) must equal the latest era stone in the candidate
-tree, or the repository verification is red. A copy that widens the constant
-anywhere — its `__main__` block included — without laying its stone cannot run
-green, and `--print-trust-surface` reports what the actual entry applies.
+the surface label this process applies (`CURRENT_TRUST_SURFACE`, as bound at
+the entry point), the tuples its live classifier uses — which is the
+registered entry for that label, not the alias constants — and the latest era
+stone in the candidate tree must all agree, or the repository verification is
+red. A copy that widens any of them at its `__main__` block without laying its
+stone cannot run green. `--print-trust-surface` reports the same three facts
+and is never combined with `--gate`. What no self-inspection can cover is a
+copy that rewrites the verifier itself; that is what review of a gate-script
+change is for.
 
 Six earlier designs are recorded here so they are not reintroduced, each
-rejected by cross-family review with a reproduced construction.
+rejected by cross-family review with a reproduced construction — two that
+trusted a declaration or a pin, four that read the landing's copy.
 Declaration-first let a new marker declare the old surface and hide the newly
 covered paths on its own landing edge. Commit-only pinning let a second marker
 replay a pinned `merged_commit`. A closed pin map bound to marker paths

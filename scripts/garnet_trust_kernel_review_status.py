@@ -76,6 +76,9 @@ TRUST_KERNEL_PREFIXES = (
     # context's pass/blocker output with trust_kernel_touched false (review v2).
     "scripts/smoke_garnet_",
     "F_Project_Management/W_TRUST/landed/",
+    # The era ledger decides which surface sealed history is verified under
+    # (review v5, R559-v5-4): a stone is authority and changes need a record.
+    "F_Project_Management/W_TRUST/eras/",
 )
 # The `garnet-cli/src/...` entries that used to live here are subsumed by the
 # `garnet-cli/src/` prefix above.
@@ -162,7 +165,9 @@ TRUST_SURFACES: dict[str, tuple[tuple[str, ...], tuple[str, ...]]] = {
 CURRENT_TRUST_SURFACE = "v2"
 # A sealed marker is verified under the surface that was IN FORCE when it
 # landed, and that is a question of provenance, never of reading the landing's
-# copy of this script.  Five designs that read it were rejected by review:
+# copy of this script.  Six designs were rejected by review, each with a
+# reproduced construction — two that trusted a declaration or a pin, four that
+# read the copy:
 # declaration-first (a new marker could declare the old, narrower surface),
 # commit-only pinning (replayable), a closed pin map bound to marker paths
 # (preserved only the two pre-versioning markers; the next widening turned a
@@ -177,10 +182,13 @@ CURRENT_TRUST_SURFACE = "v2"
 # landing's surface is the latest version whose stone was introduced at or
 # before that landing on main's first-parent history, which is append-only
 # under the ruleset; a landing before every stone is v1.  Stone history must
-# itself be append-only (no deletion, no modification), and the surface this
-# gate applies to live candidates must equal the latest stone in the candidate
-# tree — checked inside every gate run, so a copy that widens the live surface
-# without laying its stone cannot run green.
+# itself be append-only (no deletion, modification or move, judged with
+# renames disabled, on main and on every candidate edge), and inside every
+# gate run the label this process applies, the tuples its classifier uses and
+# the latest stone in the candidate tree must agree (``live_surface_findings``),
+# so a copy that widens any of them without laying its stone cannot run green.
+# What no self-inspection can cover is a copy that rewrites the verifier
+# itself; that is what the review of a gate-script change is for.
 ERA_STONE_DIR = "F_Project_Management/W_TRUST/eras/"
 ERA_STONE_SUFFIX = ".era.json"
 ERA_STONE_SCHEMA = "garnet.trust_surface_era/v1"
@@ -216,30 +224,56 @@ def load_era_stone(payload: bytes, version: str) -> tuple[dict | None, list[str]
     return (document if not findings else None), findings
 
 
+_STONE_NAME = re.compile(r"^(v[0-9]+)\.era\.json$")
+
+
+def _blob_or_absent(root: Path, ref: str, path: str) -> tuple[bytes | None, bool, list[str]]:
+    """(payload, absent, problems): absence is only a verified missing path;
+    a timeout or a malformed lookup is unavailable bytes, never absence
+    (review v5, R559-v5-2)."""
+    payload, problems = _read_blob(root, ref, path)
+    if payload is not None:
+        return payload, False, []
+    if problems and all(item.startswith("path is missing at ") for item in problems):
+        return None, True, []
+    return None, False, [f"{path} could not be read at {ref}: " + "; ".join(problems)]
+
+
 def era_stones_in_tree(root: Path, ref: str) -> tuple[dict[str, dict], list[str]]:
-    """The stones present at ``ref``: version -> document.  Every registered
-    version after v1 must have one; a stone for an unregistered version, or a
-    malformed one, is a finding."""
+    """The stones present at ``ref``: version -> document.
+
+    A stone is exactly ``ERA_STONE_DIR/<vN>.era.json`` at the root of that
+    directory.  Every registered version after v1 must have one; a stone for
+    an unregistered version, a malformed one, any other entry under the
+    directory, or a stone that cannot be read is a finding.
+    """
     stones: dict[str, dict] = {}
     findings: list[str] = []
     for version in TRUST_SURFACES:
         if version == PRE_VERSIONING_TRUST_SURFACE:
             continue
-        payload, problems = _read_blob(root, ref, era_stone_path(version))
-        if payload is None:
+        payload, absent, problems = _blob_or_absent(root, ref, era_stone_path(version))
+        findings.extend(problems)
+        if absent:
             findings.append(f"registered trust surface {version} has no era stone at {ref}")
+            continue
+        if payload is None:
             continue
         document, stone_problems = load_era_stone(payload, version)
         findings.extend(stone_problems)
         if document is not None:
             stones[version] = document
-    listing = _git_bytes(root, "ls-tree", "--name-only", f"{ref}:{ERA_STONE_DIR.rstrip('/')}")
+    listing = _git_bytes(root, "ls-tree", "-z", "--name-only", f"{ref}:{ERA_STONE_DIR.rstrip('/')}")
     if listing.returncode == 0:
-        for name in listing.stdout.decode("utf-8", errors="replace").split():
-            if name.endswith(ERA_STONE_SUFFIX):
-                version = name[: -len(ERA_STONE_SUFFIX)]
-                if version not in TRUST_SURFACES:
-                    findings.append(f"era stone {version} names a version this gate does not register")
+        for raw in listing.stdout.split(b"\0"):
+            if not raw:
+                continue
+            name = raw.decode("utf-8", errors="replace")
+            match = _STONE_NAME.fullmatch(name)
+            if match is None:
+                findings.append(f"unexpected entry under {ERA_STONE_DIR}: {name!r} is not a stone")
+            elif match.group(1) not in TRUST_SURFACES:
+                findings.append(f"era stone {match.group(1)} names a version this gate does not register")
     return stones, findings
 
 
@@ -252,34 +286,43 @@ def era_boundaries(
     root: Path, first_parent: list[str], main_ref: str
 ) -> tuple[dict[str, int], list[str]]:
     """version -> the index (newest-first) of the first-parent commit that
-    introduced its stone on ``main_ref``.  Stone history must be append-only;
-    presence is then monotone along the line and the boundary is found by
-    bisection."""
+    introduced its stone on ``main_ref``.
+
+    Stone history must be append-only, judged with renames disabled so a
+    stone moved away and back shows as a deletion (review v5, R559-v5-2); a
+    stone is introduced by exactly one ``A`` on the line, and that commit is
+    the boundary.  Nothing is bisected and no historical blob is read, so an
+    unavailable object can never masquerade as absence.
+    """
     findings: list[str] = []
     if not first_parent:
         return {}, ["first-parent history is empty"]
     edits = _git_bytes(
-        root, "log", "--first-parent", "--format=%H", "--diff-filter=DM",
-        main_ref, "--", ERA_STONE_DIR,
+        root, "log", "--first-parent", "--no-renames", "--format=%H",
+        "--diff-filter=DMT", main_ref, "--", ERA_STONE_DIR,
     )
-    if edits.returncode != 0:
+    if edits.returncode != 0 or edits.timed_out:
         return {}, ["era stone history could not be read"]
     if edits.stdout.strip():
-        return {}, ["era stone history is not append-only: a stone was modified or deleted on first-parent history"]
+        return {}, ["era stone history is not append-only: a stone was modified, deleted or moved on first-parent history"]
     tip_stones, tip_findings = era_stones_in_tree(root, first_parent[0])
     findings.extend(item for item in tip_findings if not item.startswith("registered trust surface"))
     boundaries: dict[str, int] = {}
-    for version, document in tip_stones.items():
-        path = era_stone_path(version)
-        low, high = 0, len(first_parent) - 1
-        while low < high:  # largest index at which the stone is present
-            mid = (low + high + 1) // 2
-            present, _ = _read_blob(root, first_parent[mid], path)
-            if present is None:
-                high = mid - 1
-            else:
-                low = mid
-        boundaries[version] = low
+    for version in tip_stones:
+        added = _git_bytes(
+            root, "log", "--first-parent", "--no-renames", "--format=%H",
+            "--diff-filter=A", main_ref, "--", era_stone_path(version),
+        )
+        if added.returncode != 0 or added.timed_out:
+            findings.append(f"the introduction of era stone {version} could not be read")
+            continue
+        commits = added.stdout.decode("ascii", errors="replace").split()
+        if len(commits) != 1 or commits[0] not in first_parent:
+            findings.append(
+                f"era stone {version} is not introduced by exactly one first-parent commit"
+            )
+            continue
+        boundaries[version] = first_parent.index(commits[0])
     return boundaries, findings
 
 
@@ -427,8 +470,46 @@ def _norm(path: str) -> str:
 
 
 def is_trust_kernel(path: str) -> bool:
+    """Classify a live candidate path under the registered current surface.
+
+    The table entry, not the alias tuples (review v5, R559-v5-1): a copy that
+    rebinds ``TRUST_KERNEL_PREFIXES`` at its entry point widened the live
+    classifier while every version label still said v2.  The aliases remain
+    the definition of the current entry at import, and ``live_surface_findings``
+    reports any divergence inside every gate run.
+    """
+    prefixes, files = TRUST_SURFACES[CURRENT_TRUST_SURFACE]
     value = _norm(path)
-    return value in TRUST_KERNEL_FILES or value.startswith(TRUST_KERNEL_PREFIXES)
+    return value in files or value.startswith(prefixes)
+
+
+def live_surface_findings(root: Path, ref: str) -> list[str]:
+    """The runtime entry consistency boundary, evaluated inside every gate run.
+
+    Three things must agree: the surface label this process applies
+    (``CURRENT_TRUST_SURFACE``), the latest era stone in the candidate tree,
+    and the tuples the live classifier uses, which must be the registered
+    entry for that label.  A copy that widens any of them at its entry point
+    without laying a stone cannot run green.
+    """
+    findings: list[str] = []
+    if CURRENT_TRUST_SURFACE not in TRUST_SURFACES:
+        findings.append(f"the live trust surface {CURRENT_TRUST_SURFACE!r} is not a registered version")
+    elif (tuple(TRUST_KERNEL_PREFIXES), tuple(TRUST_KERNEL_FILES)) != tuple(
+        tuple(part) for part in TRUST_SURFACES[CURRENT_TRUST_SURFACE]
+    ):
+        findings.append(
+            "the live classifier tuples do not equal the registered entry for "
+            f"{CURRENT_TRUST_SURFACE!r}; the surface was widened without a new version"
+        )
+    stones, stone_findings = era_stones_in_tree(root, ref)
+    findings.extend(stone_findings)
+    if latest_era(stones) != CURRENT_TRUST_SURFACE:
+        findings.append(
+            f"the live trust surface {CURRENT_TRUST_SURFACE!r} is not the latest era stone "
+            f"{latest_era(stones)!r} in the candidate tree"
+        )
+    return findings
 
 
 def trust_surface_predicate(name: str) -> "Callable[[str], bool]":
@@ -462,7 +543,7 @@ def trust_surface_at_commit(
 
 
 def resolve_marker_trust_surface(
-    marker: dict, boundaries: dict[str, int], landed_index: int
+    marker: dict, boundaries: dict[str, int], landed_index: int, *, era_ok: bool = True
 ) -> tuple[str, list[str]]:
     """Name the surface a landed marker was sealed under: the era in force at
     its landing.  A declared ``trust_surface`` is optional and may only agree;
@@ -473,6 +554,10 @@ def resolve_marker_trust_surface(
     a rejected marker must account for more paths, never fewer.
     """
     findings: list[str] = []
+    if not era_ok:
+        # The ledger could not be read or is not append-only; the findings for
+        # that are the caller's, and the surface resolves to the widest.
+        return CURRENT_TRUST_SURFACE, findings
     in_force = trust_surface_for_landing(boundaries, landed_index)
     if "trust_surface" in marker:
         declared = marker["trust_surface"]
@@ -1395,6 +1480,36 @@ def _review_record_append_only_findings(entries: list[ChangeEntry]) -> list[str]
             findings.append(
                 "new structured review record must be a regular 100644 blob: " + entry.path
             )
+    return findings
+
+
+def _era_stone_append_only_findings(
+    root: Path,
+    base_commit: str,
+    head_commit: str,
+) -> list[str]:
+    """Reject era-stone mutation, removal or move on every candidate commit
+    edge (review v5, R559-v5-4): a candidate could otherwise land a poisoned
+    ledger that only the next main-history check would notice."""
+    commits, graph_problems = _independent_commit_range(base_commit, head_commit, root)
+    if graph_problems:
+        return ["era stone history enumeration failed closed: " + p for p in graph_problems]
+    findings: list[str] = []
+    for commit in commits:
+        edge = _git_bytes(
+            root, "diff-tree", "-r", "--no-renames", "--name-status", "-z",
+            f"{commit}^", commit, "--", ERA_STONE_DIR,
+        )
+        if edge.returncode != 0 or edge.timed_out:
+            findings.append(f"era stone changes on {commit} could not be read")
+            continue
+        fields = edge.stdout.split(b"\0")
+        for status, path in zip(fields[0::2], fields[1::2]):
+            if status[:1] in (b"D", b"M", b"T"):
+                findings.append(
+                    "era stones are append-only: "
+                    f"{status.decode('ascii', 'replace')} {path.decode('utf-8', 'replace')} on {commit}"
+                )
     return findings
 
 
@@ -2345,6 +2460,11 @@ def read_status(
             )
         )
         problems.extend(
+            _era_stone_append_only_findings(
+                root, discovery.base_commit, discovery.head_commit
+            )
+        )
+        problems.extend(
             _landed_marker_append_only_findings(
                 root, discovery.base_commit, discovery.head_commit
             )
@@ -2506,7 +2626,7 @@ def verify_landed_review_marker(
     boundaries, era_findings = era_boundaries(root, first_parent, main_ref)
     findings.extend(era_findings)
     surface_name, surface_findings = resolve_marker_trust_surface(
-        marker, boundaries, landed_index
+        marker, boundaries, landed_index, era_ok=not era_findings
     )
     findings.extend(surface_findings)
     in_sealed_surface = trust_surface_predicate(surface_name)
@@ -2749,17 +2869,8 @@ def verify_repository_landed_markers(
     )
     if valid_markers is None and not findings:
         findings.append("landed marker registry is missing")
-    # The runtime entry consistency boundary: the surface this process applies
-    # to live candidates must be the latest era stone in the candidate tree.
-    # A copy that widens the constant anywhere — its entry point included —
-    # without laying a stone makes every gate run red here.
-    stones, stone_findings = era_stones_in_tree(root, commit)
-    findings.extend(stone_findings)
-    if latest_era(stones) != CURRENT_TRUST_SURFACE:
-        findings.append(
-            f"the live trust surface {CURRENT_TRUST_SURFACE!r} is not the latest era stone "
-            f"{latest_era(stones)!r} in the candidate tree"
-        )
+    # The runtime entry consistency boundary, inside every gate run.
+    findings.extend(live_surface_findings(root, commit))
 
     if findings:
         return findings
@@ -2967,20 +3078,23 @@ def main(argv: list[str] | None = None, *, root: Path = ROOT) -> int:
         action="store_true",
         help="read one bounded credential from stdin; environment credentials are never inherited",
     )
-    parser.add_argument("--gate", action="store_true", help="exit nonzero on any finding")
-    parser.add_argument(
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--gate", action="store_true", help="exit nonzero on any finding")
+    mode.add_argument(
         "--print-trust-surface",
         action="store_true",
-        help="print the surface this entry applies to live candidates and the latest era stone, then exit",
+        help="diagnostic: print the surface this entry applies, the latest era stone and the live "
+        "consistency findings, then exit nonzero if there are any; never combined with --gate",
     )
     args = parser.parse_args(list(argv) if argv is not None else None)
     if args.print_trust_surface:
-        stones, stone_findings = era_stones_in_tree(root, "HEAD")
+        stones, _ = era_stones_in_tree(root, "HEAD")
+        live = live_surface_findings(root, "HEAD")
         print(json.dumps(
-            {"current": CURRENT_TRUST_SURFACE, "latest_era_stone": latest_era(stones), "problems": stone_findings},
+            {"current": CURRENT_TRUST_SURFACE, "latest_era_stone": latest_era(stones), "problems": live},
             sort_keys=True,
         ))
-        return 0
+        return 1 if live else 0
 
     policy_problems: list[str] = []
     if args.gate and args.base is not None:

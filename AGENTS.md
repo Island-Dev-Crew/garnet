@@ -110,15 +110,17 @@ each version after v1 has an era stone
 (`F_Project_Management/W_TRUST/eras/<vN>.era.json`) laid by the change that
 introduced it, a landing's surface is the latest stone introduced at or before
 it on main's first-parent history, and a landing before every stone is v1. No
-copy of the gate script is ever read — six designs that read one were
-rejected by review and are recorded in the rolling-review contract. Stone
-history is append-only; a declared marker `trust_surface` may only agree with
-the era in force; an explicit non-version value (including `null`) is a
-finding; a `merged_commit` registered twice is a finding; every failure
-resolves to the current (widest, therefore strictest) surface. Inside every
-gate run the live `CURRENT_TRUST_SURFACE` must equal the latest stone in the
-candidate tree, so a copy that widens the constant without laying its stone
-cannot run green. To widen: add a `TRUST_SURFACES` version, bump
+copy of the gate script is ever read — six designs were rejected by review
+(two trusted a declaration or a pin, four read the copy) and are recorded in
+the rolling-review contract. The ledger directory is on the trust surface;
+stone history is append-only on main and on every candidate edge, judged with
+renames disabled; a declared marker `trust_surface` may only agree with the
+era in force; an explicit non-version value (including `null`) is a finding;
+a `merged_commit` registered twice is a finding; every failure resolves to the
+current (widest, therefore strictest) surface. Inside every gate run the live
+label, the tuples the classifier uses (the registered entry, not the alias
+constants) and the latest stone in the candidate tree must agree, so a copy
+that widens any of them without laying its stone cannot run green. To widen: add a `TRUST_SURFACES` version, bump
 `CURRENT_TRUST_SURFACE`, and lay the version's stone in the same change; then
 re-run `python3 -I scripts/test_garnet_trust_kernel_review_status.py`, which
 lands a v2 marker, lays a v3 stone and verifies the registry green.
