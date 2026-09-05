@@ -27,9 +27,10 @@
 //! `skipped_path_count` + `skipped_paths` (rule names and counts, no paths),
 //! and the human mode prints a `walk not total` line when the count is
 //! non-zero. `skipped_path_count: 0` is the claim "every directory this walk
-//! reached was read or tallied" — the walk does not follow directory
-//! symlinks, and each one it declines is tallied under `symlinked-directory`.
-//! The ABSENCE of the field means the verdict came from a pre-cure binary and
+//! reached was read or tallied" — a directory symlink met below the supplied
+//! root is not followed and is tallied under `symlinked-directory`; a link
+//! the walk cannot resolve is an error with no verdict at all (exit 2). The
+//! ABSENCE of the field means the verdict came from a pre-cure binary and
 //! the walk's coverage is UNKNOWN — a consumer must not read absence as zero.
 
 use crate::cap_manifest::{json_str_array, surface_for_path_with_omissions};

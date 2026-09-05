@@ -473,3 +473,143 @@ fn symlinked_garnet_file_is_still_read() {
     assert!(s.contains("\"aggregate_gained\":[\"fs\",\"net\"]"), "{s}");
     assert!(s.contains("\"skipped_path_count\":0"), "{s}");
 }
+
+/// Review v2 (Codex, B1-v2): `path.is_dir()` collapses an I/O error to
+/// `false`, so a link whose EXISTING directory target sat behind a
+/// non-searchable parent was neither followed, tallied, nor errored — exit 0,
+/// `skipped_path_count: 0`, while the target held `@caps(net, fs)`. Now a
+/// link the walk cannot resolve is an error (exit 2, no verdict): a gate must
+/// not print a green it could not earn. Restores the parent's mode on drop so
+/// the fixture can be cleaned up even when an assertion fails.
+#[cfg(unix)]
+struct RestoreMode(PathBuf);
+#[cfg(unix)]
+impl Drop for RestoreMode {
+    fn drop(&mut self) {
+        use std::os::unix::fs::PermissionsExt;
+        let _ = std::fs::set_permissions(&self.0, std::fs::Permissions::from_mode(0o700));
+    }
+}
+
+/// Old/new pair; in the root named by `link_in`, `src` links to a real
+/// directory holding `@caps(net, fs)` whose PARENT is mode 000.
+#[cfg(unix)]
+fn locked_link_pair(tag: &str, link_in: &str) -> (PathBuf, PathBuf, RestoreMode) {
+    use std::os::unix::fs::PermissionsExt;
+    let root = fresh(tag);
+    let old = root.join("old");
+    let new = root.join("new");
+    let locked = root.join("locked");
+    let actual = locked.join("actual");
+    for d in [&old, &new, &actual] {
+        std::fs::create_dir_all(d).unwrap();
+    }
+    write(old.as_path(), "tool.garnet", "@caps()\ndef main() { 1 }\n");
+    write(new.as_path(), "tool.garnet", "@caps()\ndef main() { 1 }\n");
+    std::fs::write(
+        actual.join("evil.garnet"),
+        "@caps(net, fs)\ndef reach() { 1 }\n",
+    )
+    .unwrap();
+    let side = if link_in == "old" { &old } else { &new };
+    std::os::unix::fs::symlink(&actual, side.join("src")).unwrap();
+    std::fs::set_permissions(&locked, std::fs::Permissions::from_mode(0o000)).unwrap();
+    (old, new, RestoreMode(locked))
+}
+
+#[cfg(unix)]
+fn is_root() -> bool {
+    std::process::Command::new("id")
+        .arg("-u")
+        .output()
+        .map(|o| String::from_utf8_lossy(&o.stdout).trim() == "0")
+        .unwrap_or(false)
+}
+
+#[cfg(unix)]
+fn unresolvable_link_is_an_error(link_in: &str) {
+    if is_root() {
+        eprintln!("skipped: root bypasses directory permissions");
+        return;
+    }
+    let (old, new, _guard) = locked_link_pair(&format!("locked_link_{link_in}"), link_in);
+    let out = garnet()
+        .arg("diff-caps")
+        .arg("--machine")
+        .arg(&old)
+        .arg(&new)
+        .output()
+        .unwrap();
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert_eq!(
+        out.status.code(),
+        Some(2),
+        "an unresolvable link must be an error, never a silent zero: {stderr}"
+    );
+    assert!(out.stdout.is_empty(), "no verdict on error");
+    assert!(stderr.contains("src"), "the error names the link: {stderr}");
+}
+
+#[cfg(unix)]
+#[test]
+fn unresolvable_link_in_the_new_root_is_an_error_not_a_silent_zero() {
+    unresolvable_link_is_an_error("new");
+}
+
+#[cfg(unix)]
+#[test]
+fn unresolvable_link_in_the_old_root_is_an_error_not_a_silent_zero() {
+    unresolvable_link_is_an_error("old");
+}
+
+/// A link that points at itself resolves to nothing readable; it is an error
+/// (ELOOP) rather than a silent pass — the walk does not guess.
+#[cfg(unix)]
+#[test]
+fn self_referential_link_is_an_error() {
+    let root = fresh("self_link");
+    let old = root.join("old");
+    let new = root.join("new");
+    std::fs::create_dir_all(&old).unwrap();
+    std::fs::create_dir_all(&new).unwrap();
+    write(old.as_path(), "tool.garnet", "@caps()\ndef main() { 1 }\n");
+    write(new.as_path(), "tool.garnet", "@caps()\ndef main() { 1 }\n");
+    std::os::unix::fs::symlink("cycle", new.join("cycle")).unwrap();
+    let out = garnet()
+        .arg("diff-caps")
+        .arg("--machine")
+        .arg(&old)
+        .arg(&new)
+        .output()
+        .unwrap();
+    assert_eq!(
+        out.status.code(),
+        Some(2),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert!(out.stdout.is_empty());
+}
+
+/// The supplied root itself may be a link: the OS resolves it and the tree
+/// behind it is walked — only links met BELOW the root are declined.
+#[cfg(unix)]
+#[test]
+fn explicit_root_that_is_a_link_is_resolved_and_walked() {
+    let root = fresh("root_link");
+    let old = root.join("old");
+    let real = root.join("real");
+    std::fs::create_dir_all(&old).unwrap();
+    std::fs::create_dir_all(&real).unwrap();
+    write(old.as_path(), "tool.garnet", "@caps()\ndef main() { 1 }\n");
+    write(
+        real.as_path(),
+        "tool.garnet",
+        "@caps(net, fs)\ndef main() { 1 }\n",
+    );
+    std::os::unix::fs::symlink(&real, root.join("new")).unwrap();
+    let (code, s) = machine_diff(&old, &root.join("new"));
+    assert_eq!(code, 1, "{s}");
+    assert!(s.contains("\"aggregate_gained\":[\"fs\",\"net\"]"), "{s}");
+    assert!(s.contains("\"skipped_path_count\":0"), "{s}");
+}

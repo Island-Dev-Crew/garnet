@@ -23,12 +23,18 @@
   review of this change, B1): the walk never followed a linked directory, and
   before this change it did not tally one either, so `src -> ../external`
   holding `@caps(net, fs)` vanished while the verdict reported
-  `skipped_path_count: 0`. Links are still not followed — a link loop must
-  terminate — but each declined one now counts under `symlinked-directory`. A
-  linked `.garnet` FILE is read through the link as before. What `0` asserts is
-  therefore "every directory the walk reached was read or tallied", not "the
-  filesystem holds nothing else": a link with no target is not tallied, and
-  the name-matched skips are a convention, not verified ownership.
+  `skipped_path_count: 0`. Links met below the supplied root are still not
+  followed — a link loop must terminate — but each declined one now counts
+  under `symlinked-directory`. A linked `.garnet` FILE is read through the
+  link as before, and the supplied root itself is resolved by the OS and
+  walked. A link the walk cannot resolve (the review's second round, B1-v2: an
+  existing directory behind a mode-000 parent, or a self-loop) is an error
+  with no verdict, exit 2 — the walk resolves links with an error-preserving
+  call rather than `is_dir()`, which folds such failures into `false`. What
+  `0` asserts is therefore "every directory the walk reached was read or
+  tallied", not "the filesystem holds nothing else": a link with no target is
+  not tallied, and the name-matched skips are a convention, not verified
+  ownership.
 - **Scope boundary:** this repairs which paths the walk READS and discloses
   what it does not. It does not change the declared-surface semantics, the
   `scope` caveat string, or the band mapping, and it still does not prove the

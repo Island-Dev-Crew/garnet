@@ -72,10 +72,13 @@ Owns the `garnet` binary, subcommand routing, template embedding, deterministic 
   by NAME — a convention, not a verified ownership fact: `target`, `.git`,
   `.garnet-cache` at any depth, plus the ROOT-RELATIVE `<root>/.garnet/vendor`
   — the one path a dependency may bind to. An arbitrary `vendor/` or
-  `node_modules/` at any depth is ordinary source and IS walked. Directory
-  symlinks are not followed (a link loop must terminate) and are tallied under
-  `symlinked-directory`; a linked `.garnet` FILE is read through the link.
-  Every skip and every declined link is disclosed: `--machine` carries
+  `node_modules/` at any depth is ordinary source and IS walked. A directory
+  symlink met below the supplied root is not followed (a link loop must
+  terminate) and is tallied under `symlinked-directory`; a linked `.garnet`
+  FILE is read through the link; a link the walk cannot resolve (permission
+  denied, a loop) is an error with no verdict, never a zero; the supplied root
+  itself is resolved by the OS and walked. Every skip and every declined link
+  is disclosed: `--machine` carries
   `skipped_path_count` + `skipped_paths` (rule names and counts only, never
   paths), additive within `garnet.diff-caps.machine/1`, and the human mode
   prints one `walk not total` line when the count is non-zero (byte-stable

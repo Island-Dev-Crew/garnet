@@ -219,9 +219,11 @@ impl ScanOmissions {
 
     /// Directories declined. `0` means every directory the walk reached was
     /// either read or tallied here — not that the filesystem holds nothing
-    /// else: the walk does not follow directory symlinks (each one it declines
-    /// is tallied under [`RULE_SYMLINKED_DIRECTORY`]), and a link with no
-    /// target holds nothing to read and is not tallied.
+    /// else: a directory symlink met BELOW the supplied root is not followed
+    /// and is tallied under [`RULE_SYMLINKED_DIRECTORY`]; a link with no
+    /// target holds nothing to read and is not tallied; a link the walk
+    /// cannot resolve (permission denied, a loop) is an ERROR, never a zero.
+    /// The supplied root itself is resolved by the OS and walked.
     pub fn total(&self) -> usize {
         self.counts.values().copied().sum()
     }
@@ -241,7 +243,7 @@ impl ScanOmissions {
 }
 
 /// Resolve the target list: a single `.garnet` file, or every `.garnet` file
-/// under a directory (skipping the tool-owned trees named by [`omission_rule`]).
+/// under a directory (skipping the name-matched trees of [`omission_rule`]).
 /// Returned sorted for deterministic output. `pub(crate)` so `garnet caps`
 /// (S36) reuses the walk.
 ///
@@ -283,7 +285,7 @@ pub fn collect_targets_with_omissions(
 /// git internals, this tool's own cache. That is a NAME match, not a verified
 /// ownership fact: nothing checks who wrote a `target/`. Every skip this rule
 /// makes, and every directory symlink [`walk`] declines, is disclosed by
-/// [`ScanOmissions`].
+/// [`ScanOmissions`]; a link [`walk`] cannot resolve is an error.
 fn omission_rule(root: &Path, dir: &Path) -> Option<&'static str> {
     let name = dir.file_name()?.to_string_lossy().into_owned();
     match name.as_str() {
@@ -308,14 +310,37 @@ fn walk(
         let entry = entry?;
         let path = entry.path();
         let file_type = entry.file_type()?;
-        if file_type.is_symlink() && path.is_dir() {
-            // Not FOLLOWED — a link loop must terminate — but not silent
-            // either (cross-family review B1): `.garnet` files behind the link
-            // are declared authority this walk never read, so the refusal is
-            // tallied like every other one. A linked FILE takes the branch
-            // below and is read through the link as before.
-            omissions.record(RULE_SYMLINKED_DIRECTORY);
-            continue;
+        if file_type.is_symlink() {
+            // Resolve the link with an error-PRESERVING call: `is_dir()`
+            // folds EACCES / ELOOP into `false`, which is how review B1-v2
+            // found an existing source-bearing directory behind an
+            // unsearchable parent dropped with neither a tally nor an error.
+            match std::fs::metadata(&path) {
+                // A linked directory is not FOLLOWED — a link loop must
+                // terminate — but not silent either (review B1): `.garnet`
+                // files behind it are declared authority this walk never
+                // read, so the refusal is tallied like every other one.
+                Ok(meta) if meta.is_dir() => {
+                    omissions.record(RULE_SYMLINKED_DIRECTORY);
+                    continue;
+                }
+                // A linked FILE takes the extension branch below and is read
+                // through the link as before.
+                Ok(_) => {}
+                // Nothing behind the link: nothing to read, so nothing to
+                // tally. A dangling `.garnet` NAME still reaches the read
+                // below and fails there, as it always has.
+                Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+                // Anything else — permission denied, a loop, an I/O fault —
+                // means the walk cannot say what is behind the link, and a
+                // gate must not print a green it could not earn.
+                Err(e) => {
+                    return Err(std::io::Error::new(
+                        e.kind(),
+                        format!("{}: cannot resolve symlink target: {e}", path.display()),
+                    ));
+                }
+            }
         }
         if file_type.is_dir() {
             if let Some(rule) = omission_rule(root, &path) {
@@ -546,5 +571,33 @@ mod tests {
             omissions.by_rule(),
             vec![(super::RULE_SYMLINKED_DIRECTORY, 1)]
         );
+    }
+
+    /// Review B1-v2: a link the walk cannot resolve is an error, not a silent
+    /// zero. (Skipped under root, which bypasses directory permissions.)
+    #[cfg(unix)]
+    #[test]
+    fn collect_targets_errors_on_an_unresolvable_link() {
+        use std::os::unix::fs::PermissionsExt;
+        if std::fs::metadata("/root")
+            .map(|m| m.permissions().mode() & 0o777 == 0)
+            .unwrap_or(false)
+            && std::fs::read_dir("/root").is_ok()
+        {
+            return;
+        }
+        let dir = TempDir::new().unwrap();
+        let locked = TempDir::new().unwrap();
+        let actual = locked.path().join("actual");
+        std::fs::create_dir_all(&actual).unwrap();
+        write_nested(dir.path(), "a.garnet", "@caps()\ndef main() { 1 }\n");
+        write_nested(&actual, "b.garnet", "@caps(net)\ndef g() { 1 }\n");
+        std::os::unix::fs::symlink(&actual, dir.path().join("src")).unwrap();
+        std::fs::set_permissions(locked.path(), std::fs::Permissions::from_mode(0o000)).unwrap();
+        let result = super::collect_targets_with_omissions(dir.path());
+        std::fs::set_permissions(locked.path(), std::fs::Permissions::from_mode(0o700)).unwrap();
+        let err = result.expect_err("an unresolvable link must not be a silent omission");
+        assert_eq!(err.kind(), std::io::ErrorKind::PermissionDenied);
+        assert!(err.to_string().contains("src"), "{err}");
     }
 }
