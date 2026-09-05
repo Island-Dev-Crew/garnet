@@ -1,5 +1,52 @@
 # Changelog
 
+## Unreleased — the trust surface is versioned and sealed history derives its era (U-116) (2026-09-05)
+
+- **Closed U-116:** the rolling review gate decided what needs a structured
+  record from a hand-maintained path list with holes at the load-bearing
+  places — the capability walk (`garnet-cli/src/cap_manifest.rs`), the
+  manifest verifier (`garnet-cli/src/manifest.rs`), and the dogfood PR-body
+  checker and its test. `TRUST_KERNEL_PREFIXES` gains `garnet-cli/src/`, and
+  the required-context producers are listed, as surface **v2**; v1 is kept
+  verbatim as `TRUST_SURFACE_V1_*`. A one-byte change to any of those files
+  without a record now fails the gate (it passed at the base).
+- **Sealed history is preserved by an era ledger, not by reading any copy of
+  the gate:** a landed marker binds the trust subset of its landing edge, so
+  it must be verified under the surface in force when it landed. Each version
+  after v1 has an era stone, `F_Project_Management/W_TRUST/eras/<vN>.era.json`,
+  laid by the change that introduced it (this change lays `v2`); a landing's
+  surface is the latest stone introduced at or before it on main's
+  append-only first-parent history, and a landing before every stone is v1 —
+  which is what the two pre-versioning markers (#514, #517) are. The ledger
+  directory is on the trust surface; an existing stone is append-only on main
+  and on every parent edge of every candidate commit, judged with renames
+  disabled (a stone the candidate itself lays may be authored across its own
+  commits); a stone is introduced by exactly one first-parent commit and no
+  historical blob is read; absence is only a verified empty listing and every
+  other lookup outcome is a finding. Each stone records `surface_sha256`, the
+  digest of its version's tuples. Inside every gate run the live label, the
+  tuples the classifier uses (the registered entry, not the alias constants),
+  that entry's digest against its stone, and the latest stone in the
+  candidate tree must agree, and `--print-trust-surface` (never combined with
+  `--gate`) prints the live label, the latest stone and the live-consistency
+  findings, so a copy that widens any of them — even the
+  entry and the aliases together — without laying a new stone cannot run
+  green. Six rejected designs are recorded in
+  the rolling-review contract — a declaration, a pin, a closed pin map, a
+  regular expression, a parse and a seal comment, each reproduced against by
+  the cross-family review; the last four read the landing's copy, and any
+  static reading can be made to disagree with what the copy does.
+- **Fail-closed on the version field:** a declared `trust_surface` may only
+  agree with the derivation; an explicit non-version value, JSON `null`
+  included, is a finding; an unregistered historical version is a finding; a
+  `merged_commit` registered by two markers is a finding.
+- **Cost, measured at this base and committed:**
+  `F_Project_Management/W_TRUST/evidence/U116_TRUST_SURFACE_WIDENING_COST.md`
+  lists every one of the last sixty first-parent PRs that would have needed a
+  record under v2 and did not under v1.
+- **This change modifies the gate it merges under** — human-merge-only under
+  Integrity Rule 1 — and lands coverage going forward only.
+
 ## Unreleased — gate hardening: dogfood PR-body checker section boundary, exact headings, evidence tokens (2026-09-02)
 
 ### `scripts/check_dogfood_pr_body.py` — crown D-1, hardening H3-01, crown D-N4 cured

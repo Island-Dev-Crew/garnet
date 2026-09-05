@@ -8,6 +8,7 @@ import contextlib
 import io
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -78,6 +79,10 @@ class GitRepoFixture(unittest.TestCase):
         self._git("config", "user.email", "author@example.invalid")
         self._git("config", "user.name", "Author")
         write_lf(self.root / "README.md", "base\n")
+        # The surface in force at a landing is a matter of provenance: the era
+        # stone of the current surface sits at the fixture base, so every
+        # landing after it is in the current era.
+        self._write_stone(mod.CURRENT_TRUST_SURFACE)
         registry = self.root / "F_Project_Management/W_TRUST/LANDED_REVIEW_MARKERS.json"
         registry.parent.mkdir(parents=True, exist_ok=True)
         registry.write_bytes(
@@ -88,7 +93,7 @@ class GitRepoFixture(unittest.TestCase):
                 }
             )
         )
-        self._git("add", "README.md", str(registry.relative_to(self.root)))
+        self._git("add", "README.md", mod.era_stone_path(mod.CURRENT_TRUST_SURFACE), str(registry.relative_to(self.root)))
         self._git("commit", "-m", "base")
         self.base = self._git("rev-parse", "HEAD")
         self._git("branch", "-M", "main")
@@ -96,6 +101,13 @@ class GitRepoFixture(unittest.TestCase):
 
     def tearDown(self) -> None:
         self.temp.cleanup()
+
+    def _write_stone(self, version: str, pull: int = 559) -> str:
+        path = self.root / mod.era_stone_path(version)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        digest = mod.surface_digest(version) if version in mod.TRUST_SURFACES else "0" * 64
+        path.write_bytes(_canonical({"introduced_by_pull_request": pull, "schema": mod.ERA_STONE_SCHEMA, "surface_sha256": digest, "version": version}))
+        return mod.era_stone_path(version)
 
     def _git(self, *args: str, check: bool = True) -> str:
         result = subprocess.run(
@@ -1750,6 +1762,9 @@ class LandedMarkerTests(GitRepoFixture):
             "head_repository": "Navigata1/garnet",
             "head_repository_id": 6006,
             "merged_commit": self.merged_commit,
+            # Optional: the surface in force at the landing comes from the era
+            # ledger; a declared value may only agree with it.
+            "trust_surface": mod.CURRENT_TRUST_SURFACE,
             "merged_tree": self.merged_tree,
             "pull_request_id": 7007,
             "pull_request_number": 77,
@@ -2025,6 +2040,644 @@ class RepositoryWiringTests(unittest.TestCase):
         self.assertIn("name: rolling trust-kernel review (non-pull-request)", workflow)
         self.assertIn("if: github.event_name != 'pull_request'", workflow)
 
+
+class TrustSurfaceCoverageTests(GitRepoFixture):
+    """H3-02: the enumerated trust surface had holes in exactly the load-bearing
+    places.  Three independent reviews on 2026-09-03 landed on the same spot;
+    the one carrying an in-repo identifier is the Codex hardening pass, finding
+    H3-02 (blocking).  The other two are attested by the mission handoff only,
+    so they are not named here.
+
+    A hand-maintained enumeration drifts.  These tests therefore do two things:
+    they pin the specific paths the finding named, and they *derive* the
+    required-context producer set from the repository's own machine-readable
+    rulesets so the next omission fails CI instead of merging quietly.
+    """
+
+    # (b) computes or enforces capability authority, and (c) verifies a
+    # signature or a digest.  The five MCP/Shelf entries are not in the
+    # finding's own list: a replay of the last 60 merged PRs showed a six-file
+    # widening would already have missed them.  They did NOT all land in one PR,
+    # as an earlier revision of this comment said: `mcp_schema.rs` first landed
+    # in #501, `mcp.rs` in #503, and `minimum_shelf.rs`, `mcp_stdio.rs` and
+    # `cmd/mcp_serve.rs` in #514 (verified with git log --diff-filter=A).
+    CAPABILITY_AND_SIGNATURE_PATHS = (
+        "garnet-cli/src/cap_manifest.rs",
+        "garnet-cli/src/cmd/diff_caps.rs",
+        "garnet-cli/src/cmd/verify_gate.rs",
+        "garnet-cli/src/verify_gate.rs",
+        "garnet-cli/src/manifest.rs",
+        "garnet-cli/src/cmd/verify.rs",
+        "garnet-cli/src/seal.rs",
+        "garnet-cli/src/cmd/seal.rs",
+        "garnet-cli/src/sandbox.rs",
+        "garnet-cli/src/cmd/sandbox.rs",
+        "garnet-cli/src/cmd/caps.rs",
+        "garnet-cli/src/cmd/caps_log.rs",
+        "garnet-cli/src/cmd/mcp_caps.rs",
+        "garnet-cli/src/cmd/agent_loop.rs",
+        "garnet-cli/src/cmd/repl.rs",
+        "garnet-cli/src/cmd/trust_report.rs",
+        "garnet-cli/src/machine_key.rs",
+        "garnet-cli/src/cmd/keygen.rs",
+        "garnet-cli/src/minimum_shelf.rs",
+        "garnet-cli/src/mcp.rs",
+        "garnet-cli/src/mcp_schema.rs",
+        "garnet-cli/src/mcp_stdio.rs",
+        "garnet-cli/src/cmd/mcp_serve.rs",
+    )
+
+    # (a) produces a required CI context but escapes the `scripts/garnet_` and
+    # `scripts/test_garnet_` naming prefixes.  Derived, not guessed: see
+    # `test_every_required_context_producer_is_trust_kernel`.
+    REQUIRED_CONTEXT_PRODUCERS = (
+        "scripts/check-agent-contracts.py",
+        "scripts/check_determinism_no_llm.py",
+        "scripts/check_dogfood_pr_body.py",
+        "scripts/package_garnet_studio_macos.sh",
+        "scripts/package_garnet_vscode_extension.sh",
+        "scripts/preflight_garnet_studio_notarization.sh",
+        "scripts/run_agentic_dogfood_matrix.py",
+        "scripts/smoke_garnet_studio_dmg.sh",
+        "scripts/smoke_garnet_web_pwa.sh",
+        "scripts/test_check_agent_contracts.py",
+        "scripts/test_check_determinism_no_llm.py",
+        "scripts/test_check_dogfood_pr_body.py",
+        "scripts/test_github_actions_node24_readiness.py",
+        "scripts/test_smoke_garnet_pages_pwa.py",
+    )
+
+    # The surface as it stood at origin/main ee86d063, before this widening.
+    # Widening must never narrow: every one of these still classifies true.
+    PREVIOUSLY_COVERED_PATHS = (
+        "garnet-check-v0.3/src/caps_graph.rs",
+        "garnet-interp-v0.3/src/eval.rs",
+        "garnet-vm/src/vm.rs",
+        "garnet-stdlib/src/registry.rs",
+        "garnet-wasm/src/lib.rs",
+        ".github/actions/setup-rust/action.yml",
+        ".github/rulesets/garnet-main.json",
+        ".github/workflows/ci.yml",
+        "scripts/garnet_required_context_contract.py",
+        "scripts/test_garnet_required_context_contract.py",
+        "F_Project_Management/W_TRUST/landed/LANE1.landed-review.json",
+        ".github/CODEOWNERS",
+        "Cargo.lock",
+        "garnet-cli/Cargo.toml",
+        "garnet-cli/src/bound_source.rs",
+        "garnet-cli/src/cmd/add.rs",
+        "garnet-cli/src/cmd/mod.rs",
+        "garnet-cli/src/cmd/run.rs",
+        "garnet-cli/src/cmd/test.rs",
+        "garnet-cli/src/cmd/eval.rs",
+        "garnet-cli/src/cmd/doctest.rs",
+        "garnet-cli/src/bin/garnet.rs",
+        "garnet-cli/src/lib.rs",
+        "scripts/garnet_launch_readiness_status.py",
+        "scripts/garnet_caps_enforcement_status.py",
+        "scripts/garnet_capability_scope_status.py",
+        "scripts/garnet_bounded_enforcement_status.py",
+        "scripts/garnet_red_team_status.py",
+        "docs/why.html",
+        "C_Language_Specification/GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md",
+        "F_Project_Management/W_TRUST/LANDED_REVIEW_MARKERS.json",
+    )
+
+    @staticmethod
+    def _required_context_producer_scripts() -> set[str]:
+        """Re-derive, from the repository's own rulesets, every tracked script a
+        required-context workflow invokes.  This is the anti-drift half: the
+        enumeration above is checked against a derivation, not trusted."""
+        ruleset = json.loads(
+            (mod.ROOT / ".github/rulesets/garnet-main.json").read_text(encoding="utf-8")
+        )
+        contexts = {
+            check["context"]
+            for rule in ruleset.get("rules", [])
+            if rule.get("type") == "required_status_checks"
+            for check in rule["parameters"]["required_status_checks"]
+        }
+        producers = json.loads(
+            (mod.ROOT / ".github/rulesets/required-context-producers.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        by_context = {entry["context"]: entry["workflow"] for entry in producers["producers"]}
+        workflows = {by_context[context] for context in contexts if context in by_context}
+        pattern = re.compile(r"scripts/[A-Za-z0-9_.\-/]+")
+        found: set[str] = set()
+        for workflow in sorted(workflows):
+            text = (mod.ROOT / workflow).read_text(encoding="utf-8")
+            for candidate in pattern.findall(text):
+                if (mod.ROOT / candidate).is_file():
+                    found.add(candidate)
+        return found
+
+    def test_capability_and_signature_paths_are_trust_kernel(self) -> None:
+        for path in self.CAPABILITY_AND_SIGNATURE_PATHS:
+            self.assertTrue(mod.is_trust_kernel(path), path)
+            self.assertTrue(mod.is_trust_kernel(path.replace("/", "\\")), path)
+
+    def test_required_context_producer_scripts_are_trust_kernel(self) -> None:
+        for path in self.REQUIRED_CONTEXT_PRODUCERS:
+            self.assertTrue(mod.is_trust_kernel(path), path)
+
+    def test_every_required_context_producer_is_trust_kernel(self) -> None:
+        derived = self._required_context_producer_scripts()
+        self.assertTrue(derived, "derivation found no required-context producer scripts")
+        uncovered = sorted(path for path in derived if not mod.is_trust_kernel(path))
+        self.assertEqual(
+            [],
+            uncovered,
+            "scripts that produce a required CI context but are outside the trust "
+            f"surface: {uncovered}",
+        )
+
+    def test_previously_covered_paths_stay_covered(self) -> None:
+        for path in self.PREVIOUSLY_COVERED_PATHS:
+            self.assertTrue(mod.is_trust_kernel(path), path)
+
+    def test_unrelated_paths_stay_outside_the_trust_surface(self) -> None:
+        for path in (
+            "README.md",
+            "apps/garnet-studio/src/main.rs",
+            "benchmarks/run.py",
+            "editors/vscode/package.json",
+            "garnet-cli/tests/conformance_phase_gates.rs",
+        ):
+            self.assertFalse(mod.is_trust_kernel(path), path)
+
+    def _one_byte_change_touches_trust_kernel(self, relative: str) -> mod.TrustKernelReviewStatus:
+        self._commit_file(relative, b"original\n", f"seed {relative}")
+        base = self._git("rev-parse", "HEAD")
+        self._commit_file(relative, b"originaL\n", f"one byte of {relative}")
+        return mod.read_status(base=base, head="HEAD", root=self.root)
+
+    def test_one_byte_change_to_dogfood_body_checker_is_trust_kernel(self) -> None:
+        # The script PRODUCES the required "PR dogfood evidence" context; a
+        # change to it changes what that context proves.
+        status = self._one_byte_change_touches_trust_kernel("scripts/check_dogfood_pr_body.py")
+        self.assertTrue(status.trust_kernel_touched)
+        self.assertEqual(["scripts/check_dogfood_pr_body.py"], status.touched_paths)
+
+    def test_one_byte_change_to_capability_walk_is_trust_kernel(self) -> None:
+        # The walk that decides whether authority widened.
+        status = self._one_byte_change_touches_trust_kernel("garnet-cli/src/cap_manifest.rs")
+        self.assertTrue(status.trust_kernel_touched)
+        self.assertEqual(["garnet-cli/src/cap_manifest.rs"], status.touched_paths)
+
+    def test_one_byte_change_to_manifest_verifier_is_trust_kernel(self) -> None:
+        status = self._one_byte_change_touches_trust_kernel("garnet-cli/src/manifest.rs")
+        self.assertTrue(status.trust_kernel_touched)
+        self.assertEqual(["garnet-cli/src/manifest.rs"], status.touched_paths)
+
+
+class TrustSurfaceVersionTests(unittest.TestCase):
+    """Widening the surface must not retroactively invalidate a sealed landed
+    marker.  A marker's ``touched_paths`` and ``content_digest`` are computed
+    over the trust subset of its landing edge, so a wider surface makes an
+    already-sealed marker report missing paths and a digest mismatch — and the
+    append-only rule forbids editing the marker to say otherwise.  The surface
+    is therefore versioned, and a marker is verified under the version it was
+    sealed under.  Found while gating the H3-02 widening (2026-09-03).
+    """
+
+    def test_surfaces_are_registered_and_current_is_the_live_constant(self) -> None:
+        self.assertIn("v1", mod.TRUST_SURFACES)
+        self.assertIn("v2", mod.TRUST_SURFACES)
+        self.assertEqual("v2", mod.CURRENT_TRUST_SURFACE)
+        self.assertEqual(
+            (tuple(mod.TRUST_KERNEL_PREFIXES), tuple(mod.TRUST_KERNEL_FILES)),
+            mod.TRUST_SURFACES[mod.CURRENT_TRUST_SURFACE],
+        )
+
+    def test_v1_is_the_pre_h3_02_surface(self) -> None:
+        prefixes, files = mod.TRUST_SURFACES["v1"]
+        self.assertNotIn("garnet-cli/src/", prefixes)
+        self.assertNotIn("garnet-cli/src/manifest.rs", files)
+        self.assertIn("garnet-cli/src/lib.rs", files)
+        self.assertNotIn("scripts/check_dogfood_pr_body.py", files)
+
+    def test_v1_predicate_classifies_the_old_way(self) -> None:
+        old = mod.trust_surface_predicate("v1")
+        self.assertTrue(old("garnet-cli/src/lib.rs"))
+        self.assertFalse(old("garnet-cli/src/manifest.rs"))
+        self.assertFalse(old("scripts/check_dogfood_pr_body.py"))
+
+    def test_current_predicate_classifies_the_new_way(self) -> None:
+        now = mod.trust_surface_predicate(mod.CURRENT_TRUST_SURFACE)
+        self.assertTrue(now("garnet-cli/src/manifest.rs"))
+        self.assertTrue(now("scripts/check_dogfood_pr_body.py"))
+
+    def test_every_registered_version_after_v1_has_a_stone_and_the_live_surface_is_the_latest(self) -> None:
+        stones, findings = mod.era_stones_in_tree(mod.ROOT, "HEAD")
+        self.assertEqual([], findings)
+        self.assertEqual(set(mod.TRUST_SURFACES) - {"v1"}, set(stones))
+        self.assertEqual(mod.CURRENT_TRUST_SURFACE, mod.latest_era(stones))
+        self.assertEqual(559, stones["v2"]["introduced_by_pull_request"])
+
+    def test_the_cli_entry_reports_the_live_surface_it_applies(self) -> None:
+        # Review v4 (R559-v4-1): an imported-module check misses a rebinding at
+        # the __main__ entry. The actual entry reports what it applies, and it
+        # must be the latest stone.
+        proc = subprocess.run(
+            [sys.executable, "-I", str(mod.ROOT / "scripts/garnet_trust_kernel_review_status.py"), "--print-trust-surface"],
+            cwd=mod.ROOT, capture_output=True, text=True, check=True,
+        )
+        report = json.loads(proc.stdout)
+        self.assertEqual(mod.CURRENT_TRUST_SURFACE, report["current"])
+        self.assertEqual(report["current"], report["latest_era_stone"])
+        self.assertEqual([], report["problems"])
+
+    def test_the_two_pre_versioning_landings_precede_every_stone(self) -> None:
+        # Provenance, not identity and not a reading of any copy: both landed
+        # before the v2 stone was laid, so they are v1 wherever main is.
+        for merged in ("68317ae258327aade47fc2c07b7b5b580ec7c6ea", "41d6ced858684ac67683d32315920bd50a52976e"):
+            self.assertEqual(("v1", []), mod.trust_surface_at_commit(mod.ROOT, merged))
+
+    def test_era_stone_shape_is_exact(self) -> None:
+        digest = mod.surface_digest("v2")
+        good = _canonical({"introduced_by_pull_request": 559, "schema": mod.ERA_STONE_SCHEMA, "surface_sha256": digest, "version": "v2"})
+        self.assertEqual([], mod.load_era_stone(good, "v2")[1])
+        for label, payload, version in (
+            ("wrong version", good, "v3"),
+            ("extra key", _canonical({"introduced_by_pull_request": 559, "schema": mod.ERA_STONE_SCHEMA, "surface_sha256": digest, "version": "v2", "x": 1}), "v2"),
+            ("bad schema", _canonical({"introduced_by_pull_request": 559, "schema": "other", "surface_sha256": digest, "version": "v2"}), "v2"),
+            ("no pull", _canonical({"introduced_by_pull_request": 0, "schema": mod.ERA_STONE_SCHEMA, "surface_sha256": digest, "version": "v2"}), "v2"),
+            ("no digest", _canonical({"introduced_by_pull_request": 559, "schema": mod.ERA_STONE_SCHEMA, "version": "v2"}), "v2"),
+            ("wrong digest", _canonical({"introduced_by_pull_request": 559, "schema": mod.ERA_STONE_SCHEMA, "surface_sha256": "0" * 64, "version": "v2"}), "v2"),
+            ("noncanonical", good.replace(b"\n", b"\r\n"), "v2"),
+        ):
+            with self.subTest(label=label):
+                document, findings = mod.load_era_stone(payload, version)
+                self.assertIsNone(document, label)
+                self.assertTrue(findings, label)
+
+    def test_trust_surface_is_an_allowed_marker_key(self) -> None:
+        self.assertIn("trust_surface", mod.LANDED_KEYS)
+
+    def test_registered_markers_verify_under_the_widened_surface(self) -> None:
+        # The end-to-end proof: with `garnet-cli/src/` and the required-context
+        # producers in the surface, both sealed markers must still verify.
+        findings = mod.verify_repository_landed_markers(mod.ROOT)
+        self.assertEqual([], findings)
+
+class MarkerTrustSurfaceDerivationTests(GitRepoFixture):
+    """The surface in force at a landing comes from the era ledger on main's
+    first-parent history (review v4 cure): no copy of the gate script is read."""
+
+    def _land(self, message: str = "landing") -> str:
+        self._commit_file(f"noise-{message}.txt", message.encode(), message)
+        commit = self._git("rev-parse", "HEAD")
+        self._git("update-ref", "refs/remotes/origin/main", commit)
+        return commit
+
+    def _lay(self, version: str) -> str:
+        path = self._write_stone(version)
+        self._git("add", path)
+        self._git("commit", "-m", f"era stone {version}")
+        commit = self._git("rev-parse", "HEAD")
+        self._git("update-ref", "refs/remotes/origin/main", commit)
+        return commit
+
+    def test_a_landing_after_the_current_stone_is_the_current_era(self) -> None:
+        commit = self._land()
+        self.assertEqual(("v2", []), mod.trust_surface_at_commit(self.root, commit))
+
+    def test_the_base_that_laid_the_stone_is_itself_in_that_era(self) -> None:
+        self.assertEqual(("v2", []), mod.trust_surface_at_commit(self.root, self.base))
+
+    def test_a_later_stone_moves_only_later_landings(self) -> None:
+        earlier = self._land("before-v3")
+        wider = (tuple(mod.TRUST_KERNEL_PREFIXES) + ("future-trust/",), tuple(mod.TRUST_KERNEL_FILES))
+        with mock.patch.dict(mod.TRUST_SURFACES, {"v3": wider}), mock.patch.object(mod, "CURRENT_TRUST_SURFACE", "v3"), mock.patch.object(mod, "TRUST_KERNEL_PREFIXES", wider[0]):
+            stone = self._lay("v3")
+            later = self._land("after-v3")
+            self.assertEqual(("v2", []), mod.trust_surface_at_commit(self.root, earlier))
+            self.assertEqual(("v3", []), mod.trust_surface_at_commit(self.root, stone))
+            self.assertEqual(("v3", []), mod.trust_surface_at_commit(self.root, later))
+
+    def test_a_declaration_may_only_agree_with_the_era_in_force(self) -> None:
+        boundaries = {"v2": 5}
+        self.assertEqual(("v2", []), mod.resolve_marker_trust_surface({}, boundaries, 3))
+        self.assertEqual(("v2", []), mod.resolve_marker_trust_surface({"trust_surface": "v2"}, boundaries, 3))
+        self.assertEqual(("v1", []), mod.resolve_marker_trust_surface({}, boundaries, 7))
+        name, findings = mod.resolve_marker_trust_surface({"trust_surface": "v1"}, boundaries, 3)
+        self.assertEqual((mod.CURRENT_TRUST_SURFACE, ["landed marker declares trust surface 'v1' but 'v2' was in force at its landing"]), (name, findings))
+
+    def test_explicit_null_or_non_string_version_is_a_finding(self) -> None:
+        for value in (None, 7, ["v2"], "v99"):
+            with self.subTest(value=value):
+                name, findings = mod.resolve_marker_trust_surface({"trust_surface": value}, {"v2": 5}, 3)
+                self.assertEqual(mod.CURRENT_TRUST_SURFACE, name)
+                self.assertEqual([f"unknown trust surface {value!r} in landed marker"], findings)
+
+    def test_stone_history_must_be_append_only(self) -> None:
+        commit = self._land()
+        for label, action in (
+            ("modified", lambda: self._write_stone("v2", pull=560)),
+            ("deleted", lambda: (self.root / mod.era_stone_path("v2")).unlink()),
+        ):
+            with self.subTest(label=label):
+                self._git("checkout", "-q", "-b", f"tamper-{label}", commit)
+                action()
+                self._git("add", "-A")
+                self._git("commit", "-m", f"stone {label}")
+                self._git("update-ref", "refs/remotes/origin/main", self._git("rev-parse", "HEAD"))
+                name, findings = mod.trust_surface_at_commit(self.root, commit)
+                self.assertIsNone(name, label)
+                self.assertTrue(any("append-only" in item for item in findings), (label, findings))
+                self._git("checkout", "-q", "main")
+                self._git("update-ref", "refs/remotes/origin/main", commit)
+
+    def test_a_stone_moved_away_and_back_is_not_append_only(self) -> None:
+        # Review v5 (R559-v5-2): rename-out, twelve commits, rename-back showed
+        # no D/M under rename detection and bisection then found the return
+        # as the introduction, deriving v1 for a v2 landing.
+        landing = self._land("v2-landing")
+        self._git("mv", mod.era_stone_path("v2"), "F_Project_Management/W_TRUST/eras/parked.json")
+        self._git("commit", "-m", "park the stone")
+        for i in range(12):
+            self._land(f"filler-{i}")
+        self._git("mv", "F_Project_Management/W_TRUST/eras/parked.json", mod.era_stone_path("v2"))
+        self._git("commit", "-m", "restore the stone")
+        self._git("update-ref", "refs/remotes/origin/main", self._git("rev-parse", "HEAD"))
+        name, findings = mod.trust_surface_at_commit(self.root, landing)
+        self.assertIsNone(name)
+        self.assertTrue(any("append-only" in item for item in findings), findings)
+
+    def test_an_unreadable_historical_stone_is_never_absence(self) -> None:
+        # Review v5 (R559-v5-2): a failed read was treated as absence.
+        landing = self._land()
+        real = mod._read_blob
+        def failing(root, ref, path):
+            if path.startswith(mod.ERA_STONE_DIR):
+                return None, [f"blob lookup timed out for {path}"]
+            return real(root, ref, path)
+        with mock.patch.object(mod, "_read_blob", failing):
+            stones, findings = mod.era_stones_in_tree(self.root, "HEAD")
+            self.assertEqual({}, stones)
+            self.assertTrue(any("could not be read" in item for item in findings), findings)
+            self.assertFalse(any("has no era stone" in item for item in findings), findings)
+
+    def test_a_failed_lookup_is_never_absence_at_the_git_boundary(self) -> None:
+        # Review v6 (R559-v6-1): rev-parse says the same thing for a missing
+        # path and a broken object. Absence is a verified empty listing; any
+        # other failure, listing failures and timeouts included, propagates.
+        landing = self._land()
+        real = mod._git_bytes
+        def failing(root, *args, **kwargs):
+            if "ls-tree" in args and any(str(a).startswith(mod.ERA_STONE_DIR) or str(a).endswith("eras") for a in args):
+                return mod.GitResult(returncode=128, stdout=b"", stderr=b"fatal: bad object", timed_out=False)
+            return real(root, *args, **kwargs)
+        with mock.patch.object(mod, "_git_bytes", failing):
+            stones, findings = mod.era_stones_in_tree(self.root, "HEAD")
+            self.assertEqual({}, stones)
+            self.assertTrue(any("could not be listed" in item for item in findings), findings)
+            self.assertFalse(any("has no era stone" in item for item in findings), findings)
+            name, era_findings = mod.trust_surface_at_commit(self.root, landing)
+            self.assertIsNone(name)
+        def timing_out(root, *args, **kwargs):
+            if "ls-tree" in args:
+                return mod.GitResult(returncode=0, stdout=b"", stderr=b"", timed_out=True)
+            return real(root, *args, **kwargs)
+        with mock.patch.object(mod, "_git_bytes", timing_out):
+            stones, findings = mod.era_stones_in_tree(self.root, "HEAD")
+            self.assertEqual({}, stones)
+            self.assertTrue(any("could not be listed" in item for item in findings), findings)
+
+    def test_a_directory_listing_failure_cannot_hide_clutter(self) -> None:
+        path = self.root / mod.ERA_STONE_DIR / "notes.txt"
+        path.write_bytes(b"clutter\n")
+        self._git("add", "-A"); self._git("commit", "-m", "clutter")
+        real = mod._git_bytes
+        def failing_listing(root, *args, **kwargs):
+            if "ls-tree" in args and "--name-only" in args:
+                return mod.GitResult(returncode=128, stdout=b"", stderr=b"", timed_out=False)
+            return real(root, *args, **kwargs)
+        with mock.patch.object(mod, "_git_bytes", failing_listing):
+            _, findings = mod.era_stones_in_tree(self.root, "HEAD")
+        self.assertTrue(any("could not be listed" in item for item in findings), findings)
+
+    def test_only_exact_root_stones_count_and_anything_else_is_a_finding(self) -> None:
+        for name in ("nested/v9.era.json", "v9.json", "notes.txt", "v2.era.json.bak"):
+            path = self.root / mod.ERA_STONE_DIR / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(b"{}\n")
+        self._git("add", "-A")
+        self._git("commit", "-m", "clutter")
+        stones, findings = mod.era_stones_in_tree(self.root, "HEAD")
+        self.assertEqual({"v2"}, set(stones))
+        for name in ("nested", "v9.json", "notes.txt", "v2.era.json.bak"):
+            self.assertTrue(any(name in item and "is not a stone" in item for item in findings), (name, findings))
+
+    def test_an_era_failure_resolves_to_the_widest_surface(self) -> None:
+        name, findings = mod.resolve_marker_trust_surface({}, {}, 3, era_ok=False)
+        self.assertEqual((mod.CURRENT_TRUST_SURFACE, []), (name, findings))
+
+    def test_a_stone_for_an_unregistered_version_is_a_finding(self) -> None:
+        self._lay("v9")
+        stones, findings = mod.era_stones_in_tree(self.root, "HEAD")
+        self.assertIn("era stone v9 names a version this gate does not register", findings)
+
+    def test_a_registered_version_without_a_stone_is_a_finding(self) -> None:
+        with mock.patch.dict(mod.TRUST_SURFACES, {"v3": mod.TRUST_SURFACES["v2"]}):
+            stones, findings = mod.era_stones_in_tree(self.root, "HEAD")
+            self.assertIn("registered trust surface v3 has no era stone at HEAD", findings)
+
+    def test_a_commit_off_the_first_parent_line_has_no_era(self) -> None:
+        self._git("checkout", "-q", "-b", "side")
+        side = self._commit_file("side.txt", b"side\n", "side")
+        self._git("checkout", "-q", "main")
+        name, findings = mod.trust_surface_at_commit(self.root, side)
+        self.assertIsNone(name)
+        self.assertTrue(any("not on the first-parent history" in item for item in findings), findings)
+
+
+class TrustSurfaceWideningTests(LandedMarkerTests):
+    """End to end: a marker sealed in the v2 era stays green when a v3 stone is
+    laid and the live surface widens; a landing after the v3 stone must cover
+    v3; and a live surface with no stone cannot run green (review v4 cure)."""
+
+    WIDER = (tuple(mod.TRUST_KERNEL_PREFIXES) + ("future-trust/",), tuple(mod.TRUST_KERNEL_FILES))
+
+    def _widened_to_v3(self):
+        """A real widening: the registered entry, the live label and the alias
+        tuples move together (the gate compares all three inside every run)."""
+        class _Widen:
+            def __enter__(inner):
+                inner.patches = [
+                    mock.patch.dict(mod.TRUST_SURFACES, {"v3": self.WIDER}),
+                    mock.patch.object(mod, "CURRENT_TRUST_SURFACE", "v3"),
+                    mock.patch.object(mod, "TRUST_KERNEL_PREFIXES", self.WIDER[0]),
+                ]
+                for patch in inner.patches:
+                    patch.start()
+                return inner
+            def __exit__(inner, *exc):
+                for patch in reversed(inner.patches):
+                    patch.stop()
+        return _Widen()
+
+    def _register(self, marker: dict[str, object]) -> None:
+        self._commit_repository_marker(marker)
+        self._git("update-ref", "refs/remotes/origin/main", self._git("rev-parse", "HEAD"))
+
+    def _lay_v3(self) -> str:
+        path = self._write_stone("v3", pull=600)
+        self._git("add", path)
+        self._git("commit", "-m", "era stone v3")
+        commit = self._git("rev-parse", "HEAD")
+        self._git("update-ref", "refs/remotes/origin/main", commit)
+        return commit
+
+    def test_widening_the_live_surface_keeps_a_sealed_v2_marker_green(self) -> None:
+        marker = self._marker()
+        del marker["trust_surface"]
+        self._register(marker)
+        self.assertEqual([], mod.verify_repository_landed_markers(self.root))
+        with self._widened_to_v3():
+            self._lay_v3()
+            self.assertEqual([], mod.verify_repository_landed_markers(self.root))
+
+    def test_a_declared_version_that_agrees_survives_the_widening_too(self) -> None:
+        self._register(self._marker())
+        with self._widened_to_v3():
+            self._lay_v3()
+            self.assertEqual([], mod.verify_repository_landed_markers(self.root))
+
+    def test_a_live_surface_with_no_stone_cannot_run_green(self) -> None:
+        # Review v4 (R559-v4-1): a copy that widens the constant at its entry
+        # point without laying a stone. The check runs inside every gate run.
+        self._register(self._marker())
+        with mock.patch.dict(mod.TRUST_SURFACES, {"v3": self.WIDER}), mock.patch.object(mod, "CURRENT_TRUST_SURFACE", "v3"):
+            findings = mod.verify_repository_landed_markers(self.root)
+        self.assertIn("registered trust surface v3 has no era stone at " + self._git("rev-parse", "HEAD"), findings)
+        self.assertIn("the live trust surface 'v3' is not the latest era stone 'v2' in the candidate tree", findings)
+
+    def test_widening_the_live_classifier_without_a_version_cannot_run_green(self) -> None:
+        # Review v5 (R559-v5-1): a copy that rebinds TRUST_KERNEL_PREFIXES at
+        # its entry point widened the live classifier while every label still
+        # said v2. The classifier reads the registered entry, and the aliases
+        # are compared to it inside every run.
+        self._register(self._marker())
+        with mock.patch.object(mod, "TRUST_KERNEL_PREFIXES", tuple(mod.TRUST_KERNEL_PREFIXES) + ("future-v3/",)):
+            self.assertFalse(mod.is_trust_kernel("future-v3/probe.txt"))
+            findings = mod.verify_repository_landed_markers(self.root)
+        self.assertTrue(any("live classifier tuples do not equal the registered entry" in item for item in findings), findings)
+
+    def test_a_candidate_that_edits_a_stone_is_red_before_it_lands(self) -> None:
+        # Review v5 (R559-v5-4): the ledger is on the surface and stone
+        # mutation on any candidate edge is a finding, record or not.
+        self.assertTrue(mod.is_trust_kernel(mod.era_stone_path("v2")))
+        self._git("checkout", "-q", "-b", "poison", self.merged_commit)
+        self._write_stone("v2", pull=560)
+        self._git("add", "-A")
+        self._git("commit", "-m", "edit the stone")
+        head = self._git("rev-parse", "HEAD")
+        findings = mod._era_stone_append_only_findings(self.root, self.merged_commit, head)
+        self.assertTrue(any("era stones are append-only: M" in item for item in findings), findings)
+        (self.root / mod.era_stone_path("v2")).unlink()
+        self._git("add", "-A")
+        self._git("commit", "-m", "delete the stone")
+        findings = mod._era_stone_append_only_findings(self.root, self.merged_commit, self._git("rev-parse", "HEAD"))
+        self.assertTrue(any("era stones are append-only: D" in item for item in findings), findings)
+        self._git("checkout", "-q", "main")
+
+    def test_second_parent_edges_protect_base_stones_and_a_side_added_stone_that_never_lands_is_out_of_scope(self) -> None:
+        # Review v6 (R559-v6-2) checked only first-parent edges. Every parent
+        # edge is diffed now — for stones that EXIST at the base. A base stone
+        # altered on a side branch and carried through a merge is red on the
+        # second-parent edge; a stone the side branch added and the merge
+        # discarded never lands and classifies nothing, so it is not a finding.
+        self._git("checkout", "-q", "-b", "side", self.merged_commit)
+        self._write_stone("v2", pull=560)  # alter the BASE stone on the side
+        self._git("add", "-A"); self._git("commit", "-m", "side alters v2")
+        side = self._git("rev-parse", "HEAD")
+        self._git("checkout", "-q", "-b", "candidate", self.merged_commit)
+        self._git("merge", "-q", "--no-ff", "-m", "bring the side in", side)
+        head = self._git("rev-parse", "HEAD")
+        findings = mod._era_stone_append_only_findings(self.root, self.merged_commit, head)
+        self.assertTrue(any("era stones are append-only: M" in item and "v2.era.json" in item for item in findings), findings)
+        # the side-added-then-discarded stone
+        self._git("checkout", "-q", "-b", "side2", self.merged_commit)
+        with mock.patch.dict(mod.TRUST_SURFACES, {"v3": self.WIDER}):
+            self._write_stone("v3", pull=600)
+        self._git("add", "-A"); self._git("commit", "-m", "side adds v3 stone")
+        side2 = self._git("rev-parse", "HEAD")
+        self._git("checkout", "-q", "-b", "candidate2", self.merged_commit)
+        self._git("merge", "-q", "--no-ff", "-s", "ours", "-m", "discard the side stone", side2)
+        self.assertEqual([], mod._era_stone_append_only_findings(self.root, self.merged_commit, self._git("rev-parse", "HEAD")))
+        self._git("checkout", "-q", "main")
+
+    def test_jointly_rebinding_the_entry_and_the_aliases_disagrees_with_the_stone(self) -> None:
+        # Review v6 (R559-v6-3): equality of two mutable values proved nothing;
+        # the stone records the entry's digest, and the live entry must match it.
+        self._register(self._marker())
+        wider = self.WIDER
+        with mock.patch.dict(mod.TRUST_SURFACES, {"v2": wider}), mock.patch.object(mod, "TRUST_KERNEL_PREFIXES", wider[0]):
+            findings = mod.verify_repository_landed_markers(self.root)
+        self.assertTrue(any("does not match the surface digest its era stone records" in item for item in findings), findings)
+
+    def test_a_candidate_may_author_its_own_new_stone_across_commits(self) -> None:
+        # A stone the candidate introduces is not yet history: laying it and
+        # amending it in a later commit is not a custody finding; only a stone
+        # that exists at the base is immutable.
+        self._git("checkout", "-q", "-b", "widen", self.merged_commit)
+        with mock.patch.dict(mod.TRUST_SURFACES, {"v3": self.WIDER}):
+            self._write_stone("v3", pull=600)
+            self._git("add", "-A"); self._git("commit", "-m", "lay v3")
+            self._write_stone("v3", pull=601)
+            self._git("add", "-A"); self._git("commit", "-m", "amend v3")
+        head = self._git("rev-parse", "HEAD")
+        self.assertEqual([], mod._era_stone_append_only_findings(self.root, self.merged_commit, head))
+        self._write_stone("v2", pull=560)
+        self._git("add", "-A"); self._git("commit", "-m", "edit the base stone")
+        findings = mod._era_stone_append_only_findings(self.root, self.merged_commit, self._git("rev-parse", "HEAD"))
+        self.assertTrue(any("append-only: M" in item and "v2.era.json" in item for item in findings), findings)
+        self._git("checkout", "-q", "main")
+
+    def test_print_trust_surface_never_combines_with_gate(self) -> None:
+        # Review v5 (R559-v5-3): the diagnostic returned 0 before gate policy.
+        with self.assertRaises(SystemExit) as raised:
+            mod.main(["--gate", "--print-trust-surface"], root=self.root)
+        self.assertEqual(2, raised.exception.code)
+
+    def test_a_landing_after_the_v3_stone_cannot_omit_a_v3_only_path(self) -> None:
+        # The regression the contract promises: a landing in the v3 era whose
+        # record and marker omit a v3-only path is reported.
+        with self._widened_to_v3():
+            self._lay_v3()
+            self._git("checkout", "-q", "-b", "v3-landing")
+            self._commit_file("future-trust/probe.txt", b"v3-only authority\n", "v3-only change")
+            landed = self._git("rev-parse", "HEAD")
+            self._git("update-ref", "refs/remotes/origin/main", landed)
+            marker = self._marker()
+            marker["merged_commit"] = landed
+            marker["merged_tree"] = self._git("rev-parse", "HEAD^{tree}")
+            marker["trust_surface"] = "v2"  # the laundering declaration
+            findings = mod.verify_landed_review_marker(marker, root=self.root, main_ref="refs/remotes/origin/main")
+            self.assertTrue(any("'v3' was in force" in item for item in findings), findings)
+            self.assertTrue(any("future-trust/probe.txt" in item for item in findings), findings)
+            del marker["trust_surface"]
+            findings = mod.verify_landed_review_marker(marker, root=self.root, main_ref="refs/remotes/origin/main")
+            self.assertTrue(any("future-trust/probe.txt" in item for item in findings), findings)
+            self._git("checkout", "-q", "main")
+
+    def test_a_merged_commit_registered_twice_is_a_finding(self) -> None:
+        marker = self._marker()
+        self._commit_repository_marker(marker)
+        second = "F_Project_Management/W_TRUST/landed/REPLAY.landed-review.json"
+        (self.root / second).write_bytes(_canonical(marker))
+        registry = self.root / "F_Project_Management/W_TRUST/LANDED_REVIEW_MARKERS.json"
+        registry.write_bytes(
+            _canonical({"markers": ["F_Project_Management/W_TRUST/landed/LANDED.landed-review.json", second], "schema": "garnet.trust_kernel_landed_review_registry/v1"})
+        )
+        self._git("add", second, str(registry.relative_to(self.root)))
+        self._git("commit", "-m", "replay")
+        self._git("update-ref", "refs/remotes/origin/main", self._git("rev-parse", "HEAD"))
+        findings = mod.verify_repository_landed_markers(self.root)
+        self.assertTrue(any("registered by more than one landed marker" in item for item in findings), findings)
 
 if __name__ == "__main__":
     unittest.main()

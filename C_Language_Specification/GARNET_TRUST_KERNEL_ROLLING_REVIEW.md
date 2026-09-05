@@ -16,10 +16,102 @@ output on the current tree.
 
 The gate's `TRUST_KERNEL_PREFIXES` and `TRUST_KERNEL_FILES` constants are the
 machine authority. They cover the checker, interpreter, VM, stdlib registry,
-Wasm runner, CLI authority entry points, governance/readiness policy scripts
-and tests, GitHub workflows/actions/rulesets, and the named public enforcement
-claims. The constants are deliberately conservative: an extra review is safer
-than an unreviewed trust-spine change.
+Wasm runner, the whole `garnet-cli/src/` tree, governance/readiness policy
+scripts and tests, GitHub workflows/actions/rulesets, every script named
+literally in a required-context workflow as its producer, and the named public
+enforcement claims. The
+constants are deliberately conservative: an extra review is safer than an
+unreviewed trust-spine change.
+
+Prefer a prefix over a file list. Until H3-02 (2026-09-03) `garnet-cli` was
+enumerated file by file, and three independent reviews found the same holes in
+that enumeration (only the Codex hardening pass carries an in-repo identifier): the capability walk (`cap_manifest.rs`, `cmd/diff_caps.rs`,
+`cmd/verify_gate.rs`), the manifest and Ed25519 signature verifier
+(`manifest.rs`, `cmd/verify.rs`), and the script that produces the required
+`PR dogfood evidence` context. The peer enforcement crates were already
+whole-`src/` prefixes; `garnet-cli` was the anomaly. The script entries that
+remain enumerated are checked against a derivation from
+`.github/rulesets/garnet-main.json` and `required-context-producers.json` from
+the paths named literally in workflow text (not the import or wrapper closure
+of a producer), so a new required-context producer that escapes the `scripts/garnet_` naming prefix
+fails `TrustSurfaceCoverageTests` instead of merging unreviewed.
+
+## The surface is versioned
+
+A landed marker binds the `touched_paths` and `content_digest` of the trust
+subset of its landing edge. Classify that edge with a wider surface and the
+sealed marker reports missing paths and a digest mismatch — so before H3-02 the
+surface could not be widened at all without invalidating sealed history, and
+the append-only rule correctly forbids editing a marker to say otherwise. That
+was found by running the gate on the H3-02 widening, not by reading the code.
+
+`TRUST_SURFACES` therefore names each surface version, and
+`verify_landed_review_marker` classifies a marker's landing edge under the
+surface that was **in force when it landed**. That is a question of provenance,
+never of reading the landing's copy of the gate script. Each version after v1
+has an **era stone**, a canonical JSON file
+`F_Project_Management/W_TRUST/eras/<vN>.era.json` laid by the change that
+introduced the version. A landing's surface is the latest version whose stone
+was introduced at or before that landing on main's first-parent history, which
+is append-only under the ruleset; a landing before every stone is v1 (that is
+what the two pre-versioning markers, PRs #514 and #517, are). A stone is
+introduced by exactly one `A` on the first-parent line, judged with renames
+disabled, and that commit is the boundary; no historical blob is read and
+nothing is bisected. Absence is a *verified* fact — a tree listing that
+succeeds and has no such entry — and every other outcome of a lookup, a
+listing failure or a timeout included, is a finding that resolves to the
+widest surface, never absence. Stone history must be append-only — a stone
+modified, deleted or moved on the line is a finding, and so is any change to
+an *existing* stone on **every parent edge** of every candidate commit, merges
+and root commits included, because the ledger directory is itself on the
+trust surface (a stone the candidate itself lays may still be authored across
+its own commits; it becomes immutable when it lands). A stone records
+`surface_sha256`, the digest of its version's exact tuples, so the registered
+entry cannot be widened in place either. A stone is exactly
+`eras/<vN>.era.json` at the root of that directory; any other entry there is
+a finding. Every registered version after v1 must have a stone, a stone for an
+unregistered version is a finding, and a marker may carry `trust_surface`
+only in agreement with the era in force (an explicit non-version value,
+`null` included, is a finding; a `merged_commit` registered twice is a
+finding). Every failure resolves to the current, widest surface, an
+unreadable ledger included.
+
+The **runtime entry consistency boundary** runs inside every gate invocation:
+the surface label this process applies (`CURRENT_TRUST_SURFACE`, as bound at
+the entry point), the tuples its live classifier uses — which is the
+registered entry for that label, not the alias constants — the identity of
+that entry against the digest its stone recorded, and the latest era stone in
+the candidate tree must all agree, or the repository verification is red. A
+copy that widens any of them at its `__main__` block — the label, the entry,
+the aliases, or all three together — without laying a new stone disagrees
+with a committed, append-only stone and cannot run green. `--print-trust-surface` prints the live label, the latest stone and the
+live-consistency findings (the tuple and digest comparisons surface there as
+findings, not as values) and is never combined with `--gate`. What no self-inspection can cover is a
+copy that rewrites the verifier itself; that is what review of a gate-script
+change is for.
+
+Six earlier designs are recorded here so they are not reintroduced, each
+rejected by cross-family review with a reproduced construction — two that
+trusted a declaration or a pin, four that read the landing's copy.
+Declaration-first let a new marker declare the old surface and hide the newly
+covered paths on its own landing edge. Commit-only pinning let a second marker
+replay a pinned `merged_commit`. A closed pin map bound to marker paths
+preserved exactly the two pre-versioning markers and nothing sealed after them:
+the first v2-to-v3 widening turned a valid v2 marker red with zero repository
+changes. A regular expression over the constant in the landing's copy chose the
+narrower era on a docstring, a single quote, an indent or a duplicate. A parse
+of the constant's binding was defeated by a walrus, a `from … import` and a
+tuple target — no inventory of Python binders is sound — and inferred the
+pre-versioning era from the absence of a symbol. A seal comment beside the
+constant was defeated by a copy that rebound the constant at its `__main__`
+entry while carrying the seal. The common failure: any static reading of a copy
+can be made to disagree with what that copy does. The ledger reads no copy; the
+regression that proves it lands a v2 marker, lays a v3 stone with the live
+surface widened, verifies the registry green, and shows a v3-era landing that
+omits a v3-only path reported.
+
+Live candidates are always judged by the current surface; only sealed history is
+judged by its own.
 
 ## Discovery is part of the proof
 

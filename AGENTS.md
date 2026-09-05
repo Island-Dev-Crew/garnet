@@ -85,6 +85,51 @@ the outside parent and does not relax transient-touch checks on the reviewed
 lineage. Run `python3 -I scripts/test_garnet_trust_kernel_review_status.py`
 after changing the walk or its trust-snapshot identity.
 
+The trigger surface prefers prefixes to file lists. `garnet-cli/src/` is
+covered whole, like its peer enforcement crates: enumerating that crate file by
+file left the capability walk, the manifest/Ed25519 verifier and the MCP host
+outside review (H3-02). The script entries that remain enumerated are the
+required-context producers that escape the `scripts/garnet_` naming prefix, and
+`TrustSurfaceCoverageTests` re-derives that set from
+`.github/rulesets/garnet-main.json` plus `required-context-producers.json`, so a
+new producer whose path is named literally in a required-context workflow and
+lies outside the surface fails the suite rather than merging unreviewed. That
+derivation scans literal path tokens in workflow text; it does not compute the
+import or wrapper closure of a producer, so a helper a producer invokes without
+naming it in the workflow is covered only if an existing prefix or exact entry
+already reaches it (`scripts/smoke_garnet_web_pwa_offline.mjs` is, through the
+`scripts/smoke_garnet_` prefix; `scripts/render_garnet_promo_video.mjs`, run by
+the strict agentic matrix, is not) — such helpers are not discovered
+automatically.
+Never narrow the surface to make a PR green.
+
+Widening the surface is only safe because the surface is versioned. A sealed
+landed marker binds the trust subset of its landing edge, so it is verified
+under the surface that was in force when it landed, and that is provenance:
+each version after v1 has an era stone
+(`F_Project_Management/W_TRUST/eras/<vN>.era.json`) laid by the change that
+introduced it, a landing's surface is the latest stone introduced at or before
+it on main's first-parent history, and a landing before every stone is v1. No
+copy of the gate script is ever read — six designs were rejected by review
+(two trusted a declaration or a pin, four read the copy) and are recorded in
+the rolling-review contract. The ledger directory is on the trust surface;
+stone history is append-only on main and on every candidate edge, judged with
+renames disabled; a declared marker `trust_surface` may only agree with the
+era in force; an explicit non-version value (including `null`) is a finding;
+a `merged_commit` registered twice is a finding; every failure — an unreadable ledger included — resolves to the
+current (widest, therefore strictest) surface, and absence is only ever a
+verified empty listing. Each stone records the digest of its version's
+tuples. Inside every gate run the live label, the tuples the classifier uses
+(the registered entry, not the alias constants), that entry's digest against
+its stone, and the latest stone in the candidate tree must agree, so a copy
+that widens any of them — even the entry and the aliases together — without
+laying a new stone cannot run green. Custody of an existing stone is checked
+on every parent edge of every candidate commit, merges included; a stone the
+candidate itself introduces may be authored across its own commits. To widen: add a `TRUST_SURFACES` version, bump
+`CURRENT_TRUST_SURFACE`, and lay the version's stone in the same change; then
+re-run `python3 -I scripts/test_garnet_trust_kernel_review_status.py`, which
+lands a v2 marker, lays a v3 stone and verifies the registry green.
+
 ## Dogfood PR-Body Evidence Contract
 
 `scripts/check_dogfood_pr_body.py` accepts the legacy Desktop dogfood bundle
@@ -107,6 +152,11 @@ with its expected status, and the evidence bundle also accepts a named artifact
 and where it lives. The merged bodies of #545 and #546 live under
 `scripts/fixtures/dogfood_pr_bodies/` as positive fixtures that must keep
 passing. The `git diff` the checker runs is bounded at 30 s and fails closed.
+
+The checker guards itself: `scripts/check_dogfood_pr_body.py` and its test are
+readiness-sensitive paths, so a change to the producer of the required
+`PR dogfood evidence` context must carry that evidence. Both are trust-kernel
+paths as well, so such a change also needs a structured review record.
 
 ## WV-6 / WV-7 Acceptance Gates
 
