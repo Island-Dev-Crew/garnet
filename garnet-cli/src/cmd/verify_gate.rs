@@ -579,11 +579,13 @@ mod tests {
     #[test]
     fn collect_targets_errors_on_an_unresolvable_link() {
         use std::os::unix::fs::PermissionsExt;
-        if std::fs::metadata("/root")
-            .map(|m| m.permissions().mode() & 0o777 == 0)
-            .unwrap_or(false)
-            && std::fs::read_dir("/root").is_ok()
-        {
+        let uid = std::process::Command::new("id")
+            .arg("-u")
+            .output()
+            .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
+            .unwrap_or_default();
+        if uid == "0" {
+            eprintln!("skipped: root bypasses directory permissions");
             return;
         }
         let dir = TempDir::new().unwrap();
