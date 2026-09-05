@@ -44,8 +44,10 @@
   binding step, and a failed descriptor release — on the manifest, an
   artifact, a bound parent, an inventory child, or the evidence root — are
   named findings too. A failed release is never retried, the sibling
-  descriptor the reporter still owns is released once, and a release failure
-  after a clean validation makes the result `partial`. A parent directory renamed or replaced AFTER the
+  descriptor the reporter still owns is released once, a release failure that
+  happens while unwinding from another finding is reported beside it (review
+  v4), and absence of the manifest plus a release failure is `partial`, not
+  `pending`. A parent directory renamed or replaced AFTER the
   reporter bound it is survived, not reported — the read continues in the
   bound directory and the replacement is never read; the reporter's
   docstring states that boundary and the unprivileged same-inode `mmap`

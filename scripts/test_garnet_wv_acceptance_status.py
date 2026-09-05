@@ -871,6 +871,85 @@ class GarnetWvAcceptanceStatusTests(unittest.TestCase):
         self.assertEqual(before, after, "the child descriptor must not leak")
 
 
+    # Review v4 (V4-1): a release failure that happened while unwinding from
+    # a primary finding was dropped, and in one branch left the gate
+    # `pending`. Both are reported now; absence plus a release failure is
+    # `partial`.
+
+    def test_absent_manifest_with_release_failure_is_partial_not_pending(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            evidence, _manifest = _complete_evidence(root)
+            manifest_path = evidence / wv.EVIDENCE_MANIFEST
+            st = os.lstat(evidence)
+            hook, fired = self._close_raising_on((st.st_dev, st.st_ino))
+            with mock.patch.object(os, "close", hook):
+                status = wv.read_status(root, "WV-6", verify_git=False)
+        self.assertEqual(len(fired), 1)
+        self.assertEqual(status.state, "partial")
+        self.assertFalse(status.ok)
+        self.assertEqual(
+            status.findings,
+            [
+                "exact-candidate evidence manifest is pending",
+                f"{manifest_path} descriptor could not be released: Input/output error",
+            ],
+        )
+
+    def test_primary_finding_and_release_failure_are_both_reported(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            evidence, manifest = _complete_evidence(root)
+            manifest_path = evidence / wv.EVIDENCE_MANIFEST
+            crlf = _manifest_bytes(manifest).replace(b"\n", b"\r\n")
+            offset = crlf.index(b"\r")
+            manifest_path.write_bytes(crlf)
+            st = os.lstat(manifest_path)
+            hook, fired = self._close_raising_on((st.st_dev, st.st_ino))
+            with mock.patch.object(os, "close", hook):
+                status = wv.read_status(root, "WV-6", verify_git=False)
+        self.assertEqual(len(fired), 1)
+        self.assertEqual(status.state, "partial")
+        self.assertEqual(
+            status.findings,
+            [
+                f"{manifest_path} must use LF-only line endings "
+                f"(first CR byte at offset {offset})",
+                f"{manifest_path} descriptor could not be released: Input/output error",
+            ],
+        )
+
+    def test_unbindable_root_release_failure_is_reported(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            evidence, manifest = _complete_evidence(root)
+            (evidence / wv.EVIDENCE_MANIFEST).write_bytes(_manifest_bytes(manifest))
+            st = os.lstat(evidence)
+            identity = (st.st_dev, st.st_ino)
+            real_fstat = os.fstat
+
+            def failing_root_fstat(fd):
+                result = real_fstat(fd)
+                if (result.st_dev, result.st_ino) == identity:
+                    raise OSError(5, "Input/output error")
+                return result
+
+            close_hook, fired = self._close_raising_on(identity)
+            with mock.patch.object(os, "fstat", failing_root_fstat), mock.patch.object(
+                os, "close", close_hook
+            ):
+                status = wv.read_status(root, "WV-6", verify_git=False)
+        self.assertEqual(len(fired), 1)
+        self.assertEqual(status.state, "partial")
+        self.assertEqual(
+            status.findings,
+            [
+                "evidence destination could not be bound as a directory",
+                "evidence destination descriptor could not be released: Input/output error",
+            ],
+        )
+
+
 class UnsupportedPlatformTests(unittest.TestCase):
     """Finding 2: the no-dir_fd fallback re-checked and re-read by pathname,
     and a root swap after the symlink check was accepted. There is no
@@ -908,7 +987,7 @@ class EvidenceRootBindingTests(unittest.TestCase):
 
     def test_absent_destination_is_reported_as_absent_not_unbindable(self) -> None:
         with tempfile.TemporaryDirectory() as td:
-            fd, reason = wv.open_evidence_root(Path(td) / "nope")
+            fd, reason, _ = wv.open_evidence_root(Path(td) / "nope")
             self.assertIsNone(fd)
             self.assertEqual(reason, "absent")
 
@@ -918,7 +997,7 @@ class EvidenceRootBindingTests(unittest.TestCase):
             (root / "real").mkdir()
             link = root / "link"
             link.symlink_to(root / "real", target_is_directory=True)
-            fd, reason = wv.open_evidence_root(link)
+            fd, reason, _ = wv.open_evidence_root(link)
             self.assertIsNone(fd, "a symlinked evidence destination must not bind")
             self.assertEqual(reason, "symlink")
 
@@ -932,7 +1011,7 @@ class EvidenceRootBindingTests(unittest.TestCase):
             outside.mkdir()
             (outside / "planted.txt").write_bytes(b"the bytes an ancestor swap would supply\n")
 
-            fd, reason = wv.open_evidence_root(inside)
+            fd, reason, _ = wv.open_evidence_root(inside)
             self.assertEqual(reason, "ok")
             self.assertIsNotNone(fd)
             try:
@@ -963,7 +1042,7 @@ class EvidenceRootBindingTests(unittest.TestCase):
             outside.mkdir()
             (outside / "f.txt").write_bytes(b"planted\n")
 
-            fd, _reason = wv.open_evidence_root(inside)
+            fd, _reason, _ = wv.open_evidence_root(inside)
             try:
                 inside.rename(root / "moved")
                 Path(inside).symlink_to(outside, target_is_directory=True)

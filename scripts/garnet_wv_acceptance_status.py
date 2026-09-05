@@ -107,7 +107,7 @@ DIR_FD_SUPPORTED = (
 )
 
 
-def open_evidence_root(path: Path) -> tuple[int | None, str]:
+def open_evidence_root(path: Path) -> tuple[int | None, str, list[str]]:
     """Bind the evidence directory to one descriptor, or return None.
 
     ``O_NOFOLLOW`` protects only the FINAL component, so checking the evidence
@@ -119,7 +119,9 @@ def open_evidence_root(path: Path) -> tuple[int | None, str]:
     later read is now relative to this descriptor, so the directory identity
     cannot change underneath the traversal.
 
-    Returns ``(descriptor, reason)``. The reason distinguishes an absent
+    Returns ``(descriptor, reason, secondary)``; ``secondary`` names a failed
+    release on a non-binding path, which is a finding of its own (review v4).
+    The reason distinguishes an absent
     destination (which stays ``pending``, as before) from a destination that
     exists but cannot be bound (which is a finding), so binding does not change
     the reporter's state vocabulary. ``unsupported`` means the platform has no
@@ -129,11 +131,11 @@ def open_evidence_root(path: Path) -> tuple[int | None, str]:
     on that platform.
     """
     if not DIR_FD_SUPPORTED:
-        return None, "unsupported"
+        return None, "unsupported", []
     try:
         descriptor = os.open(path, _DIRECTORY_FLAGS)
     except FileNotFoundError:
-        return None, "absent"
+        return None, "absent", []
     except OSError:
         # Do not infer the cause from errno: O_NOFOLLOW|O_DIRECTORY on a
         # symlinked directory reports ELOOP on Linux and ENOTDIR on macOS.
@@ -141,12 +143,12 @@ def open_evidence_root(path: Path) -> tuple[int | None, str]:
         try:
             entry = os.lstat(path)
         except FileNotFoundError:
-            return None, "absent"
+            return None, "absent", []
         except OSError:
-            return None, "unbindable"
+            return None, "unbindable", []
         if stat.S_ISLNK(entry.st_mode):
-            return None, "symlink"
-        return None, "unbindable"
+            return None, "symlink", []
+        return None, "unbindable", []
     try:
         opened = os.fstat(descriptor)
     except OSError:
@@ -157,14 +159,18 @@ def open_evidence_root(path: Path) -> tuple[int | None, str]:
         else "ok"
     )
     if reason != "ok":
-        # Already a non-accepting result; a failed release here changes
-        # nothing about the judgment and is not retried.
+        # Already a non-accepting result; the release is attempted once and
+        # a failure is reported beside the binding finding, never retried.
+        secondary: list[str] = []
         try:
             os.close(descriptor)
-        except OSError:
-            pass
-        return None, reason
-    return descriptor, "ok"
+        except OSError as exc:
+            secondary.append(
+                "evidence destination descriptor could not be released: "
+                f"{exc.strerror}"
+            )
+        return None, reason, secondary
+    return descriptor, "ok", []
 
 
 _DIRECTORY_FLAGS = (
@@ -173,6 +179,25 @@ _DIRECTORY_FLAGS = (
     | getattr(os, "O_CLOEXEC", 0)
     | getattr(os, "O_NOFOLLOW", 0)
 )
+
+
+def _attach(exc: BaseException, message: str) -> None:
+    """Carry a release failure on the exception already in flight.
+
+    Review v4 (V4-1): a failure released while unwinding from a primary
+    finding was dropped, and when the primary was ``EvidenceAbsent`` the gate
+    stayed ``pending``. Both are findings; the catch sites report the primary
+    and then every secondary, and absence with a secondary is ``partial``.
+    """
+    secondary = getattr(exc, "secondary", None)
+    if secondary is None:
+        secondary = []
+        exc.secondary = secondary  # type: ignore[attr-defined]
+    secondary.append(message)
+
+
+def _secondary(exc: BaseException) -> list[str]:
+    return list(getattr(exc, "secondary", []) or [])
 
 
 def _release(descriptor: int, *, label: str) -> None:
@@ -215,27 +240,27 @@ def _bind_parent(root_fd: int, relative: str, *, label: str) -> tuple[int, str]:
         try:
             child = os.open(component, _DIRECTORY_FLAGS, dir_fd=current)
         except OSError as exc:
-            # Ownership: ``current`` is ours; release it once, and let a
-            # release failure be the finding only if the open failure has
-            # not already been named — never retry either.
-            try:
-                _release(current, label=label)
-            except ValueError:
-                pass
-            raise ValueError(
+            # Ownership: ``current`` is ours; release it once — never retry —
+            # and report a release failure beside the open failure.
+            primary = ValueError(
                 f"{label} parent {component!r} is not a bound directory: "
                 f"{exc.strerror}"
-            ) from exc
+            )
+            try:
+                _release(current, label=label)
+            except ValueError as rel:
+                _attach(primary, str(rel))
+            raise primary from exc
         previous, current = current, child
         try:
             _release(previous, label=label)
-        except ValueError:
-            # The child is ours too; release it once and report the first
-            # failure. The previous descriptor is not touched again.
+        except ValueError as primary:
+            # The child is ours too: release it once, report both failures,
+            # touch neither descriptor again.
             try:
                 _release(current, label=label)
-            except ValueError:
-                pass
+            except ValueError as rel:
+                _attach(primary, str(rel))
             raise
     return current, parts[-1]
 
@@ -278,8 +303,9 @@ def _regular_bytes(
     it, and the descriptor type is checked before any read. Every rejection
     this function makes is an explicit ``ValueError`` naming the file,
     including a failed descriptor duplication at the binding step and a
-    failed descriptor release; a release failure that follows a finding is
-    secondary and the finding stands. An absent file is ``EvidenceAbsent``.
+    failed descriptor release; a release failure that follows a finding rides
+    on that finding and both are reported. An absent file is
+    ``EvidenceAbsent``, and absence plus a release failure is not pending.
     """
     parent_fd: int | None = None
     name = ""
@@ -317,21 +343,21 @@ def _regular_bytes(
             )
         except OSError as exc:
             raise ValueError(f"{label} could not be opened: {exc.strerror}") from exc
-    except BaseException:
+    except BaseException as exc:
         if parent_fd is not None:
             try:
                 _release(parent_fd, label=label)
-            except ValueError:
-                pass  # the in-flight finding is the one that stands
+            except ValueError as rel:
+                _attach(exc, str(rel))  # both are reported; absence too
         raise
     if parent_fd is not None:
         try:
             _release(parent_fd, label=label)
-        except ValueError:
+        except ValueError as primary:
             try:
                 _release(descriptor, label=label)
-            except ValueError:
-                pass
+            except ValueError as rel:
+                _attach(primary, str(rel))
             raise
     failure: BaseException | None = None
     try:
@@ -385,11 +411,11 @@ def _regular_bytes(
             os.close(descriptor)
         except OSError as exc:
             # A failed release after a clean read is a finding of its own;
-            # after a finding it is secondary and the first one stands.
+            # after a finding it rides along with it and both are reported.
+            message = f"{label} descriptor could not be released: {exc.strerror}"
             if failure is None:
-                raise ValueError(
-                    f"{label} descriptor could not be released: {exc.strerror}"
-                ) from exc
+                raise ValueError(message) from exc
+            _attach(failure, message)
 
 
 def _strict_lf_text(raw: bytes, *, label: str) -> str:
@@ -479,11 +505,13 @@ def _inventory_from_descriptor(root_fd: int, prefix: str = "") -> set[str]:
                 try:
                     os.close(child)
                 except OSError as exc:
+                    message = (
+                        f"evidence inventory {relative} descriptor could not be "
+                        f"released: {exc.strerror}"
+                    )
                     if inner is None:
-                        raise ValueError(
-                            f"evidence inventory {relative} descriptor could not be "
-                            f"released: {exc.strerror}"
-                        ) from exc
+                        raise ValueError(message) from exc
+                    _attach(inner, message)
     return names
 
 
@@ -627,10 +655,15 @@ def _validate_evidence(
             dir_fd=root_fd,
             label=str(manifest_path),
         )
-    except EvidenceAbsent:
-        return ["exact-candidate evidence manifest is pending"], None, None, None, None, 0, 0
+    except EvidenceAbsent as exc:
+        # Absence stays pending only when nothing else went wrong; a release
+        # failure on the way out is a finding and makes the result partial.
+        return (
+            ["exact-candidate evidence manifest is pending", *_secondary(exc)],
+            None, None, None, None, 0, 0,
+        )
     except ValueError as exc:
-        return [str(exc)], None, None, None, None, 0, 0
+        return [str(exc), *_secondary(exc)], None, None, None, None, 0, 0
 
     exact_keys = {
         "schema",
@@ -772,6 +805,7 @@ def _validate_evidence(
             )
         except ValueError as exc:
             findings.append(str(exc))
+            findings.extend(_secondary(exc))
             continue
         total += len(raw)
         if hashlib.sha256(raw).hexdigest() != digest:
@@ -793,6 +827,7 @@ def _validate_evidence(
         actual_files = _inventory_from_descriptor(root_fd)
     except ValueError as exc:
         findings.append(str(exc))
+        findings.extend(_secondary(exc))
     else:
         if actual_files != set(artifact_hashes):
             findings.append("evidence directory files do not exactly match the manifest")
@@ -822,6 +857,7 @@ def read_status(
         contract = load_contracts(root).get(identifier)
     except ValueError as exc:
         findings.append(str(exc))
+        findings.extend(_secondary(exc))
     if contract is None:
         if not findings:
             findings.append(f"contract {identifier} is missing")
@@ -854,7 +890,7 @@ def read_status(
     # is_symlink() test, and O_DIRECTORY subsumes is_dir(). There is no
     # pathname fallback: a platform that cannot bind the directory reports
     # that acceptance is not available on it (review finding 2).
-    root_fd, bind_reason = open_evidence_root(evidence_root)
+    root_fd, bind_reason, bind_secondary = open_evidence_root(evidence_root)
     reviewed_head = reviewed_tree = product_digest = landed_main = None
     passed = artifact_count = 0
     try:
@@ -870,6 +906,7 @@ def read_status(
         elif bind_reason in ("unbindable", "not-a-directory"):
             # Exists, is not a symlink, and still will not bind as a directory.
             findings.append("evidence destination could not be bound as a directory")
+            findings.extend(bind_secondary)
             state = "partial"
         elif bind_reason == "absent":
             findings.append("exact-candidate evidence manifest is pending")
