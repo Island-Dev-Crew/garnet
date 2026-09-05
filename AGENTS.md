@@ -96,27 +96,30 @@ new producer whose path is named literally in a required-context workflow and
 lies outside the surface fails the suite rather than merging unreviewed. That
 derivation scans literal path tokens in workflow text; it does not compute the
 import or wrapper closure of a producer, so a helper a producer invokes without
-naming it in the workflow (today: `scripts/render_garnet_promo_video.mjs`, run
-by the strict agentic matrix) is outside the surface until it is listed.
+naming it in the workflow is covered only if an existing prefix or exact entry
+already reaches it (`scripts/smoke_garnet_web_pwa_offline.mjs` is, through the
+`scripts/smoke_garnet_` prefix; `scripts/render_garnet_promo_video.mjs`, run by
+the strict agentic matrix, is not) — such helpers are not discovered
+automatically.
 Never narrow the surface to make a PR green.
 
 Widening the surface is only safe because the surface is versioned. A sealed
 landed marker binds the trust subset of its landing edge, so it is verified
-under the surface it was sealed under, and that surface is **derived from the
-landing commit**: the gate reads its own copy at the marker's `merged_commit`
-(already placed on main's first-parent history by the verifier) and takes
-`CURRENT_TRUST_SURFACE` from it; a copy without the constant is the v1 era. No
-declaration decides and no pin table has to grow: a declared `trust_surface`
-may only agree with the derivation, an explicit non-version value (including
-`null`) is a finding, an unregistered historical version is a finding, and a
-`merged_commit` registered twice is a finding. Every failure resolves to the
-current (widest, therefore strictest) surface. Declaration-first was a
-laundering path, and a closed pin map preserved only the two pre-versioning
-markers — the next widening turned a valid v2 marker red. Never widen
-`TRUST_KERNEL_PREFIXES` or `TRUST_KERNEL_FILES` in place: add a new
-`TRUST_SURFACES` version, bump `CURRENT_TRUST_SURFACE` in the same change, and
-re-run `python3 -I scripts/test_garnet_trust_kernel_review_status.py`, whose
-widening regression lands a v2 marker and verifies it green under v3.
+under the surface it was sealed under. The two pre-versioning landings
+(`PRE_VERSIONING_LANDINGS`) are v1 by identity; every later landing's own copy
+of the gate script, read at its `merged_commit`, must declare its surface in
+two places that agree — the seal line `# garnet-trust-surface: vN` and the
+canonical `CURRENT_TRUST_SURFACE = "vN"` line — and nothing about Python is
+interpreted. A declared marker `trust_surface` may only agree, an explicit
+non-version value (including `null`) is a finding, an unregistered version is
+a finding, a `merged_commit` registered twice is a finding, and every failure
+resolves to the current (widest, therefore strictest) surface. Five earlier
+designs are recorded in the rolling-review contract; do not reintroduce them.
+Never widen `TRUST_KERNEL_PREFIXES` or `TRUST_KERNEL_FILES` in place: add a
+new `TRUST_SURFACES` version, bump `CURRENT_TRUST_SURFACE` **and the seal line**
+in the same change, and re-run
+`python3 -I scripts/test_garnet_trust_kernel_review_status.py`, which pins the
+seal to the constant at every head and lands a v2 marker green under v3.
 
 ## Dogfood PR-Body Evidence Contract
 

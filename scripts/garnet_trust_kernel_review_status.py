@@ -24,7 +24,6 @@ import hashlib
 import importlib.util
 import json
 import os
-import ast
 import re
 import subprocess
 import sys
@@ -160,6 +159,7 @@ TRUST_SURFACES: dict[str, tuple[tuple[str, ...], tuple[str, ...]]] = {
     "v1": (TRUST_SURFACE_V1_PREFIXES, TRUST_SURFACE_V1_FILES),
     "v2": (TRUST_KERNEL_PREFIXES, TRUST_KERNEL_FILES),
 }
+# garnet-trust-surface: v2
 CURRENT_TRUST_SURFACE = "v2"
 # A sealed marker is verified under the surface the gate ITSELF defined at the
 # marker's landing commit.  That surface is derived, never declared and never
@@ -178,68 +178,67 @@ CURRENT_TRUST_SURFACE = "v2"
 # with no table to grow.
 GATE_SCRIPT_PATH = "scripts/garnet_trust_kernel_review_status.py"
 PRE_VERSIONING_TRUST_SURFACE = "v1"
-_SURFACE_NAMES = frozenset({"CURRENT_TRUST_SURFACE", "TRUST_SURFACES"})
-_VERSION_NAME = re.compile(r"^v[0-9]+$")
-_AMBIGUOUS_SURFACE_SOURCE = (
-    "the gate script at the landing commit does not define CURRENT_TRUST_SURFACE as "
-    "exactly one top-level string constant, so the sealed surface cannot be derived"
+# The landings sealed before the gate versioned its surface.  A fixed
+# historical fact, not a table that grows: every later landing carries its own
+# seal (below), and every era after v1 is derived from that seal, so a
+# widening never needs an entry here.  Both commits are first-parent ancestors
+# of main; the verifier establishes that before this set is consulted.
+PRE_VERSIONING_LANDINGS = frozenset(
+    {
+        "68317ae258327aade47fc2c07b7b5b580ec7c6ea",  # PR #517, Lane 1 governance activation
+        "41d6ced858684ac67683d32315920bd50a52976e",  # PR #514, Lane 2B minimum Shelf / MCP
+    }
+)
+# The seal vocabulary.  Spelled in two pieces so this file contains the token
+# exactly once: on the seal line itself.
+_SEAL_WORD = "garnet-trust-" "surface"
+_SEAL_LINE = re.compile(r"^# " + _SEAL_WORD + r": (v[0-9]+)$")
+_CONSTANT_LINE = re.compile(r'^CURRENT_TRUST_SURFACE = "(v[0-9]+)"$')
+_UNSEALED_SURFACE_SOURCE = (
+    "the gate script at the landing commit does not carry exactly one seal line "
+    "and exactly one canonical CURRENT_TRUST_SURFACE line naming the same version, "
+    "so the sealed surface cannot be derived"
 )
 
 
 def trust_surface_from_source(source: bytes) -> tuple[str | None, list[str]]:
-    """Name the surface a copy of this script defines, by PARSING it — never
-    by executing it, and never by matching its spelling.
+    """Name the surface a post-versioning copy of this script declares.
 
-    Review v2 of the versioning change showed a regular expression choosing a
-    narrower surface on ordinary Python: a docstring quoting an old value, a
-    single-quoted constant, an indented assignment, a duplicate. The rule is
-    now the language's own: the copy must contain exactly one module-level
-    assignment ``CURRENT_TRUST_SURFACE = "vN"`` (annotated or not) whose value
-    is a single string constant, and no other binding of that name anywhere.
-    A copy that names neither ``CURRENT_TRUST_SURFACE`` nor ``TRUST_SURFACES``
-    in any expression predates versioning: that is the v1 era, proven by the
-    absence of the whole mechanism rather than of one spelling. Everything
-    else is ambiguous and a finding.
+    Nothing about Python is interpreted.  Three designs were rejected by
+    review before this one: a regular expression over the constant (fooled by
+    spelling), a parse of the constant's binding (a walrus, an import or a
+    tuple target binds a name past any inventory of assignments), and the
+    inference that absence of the mechanism proves the pre-versioning era.
+    The rule is now a declaration in two places that must agree, counted over
+    raw lines: exactly one seal line ``# <seal word>: vN`` anywhere in the
+    file, and exactly one canonical line ``CURRENT_TRUST_SURFACE = "vN"`` at
+    column zero, with the same ``vN``.  A test at every head pins both to the
+    live constant, so a copy whose runtime binding disagrees with its
+    declaration cannot pass its own suite, and landing one is a reviewed gate
+    change.  Anything else — no seal, two seals, a seal that disagrees with
+    the constant, a constant spelled any other way, undecodable bytes — is a
+    finding, never a narrower surface.
     """
     try:
-        tree = ast.parse(source.decode("utf-8", errors="strict"))
-    except (SyntaxError, ValueError, UnicodeDecodeError, RecursionError, MemoryError) as exc:
-        return None, [
-            "the gate script at the landing commit could not be parsed: "
-            f"{type(exc).__name__}"
-        ]
+        text = source.decode("utf-8", errors="strict")
+    except UnicodeDecodeError:
+        return None, ["the gate script at the landing commit is not strict UTF-8"]
+    seals: list[str] = []
+    constants: list[str] = []
+    for line in text.split("\n"):
+        line = line.rstrip("\r")
+        seal = _SEAL_LINE.fullmatch(line)
+        if seal is not None:
+            seals.append(seal.group(1))
+        constant = _CONSTANT_LINE.fullmatch(line)
+        if constant is not None:
+            constants.append(constant.group(1))
+    if len(seals) != 1 or len(constants) != 1 or seals[0] != constants[0]:
+        return None, [_UNSEALED_SURFACE_SOURCE]
+    if text.count(_SEAL_WORD) != 1:
+        return None, [_UNSEALED_SURFACE_SOURCE]
+    return seals[0], []
 
-    def binds_surface(node: ast.AST) -> bool:
-        if isinstance(node, ast.Assign):
-            targets = node.targets
-        elif isinstance(node, (ast.AnnAssign, ast.AugAssign)):
-            targets = [node.target]
-        else:
-            return False
-        return any(isinstance(t, ast.Name) and t.id == "CURRENT_TRUST_SURFACE" for t in targets)
-
-    mentioned = any(
-        isinstance(node, ast.Name) and node.id in _SURFACE_NAMES for node in ast.walk(tree)
-    )
-    top_level = [node for node in tree.body if binds_surface(node)]
-    anywhere = [node for node in ast.walk(tree) if binds_surface(node)]
-    if not mentioned and not anywhere:
-        return PRE_VERSIONING_TRUST_SURFACE, []
-    if len(top_level) != 1 or len(anywhere) != 1:
-        return None, [_AMBIGUOUS_SURFACE_SOURCE]
-    node = top_level[0]
-    value = node.value
-    single_target = isinstance(node, ast.AnnAssign) or (
-        isinstance(node, ast.Assign) and len(node.targets) == 1
-    )
-    if not (
-        single_target
-        and isinstance(value, ast.Constant)
-        and isinstance(value.value, str)
-        and _VERSION_NAME.match(value.value)
-    ):
-        return None, [_AMBIGUOUS_SURFACE_SOURCE]
-    return value.value, []
 
 REVIEW_RECORD_PREFIX = "F_Project_Management/W_TRUST/"
 REVIEW_RECORD_SUFFIX = ".review.json"
@@ -398,13 +397,15 @@ def trust_surface_at_commit(root: Path, commit: str) -> tuple[str | None, list[s
     copy of this script.
 
     ``commit`` must already be a verified first-parent landing commit; the
-    caller establishes that.  The blob is parsed as Python and never executed
-    (``trust_surface_from_source``).  A copy that names neither surface symbol
-    predates versioning and is the v1 era; an ambiguous copy is a finding; a
-    copy naming a version this gate no longer registers is a finding, because
-    ``TRUST_SURFACES`` is append-only; an absent copy cannot be derived from
-    and fails closed.
+    caller establishes that.  The two landings that predate versioning are
+    ``v1`` by identity (``PRE_VERSIONING_LANDINGS``) and are not read.  Every
+    other landing's copy must declare its surface (``trust_surface_from_source``);
+    a copy that does not is a finding, a copy naming a version this gate no
+    longer registers is a finding, because ``TRUST_SURFACES`` is append-only,
+    and an absent copy cannot be derived from and fails closed.
     """
+    if commit.lower() in PRE_VERSIONING_LANDINGS:
+        return PRE_VERSIONING_TRUST_SURFACE, []
     payload, problems = _read_blob(root, commit, GATE_SCRIPT_PATH)
     if payload is None:
         return None, [

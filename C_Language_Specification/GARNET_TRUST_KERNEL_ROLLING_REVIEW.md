@@ -47,16 +47,23 @@ was found by running the gate on the H3-02 widening, not by reading the code.
 
 `TRUST_SURFACES` therefore names each surface version, and
 `verify_landed_review_marker` classifies a marker's landing edge under the
-surface that marker was sealed under. That surface is **derived, never declared
-and never pinned**: the gate reads its own copy of
-`scripts/garnet_trust_kernel_review_status.py` at the marker's `merged_commit`
-— a commit the verifier has already placed on main's first-parent history,
-which is append-only under the ruleset — and takes `CURRENT_TRUST_SURFACE` from
-it with one regular expression (`trust_surface_at_commit`; nothing is
-executed). A copy without the constant predates versioning and names the v1
-era. A copy naming a version this gate no longer registers is a finding,
-because `TRUST_SURFACES` is append-only. An absent copy cannot be derived from
-and fails closed.
+surface that marker was sealed under. Two rules decide it, and nothing about
+Python is ever interpreted. The two landings that predate versioning
+(`PRE_VERSIONING_LANDINGS`, PRs #514 and #517) are **v1 by identity** — a fixed
+historical fact, not a table that grows. Every later landing's own copy of
+`scripts/garnet_trust_kernel_review_status.py`, read at the marker's
+`merged_commit` — a commit the verifier has already placed on main's
+first-parent history, which is append-only under the ruleset — must **declare**
+its surface in two places that agree: exactly one seal line
+(`# garnet-trust-surface: vN`, a comment no construct can bind or shadow) and
+exactly one canonical `CURRENT_TRUST_SURFACE = "vN"` line at column zero
+(`trust_surface_from_source`). A test at every head pins both to the live
+constant, so a copy whose runtime binding disagrees with its declaration cannot
+pass its own suite, and landing one is a reviewed gate change. No seal, two
+seals, a disagreement, any other spelling, undecodable bytes, a version this
+gate no longer registers (`TRUST_SURFACES` is append-only), or an absent copy:
+each is a finding that resolves to the current, widest surface — never a
+narrower one.
 
 A marker may carry `trust_surface`; it is optional and may only agree with the
 derivation. An explicit value that is not a registered version string —
@@ -66,18 +73,22 @@ current surface, which is the widest and therefore the strictest, so a
 rejected marker accounts for more paths, never fewer. A `merged_commit`
 registered by more than one marker is a finding: one landing edge, one seal.
 
-Three earlier designs are recorded here so they are not reintroduced.
+Five earlier designs are recorded here so they are not reintroduced.
 Declaration-first let a new marker declare the old surface and hide the newly
 covered paths on its own landing edge; the end-to-end verifier returned zero
 findings on that construction. Commit-only pinning let a second marker replay a
 pinned `merged_commit` and inherit the historical exception. A closed pin map
 bound to marker paths preserved exactly the two pre-versioning markers and
 nothing sealed after them: the first v2-to-v3 widening turned a valid v2
-marker red with zero repository changes — the repository-wide condition this
-versioning exists to prevent — and the documented instruction to add a version
-on the next widening would have recreated it every time. Derivation preserves
-every seal era with no table to grow; the regression that proves it lands a v2
-marker, widens the live surface to v3, and verifies the registry green.
+marker red with zero repository changes. A regular expression over the
+constant chose the narrower era on a docstring, a single quote, an indent or a
+duplicate. A parse of the constant's binding was defeated by a walrus, a
+`from … import` and a tuple target — no inventory of Python binders is sound —
+and inferred the pre-versioning era from the absence of a symbol, which an
+import also produces. The seal preserves every era with no table to grow; the
+regression that proves it lands a v2 marker, widens the live surface to v3,
+and verifies the registry green, and a second regression lands each rejected
+construction with a v2-only path omitted and shows the omission reported.
 
 Live candidates are always judged by the current surface; only sealed history is
 judged by its own.

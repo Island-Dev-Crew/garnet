@@ -84,7 +84,7 @@ class GitRepoFixture(unittest.TestCase):
         # stub of it at the base: one constant, the current surface.
         stub = self.root / mod.GATE_SCRIPT_PATH
         stub.parent.mkdir(parents=True, exist_ok=True)
-        write_lf(stub, f'CURRENT_TRUST_SURFACE = "{mod.CURRENT_TRUST_SURFACE}"\n')
+        write_lf(stub, f'# {mod._SEAL_WORD}: {mod.CURRENT_TRUST_SURFACE}\nCURRENT_TRUST_SURFACE = "{mod.CURRENT_TRUST_SURFACE}"\n')
         registry = self.root / "F_Project_Management/W_TRUST/LANDED_REVIEW_MARKERS.json"
         registry.parent.mkdir(parents=True, exist_ok=True)
         registry.write_bytes(
@@ -2264,62 +2264,79 @@ class TrustSurfaceVersionTests(unittest.TestCase):
         self.assertTrue(now("garnet-cli/src/manifest.rs"))
         self.assertTrue(now("scripts/check_dogfood_pr_body.py"))
 
-    def test_sealed_markers_derive_v1_from_their_landing_commits(self) -> None:
-        # The two markers sealed before the surface carried a version. Nothing
-        # pins them: the gate reads its own copy at each landing commit, finds
-        # no CURRENT_TRUST_SURFACE constant there, and that IS the v1 era.
-        for merged in (
-            "68317ae258327aade47fc2c07b7b5b580ec7c6ea",  # PR #517
-            "41d6ced858684ac67683d32315920bd50a52976e",  # PR #514
-        ):
-            self.assertEqual(("v1", []), mod.trust_surface_at_commit(mod.ROOT, merged))
-
-    def test_the_current_commit_derives_the_current_surface(self) -> None:
-        head = subprocess.run(
-            ["git", "-C", str(mod.ROOT), "rev-parse", "HEAD"],
-            capture_output=True, text=True, check=True,
-        ).stdout.strip()
+    def test_the_two_pre_versioning_landings_are_v1_by_identity(self) -> None:
+        # A fixed historical fact: both commits landed before the gate sealed
+        # its surface, both sit on main's first-parent history, and no later
+        # landing is ever added here — later eras come from the seal line.
         self.assertEqual(
-            (mod.CURRENT_TRUST_SURFACE, []), mod.trust_surface_at_commit(mod.ROOT, head)
+            {"68317ae258327aade47fc2c07b7b5b580ec7c6ea", "41d6ced858684ac67683d32315920bd50a52976e"},
+            set(mod.PRE_VERSIONING_LANDINGS),
         )
+        for merged in mod.PRE_VERSIONING_LANDINGS:
+            self.assertEqual(("v1", []), mod.trust_surface_at_commit(mod.ROOT, merged))
+            ancestor = subprocess.run(
+                ["git", "-C", str(mod.ROOT), "merge-base", "--is-ancestor", merged, "HEAD"],
+                capture_output=True,
+            )
+            self.assertEqual(0, ancestor.returncode, merged)
 
-    def test_the_surface_is_parsed_from_source_never_matched_by_spelling(self) -> None:
-        # Review v2 (R559-v2-1): a regular expression chose a narrower surface
-        # on ordinary Python. The parser rule: exactly one module-level string
-        # constant, no other binding, spelling irrelevant; neither symbol
-        # mentioned anywhere = the pre-versioning era; all else ambiguous.
+    def test_this_head_seals_the_live_surface_exactly_once(self) -> None:
+        # The self-consistency every landing must carry: the seal line, the
+        # canonical constant line and the runtime constant agree, and the seal
+        # vocabulary occurs exactly once in the file.
+        source = (mod.ROOT / mod.GATE_SCRIPT_PATH).read_bytes()
+        self.assertEqual((mod.CURRENT_TRUST_SURFACE, []), mod.trust_surface_from_source(source))
+        self.assertEqual(1, source.decode().count(mod._SEAL_WORD))
+        head = subprocess.run(
+            ["git", "-C", str(mod.ROOT), "rev-parse", "HEAD"], capture_output=True, text=True, check=True
+        ).stdout.strip()
+        if head.lower() not in mod.PRE_VERSIONING_LANDINGS and not subprocess.run(
+            ["git", "-C", str(mod.ROOT), "status", "--porcelain", "--", mod.GATE_SCRIPT_PATH],
+            capture_output=True, text=True, check=True,
+        ).stdout.strip():
+            self.assertEqual((mod.CURRENT_TRUST_SURFACE, []), mod.trust_surface_at_commit(mod.ROOT, head))
+
+    def test_the_surface_is_declared_not_interpreted(self) -> None:
+        # Review v3 (R559-v3-1): no inventory of Python binders is sound, so
+        # no Python is interpreted. Two declarations that must agree, counted
+        # over raw lines; every other shape is a finding, never a narrower era.
         derive = mod.trust_surface_from_source
-        ambiguous = (None, [mod._AMBIGUOUS_SURFACE_SOURCE])
-        self.assertEqual(("v2", []), derive(b'CURRENT_TRUST_SURFACE = "v2"\n'))
-        self.assertEqual(("v2", []), derive(b"CURRENT_TRUST_SURFACE = 'v2'\n"))
-        self.assertEqual(("v2", []), derive(b'CURRENT_TRUST_SURFACE: str = "v2"\n'))
-        self.assertEqual(("v2", []), derive(b'x = 1\n"""Example only:\nCURRENT_TRUST_SURFACE = "v1"\n"""\nCURRENT_TRUST_SURFACE = "v2"\n'))
-        self.assertEqual(("v2", []), derive(b'# CURRENT_TRUST_SURFACE = "v1"\nCURRENT_TRUST_SURFACE = "v2"\n'))
-        # duplicates, in either order, identical or not
-        self.assertEqual(ambiguous, derive(b'CURRENT_TRUST_SURFACE = "v1"\nCURRENT_TRUST_SURFACE = "v2"\n'))
-        self.assertEqual(ambiguous, derive(b'CURRENT_TRUST_SURFACE = "v2"\nCURRENT_TRUST_SURFACE = "v1"\n'))
-        self.assertEqual(ambiguous, derive(b'CURRENT_TRUST_SURFACE = "v2"\nCURRENT_TRUST_SURFACE = "v2"\n'))
-        # not module-level, not a constant, not a version
-        self.assertEqual(ambiguous, derive(b'if True:\n    CURRENT_TRUST_SURFACE = "v2"\n'))
-        self.assertEqual(ambiguous, derive(b'def f():\n    CURRENT_TRUST_SURFACE = "v2"\n'))
-        self.assertEqual(ambiguous, derive(b'CURRENT_TRUST_SURFACE = v2\n'))
-        self.assertEqual(ambiguous, derive(b'CURRENT_TRUST_SURFACE = "two"\n'))
-        self.assertEqual(ambiguous, derive(b'CURRENT_TRUST_SURFACE = "v2" + ""\n'))
-        self.assertEqual(ambiguous, derive(b'CURRENT_TRUST_SURFACE = X = "v2"\n'))
-        self.assertEqual(ambiguous, derive(b'CURRENT_TRUST_SURFACE += "v2"\n'))
-        # the mechanism mentioned, the constant absent: post-versioning source
-        # that lacks the definition is NOT the v1 era
-        self.assertEqual(ambiguous, derive(b'TRUST_SURFACES = {}\n'))
-        self.assertEqual(ambiguous, derive(b'print(CURRENT_TRUST_SURFACE)\n'))
-        # neither symbol anywhere: the era before versioning
-        self.assertEqual(("v1", []), derive(b"# the gate before it versioned its surface\nTRUST_KERNEL_PREFIXES = ()\n"))
-        self.assertEqual(("v1", []), derive(b""))
-        # unparseable source fails closed
-        name, findings = derive(b'CURRENT_TRUST_SURFACE = "v2\n')
-        self.assertIsNone(name)
-        self.assertTrue(findings and "could not be parsed" in findings[0], findings)
-        name, findings = derive(b"\xff\xfe")
-        self.assertIsNone(name)
+        seal = f"# {mod._SEAL_WORD}: "
+        unsealed = (None, [mod._UNSEALED_SURFACE_SOURCE])
+        ok = (seal + 'v2\nCURRENT_TRUST_SURFACE = "v2"\n').encode()
+        self.assertEqual(("v2", []), derive(ok))
+        self.assertEqual(("v2", []), derive(ok.replace(b"\n", b"\r\n")))
+        # walrus, import, tuple target, globals(): irrelevant — the declaration decides
+        for extra in (
+            b'(CURRENT_TRUST_SURFACE := "v9")\n',
+            b"from somewhere import CURRENT_TRUST_SURFACE\n",
+            b'CURRENT_TRUST_SURFACE, X = "v9", 1\n',
+            b'globals()["CURRENT_TRUST_SURFACE"] = "v9"\n',
+            b'if True:\n    CURRENT_TRUST_SURFACE = "v9"\n',
+        ):
+            with self.subTest(extra=extra):
+                self.assertEqual(("v2", []), derive(ok + extra))
+        # the shapes that are findings
+        cases = {
+            "no seal": b'CURRENT_TRUST_SURFACE = "v2"\n',
+            "no constant": (seal + "v2\n").encode(),
+            "neither": b"# an unrelated file\n",
+            "empty": b"",
+            "disagree": (seal + 'v1\nCURRENT_TRUST_SURFACE = "v2"\n').encode(),
+            "two seals": (seal + "v1\n" + seal + 'v2\nCURRENT_TRUST_SURFACE = "v2"\n').encode(),
+            "seal in docstring too": ('"""\n' + seal + 'v1\n"""\n' + seal + 'v2\nCURRENT_TRUST_SURFACE = "v2"\n').encode(),
+            "two constants": (seal + 'v2\nCURRENT_TRUST_SURFACE = "v2"\nCURRENT_TRUST_SURFACE = "v1"\n').encode(),
+            "constant in docstring too": (seal + 'v2\n"""\nCURRENT_TRUST_SURFACE = "v1"\n"""\nCURRENT_TRUST_SURFACE = "v2"\n').encode(),
+            "single-quoted constant": (seal + "v2\nCURRENT_TRUST_SURFACE = 'v2'\n").encode(),
+            "indented constant only": (seal + 'v2\n    CURRENT_TRUST_SURFACE = "v2"\n').encode(),
+            "vocabulary elsewhere": (seal + 'v2\nCURRENT_TRUST_SURFACE = "v2"\n# see ' + mod._SEAL_WORD + "\n").encode(),
+            "not utf-8": b"\xff\xfe" + ok,
+        }
+        for label, body in cases.items():
+            with self.subTest(label=label):
+                name, findings = derive(body)
+                self.assertIsNone(name, label)
+                self.assertEqual(1, len(findings), (label, findings))
 
     def test_trust_surface_is_an_allowed_marker_key(self) -> None:
         self.assertIn("trust_surface", mod.LANDED_KEYS)
@@ -2331,14 +2348,12 @@ class TrustSurfaceVersionTests(unittest.TestCase):
         self.assertEqual([], findings)
 
 class MarkerTrustSurfaceDerivationTests(GitRepoFixture):
-    """The sealed surface is DERIVED from the landing commit's own copy of the
-    gate script (review v3 cure). No declaration decides, and no closed pin
-    map has to grow: main's first-parent history is the trusted evidence."""
+    """The sealed surface is DECLARED by the landing commit's own copy of the
+    gate script — a seal line and the canonical constant line, agreeing — and
+    never interpreted (review v3 cure). The two pre-versioning landings are v1
+    by identity."""
 
     def _stub(self, body: bytes | None) -> str:
-        """Land a copy of the gate script with ``body`` (or none) and return
-        that commit. The fixture base already carries the current-surface
-        stub, so an identical body is simply the base."""
         path = self.root / mod.GATE_SCRIPT_PATH
         if body is None:
             self._git("rm", "-q", mod.GATE_SCRIPT_PATH)
@@ -2347,63 +2362,53 @@ class MarkerTrustSurfaceDerivationTests(GitRepoFixture):
             self._commit_file(mod.GATE_SCRIPT_PATH, body, "gate stub")
         return self._git("rev-parse", "HEAD")
 
-    def test_v2_landing_derives_v2_and_a_declaration_may_only_agree(self) -> None:
-        commit = self._stub(b'CURRENT_TRUST_SURFACE = "v2"\n')
+    def _sealed(self, seal: str, constant: str | None = None) -> bytes:
+        return (f"# {mod._SEAL_WORD}: {seal}\nCURRENT_TRUST_SURFACE = \"{constant or seal}\"\n").encode()
+
+    def test_a_pre_versioning_landing_is_v1_without_reading_anything(self) -> None:
+        for merged in mod.PRE_VERSIONING_LANDINGS:
+            self.assertEqual(("v1", []), mod.resolve_marker_trust_surface({}, self.root, merged))
+
+    def test_a_sealed_landing_derives_its_seal_and_a_declaration_may_only_agree(self) -> None:
+        commit = self._stub(self._sealed("v2"))
         self.assertEqual(("v2", []), mod.resolve_marker_trust_surface({}, self.root, commit))
-        self.assertEqual(
-            ("v2", []),
-            mod.resolve_marker_trust_surface({"trust_surface": "v2"}, self.root, commit),
-        )
-        # Laundering probe from review v1: a NEW marker declaring the old,
-        # narrower surface. The declaration cannot win; the derivation does.
-        name, findings = mod.resolve_marker_trust_surface(
-            {"trust_surface": "v1"}, self.root, commit
-        )
+        self.assertEqual(("v2", []), mod.resolve_marker_trust_surface({"trust_surface": "v2"}, self.root, commit))
+        name, findings = mod.resolve_marker_trust_surface({"trust_surface": "v1"}, self.root, commit)
         self.assertEqual(mod.CURRENT_TRUST_SURFACE, name)
         self.assertEqual(
-            ["landed marker declares trust surface 'v1' but its merged_commit was "
-             "sealed under 'v2'"],
+            ["landed marker declares trust surface 'v1' but its merged_commit was sealed under 'v2'"],
             findings,
         )
 
     def test_explicit_null_or_non_string_version_is_a_finding(self) -> None:
-        # Review v3 (R559-5): `marker.get(...)` conflated an absent key with an
-        # explicit JSON null, and null cleared the verifier.
-        commit = self._stub(b'CURRENT_TRUST_SURFACE = "v2"\n')
+        commit = self._stub(self._sealed("v2"))
         for value in (None, 7, ["v2"], "v99"):
             with self.subTest(value=value):
-                name, findings = mod.resolve_marker_trust_surface(
-                    {"trust_surface": value}, self.root, commit
-                )
+                name, findings = mod.resolve_marker_trust_surface({"trust_surface": value}, self.root, commit)
                 self.assertEqual(mod.CURRENT_TRUST_SURFACE, name)
                 self.assertEqual([f"unknown trust surface {value!r} in landed marker"], findings)
 
-    def test_a_copy_without_the_constant_is_the_v1_era(self) -> None:
-        commit = self._stub(b"# the gate before it versioned its surface\n")
-        self.assertEqual(("v1", []), mod.resolve_marker_trust_surface({}, self.root, commit))
-
-    def test_an_ambiguous_copy_is_a_finding_and_resolves_to_the_widest_surface(self) -> None:
-        # Review v2 (R559-v2-1): every spelling trick lands here, never on v1.
-        for body in (
-            b'CURRENT_TRUST_SURFACE = "v1"\nCURRENT_TRUST_SURFACE = "v2"\n',
-            b'if True:\n    CURRENT_TRUST_SURFACE = "v2"\n',
-            b'TRUST_SURFACES = {}\n',
-            b'CURRENT_TRUST_SURFACE = "v2\n',
+    def test_an_unsealed_or_inconsistent_copy_is_a_finding_resolving_to_the_widest_surface(self) -> None:
+        for label, body in (
+            ("no seal", b'CURRENT_TRUST_SURFACE = "v2"\n'),
+            ("pre-versioning shape, post-versioning landing", b"# the gate before it versioned its surface\n"),
+            ("seal disagrees", self._sealed("v1", "v2")),
+            ("constant v1 with a later walrus, seal v2", self._sealed("v2", "v1") + b'(CURRENT_TRUST_SURFACE := "v2")\n'),
+            ("two seals", self._sealed("v2") + f"# {mod._SEAL_WORD}: v1\n".encode()),
         ):
-            with self.subTest(body=body):
+            with self.subTest(label=label):
                 commit = self._stub(body)
                 name, findings = mod.resolve_marker_trust_surface({}, self.root, commit)
-                self.assertEqual(mod.CURRENT_TRUST_SURFACE, name)
-                self.assertEqual(1, len(findings), findings)
+                self.assertEqual(mod.CURRENT_TRUST_SURFACE, name, label)
+                self.assertEqual(1, len(findings), (label, findings))
                 self.assertTrue(findings[0].startswith(f"merged_commit {commit}: "), findings)
 
-    def test_an_unregistered_historical_version_is_a_finding(self) -> None:
-        commit = self._stub(b'CURRENT_TRUST_SURFACE = "v9"\n')
+    def test_an_unregistered_sealed_version_is_a_finding(self) -> None:
+        commit = self._stub(self._sealed("v9"))
         name, findings = mod.resolve_marker_trust_surface({}, self.root, commit)
         self.assertEqual(mod.CURRENT_TRUST_SURFACE, name)
         self.assertEqual(
-            [f"merged_commit {commit} was sealed under trust surface 'v9', which this "
-             "gate does not register; TRUST_SURFACES is append-only"],
+            [f"merged_commit {commit} was sealed under trust surface 'v9', which this gate does not register; TRUST_SURFACES is append-only"],
             findings,
         )
 
@@ -2411,9 +2416,7 @@ class MarkerTrustSurfaceDerivationTests(GitRepoFixture):
         commit = self._stub(None)
         name, findings = mod.resolve_marker_trust_surface({}, self.root, commit)
         self.assertEqual(mod.CURRENT_TRUST_SURFACE, name)
-        self.assertTrue(
-            any("cannot be derived" in item for item in findings), findings
-        )
+        self.assertTrue(any("cannot be derived" in item for item in findings), findings)
 
 
 class TrustSurfaceWideningTests(LandedMarkerTests):

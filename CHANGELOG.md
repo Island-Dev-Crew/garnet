@@ -10,18 +10,19 @@
   the required-context producers are listed, as surface **v2**; v1 is kept
   verbatim as `TRUST_SURFACE_V1_*`. A one-byte change to any of those files
   without a record now fails the gate (it passed at the base).
-- **Sealed history is preserved by derivation, not by declaration or by a
-  pin table:** a landed marker binds the trust subset of its landing edge, so
-  it must be verified under the surface it was sealed under. The gate now
-  reads its own copy at the marker's `merged_commit` — already on main's
-  append-only first-parent history — and takes `CURRENT_TRUST_SURFACE` from
-  it (`trust_surface_at_commit`; a regular expression, nothing executed). A
-  copy without the constant is the v1 era. Three rejected designs are
-  recorded in the rolling-review contract: declaration-first (a new marker
-  could declare the old surface and hide its own newly covered paths),
-  commit-only pinning (replayable), and a closed pin map bound to marker
-  paths (preserved only the two pre-versioning markers; the next widening
-  turned a valid v2 marker red — reproduced by the cross-family review).
+- **Sealed history is preserved by a declaration in the landing commit, not
+  by a pin table and not by interpreting Python:** a landed marker binds the
+  trust subset of its landing edge, so it must be verified under the surface
+  it was sealed under. The two pre-versioning landings (#514, #517) are v1 by
+  identity. Every later landing's own copy of the gate script, read at its
+  `merged_commit` — already on main's append-only first-parent history — must
+  carry exactly one seal line `# garnet-trust-surface: vN` and exactly one
+  canonical `CURRENT_TRUST_SURFACE = "vN"` line that agree; a test at every
+  head pins both to the live constant. Five rejected designs are recorded in
+  the rolling-review contract: declaration-first, commit-only pinning, a
+  closed pin map that could not survive a widening, a regular expression
+  fooled by spelling, and a parse of the binding defeated by a walrus and an
+  import — each reproduced by the cross-family review.
 - **Fail-closed on the version field:** a declared `trust_surface` may only
   agree with the derivation; an explicit non-version value, JSON `null`
   included, is a finding; an unregistered historical version is a finding; a
