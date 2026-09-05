@@ -148,7 +148,9 @@ LF-only; artifacts stay byte-opaque. Nothing is swallowed: an entry the
 inventory cannot inspect, a directory it cannot open, a descriptor it cannot
 inspect, and any symlink/FIFO/socket beside the evidence are named findings
 that keep the gate `partial`. The post-read identity (device, inode, size,
-mtime, ctime) is a change detector, not proof of byte immutability. Any change
+mtime, ctime) is a change detector, not proof of byte immutability — an
+unprivileged same-inode writer (a shared writable `mmap` through a hard link)
+sits outside it. Any change
 to these invariants needs a red test in
 `scripts/test_garnet_wv_acceptance_status.py` first, and the cross-family
 review of the change must be able to reproduce the defect against the base.

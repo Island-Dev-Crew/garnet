@@ -182,7 +182,10 @@ def _bind_parent(root_fd: int, relative: str, *, label: str) -> tuple[int, str]:
     already been proven real.
     """
     parts = PurePosixPath(relative).parts
-    current = os.dup(root_fd)
+    try:
+        current = os.dup(root_fd)
+    except OSError as exc:
+        raise ValueError(f"{label} could not be bound: {exc.strerror}") from exc
     try:
         for component in parts[:-1]:
             try:
@@ -209,9 +212,13 @@ def _regular_bytes(
 
     What this binds, exactly: the metadata check, the open, the size bound,
     the read and the post-read check all address ONE descriptor, and with
-    ``dir_fd`` every parent component is bound first, so the path is never
-    resolved twice — a file (or a parent) swapped between check and use is a
-    finding, not a redirected read. The bytes judged are the bytes this
+    ``dir_fd`` every parent component is bound first. The leaf name is
+    resolved twice — once for ``lstat``, once for ``open`` — under one bound
+    parent, and a leaf swapped between the two is a finding by identity. A
+    component that is a symlink when it is opened is refused by name. A
+    parent renamed or replaced AFTER it was opened is survived, not reported:
+    the read continues in the directory that was bound and the replacement
+    is never read (review v2, V2-3). The bytes judged are the bytes this
     descriptor returned; a writer who changes the content before the read
     changes what is judged, which is the same as editing the file, and is not
     what this guards. What it excludes is judging one file's bytes under
@@ -221,16 +228,20 @@ def _regular_bytes(
     detector, not proof of byte immutability: a same-length in-place rewrite
     through a hard link that also restores mtime is caught only because ctime
     moves (review finding 5, reproduced), and a rename-over during the read is
-    caught the same way, because unlinking the held inode moves its ctime; a
-    writer able to hold ctime still — privileged, or on a filesystem without
-    it — is outside this bound.
+    caught the same way, because unlinking the held inode moves its ctime.
+    A concurrent writer to the SAME inode is outside this bound, and needs no
+    privilege: on this host (APFS) an ordinary write through a shared
+    writable ``mmap`` of a hard link moves none of the five fields (review
+    v2 demonstrated it). That writer changes what is judged, not whose bytes
+    are judged.
 
     ``O_NONBLOCK`` is set so that a regular file substituted by a FIFO between
     the check and the open cannot park the reporter waiting for a writer
     (review finding 4, reproduced); a regular file's reads are unaffected by
     it, and the descriptor type is checked before any read. Every rejection
-    is an explicit ``ValueError`` naming the file; an absent file is
-    ``EvidenceAbsent``.
+    this function makes is an explicit ``ValueError`` naming the file,
+    including a failed descriptor duplication at the binding step; an absent
+    file is ``EvidenceAbsent``.
     """
     parent_fd: int | None = None
     name = ""
@@ -361,7 +372,17 @@ def _inventory_from_descriptor(root_fd: int, prefix: str = "") -> set[str]:
             f"evidence inventory could not read {prefix or '.'}: {exc.strerror}"
         ) from exc
     with listing as entries:
-        for entry in entries:
+        while True:
+            try:
+                entry = next(entries)
+            except StopIteration:
+                break
+            except OSError as exc:
+                # Advancing the iterator can fail after it was created (V2-1).
+                raise ValueError(
+                    f"evidence inventory could not read {prefix or '.'}: "
+                    f"{exc.strerror}"
+                ) from exc
             relative = f"{prefix}{entry.name}"
             try:
                 is_link = entry.is_symlink()

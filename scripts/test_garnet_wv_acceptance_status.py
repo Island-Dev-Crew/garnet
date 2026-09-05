@@ -500,8 +500,11 @@ class GarnetWvAcceptanceStatusTests(unittest.TestCase):
         )
 
 
-    # Review v1 of this change (Codex): seven findings, each reproduced below
-    # from the reviewer's own probe. None may reach "accepted".
+    # Review v1 of this change (Codex): seven findings. Code findings 1-5 are
+    # reproduced below from the reviewer's own probes (finding 3 in three
+    # cases); 6 and 7 are the CHANGELOG/AGENTS.md text and the PR body, which
+    # are read, not run. None of these may reach "accepted". Review v2 added
+    # the two I/O paths at the end.
 
     def test_nested_artifact_parent_swap_is_never_accepted(self) -> None:
         """Finding 1: O_NOFOLLOW protects only the LAST component. With
@@ -699,6 +702,69 @@ class GarnetWvAcceptanceStatusTests(unittest.TestCase):
                     "evidence directory contains a non-regular entry stray",
                     status.findings,
                 )
+
+    def test_directory_iteration_failure_is_a_named_finding(self) -> None:
+        """Review v2 (V2-1): a failure ADVANCING the scandir iterator, as
+        opposed to creating it, escaped as a raw OSError."""
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            evidence, manifest = _complete_evidence(root)
+            (evidence / wv.EVIDENCE_MANIFEST).write_bytes(_manifest_bytes(manifest))
+            real_scandir = os.scandir
+
+            class DeniedMidway:
+                def __init__(self, inner):
+                    self._inner = inner
+                    self._served = 0
+
+                def __enter__(self):
+                    self._inner.__enter__()
+                    return self
+
+                def __exit__(self, *exc):
+                    return self._inner.__exit__(*exc)
+
+                def __iter__(self):
+                    return self
+
+                def __next__(self):
+                    if self._served == 1:
+                        raise PermissionError(13, "Permission denied")
+                    self._served += 1
+                    return next(self._inner)
+
+            def scandir_denied_midway(path=".", *args, **kwargs):
+                inner = real_scandir(path, *args, **kwargs)
+                if isinstance(path, int):
+                    return DeniedMidway(inner)
+                return inner
+
+            with mock.patch.object(os, "scandir", scandir_denied_midway):
+                status = wv.read_status(root, "WV-6", verify_git=False)
+        self.assertNotEqual(status.state, "accepted")
+        self.assertIn(
+            "evidence inventory could not read .: Permission denied", status.findings
+        )
+
+    def test_descriptor_duplication_failure_is_a_named_finding(self) -> None:
+        """Review v2 (V2-1): descriptor exhaustion at the parent binding
+        escaped as a raw OSError instead of naming the file being bound."""
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            evidence, manifest = _complete_evidence(root)
+            manifest_path = evidence / wv.EVIDENCE_MANIFEST
+            manifest_path.write_bytes(_manifest_bytes(manifest))
+
+            def exhausted(fd):
+                raise OSError(24, "Too many open files")
+
+            with mock.patch.object(os, "dup", exhausted):
+                status = wv.read_status(root, "WV-6", verify_git=False)
+        self.assertNotEqual(status.state, "accepted")
+        self.assertIn(
+            f"{manifest_path} could not be bound: Too many open files",
+            status.findings,
+        )
 
 
 class UnsupportedPlatformTests(unittest.TestCase):
