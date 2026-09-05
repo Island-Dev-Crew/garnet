@@ -20,6 +20,7 @@ reviewed-head provenance.
 from __future__ import annotations
 
 import argparse
+import functools
 import hashlib
 import importlib.util
 import json
@@ -27,9 +28,10 @@ import os
 import re
 import subprocess
 import sys
+import threading
 from dataclasses import asdict, dataclass, field
 from pathlib import Path, PurePosixPath
-from typing import Any
+from typing import Any, Callable, TypeVar
 
 SCHEMA = "garnet.trust_kernel_review/v2"
 RECORD_SCHEMA = "garnet.trust_kernel_review_record/v2"
@@ -301,6 +303,193 @@ def _git_bytes(root: Path, *args: str, timeout: int = GIT_TIMEOUT_SECONDS) -> Gi
     return GitResult(returncode, result.stdout, result.stderr)
 
 
+_BATCH_HEADER_RE = re.compile(rb"^([0-9a-f]{40}) (commit|tree|blob|tag) ([0-9]{1,18})\n$")
+_BATCH_HEADER_LIMIT = 128
+
+
+@dataclass(frozen=True)
+class _ObjectRead:
+    """One ``cat-file --batch`` answer.
+
+    ``kind`` is set once a well-formed header arrived; ``payload`` only once
+    the whole body followed.  ``timed_out`` marks the per-request deadline.
+    """
+
+    kind: str | None
+    payload: bytes | None
+    timed_out: bool = False
+
+
+class _ObjectReader:
+    """One long-lived ``git cat-file --batch`` child per repository root.
+
+    Requests run in lockstep: one object id in, one header plus body out, on
+    bytes pipes.  Any protocol violation, kill, or pipe error poisons the
+    reader so every later read fails closed; ``close`` reaps the child and
+    applies the same graft rule as ``_git_bytes``.
+    """
+
+    def __init__(self, root: Path) -> None:
+        self._objects: dict[str, tuple[str, bytes]] = {}
+        self._stderr = b""
+        self._expired = False
+        self.poisoned = False
+        self._process: subprocess.Popen[bytes] | None = None
+        self._drain: threading.Thread | None = None
+        try:
+            self._process = subprocess.Popen(
+                [
+                    "git",
+                    "-c",
+                    "advice.graftFileDeprecated=false",
+                    "--no-replace-objects",
+                    "cat-file",
+                    "--batch",
+                ],
+                cwd=root,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                env=_scrubbed_git_environment(),
+            )
+        except (OSError, ValueError):
+            self.poisoned = True
+            return
+        self._drain = threading.Thread(target=self._drain_stderr, daemon=True)
+        self._drain.start()
+
+    def _drain_stderr(self) -> None:
+        process = self._process
+        assert process is not None and process.stderr is not None
+        try:
+            self._stderr = process.stderr.read()
+        except (OSError, ValueError):
+            self._stderr = b""
+
+    def _expire(self) -> None:
+        self._expired = True
+        process = self._process
+        if process is not None:
+            try:
+                process.kill()
+            except OSError:
+                pass
+
+    def read(self, oid: str) -> _ObjectRead:
+        if self.poisoned or GIT_OID_RE.fullmatch(oid) is None:
+            return _ObjectRead(None, None)
+        cached = self._objects.get(oid)
+        if cached is not None:
+            return _ObjectRead(cached[0], cached[1])
+        process = self._process
+        assert process is not None
+        assert process.stdin is not None and process.stdout is not None
+        kind: str | None = None
+        payload: bytes | None = None
+        timer = threading.Timer(GIT_TIMEOUT_SECONDS, self._expire)
+        timer.daemon = True
+        timer.start()
+        try:
+            request = oid.encode("ascii")
+            process.stdin.write(request + b"\n")
+            process.stdin.flush()
+            header = process.stdout.readline(_BATCH_HEADER_LIMIT)
+            if header != request + b" missing\n":
+                match = _BATCH_HEADER_RE.fullmatch(header)
+                if match is None or match.group(1) != request:
+                    raise ValueError("malformed cat-file --batch header")
+                kind = match.group(2).decode("ascii")
+                size = int(match.group(3).decode("ascii"))
+                body = process.stdout.read(size + 1)
+                if len(body) != size + 1 or body[-1:] != b"\n":
+                    raise ValueError("truncated cat-file --batch body")
+                payload = body[:-1]
+        except (OSError, EOFError, ValueError):
+            self.poisoned = True
+            return _ObjectRead(kind, None, timed_out=self._expired)
+        finally:
+            timer.cancel()
+        if self._expired:
+            self.poisoned = True
+            return _ObjectRead(kind, None, timed_out=True)
+        if kind is not None and payload is not None:
+            self._objects[oid] = (kind, payload)
+        return _ObjectRead(kind, payload)
+
+    def close(self) -> list[str]:
+        """Reap the child and surface graft advice; the reader is spent afterwards."""
+        self.poisoned = True
+        process = self._process
+        if process is None:
+            return []
+        self._process = None
+        try:
+            if process.stdin is not None:
+                process.stdin.close()
+        except OSError:
+            pass
+        try:
+            process.wait(timeout=GIT_TIMEOUT_SECONDS)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            try:
+                process.wait(timeout=GIT_TIMEOUT_SECONDS)
+            except subprocess.TimeoutExpired:
+                pass
+        if self._drain is not None:
+            self._drain.join(timeout=GIT_TIMEOUT_SECONDS)
+        for stream in (process.stdout, process.stderr):
+            try:
+                if stream is not None:
+                    stream.close()
+            except OSError:
+                pass
+        if b"graft" in self._stderr.lower():
+            return ["git object reader reported graft advice"]
+        return []
+
+
+_OBJECT_READERS: dict[str, _ObjectReader] = {}
+
+
+def _object_reader(root: Path) -> _ObjectReader:
+    key = os.fspath(root)
+    reader = _OBJECT_READERS.get(key)
+    if reader is None:
+        reader = _ObjectReader(root)
+        _OBJECT_READERS[key] = reader
+    return reader
+
+
+def _close_object_readers() -> list[str]:
+    """Close every open reader and surface graft advice as findings."""
+    problems: list[str] = []
+    for key in sorted(_OBJECT_READERS):
+        problems.extend(_OBJECT_READERS[key].close())
+    _OBJECT_READERS.clear()
+    return problems
+
+
+_T = TypeVar("_T")
+
+
+def _closing_object_readers(function: Callable[..., _T]) -> Callable[..., _T]:
+    """Close the batched readers when ``function`` returns or raises.
+
+    The normal path closes explicitly so the graft rule surfaces as a finding;
+    this wrapper is the exception-safety net against a leaked child.
+    """
+
+    @functools.wraps(function)
+    def wrapper(*args: Any, **kwargs: Any) -> _T:
+        try:
+            return function(*args, **kwargs)
+        finally:
+            _close_object_readers()
+
+    return wrapper
+
+
 def _one_oid(payload: bytes) -> str | None:
     try:
         text = payload.decode("ascii", errors="strict")
@@ -482,12 +671,12 @@ def _raw_object(root: Path, kind: str, oid: str, label: str) -> tuple[bytes | No
     """Read one object through its declared type with replacement refs disabled."""
     if GIT_OID_RE.fullmatch(oid) is None or kind not in {"commit", "tree"}:
         return None, [f"{label} has an invalid object request"]
-    result = _git_bytes(root, "cat-file", kind, oid)
-    if result.timed_out:
+    read = _object_reader(root).read(oid)
+    if read.timed_out:
         return None, [f"{label} object read timed out"]
-    if result.returncode != 0:
+    if read.payload is None or read.kind != kind:
         return None, [f"{label} is not a readable {kind} object"]
-    return result.stdout, []
+    return read.payload, []
 
 
 _AUTHOR_LINE_RE = re.compile(
@@ -840,17 +1029,20 @@ def _read_blob(root: Path, ref: str, path: str) -> tuple[bytes | None, list[str]
 
 
 def _read_blob_oid(root: Path, oid: str, label: str) -> tuple[bytes | None, list[str]]:
-    kind = _git_bytes(root, "cat-file", "-t", oid)
-    if kind.timed_out:
-        return None, [f"blob type lookup timed out for {label}"]
-    if kind.returncode != 0 or kind.stdout != b"blob\n":
+    if GIT_OID_RE.fullmatch(oid) is None:
         return None, [f"object is not a regular blob: {label}"]
-    blob = _git_bytes(root, "cat-file", "blob", oid)
-    if blob.timed_out:
-        return None, [f"blob read timed out for {label}"]
-    if blob.returncode != 0:
+    read = _object_reader(root).read(oid)
+    if read.kind is None:
+        if read.timed_out:
+            return None, [f"blob type lookup timed out for {label}"]
+        return None, [f"object is not a regular blob: {label}"]
+    if read.kind != "blob":
+        return None, [f"object is not a regular blob: {label}"]
+    if read.payload is None:
+        if read.timed_out:
+            return None, [f"blob read timed out for {label}"]
         return None, [f"blob read failed for {label}"]
-    return blob.stdout, []
+    return read.payload, []
 
 
 def compute_change_digest(
@@ -1967,6 +2159,7 @@ def _load_tip_review_record(
     )
 
 
+@_closing_object_readers
 def read_status(
     changed: list[str] | None = None,
     base: str | None = None,
@@ -2082,8 +2275,9 @@ def read_status(
         )
 
     registry_ref = discovery.head_commit or head
-    registry_findings = verify_repository_landed_markers(root, ref=registry_ref)
+    registry_findings = _repository_landed_marker_findings(root, ref=registry_ref)
     problems.extend(f"registered landed marker: {problem}" for problem in registry_findings)
+    problems.extend(_close_object_readers())
 
     return TrustKernelReviewStatus(
         schema=SCHEMA,
@@ -2459,6 +2653,20 @@ def verify_repository_landed_markers(
     main_ref: str = "refs/remotes/origin/main",
 ) -> list[str]:
     """Verify every canonical landed marker registered in repository content."""
+    findings: list[str] = []
+    try:
+        findings.extend(_repository_landed_marker_findings(root, ref=ref, main_ref=main_ref))
+    finally:
+        findings.extend(_close_object_readers())
+    return findings
+
+
+def _repository_landed_marker_findings(
+    root: Path,
+    *,
+    ref: str,
+    main_ref: str = "refs/remotes/origin/main",
+) -> list[str]:
     root = root.resolve()
     commit, commit_problems = _resolve_commit(ref, "landed marker registry ref", root)
     if commit is None:
@@ -2639,6 +2847,7 @@ def _explicit_github_transport(
     return transport, []
 
 
+@_closing_object_readers
 def main(argv: list[str] | None = None, *, root: Path = ROOT) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--format", choices=["json", "md"], default="json")

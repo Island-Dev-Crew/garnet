@@ -1,0 +1,30 @@
+{
+  "author_emails": [
+    "email:jon-isaac@islanddevcrew.com"
+  ],
+  "author_ids": [
+    275140286
+  ],
+  "base_commit": "beeb5e7b23e892521da439da67d44a37f23b5584",
+  "blocking_findings": [],
+  "content_digest": "sha256:c00d30e99c5fec874c45ba3e8f11c55ab3435c2be72ee914c641bb7ab3cf8613",
+  "head_repository": "Island-Dev-Crew/garnet",
+  "head_repository_id": 1218183013,
+  "pull_request_id": 4429211323,
+  "pull_request_number": 548,
+  "repository": "Island-Dev-Crew/garnet",
+  "repository_id": 1218183013,
+  "review_scope": "Content proof binds exactly reviewed_head 36ef2644601aedda4bf8caca0674ffcdfeafb659 and does not extend or backdate reviewed_head coverage. OpenAI Codex cross-family reviewing seat verdict: CONFIRM, zero findings and zero blockers, at 36ef2644601aedda4bf8caca0674ffcdfeafb659; void if the head moves before the record commit. Exact-base recomputation verified main beeb5e7b23e892521da439da67d44a37f23b5584, one candidate commit, and exactly two touched paths: scripts/garnet_trust_kernel_review_status.py and scripts/test_garnet_trust_kernel_review_status.py. Review confirmed one lockstep, memoized, bytes-pipe git cat-file --batch Popen per root; scrubbed Git environment and --no-replace-objects; per-request Timer deadlines; poison-on-malformed-header, short-body, timeout, and pipe violation; close-time graft detection; GIT_OID_RE gates; and fail-closed kind mismatch. Missing, timeout, type-mismatch, and blob-path problem strings retain their pre-cure meanings. The 13 added focused tests passed in 4.192 seconds. The spawn-count test failed against the base implementation with small=(76, 76) and large=(2148, 2148), then passed against the candidate in 4.424 seconds. PATH-shim measurement found 35 Git spawns in 1.18 seconds for the candidate and 8,545 in 179.71 seconds for the base; the 2,560-byte JSON outputs were byte-identical with SHA-256 52dd4554744aba6864fa13802fe96ff5148abe71e4f13dfb34405b756b334077. The rolling gate reported trust_kernel_touched true, the two exact touched paths, content digest sha256:c00d30e99c5fec874c45ba3e8f11c55ab3435c2be72ee914c641bb7ab3cf8613, and sole problem structured review record is missing. Added lines contain no retired honesty vocabulary; git diff --check is clean. Integrity rule 1 remains intact: scripts/garnet_* is trust-kernel and human-merge-only. Standards and Spec axes both report no actionable findings.",
+  "review_state": "APPROVED",
+  "reviewed_head": "36ef2644601aedda4bf8caca0674ffcdfeafb659",
+  "reviewed_tree": "5775fffd32cf7ab5e1722c8221126fecb3c3ffc8",
+  "reviewer_id": 306739987,
+  "reviewer_login": "IDC-Trust-Review",
+  "schema": "garnet.trust_kernel_review_record/v2",
+  "state": "premerge",
+  "touched_paths": [
+    "scripts/garnet_trust_kernel_review_status.py",
+    "scripts/test_garnet_trust_kernel_review_status.py"
+  ],
+  "verdict": "pass"
+}
