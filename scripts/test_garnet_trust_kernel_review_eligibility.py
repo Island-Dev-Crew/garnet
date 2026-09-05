@@ -634,6 +634,19 @@ class ExpectedJobsAndCensusTests(unittest.TestCase):
     def test_complete_fresh_attempt2_is_green(self) -> None:
         self.assertEqual(self._verify(), [])
 
+    def test_seven_row_first_attempt_with_an_unexpanded_matrix_is_accepted(self) -> None:
+        """Review v1 (F3): the deliberate first-attempt RED skips the
+        downstream matrix before expansion, so attempt 1 has seven rows
+        including the placeholder; the callable demanded nine."""
+        names = [name for name in CI_PULL_REQUEST_JOBS if not name.startswith("cargo test (")]
+        names += ["cargo test (${{ matrix.os }})"]
+        self.assertEqual(len(names), 7)
+        self.assertEqual(self._verify(attempt1_jobs=self._jobs(1, names, first_id=100)), [])
+
+    def test_an_empty_first_attempt_census_is_red(self) -> None:
+        problems = self._verify(attempt1_jobs=[])
+        self.assertTrue(any("attempt-1 job census is empty" in item for item in problems), problems)
+
     def test_matrix_placeholder_does_not_satisfy_the_expanded_multiset(self) -> None:
         names = [name for name in CI_PULL_REQUEST_JOBS if not name.startswith("cargo test (")]
         names += ["cargo test (${{ matrix.os }})"] * 3
@@ -683,7 +696,7 @@ class AttemptTwoVerifierTests(unittest.TestCase):
         git.commit_file(".github/rulesets/required-context-producers.json", self.inventory, "base")
         self.base = git.rev("HEAD")
         git.run("update-ref", "refs/remotes/origin/main", self.base)
-        self.record_bytes = canonical({"schema": "garnet.trust_kernel_review_record/v2", "state": "premerge"})
+        self.record_bytes = canonical({"author_ids": [101], "reviewer_id": 202, "schema": "garnet.trust_kernel_review_record/v2", "state": "premerge"})
         git.commit_file(RECORD_PATH, self.record_bytes, "record")
         self.head = git.rev("HEAD")
         self.tree = git.rev("HEAD^{tree}")
@@ -739,6 +752,10 @@ class AttemptTwoVerifierTests(unittest.TestCase):
             "workflow_id": 12345678,
             "path": ".github/workflows/ci.yml",
             "repository": {"id": 1218183013, "full_name": REPO},
+            # The attempt-2 carrier: the principal that re-ran the workflow,
+            # as the API reports it. Distinct from the author (101) and the
+            # reviewer (202) by construction here; F1 tests vary it.
+            "triggering_actor": {"id": 303, "login": "carrier"},
         }
         if run:
             run_object.update(run)
@@ -783,6 +800,39 @@ class AttemptTwoVerifierTests(unittest.TestCase):
         document = json.loads(elig.render_verdict(verdict))
         self.assertEqual(document["schema"], elig.VERDICT_SCHEMA)
         self.assertEqual(elig.render_verdict(verdict), canonical(document).decode())
+
+    def test_green_verdict_carries_the_carrier_identity(self) -> None:
+        verdict = self._verify()
+        self.assertTrue(verdict.ok, verdict.problems)
+        self.assertEqual(verdict.carrier_id, 303)
+        self.assertEqual(json.loads(elig.render_verdict(verdict))["carrier_id"], 303)
+
+    def test_attempt2_carrier_must_exist_and_be_neither_author_nor_reviewer(self) -> None:
+        """Review v1 (F1): the verifier accepted a run with no triggering
+        actor, a carrier equal to the reviewer, and a carrier in the author
+        set — r2_role_separation_v1 was not enforced anywhere."""
+        cases = {
+            "missing": ({"triggering_actor": None}, "no authenticated triggering_actor"),
+            "not-an-object": ({"triggering_actor": "carrier"}, "no authenticated triggering_actor"),
+            "no-id": ({"triggering_actor": {"login": "carrier"}}, "no authenticated triggering_actor"),
+            "reviewer": ({"triggering_actor": {"id": 202, "login": "independent-reviewer"}}, "is the reviewer"),
+            "author": ({"triggering_actor": {"id": 101, "login": "author"}}, "is in the candidate's author set"),
+        }
+        for label, (run, fragment) in cases.items():
+            with self.subTest(label=label):
+                verdict = self._verify(transport=self._transport(run=run))
+                self.assertFalse(verdict.ok, label)
+                self.assertTrue(any(fragment in item for item in verdict.problems), (label, verdict.problems))
+                self.assertIsNone(verdict.carrier_id if label != "reviewer" and label != "author" else None)
+
+    def test_a_record_without_principals_cannot_separate_the_carrier(self) -> None:
+        bare = canonical({"schema": "garnet.trust_kernel_review_record/v2", "state": "premerge"})
+        self.assertEqual(
+            ["review record does not name its author set and reviewer, so the carrier cannot be separated"],
+            elig._carrier_separation_problems(bare, 303),
+        )
+        self.assertEqual(["review record could not be read for carrier separation"], elig._carrier_separation_problems(b"{", 303))
+        self.assertEqual([], elig._carrier_separation_problems(self.record_bytes, 303))
 
     def test_zero_two_expired_wrong_name_and_wrong_run_artifacts_are_red(self) -> None:
         cases = {
@@ -961,7 +1011,7 @@ class EmitTests(unittest.TestCase):
         git.commit_file(".github/rulesets/required-context-producers.json", self.inventory, "base")
         self.base = git.rev("HEAD")
         git.run("update-ref", "refs/remotes/origin/main", self.base)
-        self.record_bytes = canonical({"schema": "garnet.trust_kernel_review_record/v2", "state": "premerge"})
+        self.record_bytes = canonical({"author_ids": [101], "reviewer_id": 202, "schema": "garnet.trust_kernel_review_record/v2", "state": "premerge"})
         git.commit_file(RECORD_PATH, self.record_bytes, "record")
         self.head = git.rev("HEAD")
         self.tree = git.rev("HEAD^{tree}")
@@ -1136,6 +1186,19 @@ class ArchiveTransportTests(unittest.TestCase):
         self.assertFalse(second.has_header("Authorization"))
         self.assertNotIn("ambient", str(first.header_items()) + str(second.header_items()))
 
+    def test_both_signed_archive_hosts_are_accepted_on_the_default_port(self) -> None:
+        for location in (
+            "https://productionresultssa0.blob.core.windows.net/x.zip?sig=abc",
+            "https://pipelinesghubeus2.actions.githubusercontent.com/x/y.zip",
+            "https://productionresultssa0.blob.core.windows.net:443/x.zip",
+        ):
+            with self.subTest(location=location):
+                client, _ = self._client([
+                    (302, [("Location", location)], b""),
+                    (200, [("Content-Type", "application/zip")], self.ARCHIVE),
+                ])
+                self.assertEqual(client.download_archive(777).problems, ())
+
     def test_octet_stream_is_accepted(self) -> None:
         client, _ = self._client([
             (302, [("Location", self.BLOB)], b""),
@@ -1160,6 +1223,14 @@ class ArchiveTransportTests(unittest.TestCase):
             "first-status-401": [(401, [("Content-Type", "application/json")], b"{}")],
             "token-in-headers": [(302, [("Location", self.BLOB), ("X-Echo", TOKEN)], b""), (200, [("Content-Type", "application/zip")], self.ARCHIVE)],
             "token-in-location": [(302, [("Location", self.BLOB + "&t=" + TOKEN)], b""), (200, [("Content-Type", "application/zip")], self.ARCHIVE)],
+            # Review v1 (F2): the hop accepted any DNS-shaped https host.
+            "redirect-other-host": [(302, [("Location", "https://example.org/not-a-blob.zip")], b""), (200, [("Content-Type", "application/zip")], self.ARCHIVE)],
+            "redirect-loopback": [(302, [("Location", "https://127.0.0.1:8443/not-a-blob.zip")], b""), (200, [("Content-Type", "application/zip")], self.ARCHIVE)],
+            "redirect-ipv6": [(302, [("Location", "https://[::1]/x.zip")], b""), (200, [("Content-Type", "application/zip")], self.ARCHIVE)],
+            "redirect-port": [(302, [("Location", "https://productionresultssa0.blob.core.windows.net:8443/x.zip")], b""), (200, [("Content-Type", "application/zip")], self.ARCHIVE)],
+            "redirect-deceptive-suffix": [(302, [("Location", "https://productionresultssa0.blob.core.windows.net.evil.example/x.zip")], b""), (200, [("Content-Type", "application/zip")], self.ARCHIVE)],
+            "redirect-suffix-as-prefix": [(302, [("Location", "https://evil.example/blob.core.windows.net/x.zip")], b""), (200, [("Content-Type", "application/zip")], self.ARCHIVE)],
+            "redirect-bare-suffix-domain": [(302, [("Location", "https://blob.core.windows.net/x.zip")], b""), (200, [("Content-Type", "application/zip")], self.ARCHIVE)],
         }
         for label, script in cases.items():
             with self.subTest(label=label):

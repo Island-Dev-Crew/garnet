@@ -54,6 +54,22 @@ ALLOWED_PROBLEM_CODES = frozenset(
 )
 _NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,99}")
 _HOST = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9-]{0,62}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,62}[A-Za-z0-9])?)+$")
+# The only destinations an artifact-archive redirect may name: the signed-URL
+# hosts GitHub serves archives from, as a subdomain of either suffix, on the
+# default port, never an IP literal (review v1, F2: any DNS-shaped https host
+# was accepted, loopback and arbitrary ports included).
+ARCHIVE_HOST_SUFFIXES = (".blob.core.windows.net", ".actions.githubusercontent.com")
+
+
+def _archive_host_admissible(host: str, port: int | None) -> bool:
+    lowered = host.lower()
+    if port not in (None, 443):
+        return False
+    if all(label.isdigit() for label in lowered.split(".")):
+        return False
+    return any(
+        lowered.endswith(suffix) and len(lowered) > len(suffix) for suffix in ARCHIVE_HOST_SUFFIXES
+    )
 
 
 @dataclass(frozen=True)
@@ -200,6 +216,11 @@ class ActionsArtifactTransport:
         except ValueError:
             _fail("redirect-target")
         host = parsed.hostname
+        try:
+            port = parsed.port
+        except ValueError:
+            _fail("redirect-target")
+            raise AssertionError("unreachable")
         if (
             parsed.scheme != "https"
             or host is None
@@ -209,6 +230,7 @@ class ActionsArtifactTransport:
             or _HOST.fullmatch(host) is None
             or host.lower() == API_HOST
             or host.lower().endswith("." + API_HOST)
+            or not _archive_host_admissible(host, port)
         ):
             _fail("redirect-target")
         return location, host.lower()

@@ -683,6 +683,11 @@ class Verdict:
     receipt_sha256: str | None = None
     receipt_state: str | None = None
     receipt_finding_codes: list[str] = field(default_factory=list)
+    # The attempt-2 carrier: the principal the API reports as the run's
+    # `triggering_actor`, proven distinct from the record's author set and
+    # reviewer (r2_role_separation_v1). None when the run names no such
+    # principal, which is itself a problem.
+    carrier_id: int | None = None
 
 
 def render_verdict(verdict: Verdict) -> str:
@@ -829,9 +834,17 @@ def verify_attempt2(*, transport: object, archive_transport: object, root: Path,
     run, run_problems = _get_object(transport, f"actions/runs/{constants.run_id}", "workflow run")
     problems.extend(run_problems)
     workflow_id: int | None = None
+    carrier_id: int | None = None
     if run is not None:
         problems.extend(_run_object_problems(run, constants, expected_attempt=2, workflow_path=workflow_path))
         workflow_id = run.get("workflow_id") if _positive_int(run.get("workflow_id")) else None
+        # Review v1 (F1): the run's triggering_actor is the attempt-2 carrier,
+        # read from the API object, never from a CI-supplied argument.
+        actor = run.get("triggering_actor")
+        if isinstance(actor, dict) and _positive_int(actor.get("id")):
+            carrier_id = actor["id"]
+        else:
+            problems.append("workflow run names no authenticated triggering_actor identity; the attempt-2 carrier cannot be established")
     pull, pull_problems = _get_object(transport, f"pulls/{constants.pull_request_number}", "pull request")
     problems.extend(pull_problems)
     if pull is not None:
@@ -881,6 +894,9 @@ def verify_attempt2(*, transport: object, archive_transport: object, root: Path,
     record_path = receipt["review_record_path"]
     record, record_problems = read_blob(root, head, record_path)
     problems.extend(record_problems)
+    if record is not None and carrier_id is not None:
+        problems.extend(_carrier_separation_problems(record, carrier_id))
+        state = _replace(state, carrier_id=carrier_id)
     expected = {
         "artifact_name": artifact_name(constants.run_id),
         "base_ref": constants.base_ref,
@@ -914,6 +930,30 @@ def verify_attempt2(*, transport: object, archive_transport: object, root: Path,
             f"attempt-1 receipt is ineligible: state={receipt['state']} finding_codes={receipt['finding_codes']}"
         )
     return _finish(state, problems)
+
+
+def _carrier_separation_problems(record: bytes, carrier_id: int) -> list[str]:
+    """r2_role_separation_v1 at the verifier: the carrier is neither an author
+    nor the reviewer of the record it would carry. A record that does not name
+    both sets cannot be separated against and is a problem, not a pass."""
+    document, load_problems = load_strict_json(record, "review record")
+    if load_problems or not isinstance(document, dict):
+        return ["review record could not be read for carrier separation"]
+    authors = document.get("author_ids")
+    reviewer = document.get("reviewer_id")
+    if (
+        not isinstance(authors, list)
+        or not authors
+        or not all(_positive_int(item) for item in authors)
+        or not _positive_int(reviewer)
+    ):
+        return ["review record does not name its author set and reviewer, so the carrier cannot be separated"]
+    problems: list[str] = []
+    if carrier_id in authors:
+        problems.append(f"attempt-2 carrier {carrier_id} is in the candidate's author set (r2_role_separation_v1)")
+    if carrier_id == reviewer:
+        problems.append(f"attempt-2 carrier {carrier_id} is the reviewer (r2_role_separation_v1)")
+    return problems
 
 
 def _replace(verdict: Verdict, **changes: object) -> Verdict:
@@ -995,8 +1035,13 @@ def verify_jobs_and_census(
     reused = sorted(first_ids & second_ids)
     if reused:
         problems.append(f"attempt-2 reused attempt-1 job identities: {reused}")
-    if len(first) != len(expected):
-        problems.append("attempt-1 job census does not cover the expected multiset")
+    # Review v1 (F3): the deliberate first-attempt RED skips the downstream
+    # matrix before it expands, so attempt 1 legitimately carries the
+    # placeholder row. What attempt 1 must supply is a complete, non-empty
+    # enumeration whose every identity is retained and never reused above;
+    # the exact expanded multiset is attempt 2's obligation, checked above.
+    if not first:
+        problems.append("attempt-1 job census is empty")
     if producer_workflow_ids.get(workflow_path) != workflow_id:
         problems.append("workflow id mapping does not bind the re-evaluated workflow path")
     if not isinstance(head_runs, (list, tuple)):

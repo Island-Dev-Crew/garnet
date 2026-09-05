@@ -1,5 +1,39 @@
 # Changelog
 
+## Unreleased — L1 act 2: attempt-1 eligibility receipt and attempt-2 verification, construction-only (2026-09-05)
+
+- **CI:** `ci.yml` gains exactly `actions: read` at the workflow level, passes
+  the run id and attempt to the reporter, and on attempt 1 only emits the
+  eligibility receipt and uploads it as `r2-approval-pending-<run>-attempt-1`
+  with the already-pinned upload action. A record-less candidate emits no
+  receipt and the upload is a no-op.
+- **`scripts/garnet_trust_kernel_review_eligibility.py`:** `emit` writes the
+  21-key canonical receipt (sole eligible tuple `approval_pending_only` /
+  `["approval-absent"]`); `verify` enumerates artifacts completely, requires
+  exactly one non-expired receipt, binds endpoint, status, id, raw-body and
+  archive digests, parses a single-member ZIP without extraction, recomputes
+  the receipt, requires every run constant to hold live and `run_attempt == 2`,
+  and fails closed at attempt 3. The verdict carries the **carrier** — the
+  run's `triggering_actor` as the API reports it — proven neither an author
+  nor the reviewer of the record (the cross-family review found no role check
+  anywhere). The act-4 callables accept an attempt-1 census whose matrix has
+  not expanded and require the exact expanded multiset on attempt 2.
+- **`scripts/garnet_actions_artifact_transport.py`:** a bounded client that
+  follows exactly one redirect hop, strips `Authorization` on it, accepts only
+  an archive content type, caps the body, and takes its token from stdin. The
+  hop may name only a subdomain of `.blob.core.windows.net` or
+  `.actions.githubusercontent.com` on the default port, never an IP literal
+  (the review reached `example.org` and `127.0.0.1:8443` through it).
+- **The reporter denies attempt-2 acceptance by construction:**
+  `R2_ACTIVATION_AUTHORIZED = False` adds a named finding to every
+  record-bearing attempt-2 result even with a valid verdict, and the verdict
+  must name a carrier distinct from the reviewer. Act 2 therefore grants no
+  eligibility as a machine-enforced fact; flipping the constant is the
+  activation act and a gate change under Integrity Rule 1.
+- Producer fingerprints in `.github/rulesets/required-context-producers.json`
+  and the governance gate follow the workflow change; identity digests are
+  unchanged. This change modifies CI and the gate — human-merge-only.
+
 ## Unreleased — gate hardening: dogfood PR-body checker section boundary, exact headings, evidence tokens (2026-09-02)
 
 ### `scripts/check_dogfood_pr_body.py` — crown D-1, hardening H3-01, crown D-N4 cured

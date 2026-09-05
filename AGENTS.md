@@ -340,17 +340,26 @@ the pinned `actions/upload-artifact` step carries as the sole member
 candidate emits no receipt. `verify` runs at attempt 2 before the reporter:
 complete artifact enumeration, one-hop authenticated download through
 `scripts/garnet_actions_artifact_transport.py` (Authorization is stripped on
-the blob hop; `application/zip`/`application/octet-stream` only; 8 MiB cap),
+the blob hop; the hop may name only a subdomain of `.blob.core.windows.net` or
+`.actions.githubusercontent.com` on the default port, never an IP literal;
+`application/zip`/`application/octet-stream` only; 8 MiB cap),
 single-member ZIP parse without extraction, canonical receipt equality, live
 PR/base/head/tree/record/workflow/run/event/producer-inventory equality, and
 `run_attempt == 2`; the reporter consumes that verdict through
 `--eligibility-verdict` and fails closed on attempt 3 or later for every
-candidate. `expected_job_multiset` and `verify_jobs_and_census` are the act-4
-readback callables; act 2 tests them and does not wire them into CI. The
-`actions: read` workflow permission is the sole permission delta; no CI job
-may hold a write permission. `r2_role_separation_v1` stays
-OPEN-UNTIL-IMPLEMENTED until the distinct carrier identity exists, so U-59
-remains ineligible for activation after this wiring.
+candidate. The verdict carries the carrier — the run's `triggering_actor` as
+the API reports it — proven neither an author nor the reviewer of the record,
+and the reporter re-checks the carrier at the seam. `expected_job_multiset`
+and `verify_jobs_and_census` are the act-4 readback callables; act 2 tests
+them and does not wire them into CI; attempt 1 may carry an unexpanded matrix
+row, attempt 2 must carry the exact expanded multiset with no reused job
+identity. The `actions: read` workflow permission is the sole permission
+delta; no CI job may hold a write permission. **Acceptance is construction-
+only:** `R2_ACTIVATION_AUTHORIZED = False` in the reporter adds a named finding
+to every record-bearing attempt-2 result even with a valid verdict, so U-59
+grants no eligibility as a machine-enforced fact; flipping it is the activation
+act, a change to the gate that merges under it (Integrity Rule 1), and it
+lands only with the complete `r2_role_separation_v1` proof.
 
 Run `python3 -I scripts/test_garnet_trust_kernel_review_eligibility.py`,
 `python3 -I scripts/test_garnet_trust_kernel_review_status.py`, the workflow

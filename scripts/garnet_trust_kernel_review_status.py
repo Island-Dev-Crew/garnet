@@ -2588,6 +2588,23 @@ def check_clean_worktree(root: Path = ROOT) -> list[str]:
 
 
 ELIGIBILITY_VERDICT_SCHEMA = "garnet.trust_kernel_review_eligibility_verdict/v1"
+# R2 activation authority. L1 act 2 CONSTRUCTS the attempt-2 mechanism; it
+# does not AUTHORIZE it. While this is False, every record-bearing attempt-2
+# result carries R2_CONSTRUCTION_ONLY_PROBLEM even with a valid verdict, so
+# "grants no eligibility" is machine-enforced rather than described.
+# Flipping it is the activation act: a change to the gate that merges under
+# it, human-merge-only under Integrity Rule 1, and it lands only with the
+# complete r2_role_separation_v1 proof.
+R2_ACTIVATION_AUTHORIZED = False
+R2_CONSTRUCTION_ONLY_PROBLEM = (
+    "r2 attempt-2 acceptance is construction-only: r2_role_separation_v1 is "
+    "OPEN-UNTIL-IMPLEMENTED and activation is not authorized"
+)
+ATTEMPT_CARRIER_PROBLEM = (
+    "attempt-2 verdict does not carry an authenticated carrier identity distinct "
+    "from the reviewer (r2_role_separation_v1)"
+)
+_ABSENT = object()
 ELIGIBLE_RECEIPT_STATE = "approval_pending_only"
 ELIGIBLE_RECEIPT_CODES = ["approval-absent"]
 MAX_VERDICT_BYTES = 64 * 1024
@@ -2656,6 +2673,21 @@ def apply_attempt_policy(
                     and verdict.get("problems") == []
                 ):
                     problems.append(ATTEMPT_VERDICT_PROBLEM)
+                if verdict is not None:
+                    # The CI-to-reporter seam (review v1, F1): the verdict must
+                    # name the carrier, and the carrier is not the reviewer.
+                    # Author separation is proven by the verifier against the
+                    # record; the reporter re-checks what it can see.
+                    carrier = verdict.get("carrier_id", _ABSENT)
+                    if (
+                        carrier is _ABSENT
+                        or type(carrier) is not int
+                        or carrier <= 0
+                        or carrier == status.reviewer_id
+                    ):
+                        problems.append(ATTEMPT_CARRIER_PROBLEM)
+                if not R2_ACTIVATION_AUTHORIZED:
+                    problems.append(R2_CONSTRUCTION_ONLY_PROBLEM)
     if not problems:
         return status
     combined = [*status.problems, *problems]

@@ -521,6 +521,7 @@ class PreMergeReviewRecordTests(GitRepoFixture):
             "receipt_state": "approval_pending_only",
             "receipt_finding_codes": ["approval-absent"],
             "problems": [],
+            "carrier_id": 303,
         }
         value.update(overrides)
         path = Path(self.temp.name) / "verdict.json"
@@ -543,8 +544,33 @@ class PreMergeReviewRecordTests(GitRepoFixture):
         self.assertFalse(red.ok)
         self.assertTrue(any("eligibility verdict" in item for item in red.problems), red.problems)
         self.assertTrue(status.ok, "the input status must not be mutated")
-        green = mod.apply_attempt_policy(status, run_id=17, run_attempt=2, verdict_path=self._verdict())
-        self.assertTrue(green.ok, green.problems)
+        # Review v1 of #558 (F1): a valid verdict is CONSTRUCTED here but not
+        # AUTHORIZED. Until the activation act flips R2_ACTIVATION_AUTHORIZED
+        # — a gate change under Integrity Rule 1 — the reporter refuses
+        # attempt-2 acceptance by name, so "grants no eligibility" is a
+        # machine-enforced fact, not a description.
+        constructed = mod.apply_attempt_policy(status, run_id=17, run_attempt=2, verdict_path=self._verdict())
+        self.assertFalse(constructed.ok)
+        self.assertEqual([mod.R2_CONSTRUCTION_ONLY_PROBLEM], constructed.problems)
+        self.assertFalse(mod.R2_ACTIVATION_AUTHORIZED)
+        with mock.patch.object(mod, "R2_ACTIVATION_AUTHORIZED", True):
+            activated = mod.apply_attempt_policy(status, run_id=17, run_attempt=2, verdict_path=self._verdict())
+            self.assertTrue(activated.ok, activated.problems)
+            for label, overrides in (
+                ("carrier-missing", {"carrier_id": None}),
+                ("carrier-absent-key", {"carrier_id": mod._ABSENT}),
+                ("carrier-string", {"carrier_id": "303"}),
+                ("carrier-zero", {"carrier_id": 0}),
+                ("carrier-is-reviewer", {"carrier_id": 202}),
+            ):
+                with self.subTest(label=label):
+                    if overrides["carrier_id"] is mod._ABSENT:
+                        path = self._verdict(); import json as _json; value = _json.loads(path.read_bytes()); del value["carrier_id"]; path.write_bytes(_canonical(value))
+                    else:
+                        path = self._verdict(**overrides)
+                    result = mod.apply_attempt_policy(status, run_id=17, run_attempt=2, verdict_path=path)
+                    self.assertFalse(result.ok, label)
+                    self.assertIn(mod.ATTEMPT_CARRIER_PROBLEM, result.problems, label)
         for label, overrides in (
             ("not-ok", {"ok": False, "problems": ["artifact enumeration failed"]}),
             ("wrong-run", {"run_id": 18}),
