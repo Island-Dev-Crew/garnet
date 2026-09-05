@@ -39,9 +39,13 @@
   digest hash and the path count inside those two findings track the tree
   they are computed over, so the finding strings differ while the judgment
   does not.
-- **Nothing escapes as a raw exception** (review v2): a failure advancing the
-  directory iterator and a failed descriptor duplication at the binding step
-  are named findings too. A parent directory renamed or replaced AFTER the
+- **Nothing escapes as a raw exception** (reviews v2 and v3): a failure
+  advancing the directory iterator, a failed descriptor duplication at the
+  binding step, and a failed descriptor release — on the manifest, an
+  artifact, a bound parent, an inventory child, or the evidence root — are
+  named findings too. A failed release is never retried, the sibling
+  descriptor the reporter still owns is released once, and a release failure
+  after a clean validation makes the result `partial`. A parent directory renamed or replaced AFTER the
   reporter bound it is survived, not reported — the read continues in the
   bound directory and the replacement is never read; the reporter's
   docstring states that boundary and the unprivileged same-inode `mmap`

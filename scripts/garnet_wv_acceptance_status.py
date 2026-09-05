@@ -150,11 +150,20 @@ def open_evidence_root(path: Path) -> tuple[int | None, str]:
     try:
         opened = os.fstat(descriptor)
     except OSError:
-        os.close(descriptor)
-        return None, "unbindable"
-    if not stat.S_ISDIR(opened.st_mode):
-        os.close(descriptor)
-        return None, "not-a-directory"
+        opened = None
+    reason = (
+        "unbindable" if opened is None
+        else "not-a-directory" if not stat.S_ISDIR(opened.st_mode)
+        else "ok"
+    )
+    if reason != "ok":
+        # Already a non-accepting result; a failed release here changes
+        # nothing about the judgment and is not retried.
+        try:
+            os.close(descriptor)
+        except OSError:
+            pass
+        return None, reason
     return descriptor, "ok"
 
 
@@ -164,6 +173,22 @@ _DIRECTORY_FLAGS = (
     | getattr(os, "O_CLOEXEC", 0)
     | getattr(os, "O_NOFOLLOW", 0)
 )
+
+
+def _release(descriptor: int, *, label: str) -> None:
+    """Close ``descriptor`` once and name the failure.
+
+    ``close`` can fail (EINTR, EIO); a descriptor whose close raised is in an
+    uncertain state and is never closed again — retrying masked the original
+    error with EBADF and leaked the sibling descriptor the caller still owned
+    (review v3, V3-1).
+    """
+    try:
+        os.close(descriptor)
+    except OSError as exc:
+        raise ValueError(
+            f"{label} descriptor could not be released: {exc.strerror}"
+        ) from exc
 
 
 def _bind_parent(root_fd: int, relative: str, *, label: str) -> tuple[int, str]:
@@ -186,20 +211,32 @@ def _bind_parent(root_fd: int, relative: str, *, label: str) -> tuple[int, str]:
         current = os.dup(root_fd)
     except OSError as exc:
         raise ValueError(f"{label} could not be bound: {exc.strerror}") from exc
-    try:
-        for component in parts[:-1]:
+    for component in parts[:-1]:
+        try:
+            child = os.open(component, _DIRECTORY_FLAGS, dir_fd=current)
+        except OSError as exc:
+            # Ownership: ``current`` is ours; release it once, and let a
+            # release failure be the finding only if the open failure has
+            # not already been named — never retry either.
             try:
-                child = os.open(component, _DIRECTORY_FLAGS, dir_fd=current)
-            except OSError as exc:
-                raise ValueError(
-                    f"{label} parent {component!r} is not a bound directory: "
-                    f"{exc.strerror}"
-                ) from exc
-            os.close(current)
-            current = child
-    except BaseException:
-        os.close(current)
-        raise
+                _release(current, label=label)
+            except ValueError:
+                pass
+            raise ValueError(
+                f"{label} parent {component!r} is not a bound directory: "
+                f"{exc.strerror}"
+            ) from exc
+        previous, current = current, child
+        try:
+            _release(previous, label=label)
+        except ValueError:
+            # The child is ours too; release it once and report the first
+            # failure. The previous descriptor is not touched again.
+            try:
+                _release(current, label=label)
+            except ValueError:
+                pass
+            raise
     return current, parts[-1]
 
 
@@ -240,8 +277,9 @@ def _regular_bytes(
     (review finding 4, reproduced); a regular file's reads are unaffected by
     it, and the descriptor type is checked before any read. Every rejection
     this function makes is an explicit ``ValueError`` naming the file,
-    including a failed descriptor duplication at the binding step; an absent
-    file is ``EvidenceAbsent``.
+    including a failed descriptor duplication at the binding step and a
+    failed descriptor release; a release failure that follows a finding is
+    secondary and the finding stands. An absent file is ``EvidenceAbsent``.
     """
     parent_fd: int | None = None
     name = ""
@@ -279,9 +317,23 @@ def _regular_bytes(
             )
         except OSError as exc:
             raise ValueError(f"{label} could not be opened: {exc.strerror}") from exc
-    finally:
+    except BaseException:
         if parent_fd is not None:
-            os.close(parent_fd)
+            try:
+                _release(parent_fd, label=label)
+            except ValueError:
+                pass  # the in-flight finding is the one that stands
+        raise
+    if parent_fd is not None:
+        try:
+            _release(parent_fd, label=label)
+        except ValueError:
+            try:
+                _release(descriptor, label=label)
+            except ValueError:
+                pass
+            raise
+    failure: BaseException | None = None
     try:
         try:
             opened = os.fstat(descriptor)
@@ -325,8 +377,19 @@ def _regular_bytes(
         if len(payload) != opened.st_size or len(payload) > limit:
             raise ValueError(f"{label} changed while being read")
         return bytes(payload)
+    except BaseException as exc:
+        failure = exc
+        raise
     finally:
-        os.close(descriptor)
+        try:
+            os.close(descriptor)
+        except OSError as exc:
+            # A failed release after a clean read is a finding of its own;
+            # after a finding it is secondary and the first one stands.
+            if failure is None:
+                raise ValueError(
+                    f"{label} descriptor could not be released: {exc.strerror}"
+                ) from exc
 
 
 def _strict_lf_text(raw: bytes, *, label: str) -> str:
@@ -406,10 +469,21 @@ def _inventory_from_descriptor(root_fd: int, prefix: str = "") -> set[str]:
                 raise ValueError(
                     f"evidence inventory could not read {relative}: {exc.strerror}"
                 ) from exc
+            inner: BaseException | None = None
             try:
                 names |= _inventory_from_descriptor(child, f"{relative}/")
+            except BaseException as exc:
+                inner = exc
+                raise
             finally:
-                os.close(child)
+                try:
+                    os.close(child)
+                except OSError as exc:
+                    if inner is None:
+                        raise ValueError(
+                            f"evidence inventory {relative} descriptor could not be "
+                            f"released: {exc.strerror}"
+                        ) from exc
     return names
 
 
@@ -820,7 +894,14 @@ def read_status(
                 state = "accepted" if not findings else "partial"
     finally:
         if root_fd is not None:
-            os.close(root_fd)
+            try:
+                os.close(root_fd)
+            except OSError as exc:
+                findings.append(
+                    "evidence destination descriptor could not be released: "
+                    f"{exc.strerror}"
+                )
+                state = "partial"
 
     return WvAcceptanceStatus(
         schema="garnet.wv_acceptance_status/v2",

@@ -767,6 +767,110 @@ class GarnetWvAcceptanceStatusTests(unittest.TestCase):
         )
 
 
+    # Review v3 (V3-1): eight os.close sites were unguarded, and the parent
+    # binder retried a close whose state was uncertain, masking the original
+    # error with EBADF and leaking the child. Every release is named now, a
+    # failed release is never retried, and a release failure after a clean
+    # validation makes the result partial instead of escaping.
+
+    @staticmethod
+    def _close_raising_on(identity, *, times=1):
+        """An ``os.close`` stand-in that raises EIO the first ``times`` a
+        descriptor bound to ``identity`` (st_dev, st_ino) is released, and
+        releases it for real otherwise."""
+        real_close, real_fstat = os.close, os.fstat
+        fired: list[int] = []
+
+        def close_hook(fd):
+            try:
+                st = real_fstat(fd)
+            except OSError:
+                return real_close(fd)
+            if len(fired) < times and (st.st_dev, st.st_ino) == identity:
+                fired.append(fd)
+                real_close(fd)
+                raise OSError(5, "Input/output error")
+            return real_close(fd)
+
+        return close_hook, fired
+
+    @staticmethod
+    def _open_descriptor_count() -> int:
+        try:
+            return len(os.listdir("/dev/fd"))
+        except OSError:
+            return -1
+
+    def test_manifest_descriptor_release_failure_is_a_named_finding(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            evidence, manifest = _complete_evidence(root)
+            manifest_path = evidence / wv.EVIDENCE_MANIFEST
+            manifest_path.write_bytes(_manifest_bytes(manifest))
+            st = os.lstat(manifest_path)
+            hook, fired = self._close_raising_on((st.st_dev, st.st_ino))
+            with mock.patch.object(os, "close", hook):
+                status = wv.read_status(root, "WV-6", verify_git=False)
+        self.assertEqual(len(fired), 1)
+        self.assertEqual(status.state, "partial")
+        self.assertFalse(status.ok)
+        self.assertIn(
+            f"{manifest_path} descriptor could not be released: Input/output error",
+            status.findings,
+        )
+
+    def test_root_descriptor_release_failure_is_a_named_finding(self) -> None:
+        """Every close of a descriptor on the evidence directory raises: the
+        parent-chain duplicate first, then the root itself. Neither may
+        escape, and complete evidence must not come back accepted."""
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            evidence, manifest = _complete_evidence(root)
+            (evidence / wv.EVIDENCE_MANIFEST).write_bytes(_manifest_bytes(manifest))
+            st = os.lstat(evidence)
+            hook, fired = self._close_raising_on((st.st_dev, st.st_ino), times=64)
+            before = self._open_descriptor_count()
+            with mock.patch.object(os, "close", hook):
+                status = wv.read_status(root, "WV-6", verify_git=False)
+            after = self._open_descriptor_count()
+        self.assertGreaterEqual(len(fired), 1)
+        self.assertEqual(status.state, "partial")
+        self.assertFalse(status.ok)
+        self.assertTrue(
+            any("descriptor could not be released" in item for item in status.findings),
+            status.findings,
+        )
+        self.assertEqual(before, after, "no descriptor may leak on the failure path")
+
+    def test_parent_chain_release_failure_keeps_ownership(self) -> None:
+        """Releasing the previous parent while descending fails: the child
+        must still be released, the failure named once, nothing retried."""
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            evidence, manifest = _complete_evidence(root)
+            nested = evidence / "a" / "b"
+            nested.mkdir(parents=True)
+            payload = b"deep\n"
+            (nested / "proof.bin").write_bytes(payload)
+            manifest["artifacts"].append(
+                {"path": "a/b/proof.bin", "sha256": hashlib.sha256(payload).hexdigest()}
+            )
+            (evidence / wv.EVIDENCE_MANIFEST).write_bytes(_manifest_bytes(manifest))
+            st = os.lstat(evidence / "a")
+            hook, fired = self._close_raising_on((st.st_dev, st.st_ino))
+            before = self._open_descriptor_count()
+            with mock.patch.object(os, "close", hook):
+                status = wv.read_status(root, "WV-6", verify_git=False)
+            after = self._open_descriptor_count()
+        self.assertEqual(len(fired), 1, "a failed release is never retried")
+        self.assertEqual(status.state, "partial")
+        self.assertIn(
+            "artifact a/b/proof.bin descriptor could not be released: Input/output error",
+            status.findings,
+        )
+        self.assertEqual(before, after, "the child descriptor must not leak")
+
+
 class UnsupportedPlatformTests(unittest.TestCase):
     """Finding 2: the no-dir_fd fallback re-checked and re-read by pathname,
     and a root swap after the symlink check was accepted. There is no

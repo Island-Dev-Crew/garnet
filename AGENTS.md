@@ -150,7 +150,10 @@ inspect, and any symlink/FIFO/socket beside the evidence are named findings
 that keep the gate `partial`. The post-read identity (device, inode, size,
 mtime, ctime) is a change detector, not proof of byte immutability — an
 unprivileged same-inode writer (a shared writable `mmap` through a hard link)
-sits outside it. Any change
+sits outside it. A parent directory renamed or replaced *after* the reporter
+bound it is survived, not reported: the read continues in the bound directory
+and the replacement is never read for that file. Every descriptor release is
+named on failure and never retried. Any change
 to these invariants needs a red test in
 `scripts/test_garnet_wv_acceptance_status.py` first, and the cross-family
 review of the change must be able to reproduce the defect against the base.
