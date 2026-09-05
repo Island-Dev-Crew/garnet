@@ -137,6 +137,27 @@ Later reviewer records may ride above that boundary only through the proven
 U-35 record-class tolerance. This is U-57, demonstrated by
 `ops/gate-topology/evidence/11-third-merge-integration-red.txt`.
 
+The reporter reads evidence ONLY through a descriptor bound to the evidence
+directory (`O_DIRECTORY|O_NOFOLLOW`), binds every intermediate component of an
+artifact path the same way before touching the leaf, and reads each file once
+through the descriptor it checked. A platform without `dir_fd` support has no
+pathname fallback: the reporter states that acceptance is not available there
+and never accepts — acceptance runs on POSIX hosts over the committed Windows
+evidence. The byte rule for JSON evidence is strict UTF-8, no byte-order mark,
+LF-only; artifacts stay byte-opaque. Nothing is swallowed: an entry the
+inventory cannot inspect, a directory it cannot open, a descriptor it cannot
+inspect, and any symlink/FIFO/socket beside the evidence are named findings
+that keep the gate `partial`. The post-read identity (device, inode, size,
+mtime, ctime) is a change detector, not proof of byte immutability — an
+unprivileged same-inode writer (a shared writable `mmap` through a hard link)
+sits outside it. A parent directory renamed or replaced *after* the reporter
+bound it is survived, not reported: the read continues in the bound directory
+and the replacement is never read for that file. Every descriptor release is
+named on failure and never retried. Any change
+to these invariants needs a red test in
+`scripts/test_garnet_wv_acceptance_status.py` first, and the cross-family
+review of the change must be able to reproduce the defect against the base.
+
 ## Lane 0 Frozen Backlog
 
 `ops/lane0/frozen-backlog.json` is the machine authority for the Lane 0
