@@ -17,8 +17,9 @@ output on the current tree.
 The gate's `TRUST_KERNEL_PREFIXES` and `TRUST_KERNEL_FILES` constants are the
 machine authority. They cover the checker, interpreter, VM, stdlib registry,
 Wasm runner, the whole `garnet-cli/src/` tree, governance/readiness policy
-scripts and tests, GitHub workflows/actions/rulesets, every script that
-produces a required CI context, and the named public enforcement claims. The
+scripts and tests, GitHub workflows/actions/rulesets, every script named
+literally in a required-context workflow as its producer, and the named public
+enforcement claims. The
 constants are deliberately conservative: an extra review is safer than an
 unreviewed trust-spine change.
 
