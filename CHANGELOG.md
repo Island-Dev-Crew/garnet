@@ -18,14 +18,19 @@
   surface is the latest stone introduced at or before it on main's
   append-only first-parent history, and a landing before every stone is v1 —
   which is what the two pre-versioning markers (#514, #517) are. The ledger
-  directory is on the trust surface; stone history is append-only on main and
-  on every candidate edge, judged with renames disabled; a stone is
-  introduced by exactly one first-parent commit and no historical blob is
-  read. Inside every gate run the live label, the tuples the classifier uses
-  (the registered entry, not the alias constants) and the latest stone in the
+  directory is on the trust surface; an existing stone is append-only on main
+  and on every parent edge of every candidate commit, judged with renames
+  disabled (a stone the candidate itself lays may be authored across its own
+  commits); a stone is introduced by exactly one first-parent commit and no
+  historical blob is read; absence is only a verified empty listing and every
+  other lookup outcome is a finding. Each stone records `surface_sha256`, the
+  digest of its version's tuples. Inside every gate run the live label, the
+  tuples the classifier uses (the registered entry, not the alias constants),
+  that entry's digest against its stone, and the latest stone in the
   candidate tree must agree, and `--print-trust-surface` (never combined with
-  `--gate`) reports the same, so a copy that widens any of them without
-  laying its stone cannot run green. Six rejected designs are recorded in
+  `--gate`) reports the same, so a copy that widens any of them — even the
+  entry and the aliases together — without laying a new stone cannot run
+  green. Six rejected designs are recorded in
   the rolling-review contract — a declaration, a pin, a closed pin map, a
   regular expression, a parse and a seal comment, each reproduced against by
   the cross-family review; the last four read the landing's copy, and any

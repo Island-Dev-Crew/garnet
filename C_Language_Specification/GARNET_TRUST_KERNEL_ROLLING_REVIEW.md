@@ -61,9 +61,11 @@ nothing is bisected. Absence is a *verified* fact — a tree listing that
 succeeds and has no such entry — and every other outcome of a lookup, a
 listing failure or a timeout included, is a finding that resolves to the
 widest surface, never absence. Stone history must be append-only — a stone
-modified, deleted or moved on the line is a finding, and so is one on **every
-parent edge** of every candidate commit, merges and root commits included,
-because the ledger directory is itself on the trust surface. A stone records
+modified, deleted or moved on the line is a finding, and so is any change to
+an *existing* stone on **every parent edge** of every candidate commit, merges
+and root commits included, because the ledger directory is itself on the
+trust surface (a stone the candidate itself lays may still be authored across
+its own commits; it becomes immutable when it lands). A stone records
 `surface_sha256`, the digest of its version's exact tuples, so the registered
 entry cannot be widened in place either. A stone is exactly
 `eras/<vN>.era.json` at the root of that directory; any other entry there is

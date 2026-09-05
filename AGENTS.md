@@ -116,11 +116,16 @@ the rolling-review contract. The ledger directory is on the trust surface;
 stone history is append-only on main and on every candidate edge, judged with
 renames disabled; a declared marker `trust_surface` may only agree with the
 era in force; an explicit non-version value (including `null`) is a finding;
-a `merged_commit` registered twice is a finding; every failure resolves to the
-current (widest, therefore strictest) surface. Inside every gate run the live
-label, the tuples the classifier uses (the registered entry, not the alias
-constants) and the latest stone in the candidate tree must agree, so a copy
-that widens any of them without laying its stone cannot run green. To widen: add a `TRUST_SURFACES` version, bump
+a `merged_commit` registered twice is a finding; every failure — an unreadable ledger included — resolves to the
+current (widest, therefore strictest) surface, and absence is only ever a
+verified empty listing. Each stone records the digest of its version's
+tuples. Inside every gate run the live label, the tuples the classifier uses
+(the registered entry, not the alias constants), that entry's digest against
+its stone, and the latest stone in the candidate tree must agree, so a copy
+that widens any of them — even the entry and the aliases together — without
+laying a new stone cannot run green. Custody of an existing stone is checked
+on every parent edge of every candidate commit, merges included; a stone the
+candidate itself introduces may be authored across its own commits. To widen: add a `TRUST_SURFACES` version, bump
 `CURRENT_TRUST_SURFACE`, and lay the version's stone in the same change; then
 re-run `python3 -I scripts/test_garnet_trust_kernel_review_status.py`, which
 lands a v2 marker, lays a v3 stone and verifies the registry green.

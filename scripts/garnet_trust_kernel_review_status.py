@@ -1531,12 +1531,27 @@ def _era_stone_append_only_findings(
     base_commit: str,
     head_commit: str,
 ) -> list[str]:
-    """Reject era-stone mutation, removal or move on every candidate commit
-    edge (review v5, R559-v5-4): a candidate could otherwise land a poisoned
-    ledger that only the next main-history check would notice."""
+    """Reject mutation, removal or move of an EXISTING era stone on every
+    candidate commit edge (review v5, R559-v5-4): a candidate could otherwise
+    land a poisoned ledger that only the next main-history check would notice.
+
+    Existing means present at the base commit.  A stone the candidate itself
+    introduces is not yet history and may be authored across the candidate's
+    own commits; it becomes immutable the moment it lands.
+    """
     commits, graph_problems = _independent_commit_range(base_commit, head_commit, root)
     if graph_problems:
         return ["era stone history enumeration failed closed: " + p for p in graph_problems]
+    listed = _git_bytes(root, "ls-tree", "-z", "--name-only", f"{base_commit}:{ERA_STONE_DIR.rstrip('/')}")
+    if listed.timed_out:
+        return ["the era ledger could not be listed at the base commit"]
+    existing: set[bytes] = set()
+    if listed.returncode == 0:
+        existing = {ERA_STONE_DIR.encode() + name for name in listed.stdout.split(b"\0") if name}
+    else:
+        parent = _git_bytes(root, "ls-tree", "-z", "--", base_commit, ERA_STONE_DIR.rstrip("/"))
+        if parent.timed_out or parent.returncode != 0 or parent.stdout.strip(b"\0"):
+            return ["the era ledger could not be listed at the base commit"]
     findings: list[str] = []
     for commit in commits:
         parents = _git_bytes(root, "rev-list", "--parents", "-n", "1", commit)
@@ -1559,7 +1574,7 @@ def _era_stone_append_only_findings(
             if parent is None and fields and re.fullmatch(rb"[0-9a-f]{40}", fields[0] or b""):
                 fields = fields[1:]  # --root prefixes the commit id
             for status, path in zip(fields[0::2], fields[1::2]):
-                if status[:1] in (b"D", b"M", b"T"):
+                if status[:1] in (b"D", b"M", b"T") and path in existing:
                     findings.append(
                         "era stones are append-only: "
                         f"{status.decode('ascii', 'replace')} {path.decode('utf-8', 'replace')} "

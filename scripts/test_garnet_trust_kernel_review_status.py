@@ -2584,19 +2584,30 @@ class TrustSurfaceWideningTests(LandedMarkerTests):
         self.assertTrue(any("era stones are append-only: D" in item for item in findings), findings)
         self._git("checkout", "-q", "main")
 
-    def test_a_merge_that_discards_a_side_added_stone_is_red_on_its_second_parent_edge(self) -> None:
-        # Review v6 (R559-v6-2): an `ours` merge dropped a side-added stone;
-        # only first-parent edges were checked.
+    def test_second_parent_edges_protect_base_stones_and_a_side_added_stone_that_never_lands_is_out_of_scope(self) -> None:
+        # Review v6 (R559-v6-2) checked only first-parent edges. Every parent
+        # edge is diffed now — for stones that EXIST at the base. A base stone
+        # altered on a side branch and carried through a merge is red on the
+        # second-parent edge; a stone the side branch added and the merge
+        # discarded never lands and classifies nothing, so it is not a finding.
         self._git("checkout", "-q", "-b", "side", self.merged_commit)
+        self._write_stone("v2", pull=560)  # alter the BASE stone on the side
+        self._git("add", "-A"); self._git("commit", "-m", "side alters v2")
+        side = self._git("rev-parse", "HEAD")
+        self._git("checkout", "-q", "-b", "candidate", self.merged_commit)
+        self._git("merge", "-q", "--no-ff", "-m", "bring the side in", side)
+        head = self._git("rev-parse", "HEAD")
+        findings = mod._era_stone_append_only_findings(self.root, self.merged_commit, head)
+        self.assertTrue(any("era stones are append-only: M" in item and "v2.era.json" in item for item in findings), findings)
+        # the side-added-then-discarded stone
+        self._git("checkout", "-q", "-b", "side2", self.merged_commit)
         with mock.patch.dict(mod.TRUST_SURFACES, {"v3": self.WIDER}):
             self._write_stone("v3", pull=600)
         self._git("add", "-A"); self._git("commit", "-m", "side adds v3 stone")
-        side = self._git("rev-parse", "HEAD")
-        self._git("checkout", "-q", "-b", "candidate", self.merged_commit)
-        self._git("merge", "--no-ff", "-s", "ours", "-m", "discard the side stone", side)
-        head = self._git("rev-parse", "HEAD")
-        findings = mod._era_stone_append_only_findings(self.root, self.merged_commit, head)
-        self.assertTrue(any("era stones are append-only: D" in item and "against parent" in item for item in findings), findings)
+        side2 = self._git("rev-parse", "HEAD")
+        self._git("checkout", "-q", "-b", "candidate2", self.merged_commit)
+        self._git("merge", "-q", "--no-ff", "-s", "ours", "-m", "discard the side stone", side2)
+        self.assertEqual([], mod._era_stone_append_only_findings(self.root, self.merged_commit, self._git("rev-parse", "HEAD")))
         self._git("checkout", "-q", "main")
 
     def test_jointly_rebinding_the_entry_and_the_aliases_disagrees_with_the_stone(self) -> None:
@@ -2607,6 +2618,24 @@ class TrustSurfaceWideningTests(LandedMarkerTests):
         with mock.patch.dict(mod.TRUST_SURFACES, {"v2": wider}), mock.patch.object(mod, "TRUST_KERNEL_PREFIXES", wider[0]):
             findings = mod.verify_repository_landed_markers(self.root)
         self.assertTrue(any("does not match the surface digest its era stone records" in item for item in findings), findings)
+
+    def test_a_candidate_may_author_its_own_new_stone_across_commits(self) -> None:
+        # A stone the candidate introduces is not yet history: laying it and
+        # amending it in a later commit is not a custody finding; only a stone
+        # that exists at the base is immutable.
+        self._git("checkout", "-q", "-b", "widen", self.merged_commit)
+        with mock.patch.dict(mod.TRUST_SURFACES, {"v3": self.WIDER}):
+            self._write_stone("v3", pull=600)
+            self._git("add", "-A"); self._git("commit", "-m", "lay v3")
+            self._write_stone("v3", pull=601)
+            self._git("add", "-A"); self._git("commit", "-m", "amend v3")
+        head = self._git("rev-parse", "HEAD")
+        self.assertEqual([], mod._era_stone_append_only_findings(self.root, self.merged_commit, head))
+        self._write_stone("v2", pull=560)
+        self._git("add", "-A"); self._git("commit", "-m", "edit the base stone")
+        findings = mod._era_stone_append_only_findings(self.root, self.merged_commit, self._git("rev-parse", "HEAD"))
+        self.assertTrue(any("append-only: M" in item and "v2.era.json" in item for item in findings), findings)
+        self._git("checkout", "-q", "main")
 
     def test_print_trust_surface_never_combines_with_gate(self) -> None:
         # Review v5 (R559-v5-3): the diagnostic returned 0 before gate policy.
