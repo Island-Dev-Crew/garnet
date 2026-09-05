@@ -161,20 +161,33 @@ def evaluate_base_controlled_trust(
         problems.append("32-context candidate cannot retain a prepared optional context")
 
     rolling_problems = getattr(rolling_review, "problems", None)
-    rolling_ok = (
+    touched = getattr(rolling_review, "trust_kernel_touched", None)
+    boundary_ok = (
         getattr(rolling_review, "schema", None) == REVIEW_SCHEMA
         and getattr(rolling_review, "ok", None) is True
+        and getattr(rolling_review, "discovery_ok", None) is True
         and type(rolling_problems) is list
         and not rolling_problems
         and getattr(rolling_review, "base_commit", None) == base_commit
         and getattr(rolling_review, "head_commit", None) == candidate_commit
-        and type(getattr(rolling_review, "reviewed_head", None)) is str
+        and type(touched) is bool
+    )
+    record_ok = (
+        type(getattr(rolling_review, "reviewed_head", None)) is str
         and SHA_RE.fullmatch(getattr(rolling_review, "reviewed_head", "")) is not None
         and type(getattr(rolling_review, "reviewed_tree", None)) is str
         and SHA_RE.fullmatch(getattr(rolling_review, "reviewed_tree", "")) is not None
         and type(getattr(rolling_review, "content_digest", None)) is str
         and DIGEST_RE.fullmatch(getattr(rolling_review, "content_digest", "")) is not None
     )
+    untouched_ok = (
+        touched is False
+        and getattr(rolling_review, "touched_paths", None) == []
+        and getattr(rolling_review, "reviewed_head", None) is None
+        and getattr(rolling_review, "reviewed_tree", None) is None
+        and getattr(rolling_review, "content_digest", None) is None
+    )
+    rolling_ok = boundary_ok and ((touched is True and record_ok) or untouched_ok)
     if not rolling_ok:
         problems.append("rolling review v2 does not bind the exact base/candidate boundary")
         if type(rolling_problems) is list:

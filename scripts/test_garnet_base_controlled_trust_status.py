@@ -29,6 +29,7 @@ def load(name: str) -> object:
 
 status = load("garnet_base_controlled_trust_status")
 contract = status.contract
+BOUNDARY = "rolling review v2 does not bind the exact base/candidate boundary"
 
 
 class BaseControlledTrustTests(unittest.TestCase):
@@ -68,12 +69,32 @@ class BaseControlledTrustTests(unittest.TestCase):
         return SimpleNamespace(
             schema="garnet.trust_kernel_review/v2",
             ok=ok,
+            discovery_ok=True,
             base_commit="a" * 40,
             head_commit="b" * 40,
+            trust_kernel_touched=True,
+            touched_paths=["scripts/garnet_base_controlled_trust_status.py"],
             reviewed_head="b" * 40,
             reviewed_tree="c" * 40,
             content_digest="sha256:" + "d" * 64,
             problems=[] if ok else ["review enumeration failed"],
+        )
+
+    @staticmethod
+    def untouched_rolling() -> object:
+        """The exact shape read_status returns for a clean non-trust-kernel PR."""
+        return SimpleNamespace(
+            schema="garnet.trust_kernel_review/v2",
+            ok=True,
+            discovery_ok=True,
+            base_commit="a" * 40,
+            head_commit="b" * 40,
+            trust_kernel_touched=False,
+            touched_paths=[],
+            reviewed_head=None,
+            reviewed_tree=None,
+            content_digest=None,
+            problems=[],
         )
 
     def evaluate(
@@ -165,6 +186,97 @@ class BaseControlledTrustTests(unittest.TestCase):
             "protected workflow bytes",
         )
 
+    def test_clean_non_trust_kernel_candidate_binds_boundary_without_record(self) -> None:
+        # U-82: read_status computes the digest only when a trust-kernel path is
+        # touched and sets reviewed_head/reviewed_tree only from a loaded record,
+        # so a clean non-trust-kernel PR legitimately carries the None triple.
+        result = self.evaluate(rolling_review=self.untouched_rolling())
+        self.assertNotIn(BOUNDARY, result.problems)
+        self.assertTrue(result.rolling_review_ok, result.problems)
+        self.assertTrue(result.candidate_policy_ok, result.problems)
+        self.assertTrue(result.ok, result.problems)
+
+    def test_rolling_boundary_fails_closed_on_every_partial_shape(self) -> None:
+        touched_no_digest = self.rolling()
+        touched_no_digest.content_digest = None
+
+        untouched_with_head = self.untouched_rolling()
+        untouched_with_head.reviewed_head = "b" * 40
+        untouched_with_tree = self.untouched_rolling()
+        untouched_with_tree.reviewed_tree = "c" * 40
+        untouched_with_digest = self.untouched_rolling()
+        untouched_with_digest.content_digest = "sha256:" + "d" * 64
+        untouched_with_paths = self.untouched_rolling()
+        untouched_with_paths.touched_paths = ["deny.toml"]
+
+        missing_discovery = self.rolling()
+        del missing_discovery.discovery_ok
+        missing_touched = self.rolling()
+        del missing_touched.trust_kernel_touched
+        touched_not_bool = self.rolling()
+        touched_not_bool.trust_kernel_touched = 1
+
+        # The adapter's dependency-failure stub shape (no discovery_ok, no
+        # trust_kernel_touched, no touched_paths), once with its real ok=False
+        # and once with ok forced True so the missing fields alone must close it.
+        adapter_stub = SimpleNamespace(
+            schema=status.REVIEW_SCHEMA,
+            ok=False,
+            base_commit="a" * 40,
+            head_commit="b" * 40,
+            reviewed_head=None,
+            reviewed_tree=None,
+            content_digest=None,
+            problems=["Item 2 rolling-review adapter dependency failed: boom"],
+        )
+        adapter_stub_forced_ok = SimpleNamespace(
+            schema=status.REVIEW_SCHEMA,
+            ok=True,
+            base_commit="a" * 40,
+            head_commit="b" * 40,
+            reviewed_head=None,
+            reviewed_tree=None,
+            content_digest=None,
+            problems=[],
+        )
+        not_evaluated_stub = SimpleNamespace(
+            schema=status.REVIEW_SCHEMA, ok=False, problems=["candidate not evaluated"]
+        )
+
+        discovery_failed_touched = self.rolling()
+        discovery_failed_touched.discovery_ok = False
+        discovery_failed_untouched = self.untouched_rolling()
+        discovery_failed_untouched.discovery_ok = False
+
+        base_mismatch = self.rolling()
+        base_mismatch.base_commit = "f" * 40
+        head_mismatch = self.untouched_rolling()
+        head_mismatch.head_commit = "f" * 40
+
+        cases = {
+            "touched with None digest": touched_no_digest,
+            "untouched with reviewed_head": untouched_with_head,
+            "untouched with reviewed_tree": untouched_with_tree,
+            "untouched with content_digest": untouched_with_digest,
+            "untouched with non-empty touched_paths": untouched_with_paths,
+            "missing discovery_ok": missing_discovery,
+            "missing trust_kernel_touched": missing_touched,
+            "trust_kernel_touched not a bool": touched_not_bool,
+            "adapter dependency-failure stub": adapter_stub,
+            "adapter stub shape with ok forced True": adapter_stub_forced_ok,
+            "candidate-not-evaluated stub": not_evaluated_stub,
+            "discovery_ok False while touched": discovery_failed_touched,
+            "discovery_ok False while untouched": discovery_failed_untouched,
+            "base_commit mismatch": base_mismatch,
+            "head_commit mismatch": head_mismatch,
+        }
+        for name, review in cases.items():
+            with self.subTest(case=name):
+                result = self.evaluate(rolling_review=review)
+                self.assertFalse(result.rolling_review_ok)
+                self.assertIn(BOUNDARY, result.problems)
+                self.assert_red(result, BOUNDARY)
+
     def test_git_candidate_accepts_valid_workflows_across_adapter_loads(self) -> None:
         code, raw_head = status._git(ROOT, "rev-parse", "--verify", "HEAD^{commit}")
         self.assertEqual(code, 0)
@@ -172,8 +284,11 @@ class BaseControlledTrustTests(unittest.TestCase):
         rolling = SimpleNamespace(
             schema=status.REVIEW_SCHEMA,
             ok=True,
+            discovery_ok=True,
             base_commit=head,
             head_commit=head,
+            trust_kernel_touched=True,
+            touched_paths=["scripts/garnet_base_controlled_trust_status.py"],
             reviewed_head=head,
             reviewed_tree="c" * 40,
             content_digest="sha256:" + "d" * 64,
