@@ -105,7 +105,8 @@ class GitRepoFixture(unittest.TestCase):
     def _write_stone(self, version: str, pull: int = 559) -> str:
         path = self.root / mod.era_stone_path(version)
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_bytes(_canonical({"introduced_by_pull_request": pull, "schema": mod.ERA_STONE_SCHEMA, "version": version}))
+        digest = mod.surface_digest(version) if version in mod.TRUST_SURFACES else "0" * 64
+        path.write_bytes(_canonical({"introduced_by_pull_request": pull, "schema": mod.ERA_STONE_SCHEMA, "surface_sha256": digest, "version": version}))
         return mod.era_stone_path(version)
 
     def _git(self, *args: str, check: bool = True) -> str:
@@ -2295,13 +2296,16 @@ class TrustSurfaceVersionTests(unittest.TestCase):
             self.assertEqual(("v1", []), mod.trust_surface_at_commit(mod.ROOT, merged))
 
     def test_era_stone_shape_is_exact(self) -> None:
-        good = _canonical({"introduced_by_pull_request": 559, "schema": mod.ERA_STONE_SCHEMA, "version": "v2"})
+        digest = mod.surface_digest("v2")
+        good = _canonical({"introduced_by_pull_request": 559, "schema": mod.ERA_STONE_SCHEMA, "surface_sha256": digest, "version": "v2"})
         self.assertEqual([], mod.load_era_stone(good, "v2")[1])
         for label, payload, version in (
             ("wrong version", good, "v3"),
-            ("extra key", _canonical({"introduced_by_pull_request": 559, "schema": mod.ERA_STONE_SCHEMA, "version": "v2", "x": 1}), "v2"),
-            ("bad schema", _canonical({"introduced_by_pull_request": 559, "schema": "other", "version": "v2"}), "v2"),
-            ("no pull", _canonical({"introduced_by_pull_request": 0, "schema": mod.ERA_STONE_SCHEMA, "version": "v2"}), "v2"),
+            ("extra key", _canonical({"introduced_by_pull_request": 559, "schema": mod.ERA_STONE_SCHEMA, "surface_sha256": digest, "version": "v2", "x": 1}), "v2"),
+            ("bad schema", _canonical({"introduced_by_pull_request": 559, "schema": "other", "surface_sha256": digest, "version": "v2"}), "v2"),
+            ("no pull", _canonical({"introduced_by_pull_request": 0, "schema": mod.ERA_STONE_SCHEMA, "surface_sha256": digest, "version": "v2"}), "v2"),
+            ("no digest", _canonical({"introduced_by_pull_request": 559, "schema": mod.ERA_STONE_SCHEMA, "version": "v2"}), "v2"),
+            ("wrong digest", _canonical({"introduced_by_pull_request": 559, "schema": mod.ERA_STONE_SCHEMA, "surface_sha256": "0" * 64, "version": "v2"}), "v2"),
             ("noncanonical", good.replace(b"\n", b"\r\n"), "v2"),
         ):
             with self.subTest(label=label):
@@ -2415,6 +2419,45 @@ class MarkerTrustSurfaceDerivationTests(GitRepoFixture):
             self.assertEqual({}, stones)
             self.assertTrue(any("could not be read" in item for item in findings), findings)
             self.assertFalse(any("has no era stone" in item for item in findings), findings)
+
+    def test_a_failed_lookup_is_never_absence_at_the_git_boundary(self) -> None:
+        # Review v6 (R559-v6-1): rev-parse says the same thing for a missing
+        # path and a broken object. Absence is a verified empty listing; any
+        # other failure, listing failures and timeouts included, propagates.
+        landing = self._land()
+        real = mod._git_bytes
+        def failing(root, *args, **kwargs):
+            if "ls-tree" in args and any(str(a).startswith(mod.ERA_STONE_DIR) or str(a).endswith("eras") for a in args):
+                return mod.GitResult(returncode=128, stdout=b"", stderr=b"fatal: bad object", timed_out=False)
+            return real(root, *args, **kwargs)
+        with mock.patch.object(mod, "_git_bytes", failing):
+            stones, findings = mod.era_stones_in_tree(self.root, "HEAD")
+            self.assertEqual({}, stones)
+            self.assertTrue(any("could not be listed" in item for item in findings), findings)
+            self.assertFalse(any("has no era stone" in item for item in findings), findings)
+            name, era_findings = mod.trust_surface_at_commit(self.root, landing)
+            self.assertIsNone(name)
+        def timing_out(root, *args, **kwargs):
+            if "ls-tree" in args:
+                return mod.GitResult(returncode=0, stdout=b"", stderr=b"", timed_out=True)
+            return real(root, *args, **kwargs)
+        with mock.patch.object(mod, "_git_bytes", timing_out):
+            stones, findings = mod.era_stones_in_tree(self.root, "HEAD")
+            self.assertEqual({}, stones)
+            self.assertTrue(any("could not be listed" in item for item in findings), findings)
+
+    def test_a_directory_listing_failure_cannot_hide_clutter(self) -> None:
+        path = self.root / mod.ERA_STONE_DIR / "notes.txt"
+        path.write_bytes(b"clutter\n")
+        self._git("add", "-A"); self._git("commit", "-m", "clutter")
+        real = mod._git_bytes
+        def failing_listing(root, *args, **kwargs):
+            if "ls-tree" in args and "--name-only" in args:
+                return mod.GitResult(returncode=128, stdout=b"", stderr=b"", timed_out=False)
+            return real(root, *args, **kwargs)
+        with mock.patch.object(mod, "_git_bytes", failing_listing):
+            _, findings = mod.era_stones_in_tree(self.root, "HEAD")
+        self.assertTrue(any("could not be listed" in item for item in findings), findings)
 
     def test_only_exact_root_stones_count_and_anything_else_is_a_finding(self) -> None:
         for name in ("nested/v9.era.json", "v9.json", "notes.txt", "v2.era.json.bak"):
@@ -2540,6 +2583,30 @@ class TrustSurfaceWideningTests(LandedMarkerTests):
         findings = mod._era_stone_append_only_findings(self.root, self.merged_commit, self._git("rev-parse", "HEAD"))
         self.assertTrue(any("era stones are append-only: D" in item for item in findings), findings)
         self._git("checkout", "-q", "main")
+
+    def test_a_merge_that_discards_a_side_added_stone_is_red_on_its_second_parent_edge(self) -> None:
+        # Review v6 (R559-v6-2): an `ours` merge dropped a side-added stone;
+        # only first-parent edges were checked.
+        self._git("checkout", "-q", "-b", "side", self.merged_commit)
+        with mock.patch.dict(mod.TRUST_SURFACES, {"v3": self.WIDER}):
+            self._write_stone("v3", pull=600)
+        self._git("add", "-A"); self._git("commit", "-m", "side adds v3 stone")
+        side = self._git("rev-parse", "HEAD")
+        self._git("checkout", "-q", "-b", "candidate", self.merged_commit)
+        self._git("merge", "--no-ff", "-s", "ours", "-m", "discard the side stone", side)
+        head = self._git("rev-parse", "HEAD")
+        findings = mod._era_stone_append_only_findings(self.root, self.merged_commit, head)
+        self.assertTrue(any("era stones are append-only: D" in item and "against parent" in item for item in findings), findings)
+        self._git("checkout", "-q", "main")
+
+    def test_jointly_rebinding_the_entry_and_the_aliases_disagrees_with_the_stone(self) -> None:
+        # Review v6 (R559-v6-3): equality of two mutable values proved nothing;
+        # the stone records the entry's digest, and the live entry must match it.
+        self._register(self._marker())
+        wider = self.WIDER
+        with mock.patch.dict(mod.TRUST_SURFACES, {"v2": wider}), mock.patch.object(mod, "TRUST_KERNEL_PREFIXES", wider[0]):
+            findings = mod.verify_repository_landed_markers(self.root)
+        self.assertTrue(any("does not match the surface digest its era stone records" in item for item in findings), findings)
 
     def test_print_trust_surface_never_combines_with_gate(self) -> None:
         # Review v5 (R559-v5-3): the diagnostic returned 0 before gate policy.

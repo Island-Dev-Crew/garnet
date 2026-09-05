@@ -57,10 +57,15 @@ is append-only under the ruleset; a landing before every stone is v1 (that is
 what the two pre-versioning markers, PRs #514 and #517, are). A stone is
 introduced by exactly one `A` on the first-parent line, judged with renames
 disabled, and that commit is the boundary; no historical blob is read and
-nothing is bisected, so an unavailable object can never pass for absence.
-Stone history must be append-only — a stone modified, deleted or moved on the
-line is a finding, and so is one on any candidate commit edge, because the
-ledger directory is itself on the trust surface. A stone is exactly
+nothing is bisected. Absence is a *verified* fact — a tree listing that
+succeeds and has no such entry — and every other outcome of a lookup, a
+listing failure or a timeout included, is a finding that resolves to the
+widest surface, never absence. Stone history must be append-only — a stone
+modified, deleted or moved on the line is a finding, and so is one on **every
+parent edge** of every candidate commit, merges and root commits included,
+because the ledger directory is itself on the trust surface. A stone records
+`surface_sha256`, the digest of its version's exact tuples, so the registered
+entry cannot be widened in place either. A stone is exactly
 `eras/<vN>.era.json` at the root of that directory; any other entry there is
 a finding. Every registered version after v1 must have a stone, a stone for an
 unregistered version is a finding, and a marker may carry `trust_surface`
@@ -72,10 +77,12 @@ unreadable ledger included.
 The **runtime entry consistency boundary** runs inside every gate invocation:
 the surface label this process applies (`CURRENT_TRUST_SURFACE`, as bound at
 the entry point), the tuples its live classifier uses — which is the
-registered entry for that label, not the alias constants — and the latest era
-stone in the candidate tree must all agree, or the repository verification is
-red. A copy that widens any of them at its `__main__` block without laying its
-stone cannot run green. `--print-trust-surface` reports the same three facts
+registered entry for that label, not the alias constants — the identity of
+that entry against the digest its stone recorded, and the latest era stone in
+the candidate tree must all agree, or the repository verification is red. A
+copy that widens any of them at its `__main__` block — the label, the entry,
+the aliases, or all three together — without laying a new stone disagrees
+with a committed, append-only stone and cannot run green. `--print-trust-surface` reports the same three facts
 and is never combined with `--gate`. What no self-inspection can cover is a
 copy that rewrites the verifier itself; that is what review of a gate-script
 change is for.

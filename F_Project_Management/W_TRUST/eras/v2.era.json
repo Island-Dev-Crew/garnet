@@ -1,5 +1,6 @@
 {
   "introduced_by_pull_request": 559,
   "schema": "garnet.trust_surface_era/v1",
+  "surface_sha256": "74c5bd9215d68227a120fdeb38c5ccb78d359c977c5d2d7ca9238bbce760cd65",
   "version": "v2"
 }

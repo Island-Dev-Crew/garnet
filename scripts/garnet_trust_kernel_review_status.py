@@ -187,14 +187,28 @@ CURRENT_TRUST_SURFACE = "v2"
 # gate run the label this process applies, the tuples its classifier uses and
 # the latest stone in the candidate tree must agree (``live_surface_findings``),
 # so a copy that widens any of them without laying its stone cannot run green.
-# What no self-inspection can cover is a copy that rewrites the verifier
-# itself; that is what the review of a gate-script change is for.
+# Each stone records a digest of its version's tuples, so the registered entry
+# cannot be widened in place either — jointly rebinding the entry and the
+# aliases disagrees with the ledger.  What no self-inspection can cover is a
+# copy that rewrites the verifier itself; that is what the review of a
+# gate-script change is for.
 ERA_STONE_DIR = "F_Project_Management/W_TRUST/eras/"
 ERA_STONE_SUFFIX = ".era.json"
 ERA_STONE_SCHEMA = "garnet.trust_surface_era/v1"
-ERA_STONE_KEYS = frozenset({"introduced_by_pull_request", "schema", "version"})
+ERA_STONE_KEYS = frozenset({"introduced_by_pull_request", "schema", "surface_sha256", "version"})
 PRE_VERSIONING_TRUST_SURFACE = "v1"
 _VERSION_NAME = re.compile(r"^v[0-9]+$")
+
+
+def surface_digest(version: str) -> str:
+    """The identity of a registered surface: a digest of its exact tuples.
+    A stone records it at introduction, and every gate run compares the live
+    registered entry against the committed, append-only stone — so a copy
+    that rebinds the entry and the aliases together (review v6, R559-v6-3)
+    disagrees with the ledger rather than with itself."""
+    prefixes, files = TRUST_SURFACES[version]
+    payload = json.dumps([list(prefixes), list(files)], separators=(",", ":"), ensure_ascii=False)
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
 def era_stone_path(version: str) -> str:
@@ -221,6 +235,14 @@ def load_era_stone(payload: bytes, version: str) -> tuple[dict | None, list[str]
     pull = document.get("introduced_by_pull_request")
     if type(pull) is not int or pull <= 0:
         findings.append(f"era stone {version} does not name the pull request that introduced it")
+    digest = document.get("surface_sha256")
+    if not isinstance(digest, str) or re.fullmatch(r"[0-9a-f]{64}", digest) is None:
+        findings.append(f"era stone {version} does not carry a surface digest")
+    elif version in TRUST_SURFACES and digest != surface_digest(version):
+        findings.append(
+            f"the registered entry for {version} does not match the surface digest its era stone "
+            "records; the surface was widened without a new version"
+        )
     return (document if not findings else None), findings
 
 
@@ -228,15 +250,20 @@ _STONE_NAME = re.compile(r"^(v[0-9]+)\.era\.json$")
 
 
 def _blob_or_absent(root: Path, ref: str, path: str) -> tuple[bytes | None, bool, list[str]]:
-    """(payload, absent, problems): absence is only a verified missing path;
-    a timeout or a malformed lookup is unavailable bytes, never absence
-    (review v5, R559-v5-2)."""
-    payload, problems = _read_blob(root, ref, path)
-    if payload is not None:
-        return payload, False, []
-    if problems and all(item.startswith("path is missing at ") for item in problems):
+    """(payload, absent, problems).  Absence is a VERIFIED fact: the parent tree
+    listed successfully and has no such entry.  A listing or object failure of
+    any kind, a timeout included, is unavailable bytes and never absence
+    (review v6, R559-v6-1: ``rev-parse`` says the same thing for a missing
+    path and a broken object, so it cannot be the judge of absence)."""
+    listed = _git_bytes(root, "ls-tree", "-z", "--", ref, path)
+    if listed.timed_out or listed.returncode != 0:
+        return None, False, [f"{path} could not be listed at {ref}"]
+    if not listed.stdout.strip(b"\0"):
         return None, True, []
-    return None, False, [f"{path} could not be read at {ref}: " + "; ".join(problems)]
+    payload, problems = _read_blob(root, ref, path)
+    if payload is None:
+        return None, False, [f"{path} could not be read at {ref}: " + "; ".join(problems)]
+    return payload, False, []
 
 
 def era_stones_in_tree(root: Path, ref: str) -> tuple[dict[str, dict], list[str]]:
@@ -264,7 +291,17 @@ def era_stones_in_tree(root: Path, ref: str) -> tuple[dict[str, dict], list[str]
         if document is not None:
             stones[version] = document
     listing = _git_bytes(root, "ls-tree", "-z", "--name-only", f"{ref}:{ERA_STONE_DIR.rstrip('/')}")
-    if listing.returncode == 0:
+    if listing.timed_out:
+        findings.append(f"the era ledger could not be listed at {ref}: timed out")
+    elif listing.returncode != 0:
+        # The directory may legitimately not exist yet (a repository before
+        # its first stone).  Verify that, and treat anything else as failure.
+        parent = _git_bytes(root, "ls-tree", "-z", "--", ref, ERA_STONE_DIR.rstrip("/"))
+        if parent.timed_out or parent.returncode != 0:
+            findings.append(f"the era ledger could not be listed at {ref}")
+        elif parent.stdout.strip(b"\0"):
+            findings.append(f"the era ledger could not be listed at {ref}")
+    else:
         for raw in listing.stdout.split(b"\0"):
             if not raw:
                 continue
@@ -306,7 +343,10 @@ def era_boundaries(
     if edits.stdout.strip():
         return {}, ["era stone history is not append-only: a stone was modified, deleted or moved on first-parent history"]
     tip_stones, tip_findings = era_stones_in_tree(root, first_parent[0])
-    findings.extend(item for item in tip_findings if not item.startswith("registered trust surface"))
+    # Only a VERIFIED absence is tolerated here (a history before its first
+    # stone); a listing or read failure propagates and the caller resolves to
+    # the widest surface.
+    findings.extend(item for item in tip_findings if " has no era stone at " not in item)
     boundaries: dict[str, int] = {}
     for version in tip_stones:
         added = _git_bytes(
@@ -486,11 +526,14 @@ def is_trust_kernel(path: str) -> bool:
 def live_surface_findings(root: Path, ref: str) -> list[str]:
     """The runtime entry consistency boundary, evaluated inside every gate run.
 
-    Three things must agree: the surface label this process applies
+    Four things must agree: the surface label this process applies
     (``CURRENT_TRUST_SURFACE``), the latest era stone in the candidate tree,
-    and the tuples the live classifier uses, which must be the registered
-    entry for that label.  A copy that widens any of them at its entry point
-    without laying a stone cannot run green.
+    the tuples the live classifier uses, which must be the registered entry
+    for that label, and that entry's identity, which must match the surface
+    digest its stone recorded when the version was introduced.  A copy that
+    widens any of them at its entry point without laying a stone disagrees
+    with a committed, append-only stone and cannot run green.  What no
+    self-inspection covers is a copy that replaces the verifier itself.
     """
     findings: list[str] = []
     if CURRENT_TRUST_SURFACE not in TRUST_SURFACES:
@@ -1496,20 +1539,32 @@ def _era_stone_append_only_findings(
         return ["era stone history enumeration failed closed: " + p for p in graph_problems]
     findings: list[str] = []
     for commit in commits:
-        edge = _git_bytes(
-            root, "diff-tree", "-r", "--no-renames", "--name-status", "-z",
-            f"{commit}^", commit, "--", ERA_STONE_DIR,
-        )
-        if edge.returncode != 0 or edge.timed_out:
-            findings.append(f"era stone changes on {commit} could not be read")
+        parents = _git_bytes(root, "rev-list", "--parents", "-n", "1", commit)
+        if parents.returncode != 0 or parents.timed_out:
+            findings.append(f"the parents of {commit} could not be read")
             continue
-        fields = edge.stdout.split(b"\0")
-        for status, path in zip(fields[0::2], fields[1::2]):
-            if status[:1] in (b"D", b"M", b"T"):
-                findings.append(
-                    "era stones are append-only: "
-                    f"{status.decode('ascii', 'replace')} {path.decode('utf-8', 'replace')} on {commit}"
-                )
+        ids = parents.stdout.decode("ascii", errors="replace").split()
+        # Every parent edge of a merge is a candidate edge (review v6,
+        # R559-v6-2: an `ours` merge discarded a side-added stone on its
+        # second-parent edge unseen); a root commit is diffed against nothing.
+        edges = [(parent, commit) for parent in ids[1:]] or [(None, commit)]
+        for parent, child in edges:
+            args = ["diff-tree", "-r", "--no-renames", "--name-status", "-z"]
+            args += ["--root", child] if parent is None else [parent, child]
+            edge = _git_bytes(root, *args, "--", ERA_STONE_DIR)
+            if edge.returncode != 0 or edge.timed_out:
+                findings.append(f"era stone changes on {child} could not be read")
+                continue
+            fields = edge.stdout.split(b"\0")
+            if parent is None and fields and re.fullmatch(rb"[0-9a-f]{40}", fields[0] or b""):
+                fields = fields[1:]  # --root prefixes the commit id
+            for status, path in zip(fields[0::2], fields[1::2]):
+                if status[:1] in (b"D", b"M", b"T"):
+                    findings.append(
+                        "era stones are append-only: "
+                        f"{status.decode('ascii', 'replace')} {path.decode('utf-8', 'replace')} "
+                        f"on {child}" + (f" against parent {parent[:12]}" if parent else "")
+                    )
     return findings
 
 
