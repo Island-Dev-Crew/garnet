@@ -510,6 +510,103 @@ class PreMergeReviewRecordTests(GitRepoFixture):
             pull_request=77,
         )
 
+    def _verdict(self, **overrides: object) -> Path:
+        head = self._git("rev-parse", "HEAD")
+        value: dict[str, object] = {
+            "schema": "garnet.trust_kernel_review_eligibility_verdict/v1",
+            "ok": True,
+            "run_id": 17,
+            "run_attempt": 2,
+            "candidate_head": head,
+            "receipt_state": "approval_pending_only",
+            "receipt_finding_codes": ["approval-absent"],
+            "problems": [],
+            "carrier_id": 303,
+        }
+        value.update(overrides)
+        path = Path(self.temp.name) / "verdict.json"
+        path.write_bytes(_canonical(value))
+        return path
+
+    def test_status_reports_the_loaded_record_raw_sha256(self) -> None:
+        self._commit_record()
+        status = self._status()
+        self.assertTrue(status.ok, status.problems)
+        raw = (self.root / self.RECORD).read_bytes()
+        self.assertEqual(hashlib.sha256(raw).hexdigest(), status.review_record_sha256)
+        self.assertEqual(self.RECORD, status.review_record_path)
+
+    def test_record_bearing_attempt_two_requires_an_eligible_verdict(self) -> None:
+        self._commit_record()
+        status = self._status()
+        self.assertTrue(status.ok, status.problems)
+        red = mod.apply_attempt_policy(status, run_id=17, run_attempt=2, verdict_path=None)
+        self.assertFalse(red.ok)
+        self.assertTrue(any("eligibility verdict" in item for item in red.problems), red.problems)
+        self.assertTrue(status.ok, "the input status must not be mutated")
+        # Review v1 of #558 (F1): a valid verdict is CONSTRUCTED here but not
+        # AUTHORIZED. Until the activation act flips R2_ACTIVATION_AUTHORIZED
+        # — a gate change under Integrity Rule 1 — the reporter refuses
+        # attempt-2 acceptance by name, so "grants no eligibility" is a
+        # machine-enforced fact, not a description.
+        constructed = mod.apply_attempt_policy(status, run_id=17, run_attempt=2, verdict_path=self._verdict())
+        self.assertFalse(constructed.ok)
+        self.assertEqual([mod.R2_CONSTRUCTION_ONLY_PROBLEM], constructed.problems)
+        self.assertFalse(mod.R2_ACTIVATION_AUTHORIZED)
+        with mock.patch.object(mod, "R2_ACTIVATION_AUTHORIZED", True):
+            activated = mod.apply_attempt_policy(status, run_id=17, run_attempt=2, verdict_path=self._verdict())
+            self.assertTrue(activated.ok, activated.problems)
+            for label, overrides in (
+                ("carrier-missing", {"carrier_id": None}),
+                ("carrier-absent-key", {"carrier_id": mod._ABSENT}),
+                ("carrier-string", {"carrier_id": "303"}),
+                ("carrier-zero", {"carrier_id": 0}),
+                ("carrier-is-reviewer", {"carrier_id": 202}),
+            ):
+                with self.subTest(label=label):
+                    if overrides["carrier_id"] is mod._ABSENT:
+                        path = self._verdict(); import json as _json; value = _json.loads(path.read_bytes()); del value["carrier_id"]; path.write_bytes(_canonical(value))
+                    else:
+                        path = self._verdict(**overrides)
+                    result = mod.apply_attempt_policy(status, run_id=17, run_attempt=2, verdict_path=path)
+                    self.assertFalse(result.ok, label)
+                    self.assertIn(mod.ATTEMPT_CARRIER_PROBLEM, result.problems, label)
+        for label, overrides in (
+            ("not-ok", {"ok": False, "problems": ["artifact enumeration failed"]}),
+            ("wrong-run", {"run_id": 18}),
+            ("wrong-attempt", {"run_attempt": 1}),
+            ("wrong-head", {"candidate_head": "f" * 40}),
+            ("ineligible", {"receipt_state": "ineligible", "receipt_finding_codes": []}),
+            ("wrong-codes", {"receipt_finding_codes": ["approval-not-at-head"]}),
+            ("wrong-schema", {"schema": "garnet.other/v1"}),
+        ):
+            with self.subTest(label=label):
+                result = mod.apply_attempt_policy(
+                    status, run_id=17, run_attempt=2, verdict_path=self._verdict(**overrides)
+                )
+                self.assertFalse(result.ok, label)
+        missing = mod.apply_attempt_policy(
+            status, run_id=17, run_attempt=2, verdict_path=Path(self.temp.name) / "absent.json"
+        )
+        self.assertFalse(missing.ok)
+        noncanonical = Path(self.temp.name) / "noncanonical.json"
+        noncanonical.write_bytes(_canonical({"ok": True}).replace(b"\n", b"\r\n"))
+        self.assertFalse(
+            mod.apply_attempt_policy(status, run_id=17, run_attempt=2, verdict_path=noncanonical).ok
+        )
+
+    def test_attempt_one_and_attempt_three_policy(self) -> None:
+        self._commit_record()
+        status = self._status()
+        self.assertTrue(status.ok, status.problems)
+        first = mod.apply_attempt_policy(status, run_id=17, run_attempt=1, verdict_path=None)
+        self.assertTrue(first.ok, first.problems)
+        third = mod.apply_attempt_policy(status, run_id=17, run_attempt=3, verdict_path=self._verdict())
+        self.assertFalse(third.ok)
+        self.assertIn(mod.ATTEMPT_EXHAUSTED_PROBLEM, third.problems)
+        unbound = mod.apply_attempt_policy(status, run_id=None, run_attempt=None, verdict_path=None)
+        self.assertTrue(unbound.ok, unbound.problems)
+
     def test_exact_canonical_content_bound_record_passes(self) -> None:
         self._commit_record()
         status = self._status()
@@ -1999,11 +2096,91 @@ class CliTests(GitRepoFixture):
         )
         self.assertEqual(1, result.returncode, result.stdout)
 
+    def _main(self, *args: str) -> tuple[int, str]:
+        """Run the CLI in-process against the fixture repository, not the real worktree."""
+        stream = io.StringIO()
+        with contextlib.redirect_stdout(stream), contextlib.redirect_stderr(io.StringIO()):
+            code = mod.main(list(args), root=self.root)
+        return code, stream.getvalue()
+
+    def test_attempt_three_or_later_fails_closed_even_for_record_less_candidates(self) -> None:
+        for attempt in ("3", "4", "99"):
+            with self.subTest(attempt=attempt):
+                code, out = self._main("--gate", "--run-id", "17", "--run-attempt", attempt)
+                self.assertEqual(1, code, out)
+                self.assertIn(mod.ATTEMPT_EXHAUSTED_PROBLEM, out)
+
+    def test_attempt_two_record_less_candidate_passes_without_a_verdict(self) -> None:
+        for attempt in ("1", "2"):
+            with self.subTest(attempt=attempt):
+                code, out = self._main("--gate", "--run-id", "17", "--run-attempt", attempt)
+                self.assertEqual(0, code, out)
+
+    def test_run_id_and_run_attempt_are_bound_together_and_positive(self) -> None:
+        for args in (
+            ("--run-id", "17"),
+            ("--run-attempt", "1"),
+            ("--run-id", "0", "--run-attempt", "1"),
+            ("--run-id", "17", "--run-attempt", "0"),
+            ("--run-id", "17", "--run-attempt", "-1"),
+        ):
+            with self.subTest(args=args):
+                code, out = self._main("--gate", *args)
+                self.assertEqual(1, code, out)
+
+    def test_status_out_writes_exactly_the_printed_json(self) -> None:
+        target = self.root / "out" / "status.json"
+        code, out = self._main("--gate", "--status-out", str(target))
+        self.assertEqual(0, code, out)
+        self.assertEqual(target.read_bytes(), out.encode("utf-8"))
+        document = json.loads(target.read_text(encoding="utf-8"))
+        self.assertEqual(document["schema"], mod.SCHEMA)
+        self.assertIn("review_record_sha256", document)
+        red_code, red_out = self._main(
+            "--gate", "--run-id", "17", "--run-attempt", "3", "--status-out", str(target)
+        )
+        self.assertEqual(1, red_code)
+        self.assertEqual(target.read_bytes(), red_out.encode("utf-8"))
+        self.assertFalse(json.loads(target.read_text(encoding="utf-8"))["ok"])
+
 
 class RepositoryWiringTests(unittest.TestCase):
     def test_ci_injects_bounded_pull_request_review_transport(self) -> None:
         workflow = (mod.ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
-        self.assertIn("permissions:\n  contents: read\n  pull-requests: read", workflow)
+        # L1 act 2: the sole permission delta is `actions: read` so attempt 2 can
+        # authenticate and download the attempt-1 receipt; no CI write permission.
+        self.assertIn(
+            "permissions:\n  actions: read\n  contents: read\n  pull-requests: read\n",
+            workflow,
+        )
+        header = workflow.split("\njobs:\n", 1)[0]
+        self.assertNotIn("write", header.split("\npermissions:\n", 1)[1].split("\n\n", 1)[0])
+        self.assertNotIn(": write", workflow)
+        self.assertIn(
+            '--run-id "$REVIEW_RUN_ID" --run-attempt "$REVIEW_RUN_ATTEMPT" '
+            '--status-out "$RUNNER_TEMP/trust-kernel-review.json"',
+            workflow,
+        )
+        self.assertIn("REVIEW_RUN_ID: ${{ github.run_id }}", workflow)
+        self.assertIn("REVIEW_RUN_ATTEMPT: ${{ github.run_attempt }}", workflow)
+        self.assertIn('if [[ "$REVIEW_RUN_ATTEMPT" == "2" ]]; then', workflow)
+        self.assertIn("garnet_trust_kernel_review_eligibility.py verify", workflow)
+        self.assertIn('--eligibility-verdict "$RUNNER_TEMP/r2/verdict.json"', workflow)
+        self.assertIn("name: emit r2 eligibility receipt", workflow)
+        self.assertIn("name: upload r2 eligibility receipt", workflow)
+        self.assertEqual(
+            2,
+            workflow.count(
+                "if: always() && github.event_name == 'pull_request' && github.run_attempt == '1'"
+            ),
+        )
+        self.assertIn(
+            "uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f",
+            workflow.split("name: upload r2 eligibility receipt", 1)[1],
+        )
+        self.assertIn("name: r2-approval-pending-${{ github.run_id }}-attempt-1", workflow)
+        self.assertIn("if-no-files-found: ignore", workflow)
+        self.assertNotIn("overwrite:", workflow)
         self.assertIn(
             "ref: ${{ github.event.pull_request.head.sha || github.sha }}", workflow
         )

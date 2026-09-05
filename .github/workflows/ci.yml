@@ -14,7 +14,12 @@ on:
     branches: [main]
   workflow_dispatch: {}
 
+# L1 act 2 (U-59): `actions: read` is the sole permission delta. It lets CI
+# attempt 2 authenticate and download the attempt-1 eligibility receipt. No
+# CI job holds a write permission; the Actions-write rerun carrier is a
+# separate identity that never enters a job.
 permissions:
+  actions: read
   contents: read
   pull-requests: read
 
@@ -230,6 +235,14 @@ jobs:
       # transport. The reporter never reads an ambient credential. A main push has
       # no PR review to authenticate and proves the authoritative empty post-merge
       # diff instead.
+      #
+      # U-59 (L1 act 2): the reporter binds the run id and attempt. Attempt 2 of
+      # a record-bearing candidate first verifies the attempt-1 eligibility
+      # receipt (complete artifact enumeration, one-hop authenticated download,
+      # single-member ZIP, canonical receipt, live run/PR/base/head/tree/record
+      # equality) and hands the reporter that verdict; attempt 3 or later fails
+      # closed. The reporter also writes its status JSON so the always-run
+      # receipt step below can classify attempt-1 findings.
       - name: rolling trust-kernel review (pull request)
         if: github.event_name == 'pull_request'
         shell: bash
@@ -237,16 +250,69 @@ jobs:
           REVIEW_TOKEN: ${{ github.token }}
           REVIEW_REPO: ${{ github.repository }}
           REVIEW_PR: ${{ github.event.pull_request.number }}
+          REVIEW_RUN_ID: ${{ github.run_id }}
+          REVIEW_RUN_ATTEMPT: ${{ github.run_attempt }}
+          REVIEW_REPOSITORY_ID: ${{ github.repository_id }}
+          REVIEW_PR_ID: ${{ github.event.pull_request.id }}
+          REVIEW_BASE_REF: ${{ github.event.pull_request.base.ref }}
+          REVIEW_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          REVIEW_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          REVIEW_RUN_NUMBER: ${{ github.run_number }}
+          REVIEW_WORKFLOW_REF: ${{ github.workflow_ref }}
+          REVIEW_WORKFLOW_SHA: ${{ github.workflow_sha }}
         run: |
           set -euo pipefail
           set +x
           review_token="$REVIEW_TOKEN"
           unset REVIEW_TOKEN GH_TOKEN GITHUB_TOKEN GARNET_REVIEW_GITHUB_TOKEN GARNET_ADMIN_GITHUB_TOKEN
-          printf '%s' "$review_token" | python3 scripts/garnet_trust_kernel_review_status.py --gate --github-repo "$REVIEW_REPO" --github-pr "$REVIEW_PR" --github-token-stdin
+          # `${arr[@]+"${arr[@]}"}` is the portable empty-array expansion: a bare
+          # `"${arr[@]}"` on an empty array aborts under `set -u` in bash 3.2.
+          verdict_args=()
+          if [[ "$REVIEW_RUN_ATTEMPT" == "2" ]]; then
+            printf '%s' "$review_token" | python3 scripts/garnet_trust_kernel_review_eligibility.py verify --github-repo "$REVIEW_REPO" --github-token-stdin --repository-id "$REVIEW_REPOSITORY_ID" --pull-request-id "$REVIEW_PR_ID" --pull-request-number "$REVIEW_PR" --base-ref "$REVIEW_BASE_REF" --base-sha "$REVIEW_BASE_SHA" --head-sha "$REVIEW_HEAD_SHA" --run-id "$REVIEW_RUN_ID" --run-number "$REVIEW_RUN_NUMBER" --run-attempt "$REVIEW_RUN_ATTEMPT" --workflow-ref "$REVIEW_WORKFLOW_REF" --workflow-sha "$REVIEW_WORKFLOW_SHA" --verdict-out "$RUNNER_TEMP/r2/verdict.json"
+            verdict_args=(--eligibility-verdict "$RUNNER_TEMP/r2/verdict.json")
+          fi
+          printf '%s' "$review_token" | python3 scripts/garnet_trust_kernel_review_status.py --gate --github-repo "$REVIEW_REPO" --github-pr "$REVIEW_PR" --github-token-stdin --run-id "$REVIEW_RUN_ID" --run-attempt "$REVIEW_RUN_ATTEMPT" --status-out "$RUNNER_TEMP/trust-kernel-review.json" ${verdict_args[@]+"${verdict_args[@]}"}
           unset review_token
       - name: rolling trust-kernel review (non-pull-request)
         if: github.event_name != 'pull_request'
         run: python3 scripts/garnet_trust_kernel_review_status.py --gate
+      # U-59 attempt-1 receipt: emitted for every attempt-1 outcome of a
+      # record-bearing candidate (always(), so a RED reporter still yields an
+      # `ineligible` receipt); a record-less candidate emits nothing and the
+      # upload below then has no file. Attempt 2 never re-emits or overwrites.
+      - name: emit r2 eligibility receipt
+        if: always() && github.event_name == 'pull_request' && github.run_attempt == '1'
+        shell: bash
+        env:
+          REVIEW_TOKEN: ${{ github.token }}
+          REVIEW_REPO: ${{ github.repository }}
+          REVIEW_PR: ${{ github.event.pull_request.number }}
+          REVIEW_RUN_ID: ${{ github.run_id }}
+          REVIEW_RUN_ATTEMPT: ${{ github.run_attempt }}
+          REVIEW_REPOSITORY_ID: ${{ github.repository_id }}
+          REVIEW_PR_ID: ${{ github.event.pull_request.id }}
+          REVIEW_BASE_REF: ${{ github.event.pull_request.base.ref }}
+          REVIEW_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          REVIEW_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          REVIEW_RUN_NUMBER: ${{ github.run_number }}
+          REVIEW_WORKFLOW_REF: ${{ github.workflow_ref }}
+          REVIEW_WORKFLOW_SHA: ${{ github.workflow_sha }}
+        run: |
+          set -euo pipefail
+          set +x
+          review_token="$REVIEW_TOKEN"
+          unset REVIEW_TOKEN GH_TOKEN GITHUB_TOKEN GARNET_REVIEW_GITHUB_TOKEN GARNET_ADMIN_GITHUB_TOKEN
+          printf '%s' "$review_token" | python3 scripts/garnet_trust_kernel_review_eligibility.py emit --status "$RUNNER_TEMP/trust-kernel-review.json" --output "$RUNNER_TEMP/r2/eligibility.json" --github-repo "$REVIEW_REPO" --github-token-stdin --repository-id "$REVIEW_REPOSITORY_ID" --pull-request-id "$REVIEW_PR_ID" --pull-request-number "$REVIEW_PR" --base-ref "$REVIEW_BASE_REF" --base-sha "$REVIEW_BASE_SHA" --head-sha "$REVIEW_HEAD_SHA" --run-id "$REVIEW_RUN_ID" --run-number "$REVIEW_RUN_NUMBER" --run-attempt "$REVIEW_RUN_ATTEMPT" --workflow-ref "$REVIEW_WORKFLOW_REF" --workflow-sha "$REVIEW_WORKFLOW_SHA"
+          unset review_token
+      - name: upload r2 eligibility receipt
+        if: always() && github.event_name == 'pull_request' && github.run_attempt == '1'
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: r2-approval-pending-${{ github.run_id }}-attempt-1
+          path: ${{ runner.temp }}/r2/eligibility.json
+          if-no-files-found: ignore
+          retention-days: 90
 
   # ───────────────────────────────────────────────────────────────────
   # Format check — fast, runs once on Linux. A failure here is the
