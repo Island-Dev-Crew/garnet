@@ -28,7 +28,8 @@
   tuples the classifier uses (the registered entry, not the alias constants),
   that entry's digest against its stone, and the latest stone in the
   candidate tree must agree, and `--print-trust-surface` (never combined with
-  `--gate`) reports the same, so a copy that widens any of them — even the
+  `--gate`) prints the live label, the latest stone and the live-consistency
+  findings, so a copy that widens any of them — even the
   entry and the aliases together — without laying a new stone cannot run
   green. Six rejected designs are recorded in
   the rolling-review contract — a declaration, a pin, a closed pin map, a

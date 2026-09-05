@@ -84,8 +84,9 @@ that entry against the digest its stone recorded, and the latest era stone in
 the candidate tree must all agree, or the repository verification is red. A
 copy that widens any of them at its `__main__` block — the label, the entry,
 the aliases, or all three together — without laying a new stone disagrees
-with a committed, append-only stone and cannot run green. `--print-trust-surface` reports the same three facts
-and is never combined with `--gate`. What no self-inspection can cover is a
+with a committed, append-only stone and cannot run green. `--print-trust-surface` prints the live label, the latest stone and the
+live-consistency findings (the tuple and digest comparisons surface there as
+findings, not as values) and is never combined with `--gate`. What no self-inspection can cover is a
 copy that rewrites the verifier itself; that is what review of a gate-script
 change is for.
 

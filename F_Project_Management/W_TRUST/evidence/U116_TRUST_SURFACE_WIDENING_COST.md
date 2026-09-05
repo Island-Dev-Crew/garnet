@@ -4,7 +4,7 @@ Measured at base `452a0e211f3dcaf2cff557e108e79f8f9e67b288` (main after #551) wi
 
 ## What v2 adds over v1
 
-Prefixes added: `garnet-cli/src/`, `scripts/smoke_garnet_`
+Prefixes added: `F_Project_Management/W_TRUST/eras/`, `garnet-cli/src/`, `scripts/smoke_garnet_`
 
 Files added: `scripts/check-agent-contracts.py`, `scripts/check_determinism_no_llm.py`, `scripts/check_dogfood_pr_body.py`, `scripts/package_garnet_studio_macos.sh`, `scripts/package_garnet_vscode_extension.sh`, `scripts/preflight_garnet_studio_notarization.sh`, `scripts/run_agentic_dogfood_matrix.py`, `scripts/smoke_garnet_studio_dmg.sh`, `scripts/smoke_garnet_web_pwa.sh`, `scripts/test_check_agent_contracts.py`, `scripts/test_check_determinism_no_llm.py`, `scripts/test_check_dogfood_pr_body.py`, `scripts/test_github_actions_node24_readiness.py`, `scripts/test_smoke_garnet_pages_pwa.py`
 
