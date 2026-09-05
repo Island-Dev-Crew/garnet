@@ -1,5 +1,43 @@
 # Changelog
 
+## Unreleased — WV acceptance reporter reads evidence once, by descriptor (2026-09-04)
+
+- **Cured crown finding D-2 in `scripts/garnet_wv_acceptance_status.py`:** the
+  reporter checked evidence, stat'ed it, then reopened it by path, and read it
+  in text mode with universal-newline translation — a CRLF manifest reached
+  `accepted`, and a deterministic check/use swap redirected the manifest read.
+  Every JSON evidence file is now read once through a descriptor bound to
+  what was checked; the byte rule rejects a byte-order mark, any carriage
+  return (with its offset) and non-UTF-8 bytes by name. Artifacts get the
+  same descriptor discipline and keep byte opacity: no CRLF or BOM rule
+  applies to them, because native-Windows evidence legitimately contains
+  CRLF and the contract states no such requirement.
+- **The evidence directory and every path beneath it are bound, not named:**
+  the destination is opened once with `O_DIRECTORY|O_NOFOLLOW` and every
+  read is relative to that descriptor; each intermediate component of an
+  artifact path is opened the same way before the leaf is touched, because
+  `O_NOFOLLOW` protects only the last component (the cross-family review of
+  this change reproduced an accepted nested-parent swap against the earlier
+  head). A platform without `dir_fd` support has NO pathname fallback: the
+  reporter reports `evidence identity cannot be bound on this platform` and
+  never accepts there — the review reproduced an accepted root swap against
+  the fallback. Acceptance therefore runs on POSIX hosts; the committed
+  Windows evidence is judged there.
+- **Nothing is swallowed:** an inventory entry that cannot be inspected, a
+  directory that cannot be opened, and a descriptor that cannot be
+  inspected are each a named finding that keeps the gate `partial`; a
+  symlink, FIFO or socket beside the evidence is a finding, not a skip. The
+  open carries `O_NONBLOCK` so a FIFO substituted between the check and the
+  open cannot park the gate. The post-read identity now includes `ctime`,
+  which catches a same-length rewrite through a hard link with `mtime`
+  restored and a rename-over during the read; it is a change detector, not
+  proof of byte immutability, and the reporter's docstring says exactly
+  that.
+- **WV-6 is unchanged in judgment:** `state partial`, the same findings; the
+  reporter JSON over the real evidence is byte-identical for the base and the
+  cured reporter on the same tree. Across commits only the product-digest
+  finding's current-tree hash differs, as it does for every candidate.
+
 ## Unreleased — gate hardening: dogfood PR-body checker section boundary, exact headings, evidence tokens (2026-09-02)
 
 ### `scripts/check_dogfood_pr_body.py` — crown D-1, hardening H3-01, crown D-N4 cured

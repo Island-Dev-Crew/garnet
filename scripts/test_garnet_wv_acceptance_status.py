@@ -10,6 +10,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import threading
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -108,7 +109,9 @@ def _swap_after_fstat(identity: tuple[int, int], replacement: Path, destination:
     return fstat_then_swap, fired
 
 
-class GarnetWvAcceptanceStatusTests(unittest.TestCase):
+class ContractTests(unittest.TestCase):
+    """No evidence I/O: these run on every platform."""
+
     def test_contracts_keep_established_meanings(self) -> None:
         contracts = wv.load_contracts(ROOT)
         self.assertEqual(
@@ -122,6 +125,25 @@ class GarnetWvAcceptanceStatusTests(unittest.TestCase):
         )
         self.assertIn("winget", contracts["WV-7"]["title"].lower())
         self.assertIn("Docker", contracts["WV-7"]["title"])
+
+    def test_invalid_review_provenance_cannot_self_promote(self) -> None:
+        findings, _ = wv._verify_squash_durable_content(
+            ROOT,
+            reviewed_head="not-a-sha",
+            reviewed_tree="also-not-a-tree",
+            expected_content_digest="not-a-digest",
+            verify_git=False,
+        )
+        self.assertTrue(any("reviewed head provenance" in item for item in findings))
+        self.assertTrue(any("reviewed tree provenance" in item for item in findings))
+        self.assertTrue(any("product content digest" in item for item in findings))
+
+
+@unittest.skipUnless(wv.DIR_FD_SUPPORTED, "evidence acceptance requires dir_fd (POSIX)")
+class GarnetWvAcceptanceStatusTests(unittest.TestCase):
+    """Every test here reads evidence, which the reporter does only through a
+    bound directory descriptor; a platform without ``dir_fd`` never accepts
+    (see UnsupportedPlatformTests) and skips these."""
 
     def test_current_repository_tracks_wv6_acceptance_and_wv7_pending(self) -> None:
         expectations = {
@@ -307,18 +329,6 @@ class GarnetWvAcceptanceStatusTests(unittest.TestCase):
         self.assertTrue(any("required check" in item for item in status.findings))
         self.assertTrue(any("SHA-256" in item for item in status.findings))
 
-    def test_invalid_review_provenance_cannot_self_promote(self) -> None:
-        findings, _ = wv._verify_squash_durable_content(
-            ROOT,
-            reviewed_head="not-a-sha",
-            reviewed_tree="also-not-a-tree",
-            expected_content_digest="not-a-digest",
-            verify_git=False,
-        )
-        self.assertTrue(any("reviewed head provenance" in item for item in findings))
-        self.assertTrue(any("reviewed tree provenance" in item for item in findings))
-        self.assertTrue(any("product content digest" in item for item in findings))
-
     # Crown ceremony, scope D, bound to beeb5e7b: the reporter accepted a CRLF
     # manifest (wv_crlf_manifest: state=accepted) and re-opened evidence by
     # path after checking it (wv_check_use_swap: accepted_source=outside).
@@ -423,15 +433,15 @@ class GarnetWvAcceptanceStatusTests(unittest.TestCase):
                 status = wv.read_status(root, "WV-6", verify_git=False)
             # The path now carries the accepting bytes...
             self.assertEqual(manifest_path.read_bytes(), _manifest_bytes(manifest))
-        # ...but the reporter judged the descriptor it checked.
+        # ...and the reporter, holding the descriptor it checked, sees the
+        # rename-over itself: unlinking the held inode moves its ctime, which
+        # is part of the post-read identity since review finding 5. The swap
+        # is a finding in its own right, not merely survived.
         self.assertEqual(len(fired), 1)
         self.assertNotEqual(status.state, "accepted")
         self.assertFalse(status.ok)
-        self.assertIn(
-            "evidence manifest state must be evidence_complete", status.findings
-        )
-        self.assertFalse(
-            any("changed" in item for item in status.findings), status.findings
+        self.assertEqual(
+            status.findings, [f"{manifest_path} changed while being read"]
         )
 
     def test_artifact_swapped_after_its_check_is_never_accepted(self) -> None:
@@ -479,14 +489,240 @@ class GarnetWvAcceptanceStatusTests(unittest.TestCase):
             with mock.patch.object(os, "fstat", hook):
                 status = wv.read_status(root, "WV-6", verify_git=False)
             self.assertEqual(inside.read_bytes(), listed)
+        # The rename-over is detected outright (ctime moves when the held
+        # inode is unlinked), so the tampered bytes are never even hashed.
         self.assertEqual(len(fired), 1)
         self.assertNotEqual(status.state, "accepted")
         self.assertFalse(status.ok)
-        self.assertIn(f"artifact {target} SHA-256 does not match", status.findings)
+        self.assertIn(f"artifact {target} changed while being read", status.findings)
         self.assertFalse(
-            any("changed" in item for item in status.findings), status.findings
+            any("SHA-256" in item for item in status.findings), status.findings
         )
 
+
+    # Review v1 of this change (Codex): seven findings, each reproduced below
+    # from the reviewer's own probe. None may reach "accepted".
+
+    def test_nested_artifact_parent_swap_is_never_accepted(self) -> None:
+        """Finding 1: O_NOFOLLOW protects only the LAST component. With
+        `nested/` swapped for a symlink to an outside directory during the
+        leaf's check and open, then restored before the inventory, outside
+        bytes with the listed hash were accepted."""
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            evidence, manifest = _complete_evidence(root)
+            good = b"the bytes the manifest lists\n"
+            nested = evidence / "nested"
+            nested.mkdir()
+            (nested / "proof.bin").write_bytes(b"wrong inside bytes\n")
+            manifest["artifacts"].append(
+                {"path": "nested/proof.bin", "sha256": hashlib.sha256(good).hexdigest()}
+            )
+            (evidence / wv.EVIDENCE_MANIFEST).write_bytes(_manifest_bytes(manifest))
+            outside = root / "outside"
+            outside.mkdir()
+            (outside / "proof.bin").write_bytes(good)
+            moved = root / "moved"
+            nested.rename(moved)
+            nested.symlink_to(outside, target_is_directory=True)
+            outside_identity = os.lstat(outside / "proof.bin")
+            real_fstat = os.fstat
+            restored: list[int] = []
+
+            def fstat_then_restore_parent(fd):
+                result = real_fstat(fd)
+                if not restored and (result.st_dev, result.st_ino) == (
+                    outside_identity.st_dev,
+                    outside_identity.st_ino,
+                ):
+                    nested.unlink()
+                    moved.rename(nested)
+                    restored.append(fd)
+                return result
+
+            with mock.patch.object(os, "fstat", fstat_then_restore_parent):
+                status = wv.read_status(root, "WV-6", verify_git=False)
+            if nested.is_symlink():
+                nested.unlink()
+                moved.rename(nested)
+        self.assertNotEqual(status.state, "accepted")
+        self.assertFalse(status.ok)
+        self.assertTrue(
+            any(
+                item.startswith(
+                    "artifact nested/proof.bin parent 'nested' is not a bound directory"
+                )
+                for item in status.findings
+            ),
+            status.findings,
+        )
+
+    def test_unreadable_evidence_subtree_is_a_finding_not_empty(self) -> None:
+        """Finding 3: an inventory error was swallowed, so an unreadable
+        subtree counted as empty and an unlisted file stopped mattering."""
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            evidence, manifest = _complete_evidence(root)
+            (evidence / wv.EVIDENCE_MANIFEST).write_bytes(_manifest_bytes(manifest))
+            (evidence / "unlisted").mkdir()
+            (evidence / "unlisted" / "extra.txt").write_bytes(b"not in the manifest\n")
+            control = wv.read_status(root, "WV-6", verify_git=False)
+            self.assertIn(
+                "evidence directory files do not exactly match the manifest",
+                control.findings,
+            )
+            real_open = os.open
+
+            def open_denying_unlisted(path, flags, *args, **kwargs):
+                if os.fsdecode(path) == "unlisted" and kwargs.get("dir_fd") is not None:
+                    raise PermissionError(13, "Permission denied")
+                return real_open(path, flags, *args, **kwargs)
+
+            with mock.patch.object(os, "open", open_denying_unlisted):
+                status = wv.read_status(root, "WV-6", verify_git=False)
+        self.assertNotEqual(status.state, "accepted")
+        self.assertFalse(status.ok)
+        self.assertIn(
+            "evidence inventory could not read unlisted: Permission denied",
+            status.findings,
+        )
+
+    def test_descriptor_inspection_failure_is_a_named_finding(self) -> None:
+        """Finding 3, second half: an fstat failure escaped as a raw OSError."""
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            evidence, manifest = _complete_evidence(root)
+            manifest_path = evidence / wv.EVIDENCE_MANIFEST
+            manifest_path.write_bytes(_manifest_bytes(manifest))
+            before = os.lstat(manifest_path)
+            real_fstat = os.fstat
+
+            def failing_fstat(fd):
+                result = real_fstat(fd)
+                if (result.st_dev, result.st_ino) == (before.st_dev, before.st_ino):
+                    raise OSError(5, "Input/output error")
+                return result
+
+            with mock.patch.object(os, "fstat", failing_fstat):
+                status = wv.read_status(root, "WV-6", verify_git=False)
+        self.assertNotEqual(status.state, "accepted")
+        self.assertIn(
+            f"{manifest_path} could not be inspected: Input/output error",
+            status.findings,
+        )
+
+    @unittest.skipUnless(hasattr(os, "mkfifo"), "no FIFOs on this platform")
+    def test_fifo_swapped_after_the_check_is_rejected_without_blocking(self) -> None:
+        """Finding 4: a blocking open of a substituted FIFO waited for a
+        writer forever and never reached the descriptor type check."""
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            evidence, manifest = _complete_evidence(root)
+            manifest_path = evidence / wv.EVIDENCE_MANIFEST
+            manifest_path.write_bytes(_manifest_bytes(manifest))
+            fifo = root / "fifo"
+            os.mkfifo(fifo)
+            hook, fired = _swap_after_lstat(wv.EVIDENCE_MANIFEST, fifo, manifest_path)
+            result: list[object] = []
+
+            def run() -> None:
+                with mock.patch.object(os, "lstat", hook):
+                    result.append(wv.read_status(root, "WV-6", verify_git=False))
+
+            worker = threading.Thread(target=run, daemon=True)
+            worker.start()
+            worker.join(10)
+            self.assertFalse(
+                worker.is_alive(), "the open of a substituted FIFO must not block"
+            )
+        status = result[0]
+        self.assertEqual(fired, [wv.EVIDENCE_MANIFEST])
+        self.assertNotEqual(status.state, "accepted")
+        self.assertIn(
+            f"{manifest_path} identity changed between check and open",
+            status.findings,
+        )
+
+    @unittest.skipIf(os.name == "nt", "hard links and utime differ on Windows")
+    def test_same_length_rewrite_through_an_alias_is_detected(self) -> None:
+        """Finding 5: dev/ino/size/mtime equality was sold as byte
+        immutability. A same-length rewrite through a hard link with mtime
+        restored passed every one of those and changed the judged bytes."""
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            evidence, manifest = _complete_evidence(root)
+            manifest_path = evidence / wv.EVIDENCE_MANIFEST
+            accepting = _manifest_bytes(manifest)
+            rejecting = accepting.replace(b'"evidence_complete"', b'"evidence_COMPLETE"')
+            self.assertEqual(len(accepting), len(rejecting))
+            manifest_path.write_bytes(rejecting)
+            alias = root / "alias"
+            os.link(manifest_path, alias)
+            before = os.lstat(manifest_path)
+            real_fstat = os.fstat
+            fired: list[int] = []
+
+            def fstat_then_rewrite(fd):
+                result = real_fstat(fd)
+                if not fired and (result.st_dev, result.st_ino) == (
+                    before.st_dev,
+                    before.st_ino,
+                ):
+                    with open(alias, "r+b") as handle:
+                        handle.write(accepting)
+                    os.utime(alias, ns=(before.st_atime_ns, before.st_mtime_ns))
+                    fired.append(fd)
+                return result
+
+            with mock.patch.object(os, "fstat", fstat_then_rewrite):
+                status = wv.read_status(root, "WV-6", verify_git=False)
+        self.assertEqual(len(fired), 1)
+        self.assertNotEqual(status.state, "accepted")
+        self.assertIn(f"{manifest_path} changed while being read", status.findings)
+
+    @unittest.skipUnless(hasattr(os, "mkfifo"), "no FIFOs on this platform")
+    def test_non_regular_entries_in_the_evidence_directory_are_findings(self) -> None:
+        """A symlink or a FIFO beside the evidence was silently left out of the
+        inventory; an entry the manifest cannot describe is a finding."""
+        for kind in ("symlink", "fifo"):
+            with self.subTest(kind=kind), tempfile.TemporaryDirectory() as td:
+                root = Path(td)
+                evidence, manifest = _complete_evidence(root)
+                (evidence / wv.EVIDENCE_MANIFEST).write_bytes(_manifest_bytes(manifest))
+                if kind == "symlink":
+                    (evidence / "stray").symlink_to(evidence / "nothing.txt")
+                else:
+                    os.mkfifo(evidence / "stray")
+                status = wv.read_status(root, "WV-6", verify_git=False)
+                self.assertNotEqual(status.state, "accepted")
+                self.assertIn(
+                    "evidence directory contains a non-regular entry stray",
+                    status.findings,
+                )
+
+
+class UnsupportedPlatformTests(unittest.TestCase):
+    """Finding 2: the no-dir_fd fallback re-checked and re-read by pathname,
+    and a root swap after the symlink check was accepted. There is no
+    fallback now: a platform that cannot bind the evidence directory says so
+    and never accepts."""
+
+    def test_platform_without_dir_fd_never_accepts(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            evidence, manifest = _complete_evidence(root)
+            (evidence / wv.EVIDENCE_MANIFEST).write_bytes(_manifest_bytes(manifest))
+            with mock.patch.object(wv, "DIR_FD_SUPPORTED", False):
+                status = wv.read_status(root, "WV-6", verify_git=False)
+        self.assertEqual(status.state, "partial")
+        self.assertFalse(status.ok)
+        self.assertEqual(
+            status.findings,
+            [
+                "evidence identity cannot be bound on this platform "
+                "(no dir_fd support); acceptance is not available here"
+            ],
+        )
 
 
 @unittest.skipUnless(wv.DIR_FD_SUPPORTED, "platform has no dir_fd support")

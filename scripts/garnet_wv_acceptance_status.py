@@ -123,19 +123,15 @@ def open_evidence_root(path: Path) -> tuple[int | None, str]:
     destination (which stays ``pending``, as before) from a destination that
     exists but cannot be bound (which is a finding), so binding does not change
     the reporter's state vocabulary. ``unsupported`` means the platform has no
-    ``dir_fd`` support; the caller then falls back to the pathname checks and
-    the ancestor-swap bound stands on that platform.
+    ``dir_fd`` support; there is no pathname fallback, because a pathname
+    fallback cannot deliver this bound (review finding 2 reproduced the root
+    swap against it), so the caller reports that acceptance is not available
+    on that platform.
     """
     if not DIR_FD_SUPPORTED:
         return None, "unsupported"
-    flags = (
-        os.O_RDONLY
-        | os.O_DIRECTORY
-        | getattr(os, "O_CLOEXEC", 0)
-        | getattr(os, "O_NOFOLLOW", 0)
-    )
     try:
-        descriptor = os.open(path, flags)
+        descriptor = os.open(path, _DIRECTORY_FLAGS)
     except FileNotFoundError:
         return None, "absent"
     except OSError:
@@ -162,48 +158,124 @@ def open_evidence_root(path: Path) -> tuple[int | None, str]:
     return descriptor, "ok"
 
 
+_DIRECTORY_FLAGS = (
+    os.O_RDONLY
+    | getattr(os, "O_DIRECTORY", 0)
+    | getattr(os, "O_CLOEXEC", 0)
+    | getattr(os, "O_NOFOLLOW", 0)
+)
+
+
+def _bind_parent(root_fd: int, relative: str, *, label: str) -> tuple[int, str]:
+    """Open every intermediate directory of ``relative`` beneath ``root_fd``
+    with ``O_NOFOLLOW`` and return a descriptor for the leaf's parent plus the
+    leaf name. The caller owns and closes the returned descriptor.
+
+    ``O_NOFOLLOW`` protects only the LAST component of a path. Passing
+    ``nested/proof.bin`` straight to ``lstat`` and ``open`` relative to the
+    root let ``nested`` be a symlink to an outside directory while the leaf
+    was checked and opened, then be restored before the inventory — and the
+    outside bytes, carrying the listed hash, were accepted (review finding 1,
+    reproduced). Binding each component to its own descriptor closes that: a
+    component that is a symlink at the moment it is opened refuses to open,
+    and the leaf is then checked and opened relative to a directory that has
+    already been proven real.
+    """
+    parts = PurePosixPath(relative).parts
+    current = os.dup(root_fd)
+    try:
+        for component in parts[:-1]:
+            try:
+                child = os.open(component, _DIRECTORY_FLAGS, dir_fd=current)
+            except OSError as exc:
+                raise ValueError(
+                    f"{label} parent {component!r} is not a bound directory: "
+                    f"{exc.strerror}"
+                ) from exc
+            os.close(current)
+            current = child
+    except BaseException:
+        os.close(current)
+        raise
+    return current, parts[-1]
+
+
 def _regular_bytes(
     path: Path, *, limit: int, minimum: int, label: str, bound: str,
     dir_fd: int | None = None
 ) -> bytes:
     """Read ``path`` once through a descriptor and return exactly the bytes
-    that were checked.
+    that were read.
 
-    The metadata check, the open, the size bound, the read, and the post-read
-    identity check all bind to one descriptor; the path is never reopened, so
-    a file swapped between check and use is a finding, not a redirected read.
-    Every rejection is an explicit ``ValueError`` naming the file.
+    What this binds, exactly: the metadata check, the open, the size bound,
+    the read and the post-read check all address ONE descriptor, and with
+    ``dir_fd`` every parent component is bound first, so the path is never
+    resolved twice — a file (or a parent) swapped between check and use is a
+    finding, not a redirected read. The bytes judged are the bytes this
+    descriptor returned; a writer who changes the content before the read
+    changes what is judged, which is the same as editing the file, and is not
+    what this guards. What it excludes is judging one file's bytes under
+    another file's identity.
+
+    The post-read comparison (device, inode, size, mtime, ctime) is a change
+    detector, not proof of byte immutability: a same-length in-place rewrite
+    through a hard link that also restores mtime is caught only because ctime
+    moves (review finding 5, reproduced), and a rename-over during the read is
+    caught the same way, because unlinking the held inode moves its ctime; a
+    writer able to hold ctime still — privileged, or on a filesystem without
+    it — is outside this bound.
+
+    ``O_NONBLOCK`` is set so that a regular file substituted by a FIFO between
+    the check and the open cannot park the reporter waiting for a writer
+    (review finding 4, reproduced); a regular file's reads are unaffected by
+    it, and the descriptor type is checked before any read. Every rejection
+    is an explicit ``ValueError`` naming the file; an absent file is
+    ``EvidenceAbsent``.
     """
-    target = str(path) if dir_fd is None else os.fspath(path)
+    parent_fd: int | None = None
+    name = ""
+    if dir_fd is not None:
+        parent_fd, name = _bind_parent(dir_fd, os.fspath(path), label=label)
     try:
-        before = os.lstat(target, dir_fd=dir_fd) if dir_fd is not None else os.lstat(path)
-    except FileNotFoundError as exc:
-        raise EvidenceAbsent(f"{label} is not a regular file") from exc
-    except OSError as exc:
-        raise ValueError(f"{label} is not a regular file") from exc
-    if (
-        stat.S_ISLNK(before.st_mode)
-        or not stat.S_ISREG(before.st_mode)
-        or bool(getattr(before, "st_file_attributes", 0) & WINDOWS_REPARSE_POINT)
-    ):
-        raise ValueError(f"{label} is not a regular file")
-    if before.st_size < minimum or before.st_size > limit:
-        raise ValueError(f"{label} exceeds {bound}")
-    flags = (
-        os.O_RDONLY
-        | getattr(os, "O_BINARY", 0)
-        | getattr(os, "O_CLOEXEC", 0)
-        | getattr(os, "O_NOFOLLOW", 0)
-    )
-    try:
-        descriptor = (
-            os.open(target, flags, dir_fd=dir_fd) if dir_fd is not None
-            else os.open(path, flags)
+        try:
+            before = (
+                os.lstat(name, dir_fd=parent_fd) if parent_fd is not None
+                else os.lstat(path)
+            )
+        except FileNotFoundError as exc:
+            raise EvidenceAbsent(f"{label} is not a regular file") from exc
+        except OSError as exc:
+            raise ValueError(f"{label} is not a regular file") from exc
+        if (
+            stat.S_ISLNK(before.st_mode)
+            or not stat.S_ISREG(before.st_mode)
+            or bool(getattr(before, "st_file_attributes", 0) & WINDOWS_REPARSE_POINT)
+        ):
+            raise ValueError(f"{label} is not a regular file")
+        if before.st_size < minimum or before.st_size > limit:
+            raise ValueError(f"{label} exceeds {bound}")
+        flags = (
+            os.O_RDONLY
+            | getattr(os, "O_BINARY", 0)
+            | getattr(os, "O_CLOEXEC", 0)
+            | getattr(os, "O_NOFOLLOW", 0)
+            | getattr(os, "O_NONBLOCK", 0)
         )
-    except OSError as exc:
-        raise ValueError(f"{label} could not be opened: {exc.strerror}") from exc
+        try:
+            descriptor = (
+                os.open(name, flags, dir_fd=parent_fd) if parent_fd is not None
+                else os.open(path, flags)
+            )
+        except OSError as exc:
+            raise ValueError(f"{label} could not be opened: {exc.strerror}") from exc
+    finally:
+        if parent_fd is not None:
+            os.close(parent_fd)
     try:
-        opened = os.fstat(descriptor)
+        try:
+            opened = os.fstat(descriptor)
+        except OSError as exc:
+            raise ValueError(f"{label} could not be inspected: {exc.strerror}") from exc
         if not stat.S_ISREG(opened.st_mode) or (opened.st_dev, opened.st_ino) != (
             before.st_dev,
             before.st_ino,
@@ -220,9 +292,24 @@ def _regular_bytes(
             if not chunk:
                 break
             payload.extend(chunk)
-        after = os.fstat(descriptor)
-        identity = (opened.st_dev, opened.st_ino, opened.st_size, opened.st_mtime_ns)
-        if identity != (after.st_dev, after.st_ino, after.st_size, after.st_mtime_ns):
+        try:
+            after = os.fstat(descriptor)
+        except OSError as exc:
+            raise ValueError(f"{label} could not be inspected: {exc.strerror}") from exc
+        identity = (
+            opened.st_dev,
+            opened.st_ino,
+            opened.st_size,
+            opened.st_mtime_ns,
+            opened.st_ctime_ns,
+        )
+        if identity != (
+            after.st_dev,
+            after.st_ino,
+            after.st_size,
+            after.st_mtime_ns,
+            after.st_ctime_ns,
+        ):
             raise ValueError(f"{label} changed while being read")
         if len(payload) != opened.st_size or len(payload) > limit:
             raise ValueError(f"{label} changed while being read")
@@ -254,49 +341,50 @@ def _strict_lf_text(raw: bytes, *, label: str) -> str:
         raise ValueError(f"{label} is not strict UTF-8: {exc}") from exc
 
 
-def _manifest_present(evidence_root: Path, root_fd: int | None) -> bool:
-    """Is the manifest a regular file, checked through the bound descriptor?"""
-    if root_fd is None:
-        return evidence_root.is_dir() and (evidence_root / EVIDENCE_MANIFEST).exists()
-    try:
-        entry = os.lstat(EVIDENCE_MANIFEST, dir_fd=root_fd)
-    except OSError:
-        return False
-    return stat.S_ISREG(entry.st_mode)
-
-
 def _inventory_from_descriptor(root_fd: int, prefix: str = "") -> set[str]:
     """List regular files under a bound directory descriptor, never by pathname.
 
     Each subdirectory is opened relative to its parent descriptor with
     ``O_NOFOLLOW``, so no component of the traversal can be swapped for a
-    symlink between the check and the listing.
+    symlink between the check and the listing. Nothing is swallowed: an entry
+    that cannot be inspected or a directory that cannot be opened is a
+    ``ValueError`` naming it, because an unreadable subtree is unresolved
+    evidence, not empty evidence (review finding 3 turned an injected
+    permission error into acceptance). An entry the manifest cannot describe
+    — a symlink, a FIFO, a socket — is a ``ValueError`` too, not a skip.
     """
     names: set[str] = set()
-    with os.scandir(root_fd) as entries:
+    try:
+        listing = os.scandir(root_fd)
+    except OSError as exc:
+        raise ValueError(
+            f"evidence inventory could not read {prefix or '.'}: {exc.strerror}"
+        ) from exc
+    with listing as entries:
         for entry in entries:
             relative = f"{prefix}{entry.name}"
             try:
-                if entry.is_symlink():
-                    continue
-                if entry.is_file(follow_symlinks=False):
-                    if relative != EVIDENCE_MANIFEST:
-                        names.add(relative)
-                    continue
-                if not entry.is_dir(follow_symlinks=False):
-                    continue
-            except OSError:
+                is_link = entry.is_symlink()
+                is_file = entry.is_file(follow_symlinks=False)
+                is_dir = entry.is_dir(follow_symlinks=False)
+            except OSError as exc:
+                raise ValueError(
+                    f"evidence inventory could not read {relative}: {exc.strerror}"
+                ) from exc
+            if is_link or not (is_file or is_dir):
+                raise ValueError(
+                    f"evidence directory contains a non-regular entry {relative}"
+                )
+            if is_file:
+                if relative != EVIDENCE_MANIFEST:
+                    names.add(relative)
                 continue
-            flags = (
-                os.O_RDONLY
-                | os.O_DIRECTORY
-                | getattr(os, "O_CLOEXEC", 0)
-                | getattr(os, "O_NOFOLLOW", 0)
-            )
             try:
-                child = os.open(entry.name, flags, dir_fd=root_fd)
-            except OSError:
-                continue
+                child = os.open(entry.name, _DIRECTORY_FLAGS, dir_fd=root_fd)
+            except OSError as exc:
+                raise ValueError(
+                    f"evidence inventory could not read {relative}: {exc.strerror}"
+                ) from exc
             try:
                 names |= _inventory_from_descriptor(child, f"{relative}/")
             finally:
@@ -431,13 +519,15 @@ def _validate_evidence(
     evidence_root: Path,
     *,
     verify_git: bool,
-    root_fd: int | None = None,
+    root_fd: int,
 ) -> tuple[list[str], str | None, str | None, str | None, str | None, int, int]:
+    """Judge evidence read ONLY relative to ``root_fd``; ``evidence_root`` is
+    used for the names in findings, never for a read."""
     findings: list[str] = []
     manifest_path = evidence_root / EVIDENCE_MANIFEST
     try:
         manifest = _read_json(
-            Path(EVIDENCE_MANIFEST) if root_fd is not None else manifest_path,
+            Path(EVIDENCE_MANIFEST),
             limit=MAX_MANIFEST_BYTES,
             dir_fd=root_fd,
             label=str(manifest_path),
@@ -578,7 +668,7 @@ def _validate_evidence(
         artifact_hashes[relative] = digest
         try:
             raw = _regular_bytes(
-                Path(relative) if root_fd is not None else evidence_root / relative,
+                Path(relative),
                 limit=min(MAX_ARTIFACT_BYTES, MAX_TOTAL_BYTES - total),
                 minimum=0,
                 label=f"artifact {relative}",
@@ -604,16 +694,13 @@ def _validate_evidence(
     for missing in sorted(referenced - set(artifact_hashes)):
         findings.append(f"check evidence {missing} is absent from artifacts")
 
-    if root_fd is not None:
+    try:
         actual_files = _inventory_from_descriptor(root_fd)
+    except ValueError as exc:
+        findings.append(str(exc))
     else:
-        actual_files = {
-            path.relative_to(evidence_root).as_posix()
-            for path in evidence_root.rglob("*")
-            if path.is_file() and path.name != EVIDENCE_MANIFEST
-        }
-    if actual_files != set(artifact_hashes):
-        findings.append("evidence directory files do not exactly match the manifest")
+        if actual_files != set(artifact_hashes):
+            findings.append("evidence directory files do not exactly match the manifest")
 
     passed = sum(
         1
@@ -669,40 +756,31 @@ def read_status(
     # inventory left an ancestor swap open (review v1 finding, reproduced): a
     # swap after the check redirected the whole traversal to an outside tree and
     # the reporter returned `accepted`. O_NOFOLLOW here also subsumes the old
-    # is_symlink() test, and O_DIRECTORY subsumes is_dir().
+    # is_symlink() test, and O_DIRECTORY subsumes is_dir(). There is no
+    # pathname fallback: a platform that cannot bind the directory reports
+    # that acceptance is not available on it (review finding 2).
     root_fd, bind_reason = open_evidence_root(evidence_root)
+    reviewed_head = reviewed_tree = product_digest = landed_main = None
+    passed = artifact_count = 0
     try:
-        if bind_reason == "symlink" or (
-            bind_reason == "unsupported" and evidence_root.is_symlink()
-        ):
+        if bind_reason == "unsupported":
+            findings.append(
+                "evidence identity cannot be bound on this platform "
+                "(no dir_fd support); acceptance is not available here"
+            )
+            state = "partial"
+        elif bind_reason == "symlink":
             findings.append("evidence destination must not be a symlink")
             state = "partial"
-            reviewed_head = None
-            reviewed_tree = None
-            product_digest = None
-            landed_main = None
-            passed = 0
-            artifact_count = 0
-        elif bind_reason == "unbindable":
+        elif bind_reason in ("unbindable", "not-a-directory"):
             # Exists, is not a symlink, and still will not bind as a directory.
             findings.append("evidence destination could not be bound as a directory")
             state = "partial"
-            reviewed_head = None
-            reviewed_tree = None
-            product_digest = None
-            landed_main = None
-            passed = 0
-            artifact_count = 0
-        elif root_fd is None and not _manifest_present(evidence_root, root_fd):
+        elif bind_reason == "absent":
             findings.append("exact-candidate evidence manifest is pending")
             state = "pending"
-            reviewed_head = None
-            reviewed_tree = None
-            product_digest = None
-            landed_main = None
-            passed = 0
-            artifact_count = 0
         else:
+            assert root_fd is not None
             (
                 evidence_findings,
                 reviewed_head,
