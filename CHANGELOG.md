@@ -18,7 +18,17 @@
   gains `skipped_path_count` and `skipped_paths` (rule names and counts only,
   never paths) — purely additive, no existing key changes. The human mode
   prints one `walk not total` line only when the count is non-zero, so
-  byte-stable output for a total walk is unchanged.
+  byte-stable output for a walk with nothing declined is unchanged.
+- **Directory symlinks are declined and disclosed** (found by the cross-family
+  review of this change, B1): the walk never followed a linked directory, and
+  before this change it did not tally one either, so `src -> ../external`
+  holding `@caps(net, fs)` vanished while the verdict reported
+  `skipped_path_count: 0`. Links are still not followed — a link loop must
+  terminate — but each declined one now counts under `symlinked-directory`. A
+  linked `.garnet` FILE is read through the link as before. What `0` asserts is
+  therefore "every directory the walk reached was read or tallied", not "the
+  filesystem holds nothing else": a link with no target is not tallied, and
+  the name-matched skips are a convention, not verified ownership.
 - **Scope boundary:** this repairs which paths the walk READS and discloses
   what it does not. It does not change the declared-surface semantics, the
   `scope` caveat string, or the band mapping, and it still does not prove the

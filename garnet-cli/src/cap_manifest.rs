@@ -136,7 +136,8 @@ pub fn surface_for_path(path: &Path) -> Result<CapabilitySurface, String> {
 
 /// [`surface_for_path`] plus the tally of directories the walk refused to read.
 ///
-/// Crown C B-1: a caller that GATES on this surface must disclose the tally. A
+/// Crown C B-1: a caller that GATES on this surface should disclose the tally;
+/// today `diff-caps` does and `caps` / `verify` / `sandbox-policy` do not. A
 /// `.garnet` file under a skipped directory declares authority that is simply
 /// unread — which is not the same claim as the diff-caps `scope` string, and
 /// is not covered by it: `scope` disclaims *undeclared* authority.

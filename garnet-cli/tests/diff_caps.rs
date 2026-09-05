@@ -360,8 +360,8 @@ fn build_output_vcs_and_cache_stay_skipped_and_are_disclosed() {
     assert!(s.contains("{\"rule\":\"vcs-metadata\",\"count\":1}"), "{s}");
 }
 
-/// A total walk says so: zero skipped paths, empty rule list. Absence of the
-/// field means a pre-cure binary, NOT a total walk.
+/// A walk that declined nothing says so: zero skipped paths, empty rule list.
+/// Absence of the field means a pre-cure binary, NOT a clean walk.
 #[test]
 fn a_total_walk_reports_zero_skipped_paths() {
     let dir = fresh("total_walk");
@@ -371,4 +371,105 @@ fn a_total_walk_reports_zero_skipped_paths() {
     assert_eq!(code, 0, "{s}");
     assert!(s.contains("\"skipped_path_count\":0"), "{s}");
     assert!(s.contains("\"skipped_paths\":[]"), "{s}");
+}
+
+/// Cross-family review of this change (Codex, B1): a DIRECTORY reached through
+/// a symlink was neither walked nor tallied — `DirEntry::file_type()` does not
+/// follow links, so `src -> ../external` holding `evil.garnet` vanished while
+/// the verdict still reported `skipped_path_count: 0`. The walk still does not
+/// FOLLOW links (a link loop must terminate); it now DISCLOSES each one it
+/// declines under `symlinked-directory`. Old/new pair whose only difference is
+/// a `src` link, in the root named by `link_in`, to a real directory holding
+/// `@caps(net, fs)`.
+#[cfg(unix)]
+fn symlinked_authority_pair(tag: &str, link_in: &str) -> (PathBuf, PathBuf) {
+    let root = fresh(tag);
+    let old = root.join("old");
+    let new = root.join("new");
+    let external = root.join("external");
+    for d in [&old, &new, &external] {
+        std::fs::create_dir_all(d).unwrap();
+    }
+    write(old.as_path(), "tool.garnet", "@caps()\ndef main() { 1 }\n");
+    write(new.as_path(), "tool.garnet", "@caps()\ndef main() { 1 }\n");
+    std::fs::write(
+        external.join("evil.garnet"),
+        "@caps(net, fs)\ndef reach() { 1 }\n",
+    )
+    .unwrap();
+    let side = if link_in == "old" { &old } else { &new };
+    std::os::unix::fs::symlink(&external, side.join("src")).unwrap();
+    (old, new)
+}
+
+/// A linked directory in the NEW root: not followed, so no expansion is seen —
+/// and the verdict must say so instead of claiming a complete walk.
+#[cfg(unix)]
+#[test]
+fn symlinked_directory_in_the_new_root_is_disclosed_not_followed() {
+    let (old, new) = symlinked_authority_pair("symlink_new", "new");
+    let (code, s) = machine_diff(&old, &new);
+    assert_eq!(code, 0, "a linked directory is not followed: {s}");
+    assert!(s.contains("\"verdict\":\"no-authority-expansion\""), "{s}");
+    assert!(s.contains("\"skipped_path_count\":1"), "{s}");
+    assert!(
+        s.contains("{\"rule\":\"symlinked-directory\",\"count\":1}"),
+        "{s}"
+    );
+}
+
+/// The verdict covers both trees, so a link in the OLD root is tallied too.
+#[cfg(unix)]
+#[test]
+fn symlinked_directory_in_the_old_root_is_disclosed_too() {
+    let (old, new) = symlinked_authority_pair("symlink_old", "old");
+    let (code, s) = machine_diff(&old, &new);
+    assert_eq!(code, 0, "{s}");
+    assert!(s.contains("\"skipped_path_count\":1"), "{s}");
+    assert!(
+        s.contains("{\"rule\":\"symlinked-directory\",\"count\":1}"),
+        "{s}"
+    );
+}
+
+/// A link back onto its own tree must terminate — and be tallied, not hidden.
+#[cfg(unix)]
+#[test]
+fn symlink_loop_terminates_and_is_disclosed() {
+    let root = fresh("symlink_loop");
+    let old = root.join("old");
+    let new = root.join("new");
+    std::fs::create_dir_all(&old).unwrap();
+    std::fs::create_dir_all(&new).unwrap();
+    write(old.as_path(), "tool.garnet", "@caps()\ndef main() { 1 }\n");
+    write(new.as_path(), "tool.garnet", "@caps()\ndef main() { 1 }\n");
+    std::os::unix::fs::symlink(&new, new.join("loop")).unwrap();
+    let (code, s) = machine_diff(&old, &new);
+    assert_eq!(code, 0, "{s}");
+    assert!(s.contains("\"skipped_path_count\":1"), "{s}");
+    assert!(
+        s.contains("{\"rule\":\"symlinked-directory\",\"count\":1}"),
+        "{s}"
+    );
+}
+
+/// A linked `.garnet` FILE is read through the link as before — only linked
+/// DIRECTORIES are declined — so authority declared in one still gates.
+#[cfg(unix)]
+#[test]
+fn symlinked_garnet_file_is_still_read() {
+    let root = fresh("symlink_file");
+    let old = root.join("old");
+    let new = root.join("new");
+    std::fs::create_dir_all(&old).unwrap();
+    std::fs::create_dir_all(&new).unwrap();
+    write(old.as_path(), "tool.garnet", "@caps()\ndef main() { 1 }\n");
+    write(new.as_path(), "tool.garnet", "@caps()\ndef main() { 1 }\n");
+    let real = root.join("real.garnet");
+    std::fs::write(&real, "@caps(net, fs)\ndef reach() { 1 }\n").unwrap();
+    std::os::unix::fs::symlink(&real, new.join("linked.garnet")).unwrap();
+    let (code, s) = machine_diff(&old, &new);
+    assert_eq!(code, 1, "authority behind a linked file must gate: {s}");
+    assert!(s.contains("\"aggregate_gained\":[\"fs\",\"net\"]"), "{s}");
+    assert!(s.contains("\"skipped_path_count\":0"), "{s}");
 }

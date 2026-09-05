@@ -197,6 +197,9 @@ pub const RULE_VCS_METADATA: &str = "vcs-metadata";
 pub const RULE_TOOL_CACHE: &str = "tool-cache";
 /// The one documented vendored-dependency path, `<root>/.garnet/vendor`.
 pub const RULE_VENDORED_DEPENDENCIES: &str = "vendored-dependencies";
+/// A directory reached through a symbolic link. Not followed — a link loop
+/// must terminate — so whatever it holds is unread, and said so.
+pub const RULE_SYMLINKED_DIRECTORY: &str = "symlinked-directory";
 
 /// What a walk did NOT read, tallied by rule.
 ///
@@ -214,7 +217,11 @@ impl ScanOmissions {
         *self.counts.entry(rule).or_insert(0) += 1;
     }
 
-    /// Directories omitted. `0` means the walk was total.
+    /// Directories declined. `0` means every directory the walk reached was
+    /// either read or tallied here — not that the filesystem holds nothing
+    /// else: the walk does not follow directory symlinks (each one it declines
+    /// is tallied under [`RULE_SYMLINKED_DIRECTORY`]), and a link with no
+    /// target holds nothing to read and is not tallied.
     pub fn total(&self) -> usize {
         self.counts.values().copied().sum()
     }
@@ -272,9 +279,11 @@ pub fn collect_targets_with_omissions(
 /// ordinary source and is walked.
 ///
 /// `target`, `.git`, and `.garnet-cache` remain skipped at any depth. Each
-/// names a tree a tool owns and generates — Cargo/Garnet build output, git
-/// internals, this tool's own cache — not authored source a reviewer diffs.
-/// Every remaining skip is disclosed by [`ScanOmissions`].
+/// names a tree a tool conventionally generates — Cargo/Garnet build output,
+/// git internals, this tool's own cache. That is a NAME match, not a verified
+/// ownership fact: nothing checks who wrote a `target/`. Every skip this rule
+/// makes, and every directory symlink [`walk`] declines, is disclosed by
+/// [`ScanOmissions`].
 fn omission_rule(root: &Path, dir: &Path) -> Option<&'static str> {
     let name = dir.file_name()?.to_string_lossy().into_owned();
     match name.as_str() {
@@ -299,6 +308,15 @@ fn walk(
         let entry = entry?;
         let path = entry.path();
         let file_type = entry.file_type()?;
+        if file_type.is_symlink() && path.is_dir() {
+            // Not FOLLOWED — a link loop must terminate — but not silent
+            // either (cross-family review B1): `.garnet` files behind the link
+            // are declared authority this walk never read, so the refusal is
+            // tallied like every other one. A linked FILE takes the branch
+            // below and is read through the link as before.
+            omissions.record(RULE_SYMLINKED_DIRECTORY);
+            continue;
+        }
         if file_type.is_dir() {
             if let Some(rule) = omission_rule(root, &path) {
                 omissions.record(rule);
@@ -505,5 +523,28 @@ mod tests {
         let (_, omissions) = super::collect_targets_with_omissions(tmp.path()).unwrap();
         assert_eq!(omissions.total(), 0);
         assert!(omissions.by_rule().is_empty());
+    }
+
+    /// Cross-family review B1: a directory reached through a symlink is not
+    /// followed — and must be tallied, not silently dropped.
+    #[cfg(unix)]
+    #[test]
+    fn collect_targets_declines_a_symlinked_directory_and_says_so() {
+        let dir = TempDir::new().unwrap();
+        let external = TempDir::new().unwrap();
+        write_nested(dir.path(), "a.garnet", "@caps()\ndef main() { 1 }\n");
+        write_nested(external.path(), "b.garnet", "@caps(net)\ndef g() { 1 }\n");
+        std::os::unix::fs::symlink(external.path(), dir.path().join("link")).unwrap();
+        let (found, omissions) = super::collect_targets_with_omissions(dir.path()).unwrap();
+        let names: Vec<String> = found
+            .iter()
+            .map(|p| p.file_name().unwrap().to_string_lossy().into_owned())
+            .collect();
+        assert_eq!(names, vec!["a.garnet".to_string()]);
+        assert_eq!(omissions.total(), 1);
+        assert_eq!(
+            omissions.by_rule(),
+            vec![(super::RULE_SYMLINKED_DIRECTORY, 1)]
+        );
     }
 }

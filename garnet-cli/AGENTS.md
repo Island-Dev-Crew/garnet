@@ -68,16 +68,21 @@ Owns the `garnet` binary, subcommand routing, template embedding, deterministic 
   bound annotations are not part of the caps surface). On exit 2
   (usage/parse error) no JSON is emitted — stdout empty, error on stderr.
 - The shared collector (`cmd::verify_gate::collect_targets`) must not hide
-  DECLARED authority behind a directory name (crown C B-1). Only tool-owned
-  trees are skipped: `target`, `.git`, `.garnet-cache` at any depth, plus the
-  ROOT-RELATIVE `<root>/.garnet/vendor` — the one path a dependency may bind
-  to. An arbitrary `vendor/` or `node_modules/` at any depth is ordinary
-  source and IS walked. Every remaining omission is disclosed: `--machine`
-  carries `skipped_path_count` + `skipped_paths` (rule names and counts only,
-  never paths), additive within `garnet.diff-caps.machine/1`, and the human
-  mode prints one `walk not total` line when the count is non-zero (byte-stable
-  when it is zero). `skipped_path_count: 0` asserts a total walk; ABSENCE of
-  the field means a pre-cure binary and an UNKNOWN walk, not a total one.
+  DECLARED authority behind a directory name (crown C B-1). Skips are matched
+  by NAME — a convention, not a verified ownership fact: `target`, `.git`,
+  `.garnet-cache` at any depth, plus the ROOT-RELATIVE `<root>/.garnet/vendor`
+  — the one path a dependency may bind to. An arbitrary `vendor/` or
+  `node_modules/` at any depth is ordinary source and IS walked. Directory
+  symlinks are not followed (a link loop must terminate) and are tallied under
+  `symlinked-directory`; a linked `.garnet` FILE is read through the link.
+  Every skip and every declined link is disclosed: `--machine` carries
+  `skipped_path_count` + `skipped_paths` (rule names and counts only, never
+  paths), additive within `garnet.diff-caps.machine/1`, and the human mode
+  prints one `walk not total` line when the count is non-zero (byte-stable
+  when it is zero). `skipped_path_count: 0` asserts that every directory the
+  walk reached was read or tallied; ABSENCE of the field means a pre-cure
+  binary and an UNKNOWN walk. `caps`, `verify` and `sandbox-policy` inherit the
+  walk but do not yet surface the tally.
 - Deterministic build/verify behavior must stay reproducible.
 - Crash surface (RB-2): `src/lib.rs` AND `src/bin/garnet.rs` carry
   `#![deny(clippy::unwrap_used, clippy::expect_used)]` (tests exempt via
