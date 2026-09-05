@@ -13,6 +13,9 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import html
+from html.parser import HTMLParser
+import unicodedata
 import json
 import re
 import sys
@@ -59,10 +62,82 @@ CITED_TEST_ANCHORS = [
     ROOT / "garnet-vm" / "tests" / "scope_shadowing_parity.rs",
 ]
 
+def _fold_dashes(text: str) -> str:
+    """Fold every Unicode dash-punctuation character (category Pd) plus the
+    soft hyphen and minus sign to ASCII '-'.
+
+    Category-based, not enumerated: an enumeration missed U+FE63 and U+058A in
+    review, and any list will miss the next one. Pd is the supported separator
+    set; a character outside it (U+2053 SWUNG DASH is category Po) is outside
+    the contract, not "not a dash"."""
+    return "".join(
+        "-" if (unicodedata.category(c) == "Pd" or c in "\u00ad\u2212") else c
+        for c in text
+    )
+
+
+class _VisibleText(HTMLParser):
+    """Collect the text a reader would see, with every tag and comment removed.
+
+    A regex cannot do this: a valid `<span title="<!--">` starts no comment,
+    and a valid `<a title=">">` ends no tag, yet both defeat a pattern. The
+    stdlib tokenizer tracks quoting and comment state, so markup between
+    tokens is removed exactly and nothing inside a token is touched."""
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.parts: list[str] = []
+
+    def handle_data(self, data: str) -> None:
+        self.parts.append(data)
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        self.parts.append(" ")
+
+    def handle_endtag(self, tag: str) -> None:
+        self.parts.append(" ")
+
+    def handle_startendtag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        self.parts.append(" ")
+
+    # Comments, declarations and processing instructions are also markup
+    # between tokens: they separate words, so they become a space, never
+    # nothing. Emitting nothing joined `universal<!-- -->runtime` into one
+    # token and let it evade.
+    def handle_comment(self, data: str) -> None:
+        self.parts.append(" ")
+
+    def handle_decl(self, decl: str) -> None:
+        self.parts.append(" ")
+
+    def handle_pi(self, data: str) -> None:
+        self.parts.append(" ")
+
+
+def _forbidden_text(raw: str) -> str:
+    """Text for slogan matching, with markup removed by a real HTML tokenizer.
+
+    Contract, stated exactly:
+
+    CAUGHT: whitespace or any Pd/soft-hyphen/minus separator between tokens;
+    HTML entities; case; any well-formed tag or comment that falls BETWEEN
+    tokens, including tags whose attributes contain '>' or '<!--'.
+
+    NOT CAUGHT: markup or zero-width characters inserted INSIDE a token
+    (`uni<span>versal`, `u\u200bniversal`), letter-substitution, or any
+    paraphrase. This is a bounded slogan filter over three phrases, not a
+    semantic check; the normative fence's May-not-say list is the actual rule
+    and human review is what enforces it."""
+    parser = _VisibleText()
+    parser.feed(raw)
+    parser.close()
+    return _normalized("".join(parser.parts))
+
+
 FORBIDDEN_PATTERNS = [
-    r"no\s+ambient\s+authority,?\s+ever",
-    r"universal\s+@?caps\s+runtime\s+enforcement",
-    r"universal\s+runtime\s+enforcement",
+    r"no[\s\-]+ambient[\s\-]+authority,?[\s\-]+ever",
+    r"universal[\s\-]+@?caps[\s\-]+runtime[\s\-]+enforcement",
+    r"universal[\s\-]+runtime[\s\-]+enforcement",
 ]
 
 STALE_TRUTH_PATTERNS = [
@@ -77,7 +152,7 @@ STALE_TRUTH_PATTERNS = [
 ENFORCED_CLAIM_MARKER = "<b>enforced:</b>"
 EXPECTED_ENFORCED_CLAIMS = 2
 EXPECTED_ENFORCED_CLAIM_HASHES = [
-    "8cea8eec892bb7b908c0320fef64c9a0af02167d094141f7258aec566b5f57f0",
+    "8fdeb3988acbabb8e5171dc5940809af4321deee7a0a4522586275482a8d70ff",
     "032b790318e1d10a80418f59e6f363e43671193a080c26a4803dd2beffb2a541",
 ]
 
@@ -141,7 +216,17 @@ def _rel(path: Path) -> str:
 
 
 def _normalized(text: str) -> str:
-    return re.sub(r"\s+", " ", text).strip()
+    """Collapse whitespace, decode HTML entities, and fold dash variants.
+
+    Decoding matters: a claim written with entities evades a plain scan. A stale
+    count spelled `sixty&#8209;one` survived two greps of these very surfaces
+    before it was caught by review, and the same trick hides a forbidden slogan.
+
+    This narrows the evasion; it does not close it. See `_forbidden_text` for
+    the exact caught / not-caught contract.
+    """
+    decoded = _fold_dashes(html.unescape(text))
+    return re.sub(r"\s+", " ", decoded).strip()
 
 
 def _enforced_claim_hashes(why_text: str) -> list[str]:
@@ -233,7 +318,8 @@ def read_status() -> CapabilityScopeStatus:
 
     forbidden_hits: list[str] = []
     for surface in PUBLIC_SURFACES:
-        text = _read(surface)
+        # Normalise before matching: an entity-encoded slogan evaded the raw scan.
+        text = _forbidden_text(_read(surface))
         for pattern in FORBIDDEN_PATTERNS:
             for match in re.finditer(pattern, text, flags=re.IGNORECASE):
                 forbidden_hits.append(f"{_rel(surface)}: '{match.group(0)}'")

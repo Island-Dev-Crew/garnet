@@ -68,7 +68,16 @@ a tag autonomously.
 - Preserve the named-deferred fences: `@bounded` (Wasmtime fuel), memory, time,
   `@mailbox`, and macOS/Windows OS-sandbox application remain
   declared-not-enforced; only `@caps` + `@max_depth` are enforced (both
-  backends), with seccomp applied on **Linux only**.
+  backends), with seccomp applied on **Linux only**. "`@caps` is enforced"
+  means exactly this and no more: at check time, the propagator rejects an
+  undeclared capability along a **named, acyclic** call chain from an
+  **annotated** function; at run time, the **fifteen gated host-authority
+  primitives** require the program entry's declared budget, and the other 65
+  registry rows carry no runtime gate (58 need no capability, 5 are
+  checker-only, 2 are unbridged). `garnet run` does not invoke the checker.
+  The normative fence is
+  `C_Language_Specification/GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md`; do not
+  restate the claim wider than that file does.
 - **Four integrity rules:** (1) a PR may not modify the gate it merges under
   (CI / dogfood skill / diff-caps thresholds / capability-manifest standard
   / `scripts/garnet_github_*` changes are **human-merge-only**); (2) a capability-surface widening must fail

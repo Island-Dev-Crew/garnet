@@ -34,7 +34,8 @@ And in 2026 there's a second bargain nobody should accept. AI agents now write t
 *allowed to do* — the supply chain has already produced validly-signed malware. Garnet doesn't
 ask you to trust that the model understood. **It makes acceptance a decision on capability
 evidence your own toolchain recomputes — not the model's claims**: functions declare their
-authority budget, the checker verifies declared budgets transitively, and `diff-caps` answers
+authority budget, the checker verifies declared budgets transitively across the named, acyclic call
+edges it can build from annotated functions, and `diff-caps` answers
 *"what new authority am I granting?"* in one screen.
 
 Safe by default. Fast when needed. Joyful always.
@@ -90,10 +91,19 @@ and aimed at agent-authored code:
 - **`diff-caps`** — the capability-surface diff as an acceptance gate. When a dependency or an
   agent's PR changes what the code *can do*, you review the authority delta, not every line.
 - **`@caps(...)`** — functions declare their OS-authority budget; the CapCaps propagator checks
-  declared budgets transitively at check time, and the entry point must declare its budget. Under
-  the `garnet` CLI, the gated host-authority primitives (fs, net, proc, env, log-to-file — 12
-  runtime-gated + 3 entry-gated) additionally trap at run time unless the calling chain declares
-  the authority; `time`/`uuid` and pure computation are checker-only. See the
+  declared budgets transitively at check time **across named call chains**, and the entry point
+  must declare its budget. Reached instead through a function value, a closure, an actor handler,
+  a top-level initializer, a string interpolation or `method_missing`, a call contributes no edge
+  and the checker stays silent; a primitive reached only through a cycle in the call graph is not
+  reported even along a named chain, annotated or not (finding U-91; the cycle case is a checker
+  defect with its own cure pending). `garnet run` does not invoke the checker. Under the `garnet` CLI the 15
+  gated host-authority primitives (fs, net, proc, env, log-to-file) additionally trap at run time
+  unless the **program entry's** own declared budget covers the capability, whichever call edge
+  reached them. The other 65 registry rows carry no runtime gate, and they are not one group:
+  58 require no capability at all, 5 are capability-bearing and checker-only (`time::now_ms`,
+  `time::wall_clock_ms`, `time::sleep`, `std::uuid::new_v4`, `std::uuid::new_v7`; `new_v5`
+  requires nothing) and really do execute undeclared, and `net::tcp_listen` / `net::udp_bind`
+  are unbridged and do not execute either. See the
   [capability enforcement scope table](C_Language_Specification/GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md).
 - **An enforced kernel** — `@caps` and `@max_depth` trap identically on both execution backends,
   with cross-OS trap parity recorded as evidence, not asserted.
