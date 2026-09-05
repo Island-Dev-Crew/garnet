@@ -94,6 +94,20 @@ tuple order must not override document order. Keep regression fixtures for
 both heading orders. Run `python3 -I scripts/test_check_dogfood_pr_body.py`
 after changing the checker or this contract.
 
+Three rules bind how the checker reads a body. A required heading matches only
+when its heading text equals the contract heading exactly after trailing
+whitespace is stripped (`### Current truth — none stated` is not
+`### Current truth`). A section ends at the next heading of the same or higher
+level, so a `## ` closes an open `### ` section and a checked item under a
+later `## ` never counts for it. A checked item counts as evidence only when it
+carries a token a reviewer can recompute: a command, path, or value in
+backticks, a repo path, a 7–40 hex SHA, an `https://` URL, a `#PR` reference,
+or a numeric result; Remote verification also accepts the named CI/PR check
+with its expected status, and the evidence bundle also accepts a named artifact
+and where it lives. The merged bodies of #545 and #546 live under
+`scripts/fixtures/dogfood_pr_bodies/` as positive fixtures that must keep
+passing. The `git diff` the checker runs is bounded at 30 s and fails closed.
+
 ## WV-6 / WV-7 Acceptance Gates
 
 `F_Project_Management/LAUNCH/WV6_WV7_ACCEPTANCE_CONTRACTS.json` preserves the

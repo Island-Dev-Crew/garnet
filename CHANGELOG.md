@@ -1,5 +1,38 @@
 # Changelog
 
+## Unreleased — gate hardening: dogfood PR-body checker section boundary, exact headings, evidence tokens (2026-09-02)
+
+### `scripts/check_dogfood_pr_body.py` — crown D-1, hardening H3-01, crown D-N4 cured
+
+- **Fixed (D-1, blocking):** a section ended only at the next literal `### `;
+  a higher-level `## ` heading closes the section in Markdown but was ignored,
+  so a checked item under a later, unrelated `## ` section satisfied the
+  evidence contract. A section now ends at the next heading of the same or
+  higher level; a deeper heading stays inside it.
+- **Fixed (H3-01, medium):** headings matched by prefix and any non-empty
+  checked item counted as evidence, so `### Current truth — none stated` with
+  `- [x] x` under Local, Remote and Evidence passed. Headings now match the
+  contract text exactly after trailing-whitespace normalization, and a checked
+  item counts only when it carries an evidence token (a command/path/value in
+  backticks, a repo path, a 7–40 hex SHA, an `https://` URL, a `#PR`
+  reference, or a numeric result; Remote verification also accepts the named
+  CI/PR check with its expected status, the evidence bundle also a named
+  artifact and where it lives). A vacuous item fails with a problem naming the
+  section and the token classes it needs.
+- **Fixed (D-N4):** the `git diff --name-only` subprocess is bounded at 30 s
+  and fails closed with an explicit `::error::` on timeout.
+- **Calibration:** the merged bodies of #540–#546 all pass; #545 and #546 are
+  committed as positive fixtures under `scripts/fixtures/dogfood_pr_bodies/`.
+  The named-check and named-artifact classes exist because every merged
+  Remote line reads "Fresh PR checks are required to settle before handoff;
+  no CI conclusion is claimed in advance." and #542/#544 name their artifact
+  in prose; the rule was widened rather than the bodies rewritten.
+- **Scope:** gate-script hardening only; no shipped-binary behavior change.
+  This PR modifies the gate it merges under → integrity rule 1:
+  human-merge-only, Codex reviews first. `scripts/check_*` is not a
+  rolling-gate trust prefix (H3-02, a separate act), so the rolling gate
+  reports `touched_paths []` for this change.
+
 ## Unreleased — U-91 entry-budget capability enforcement (2026-09-03)
 
 - **Fixed authority laundering through call edges the checker cannot see:** all
