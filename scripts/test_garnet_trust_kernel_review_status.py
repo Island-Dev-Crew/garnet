@@ -2283,14 +2283,43 @@ class TrustSurfaceVersionTests(unittest.TestCase):
             (mod.CURRENT_TRUST_SURFACE, []), mod.trust_surface_at_commit(mod.ROOT, head)
         )
 
-    def test_the_surface_constant_is_parsed_from_source_not_executed(self) -> None:
-        # The derivation is one regular expression over the blob; a copy that
-        # defines the constant twice, or as anything but a "vN" string, is not
-        # a surface.
-        self.assertIsNotNone(mod._CURRENT_SURFACE_CONSTANT.search(b'x = 1\nCURRENT_TRUST_SURFACE = "v2"\n'))
-        self.assertIsNone(mod._CURRENT_SURFACE_CONSTANT.search(b'CURRENT_TRUST_SURFACE = v2\n'))
-        self.assertIsNone(mod._CURRENT_SURFACE_CONSTANT.search(b'  CURRENT_TRUST_SURFACE = "v2"\n'))
-        self.assertIsNone(mod._CURRENT_SURFACE_CONSTANT.search(b'CURRENT_TRUST_SURFACE = "two"\n'))
+    def test_the_surface_is_parsed_from_source_never_matched_by_spelling(self) -> None:
+        # Review v2 (R559-v2-1): a regular expression chose a narrower surface
+        # on ordinary Python. The parser rule: exactly one module-level string
+        # constant, no other binding, spelling irrelevant; neither symbol
+        # mentioned anywhere = the pre-versioning era; all else ambiguous.
+        derive = mod.trust_surface_from_source
+        ambiguous = (None, [mod._AMBIGUOUS_SURFACE_SOURCE])
+        self.assertEqual(("v2", []), derive(b'CURRENT_TRUST_SURFACE = "v2"\n'))
+        self.assertEqual(("v2", []), derive(b"CURRENT_TRUST_SURFACE = 'v2'\n"))
+        self.assertEqual(("v2", []), derive(b'CURRENT_TRUST_SURFACE: str = "v2"\n'))
+        self.assertEqual(("v2", []), derive(b'x = 1\n"""Example only:\nCURRENT_TRUST_SURFACE = "v1"\n"""\nCURRENT_TRUST_SURFACE = "v2"\n'))
+        self.assertEqual(("v2", []), derive(b'# CURRENT_TRUST_SURFACE = "v1"\nCURRENT_TRUST_SURFACE = "v2"\n'))
+        # duplicates, in either order, identical or not
+        self.assertEqual(ambiguous, derive(b'CURRENT_TRUST_SURFACE = "v1"\nCURRENT_TRUST_SURFACE = "v2"\n'))
+        self.assertEqual(ambiguous, derive(b'CURRENT_TRUST_SURFACE = "v2"\nCURRENT_TRUST_SURFACE = "v1"\n'))
+        self.assertEqual(ambiguous, derive(b'CURRENT_TRUST_SURFACE = "v2"\nCURRENT_TRUST_SURFACE = "v2"\n'))
+        # not module-level, not a constant, not a version
+        self.assertEqual(ambiguous, derive(b'if True:\n    CURRENT_TRUST_SURFACE = "v2"\n'))
+        self.assertEqual(ambiguous, derive(b'def f():\n    CURRENT_TRUST_SURFACE = "v2"\n'))
+        self.assertEqual(ambiguous, derive(b'CURRENT_TRUST_SURFACE = v2\n'))
+        self.assertEqual(ambiguous, derive(b'CURRENT_TRUST_SURFACE = "two"\n'))
+        self.assertEqual(ambiguous, derive(b'CURRENT_TRUST_SURFACE = "v2" + ""\n'))
+        self.assertEqual(ambiguous, derive(b'CURRENT_TRUST_SURFACE = X = "v2"\n'))
+        self.assertEqual(ambiguous, derive(b'CURRENT_TRUST_SURFACE += "v2"\n'))
+        # the mechanism mentioned, the constant absent: post-versioning source
+        # that lacks the definition is NOT the v1 era
+        self.assertEqual(ambiguous, derive(b'TRUST_SURFACES = {}\n'))
+        self.assertEqual(ambiguous, derive(b'print(CURRENT_TRUST_SURFACE)\n'))
+        # neither symbol anywhere: the era before versioning
+        self.assertEqual(("v1", []), derive(b"# the gate before it versioned its surface\nTRUST_KERNEL_PREFIXES = ()\n"))
+        self.assertEqual(("v1", []), derive(b""))
+        # unparseable source fails closed
+        name, findings = derive(b'CURRENT_TRUST_SURFACE = "v2\n')
+        self.assertIsNone(name)
+        self.assertTrue(findings and "could not be parsed" in findings[0], findings)
+        name, findings = derive(b"\xff\xfe")
+        self.assertIsNone(name)
 
     def test_trust_surface_is_an_allowed_marker_key(self) -> None:
         self.assertIn("trust_surface", mod.LANDED_KEYS)
@@ -2352,6 +2381,21 @@ class MarkerTrustSurfaceDerivationTests(GitRepoFixture):
     def test_a_copy_without_the_constant_is_the_v1_era(self) -> None:
         commit = self._stub(b"# the gate before it versioned its surface\n")
         self.assertEqual(("v1", []), mod.resolve_marker_trust_surface({}, self.root, commit))
+
+    def test_an_ambiguous_copy_is_a_finding_and_resolves_to_the_widest_surface(self) -> None:
+        # Review v2 (R559-v2-1): every spelling trick lands here, never on v1.
+        for body in (
+            b'CURRENT_TRUST_SURFACE = "v1"\nCURRENT_TRUST_SURFACE = "v2"\n',
+            b'if True:\n    CURRENT_TRUST_SURFACE = "v2"\n',
+            b'TRUST_SURFACES = {}\n',
+            b'CURRENT_TRUST_SURFACE = "v2\n',
+        ):
+            with self.subTest(body=body):
+                commit = self._stub(body)
+                name, findings = mod.resolve_marker_trust_surface({}, self.root, commit)
+                self.assertEqual(mod.CURRENT_TRUST_SURFACE, name)
+                self.assertEqual(1, len(findings), findings)
+                self.assertTrue(findings[0].startswith(f"merged_commit {commit}: "), findings)
 
     def test_an_unregistered_historical_version_is_a_finding(self) -> None:
         commit = self._stub(b'CURRENT_TRUST_SURFACE = "v9"\n')

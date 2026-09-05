@@ -30,8 +30,9 @@ that enumeration (only the Codex hardening pass carries an in-repo identifier): 
 `PR dogfood evidence` context. The peer enforcement crates were already
 whole-`src/` prefixes; `garnet-cli` was the anomaly. The script entries that
 remain enumerated are checked against a derivation from
-`.github/rulesets/garnet-main.json` and `required-context-producers.json`, so a
-new required-context producer that escapes the `scripts/garnet_` naming prefix
+`.github/rulesets/garnet-main.json` and `required-context-producers.json` from
+the paths named literally in workflow text (not the import or wrapper closure
+of a producer), so a new required-context producer that escapes the `scripts/garnet_` naming prefix
 fails `TrustSurfaceCoverageTests` instead of merging unreviewed.
 
 ## The surface is versioned

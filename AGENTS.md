@@ -92,7 +92,12 @@ outside review (H3-02). The script entries that remain enumerated are the
 required-context producers that escape the `scripts/garnet_` naming prefix, and
 `TrustSurfaceCoverageTests` re-derives that set from
 `.github/rulesets/garnet-main.json` plus `required-context-producers.json`, so a
-new producer outside the surface fails the suite rather than merging unreviewed.
+new producer whose path is named literally in a required-context workflow and
+lies outside the surface fails the suite rather than merging unreviewed. That
+derivation scans literal path tokens in workflow text; it does not compute the
+import or wrapper closure of a producer, so a helper a producer invokes without
+naming it in the workflow (today: `scripts/render_garnet_promo_video.mjs`, run
+by the strict agentic matrix) is outside the surface until it is listed.
 Never narrow the surface to make a PR green.
 
 Widening the surface is only safe because the surface is versioned. A sealed

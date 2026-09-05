@@ -24,6 +24,7 @@ import hashlib
 import importlib.util
 import json
 import os
+import ast
 import re
 import subprocess
 import sys
@@ -177,11 +178,68 @@ CURRENT_TRUST_SURFACE = "v2"
 # with no table to grow.
 GATE_SCRIPT_PATH = "scripts/garnet_trust_kernel_review_status.py"
 PRE_VERSIONING_TRUST_SURFACE = "v1"
-# One regular expression over the blob; nothing is executed.  Anchored at the
-# line start, a bare double-quoted "vN", optional trailing comment.
-_CURRENT_SURFACE_CONSTANT = re.compile(
-    rb'^CURRENT_TRUST_SURFACE\s*=\s*"(v[0-9]+)"[ \t]*(?:#[^\n]*)?$', re.M
+_SURFACE_NAMES = frozenset({"CURRENT_TRUST_SURFACE", "TRUST_SURFACES"})
+_VERSION_NAME = re.compile(r"^v[0-9]+$")
+_AMBIGUOUS_SURFACE_SOURCE = (
+    "the gate script at the landing commit does not define CURRENT_TRUST_SURFACE as "
+    "exactly one top-level string constant, so the sealed surface cannot be derived"
 )
+
+
+def trust_surface_from_source(source: bytes) -> tuple[str | None, list[str]]:
+    """Name the surface a copy of this script defines, by PARSING it — never
+    by executing it, and never by matching its spelling.
+
+    Review v2 of the versioning change showed a regular expression choosing a
+    narrower surface on ordinary Python: a docstring quoting an old value, a
+    single-quoted constant, an indented assignment, a duplicate. The rule is
+    now the language's own: the copy must contain exactly one module-level
+    assignment ``CURRENT_TRUST_SURFACE = "vN"`` (annotated or not) whose value
+    is a single string constant, and no other binding of that name anywhere.
+    A copy that names neither ``CURRENT_TRUST_SURFACE`` nor ``TRUST_SURFACES``
+    in any expression predates versioning: that is the v1 era, proven by the
+    absence of the whole mechanism rather than of one spelling. Everything
+    else is ambiguous and a finding.
+    """
+    try:
+        tree = ast.parse(source.decode("utf-8", errors="strict"))
+    except (SyntaxError, ValueError, UnicodeDecodeError, RecursionError, MemoryError) as exc:
+        return None, [
+            "the gate script at the landing commit could not be parsed: "
+            f"{type(exc).__name__}"
+        ]
+
+    def binds_surface(node: ast.AST) -> bool:
+        if isinstance(node, ast.Assign):
+            targets = node.targets
+        elif isinstance(node, (ast.AnnAssign, ast.AugAssign)):
+            targets = [node.target]
+        else:
+            return False
+        return any(isinstance(t, ast.Name) and t.id == "CURRENT_TRUST_SURFACE" for t in targets)
+
+    mentioned = any(
+        isinstance(node, ast.Name) and node.id in _SURFACE_NAMES for node in ast.walk(tree)
+    )
+    top_level = [node for node in tree.body if binds_surface(node)]
+    anywhere = [node for node in ast.walk(tree) if binds_surface(node)]
+    if not mentioned and not anywhere:
+        return PRE_VERSIONING_TRUST_SURFACE, []
+    if len(top_level) != 1 or len(anywhere) != 1:
+        return None, [_AMBIGUOUS_SURFACE_SOURCE]
+    node = top_level[0]
+    value = node.value
+    single_target = isinstance(node, ast.AnnAssign) or (
+        isinstance(node, ast.Assign) and len(node.targets) == 1
+    )
+    if not (
+        single_target
+        and isinstance(value, ast.Constant)
+        and isinstance(value.value, str)
+        and _VERSION_NAME.match(value.value)
+    ):
+        return None, [_AMBIGUOUS_SURFACE_SOURCE]
+    return value.value, []
 
 REVIEW_RECORD_PREFIX = "F_Project_Management/W_TRUST/"
 REVIEW_RECORD_SUFFIX = ".review.json"
@@ -340,11 +398,12 @@ def trust_surface_at_commit(root: Path, commit: str) -> tuple[str | None, list[s
     copy of this script.
 
     ``commit`` must already be a verified first-parent landing commit; the
-    caller establishes that.  The blob is parsed with one regular expression
-    and never executed.  A copy without the constant predates versioning and
-    names the v1 era; a copy naming a version this gate no longer registers is
-    a finding, because ``TRUST_SURFACES`` is append-only; an absent copy cannot
-    be derived from and fails closed.
+    caller establishes that.  The blob is parsed as Python and never executed
+    (``trust_surface_from_source``).  A copy that names neither surface symbol
+    predates versioning and is the v1 era; an ambiguous copy is a finding; a
+    copy naming a version this gate no longer registers is a finding, because
+    ``TRUST_SURFACES`` is append-only; an absent copy cannot be derived from
+    and fails closed.
     """
     payload, problems = _read_blob(root, commit, GATE_SCRIPT_PATH)
     if payload is None:
@@ -353,10 +412,9 @@ def trust_surface_at_commit(root: Path, commit: str) -> tuple[str | None, list[s
             f"the gate script is absent at merged_commit {commit}, so the sealed "
             "trust surface cannot be derived",
         ]
-    match = _CURRENT_SURFACE_CONSTANT.search(payload)
-    if match is None:
-        return PRE_VERSIONING_TRUST_SURFACE, []
-    name = match.group(1).decode("ascii")
+    name, parse_findings = trust_surface_from_source(payload)
+    if name is None:
+        return None, [f"merged_commit {commit}: {item}" for item in parse_findings]
     if name not in TRUST_SURFACES:
         return None, [
             f"merged_commit {commit} was sealed under trust surface {name!r}, which "
