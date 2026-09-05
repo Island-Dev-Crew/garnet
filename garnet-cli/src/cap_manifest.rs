@@ -8,7 +8,7 @@
 //! build [`crate::manifest::Manifest`], which carries source/AST hashes but no
 //! capability surface.
 
-use crate::cmd::verify_gate::collect_targets;
+use crate::cmd::verify_gate::{collect_targets_with_omissions, ScanOmissions};
 use crate::diagnostics::json_escape;
 use crate::{edition_manifest, read_file};
 use garnet_check::{capability_surface, CapabilitySurface};
@@ -131,7 +131,20 @@ pub fn merge_surfaces(surfaces: Vec<CapabilitySurface>) -> CapabilitySurface {
 /// `garnet caps`, `garnet diff-caps`, and `garnet verify --caps-baseline`.
 /// Returns a usage / parse / IO error message on failure.
 pub fn surface_for_path(path: &Path) -> Result<CapabilitySurface, String> {
-    let targets = collect_targets(path).map_err(|e| e.to_string())?;
+    Ok(surface_for_path_with_omissions(path)?.0)
+}
+
+/// [`surface_for_path`] plus the tally of directories the walk refused to read.
+///
+/// Crown C B-1: a caller that GATES on this surface should disclose the tally;
+/// today `diff-caps` does and `caps` / `verify` / `sandbox-policy` do not. A
+/// `.garnet` file under a skipped directory declares authority that is simply
+/// unread — which is not the same claim as the diff-caps `scope` string, and
+/// is not covered by it: `scope` disclaims *undeclared* authority.
+pub fn surface_for_path_with_omissions(
+    path: &Path,
+) -> Result<(CapabilitySurface, ScanOmissions), String> {
+    let (targets, omissions) = collect_targets_with_omissions(path).map_err(|e| e.to_string())?;
     if targets.is_empty() {
         return Err(format!("no .garnet files found under {}", path.display()));
     }
@@ -152,9 +165,9 @@ pub fn surface_for_path(path: &Path) -> Result<CapabilitySurface, String> {
         // INVARIANT: guarded by the len() == 1 check on the previous line —
         // pop() on a one-element Vec cannot return None.
         let only = surfaces.pop().expect("one surface");
-        return Ok(only);
+        return Ok((only, omissions));
     }
-    Ok(merge_surfaces(surfaces))
+    Ok((merge_surfaces(surfaces), omissions))
 }
 
 /// Render a slice of strings as a JSON array of escaped strings.
