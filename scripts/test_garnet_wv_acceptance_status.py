@@ -897,24 +897,34 @@ class GarnetWvAcceptanceStatusTests(unittest.TestCase):
         )
 
     def test_primary_finding_and_release_failure_are_both_reported(self) -> None:
+        """A read failure inside the bound read, then the release fails:
+        the read finding comes first and the release finding rides on it."""
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             evidence, manifest = _complete_evidence(root)
             manifest_path = evidence / wv.EVIDENCE_MANIFEST
-            crlf = _manifest_bytes(manifest).replace(b"\n", b"\r\n")
-            offset = crlf.index(b"\r")
-            manifest_path.write_bytes(crlf)
+            manifest_path.write_bytes(_manifest_bytes(manifest))
             st = os.lstat(manifest_path)
-            hook, fired = self._close_raising_on((st.st_dev, st.st_ino))
-            with mock.patch.object(os, "close", hook):
+            identity = (st.st_dev, st.st_ino)
+            real_read, real_fstat = os.read, os.fstat
+
+            def failing_read(fd, n):
+                probe = real_fstat(fd)
+                if (probe.st_dev, probe.st_ino) == identity:
+                    raise OSError(5, "Input/output error")
+                return real_read(fd, n)
+
+            close_hook, fired = self._close_raising_on(identity)
+            with mock.patch.object(os, "read", failing_read), mock.patch.object(
+                os, "close", close_hook
+            ):
                 status = wv.read_status(root, "WV-6", verify_git=False)
         self.assertEqual(len(fired), 1)
         self.assertEqual(status.state, "partial")
         self.assertEqual(
             status.findings,
             [
-                f"{manifest_path} must use LF-only line endings "
-                f"(first CR byte at offset {offset})",
+                f"{manifest_path} could not be read: Input/output error",
                 f"{manifest_path} descriptor could not be released: Input/output error",
             ],
         )
