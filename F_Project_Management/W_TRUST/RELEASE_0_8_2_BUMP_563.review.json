@@ -1,0 +1,29 @@
+{
+  "author_emails": [
+    "email:jon-isaac@islanddevcrew.com"
+  ],
+  "author_ids": [
+    275140286
+  ],
+  "base_commit": "d22a1c0d78fcceafcb11f946289b16cdb5ebbbf5",
+  "blocking_findings": [],
+  "content_digest": "sha256:bf2bd6dd016b0cd7bb382bc5d00e41fa5b4fb37abc33c7919e091f5621ea1751",
+  "head_repository": "Island-Dev-Crew/garnet",
+  "head_repository_id": 1218183013,
+  "pull_request_id": 4448069009,
+  "pull_request_number": 563,
+  "repository": "Island-Dev-Crew/garnet",
+  "repository_id": 1218183013,
+  "review_scope": "Content proof binds exactly reviewed_head 96a0c699b7010a47487d0b2ee4ed051c328f8a75 and does not extend or backdate reviewed_head coverage. OpenAI Codex cross-family seat, delta-identical-scope review on 2026-09-04, verdict CONFIRM, at 96a0c699b7010a47487d0b2ee4ed051c328f8a75; void if the head moves before this sanctioned record-only write. Implementer seat: Claude Fable 5.1. LINEAGE: re-creates PR #550 on a fresh branch (U-122). The reviewer compared every changed file's hunks against the head confirmed as #550 review v3 (cfbddda, itself carrying v2's full functional verification: 2,228 tests / 0 failed), confirmed no record file and no conflict artefacts, re-ran the Minimum Shelf package and MCP stdio tests, the Wasm readiness reporter, and the Shelf smoke (whose four findings are the pre-existing WV-6 product-digest drift, identical on main), confirmed no v0.8.2 tag exists, and re-checked retired vocabulary. #550's v2/v3 verdicts carry; its records remain on the #550 branch as provenance. WHAT IT CARRIES: the workspace version bump 0.8.1 -> 0.8.2 (the tag is NOT cut and remains Jon-only); the consolidated [0.8.2] changelog with main's U-91 and Lane 0 entries folded under it; the rebuilt W-PLAY package and browser proof on the bumped inputs; and the 0.8.2 Minimum Shelf reseal (U-120): garnet seal is deterministic, the reseal differs from the old seal in exactly parser_version/interp_version, SHELF_PACKAGE.json is rebound, TRUSTED_SEAL_BLAKE3 and TRUSTED_MANIFEST_BLAKE3 in the binary and EXPECTED_SEAL_BLAKE3 plus two sha256 pins in the smoke script follow, and the reseal is recorded in ops/lane2b/evidence/11-f2-version-bump-reseal-green.txt beside the untouched F1 evidence. The validator was not relaxed. The exact base..reviewed_head Git author set is email:jon-isaac@islanddevcrew.com; the authenticated GitHub author/committer principal is IslandDevCrew ID 275140286. IDC-Trust-Review ID 306739987 is the approval-event carrier only. MERGE AUTHORITY: touches garnet-cli/src/minimum_shelf.rs (trust surface) and Cargo.lock (trust file) and requires this record plus an authenticated approval from a principal disjoint from the author set. scripts/smoke_garnet_minimum_shelf.py is changed only in its pins; whether that makes this human-merge-only under Integrity Rule 1 is Jon's reading, and the approval is his either way. Touched paths Cargo.lock; content digest sha256:bf2bd6dd016b0cd7bb382bc5d00e41fa5b4fb37abc33c7919e091f5621ea1751; sole pre-record problem structured review record is missing. Standards axis: none. Spec axis: none. This premerge record is reviewer evidence only; it is not carrier approval, a GitHub approval, re-evaluation, merge, commit, push, tag, or release.",
+  "review_state": "APPROVED",
+  "reviewed_head": "96a0c699b7010a47487d0b2ee4ed051c328f8a75",
+  "reviewed_tree": "f88a1d21ec2b995a5de055ebe8f1d4bda4e94a33",
+  "reviewer_id": 306739987,
+  "reviewer_login": "IDC-Trust-Review",
+  "schema": "garnet.trust_kernel_review_record/v2",
+  "state": "premerge",
+  "touched_paths": [
+    "Cargo.lock"
+  ],
+  "verdict": "pass"
+}

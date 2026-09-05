@@ -1,0 +1,37 @@
+GARNET LANE 2B F2 RESEAL EVIDENCE (workspace 0.8.2)
+implementer: Claude Fable 5.1 (autonomous seat under the 2026-09-01 delegation)
+reviewer: OpenAI Codex (cross-family; the record for this PR binds the verdict)
+captured_utc: 2026-09-04T23:19:48Z
+trigger: the workspace version bump 0.8.1 -> 0.8.2. Manifest::from_module derives
+  parser_version and interp_version from CARGO_PKG_VERSION, and minimum_shelf.rs
+  compares the complete build manifest, so the committed 0.8.1 seal was refused
+  by the 0.8.2 CLI (sealed_flagship_loads_end_to_end and
+  native_stdio_initialize_list_call_and_error both red). Found by Codex review
+  v1 of PR #550 (P1).
+
+RESEAL (garnet seal is deterministic: two consecutive seals are byte-identical)
+  tool.garnet            unchanged  blake3 38db718f35ec1dd034010a9c3d52b4236ce30523a117abefdf41196d5cc9cce9
+  tool.seal.json         before     canonical-text blake3 6913c59afbb93e737c5e87d507d7f66b786a71668c0f85288bf636bbc3433696
+                         after      canonical-text blake3 543e22925d0f2013d7ad6d83c4f29449a22109f4a75c7f5bba5f5506a94a1f57
+                         only diff: parser_version/interp_version 0.8.1 -> 0.8.2
+  SHELF_PACKAGE.json     before     canonical-text blake3 b7938be2a21454c794e499399339e40cee2105f7aee887461e02f66f25d9166b
+                         after      canonical-text blake3 ca0829040caaeda53d7044fa763460dd2ccec46e0db0a6d7da7591947f40f3b3
+                         only diff: sealBlake3 rebound to the new seal
+
+BINARY PINS (garnet-cli/src/minimum_shelf.rs)
+  TRUSTED_SOURCE_BLAKE3    unchanged
+  TRUSTED_SEAL_BLAKE3      6913c59afbb93e737c5e87d507d7f66b786a71668c0f85288bf636bbc3433696 -> 543e22925d0f2013d7ad6d83c4f29449a22109f4a75c7f5bba5f5506a94a1f57
+  TRUSTED_MANIFEST_BLAKE3  b7938be2a21454c794e499399339e40cee2105f7aee887461e02f66f25d9166b -> ca0829040caaeda53d7044fa763460dd2ccec46e0db0a6d7da7591947f40f3b3
+
+SMOKE PINS (scripts/smoke_garnet_minimum_shelf.py)
+  EXPECTED_SEAL_BLAKE3  rebound to the new canonical-text blake3 above
+  sha256:
+  tool.seal.json      526ac0f63f8ac487f6c38fd947defe1b80e1c3c14d80e3cfb38f5a66355b9cbd -> ec5763fa02ad19ca0466ae469cc15937066d5452d3fbfcabe9a8cb18729f4dd3
+  SHELF_PACKAGE.json  dc12370de087c8beeb8885b4d51d4e37b8b02b8d7af90a3957bcb7c1e111b618 -> a3c6cc2306a041c8dc094e1ebc546ab0ae257629d880f34fb969747268110e3a
+
+RESULT
+  cargo test -p garnet-cli --test minimum_shelf_package --test mcp_stdio: green (see PR)
+  python3 -I scripts/smoke_garnet_minimum_shelf.py --gate: the four product-digest
+    findings pre-exist on main (WV-6 partial, U-58) and are identical there; the
+    fifth, 'flagship package contract is not exact', is gone after the rebind
+  the validator was not relaxed; 10-f1-canonical-reseal-green.txt is untouched.
