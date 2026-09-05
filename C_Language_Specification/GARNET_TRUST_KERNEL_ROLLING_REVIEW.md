@@ -47,48 +47,47 @@ was found by running the gate on the H3-02 widening, not by reading the code.
 
 `TRUST_SURFACES` therefore names each surface version, and
 `verify_landed_review_marker` classifies a marker's landing edge under the
-surface that marker was sealed under. Two rules decide it, and nothing about
-Python is ever interpreted. The two landings that predate versioning
-(`PRE_VERSIONING_LANDINGS`, PRs #514 and #517) are **v1 by identity** — a fixed
-historical fact, not a table that grows. Every later landing's own copy of
-`scripts/garnet_trust_kernel_review_status.py`, read at the marker's
-`merged_commit` — a commit the verifier has already placed on main's
-first-parent history, which is append-only under the ruleset — must **declare**
-its surface in two places that agree: exactly one seal line
-(`# garnet-trust-surface: vN`, a comment no construct can bind or shadow) and
-exactly one canonical `CURRENT_TRUST_SURFACE = "vN"` line at column zero
-(`trust_surface_from_source`). A test at every head pins both to the live
-constant, so a copy whose runtime binding disagrees with its declaration cannot
-pass its own suite, and landing one is a reviewed gate change. No seal, two
-seals, a disagreement, any other spelling, undecodable bytes, a version this
-gate no longer registers (`TRUST_SURFACES` is append-only), or an absent copy:
-each is a finding that resolves to the current, widest surface — never a
-narrower one.
+surface that was **in force when it landed**. That is a question of provenance,
+never of reading the landing's copy of the gate script. Each version after v1
+has an **era stone**, a canonical JSON file
+`F_Project_Management/W_TRUST/eras/<vN>.era.json` laid by the change that
+introduced the version. A landing's surface is the latest version whose stone
+was introduced at or before that landing on main's first-parent history, which
+is append-only under the ruleset; a landing before every stone is v1 (that is
+what the two pre-versioning markers, PRs #514 and #517, are). Stone history
+must itself be append-only — a modified or deleted stone anywhere on the line
+is a finding — so presence is monotone and the boundary is found by bisection.
+Every registered version after v1 must have a stone, a stone for an
+unregistered version is a finding, and a marker may carry `trust_surface`
+only in agreement with the era in force (an explicit non-version value,
+`null` included, is a finding; a `merged_commit` registered twice is a
+finding). Every failure resolves to the current, widest surface.
 
-A marker may carry `trust_surface`; it is optional and may only agree with the
-derivation. An explicit value that is not a registered version string —
-including JSON `null`, which an absent-key check once conflated with omission
-— is a finding, and a disagreement is a finding. Every failure resolves to the
-current surface, which is the widest and therefore the strictest, so a
-rejected marker accounts for more paths, never fewer. A `merged_commit`
-registered by more than one marker is a finding: one landing edge, one seal.
+The **runtime entry consistency boundary** runs inside every gate invocation:
+the surface this process applies to live candidates (`CURRENT_TRUST_SURFACE`,
+as bound at the entry point) must equal the latest era stone in the candidate
+tree, or the repository verification is red. A copy that widens the constant
+anywhere — its `__main__` block included — without laying its stone cannot run
+green, and `--print-trust-surface` reports what the actual entry applies.
 
-Five earlier designs are recorded here so they are not reintroduced.
+Six earlier designs are recorded here so they are not reintroduced, each
+rejected by cross-family review with a reproduced construction.
 Declaration-first let a new marker declare the old surface and hide the newly
-covered paths on its own landing edge; the end-to-end verifier returned zero
-findings on that construction. Commit-only pinning let a second marker replay a
-pinned `merged_commit` and inherit the historical exception. A closed pin map
-bound to marker paths preserved exactly the two pre-versioning markers and
-nothing sealed after them: the first v2-to-v3 widening turned a valid v2
-marker red with zero repository changes. A regular expression over the
-constant chose the narrower era on a docstring, a single quote, an indent or a
-duplicate. A parse of the constant's binding was defeated by a walrus, a
-`from … import` and a tuple target — no inventory of Python binders is sound —
-and inferred the pre-versioning era from the absence of a symbol, which an
-import also produces. The seal preserves every era with no table to grow; the
-regression that proves it lands a v2 marker, widens the live surface to v3,
-and verifies the registry green, and a second regression lands each rejected
-construction with a v2-only path omitted and shows the omission reported.
+covered paths on its own landing edge. Commit-only pinning let a second marker
+replay a pinned `merged_commit`. A closed pin map bound to marker paths
+preserved exactly the two pre-versioning markers and nothing sealed after them:
+the first v2-to-v3 widening turned a valid v2 marker red with zero repository
+changes. A regular expression over the constant in the landing's copy chose the
+narrower era on a docstring, a single quote, an indent or a duplicate. A parse
+of the constant's binding was defeated by a walrus, a `from … import` and a
+tuple target — no inventory of Python binders is sound — and inferred the
+pre-versioning era from the absence of a symbol. A seal comment beside the
+constant was defeated by a copy that rebound the constant at its `__main__`
+entry while carrying the seal. The common failure: any static reading of a copy
+can be made to disagree with what that copy does. The ledger reads no copy; the
+regression that proves it lands a v2 marker, lays a v3 stone with the live
+surface widened, verifies the registry green, and shows a v3-era landing that
+omits a v3-only path reported.
 
 Live candidates are always judged by the current surface; only sealed history is
 judged by its own.

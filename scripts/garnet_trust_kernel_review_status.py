@@ -159,85 +159,137 @@ TRUST_SURFACES: dict[str, tuple[tuple[str, ...], tuple[str, ...]]] = {
     "v1": (TRUST_SURFACE_V1_PREFIXES, TRUST_SURFACE_V1_FILES),
     "v2": (TRUST_KERNEL_PREFIXES, TRUST_KERNEL_FILES),
 }
-# garnet-trust-surface: v2
 CURRENT_TRUST_SURFACE = "v2"
-# A sealed marker is verified under the surface the gate ITSELF defined at the
-# marker's landing commit.  That surface is derived, never declared and never
-# pinned: the gate reads its own copy at `merged_commit` — a commit the
-# verifier has already placed on main's first-parent history, which is
-# append-only under the ruleset — and takes the one constant above from it.  A
-# copy without the constant predates versioning, which is the v1 era.
+# A sealed marker is verified under the surface that was IN FORCE when it
+# landed, and that is a question of provenance, never of reading the landing's
+# copy of this script.  Five designs that read it were rejected by review:
+# declaration-first (a new marker could declare the old, narrower surface),
+# commit-only pinning (replayable), a closed pin map bound to marker paths
+# (preserved only the two pre-versioning markers; the next widening turned a
+# valid v2 marker red), a regular expression over the constant (fooled by
+# spelling), a parse of its binding (defeated by a walrus and an import), and a
+# seal comment beside it (a copy can rebind the constant at its entry point and
+# still carry the seal).  Any static reading of a copy can be made to disagree
+# with what that copy does; so no copy is read.
 #
-# Two earlier designs are recorded so they are not reintroduced.  Declaration-
-# first let a NEW marker declare the old, narrower surface and hide the newly
-# covered paths on its own landing edge (review v1 finding).  A closed pin map
-# keyed by `merged_commit` preserved exactly the two pre-versioning markers and
-# nothing after them: the first v2-to-v3 widening turned a valid v2 marker red
-# (review v3 finding, R559-4), which is the repository-wide condition this
-# versioning exists to prevent.  Derivation preserves every seal era, forever,
-# with no table to grow.
-GATE_SCRIPT_PATH = "scripts/garnet_trust_kernel_review_status.py"
+# Instead each surface version after v1 has an ERA STONE: a canonical JSON file
+# under ERA_STONE_DIR added by the change that introduced the version.  A
+# landing's surface is the latest version whose stone was introduced at or
+# before that landing on main's first-parent history, which is append-only
+# under the ruleset; a landing before every stone is v1.  Stone history must
+# itself be append-only (no deletion, no modification), and the surface this
+# gate applies to live candidates must equal the latest stone in the candidate
+# tree — checked inside every gate run, so a copy that widens the live surface
+# without laying its stone cannot run green.
+ERA_STONE_DIR = "F_Project_Management/W_TRUST/eras/"
+ERA_STONE_SUFFIX = ".era.json"
+ERA_STONE_SCHEMA = "garnet.trust_surface_era/v1"
+ERA_STONE_KEYS = frozenset({"introduced_by_pull_request", "schema", "version"})
 PRE_VERSIONING_TRUST_SURFACE = "v1"
-# The landings sealed before the gate versioned its surface.  A fixed
-# historical fact, not a table that grows: every later landing carries its own
-# seal (below), and every era after v1 is derived from that seal, so a
-# widening never needs an entry here.  Both commits are first-parent ancestors
-# of main; the verifier establishes that before this set is consulted.
-PRE_VERSIONING_LANDINGS = frozenset(
-    {
-        "68317ae258327aade47fc2c07b7b5b580ec7c6ea",  # PR #517, Lane 1 governance activation
-        "41d6ced858684ac67683d32315920bd50a52976e",  # PR #514, Lane 2B minimum Shelf / MCP
-    }
-)
-# The seal vocabulary.  Spelled in two pieces so this file contains the token
-# exactly once: on the seal line itself.
-_SEAL_WORD = "garnet-trust-" "surface"
-_SEAL_LINE = re.compile(r"^# " + _SEAL_WORD + r": (v[0-9]+)$")
-_CONSTANT_LINE = re.compile(r'^CURRENT_TRUST_SURFACE = "(v[0-9]+)"$')
-_UNSEALED_SURFACE_SOURCE = (
-    "the gate script at the landing commit does not carry exactly one seal line "
-    "and exactly one canonical CURRENT_TRUST_SURFACE line naming the same version, "
-    "so the sealed surface cannot be derived"
-)
+_VERSION_NAME = re.compile(r"^v[0-9]+$")
 
 
-def trust_surface_from_source(source: bytes) -> tuple[str | None, list[str]]:
-    """Name the surface a post-versioning copy of this script declares.
+def era_stone_path(version: str) -> str:
+    return f"{ERA_STONE_DIR}{version}{ERA_STONE_SUFFIX}"
 
-    Nothing about Python is interpreted.  Three designs were rejected by
-    review before this one: a regular expression over the constant (fooled by
-    spelling), a parse of the constant's binding (a walrus, an import or a
-    tuple target binds a name past any inventory of assignments), and the
-    inference that absence of the mechanism proves the pre-versioning era.
-    The rule is now a declaration in two places that must agree, counted over
-    raw lines: exactly one seal line ``# <seal word>: vN`` anywhere in the
-    file, and exactly one canonical line ``CURRENT_TRUST_SURFACE = "vN"`` at
-    column zero, with the same ``vN``.  A test at every head pins both to the
-    live constant, so a copy whose runtime binding disagrees with its
-    declaration cannot pass its own suite, and landing one is a reviewed gate
-    change.  Anything else — no seal, two seals, a seal that disagrees with
-    the constant, a constant spelled any other way, undecodable bytes — is a
-    finding, never a narrower surface.
-    """
-    try:
-        text = source.decode("utf-8", errors="strict")
-    except UnicodeDecodeError:
-        return None, ["the gate script at the landing commit is not strict UTF-8"]
-    seals: list[str] = []
-    constants: list[str] = []
-    for line in text.split("\n"):
-        line = line.rstrip("\r")
-        seal = _SEAL_LINE.fullmatch(line)
-        if seal is not None:
-            seals.append(seal.group(1))
-        constant = _CONSTANT_LINE.fullmatch(line)
-        if constant is not None:
-            constants.append(constant.group(1))
-    if len(seals) != 1 or len(constants) != 1 or seals[0] != constants[0]:
-        return None, [_UNSEALED_SURFACE_SOURCE]
-    if text.count(_SEAL_WORD) != 1:
-        return None, [_UNSEALED_SURFACE_SOURCE]
-    return seals[0], []
+
+def _version_number(version: str) -> int:
+    return int(version[1:])
+
+
+def load_era_stone(payload: bytes, version: str) -> tuple[dict | None, list[str]]:
+    """Parse one era stone: canonical JSON, exact keys, schema, version equal to
+    the file's own name, a positive pull request number."""
+    document, problems = _load_canonical_record(payload)
+    if document is None:
+        return None, [f"era stone {version}: {item}" for item in problems]
+    findings: list[str] = []
+    if set(document) != ERA_STONE_KEYS:
+        findings.append(f"era stone {version} keys are not exact")
+    if document.get("schema") != ERA_STONE_SCHEMA:
+        findings.append(f"era stone {version} schema is not {ERA_STONE_SCHEMA}")
+    if document.get("version") != version:
+        findings.append(f"era stone {version} names version {document.get('version')!r}")
+    pull = document.get("introduced_by_pull_request")
+    if type(pull) is not int or pull <= 0:
+        findings.append(f"era stone {version} does not name the pull request that introduced it")
+    return (document if not findings else None), findings
+
+
+def era_stones_in_tree(root: Path, ref: str) -> tuple[dict[str, dict], list[str]]:
+    """The stones present at ``ref``: version -> document.  Every registered
+    version after v1 must have one; a stone for an unregistered version, or a
+    malformed one, is a finding."""
+    stones: dict[str, dict] = {}
+    findings: list[str] = []
+    for version in TRUST_SURFACES:
+        if version == PRE_VERSIONING_TRUST_SURFACE:
+            continue
+        payload, problems = _read_blob(root, ref, era_stone_path(version))
+        if payload is None:
+            findings.append(f"registered trust surface {version} has no era stone at {ref}")
+            continue
+        document, stone_problems = load_era_stone(payload, version)
+        findings.extend(stone_problems)
+        if document is not None:
+            stones[version] = document
+    listing = _git_bytes(root, "ls-tree", "--name-only", f"{ref}:{ERA_STONE_DIR.rstrip('/')}")
+    if listing.returncode == 0:
+        for name in listing.stdout.decode("utf-8", errors="replace").split():
+            if name.endswith(ERA_STONE_SUFFIX):
+                version = name[: -len(ERA_STONE_SUFFIX)]
+                if version not in TRUST_SURFACES:
+                    findings.append(f"era stone {version} names a version this gate does not register")
+    return stones, findings
+
+
+def latest_era(stones: "dict[str, object] | list[str]") -> str:
+    versions = [v for v in stones if _VERSION_NAME.match(v)]
+    return max(versions, key=_version_number) if versions else PRE_VERSIONING_TRUST_SURFACE
+
+
+def era_boundaries(
+    root: Path, first_parent: list[str], main_ref: str
+) -> tuple[dict[str, int], list[str]]:
+    """version -> the index (newest-first) of the first-parent commit that
+    introduced its stone on ``main_ref``.  Stone history must be append-only;
+    presence is then monotone along the line and the boundary is found by
+    bisection."""
+    findings: list[str] = []
+    if not first_parent:
+        return {}, ["first-parent history is empty"]
+    edits = _git_bytes(
+        root, "log", "--first-parent", "--format=%H", "--diff-filter=DM",
+        main_ref, "--", ERA_STONE_DIR,
+    )
+    if edits.returncode != 0:
+        return {}, ["era stone history could not be read"]
+    if edits.stdout.strip():
+        return {}, ["era stone history is not append-only: a stone was modified or deleted on first-parent history"]
+    tip_stones, tip_findings = era_stones_in_tree(root, first_parent[0])
+    findings.extend(item for item in tip_findings if not item.startswith("registered trust surface"))
+    boundaries: dict[str, int] = {}
+    for version, document in tip_stones.items():
+        path = era_stone_path(version)
+        low, high = 0, len(first_parent) - 1
+        while low < high:  # largest index at which the stone is present
+            mid = (low + high + 1) // 2
+            present, _ = _read_blob(root, first_parent[mid], path)
+            if present is None:
+                high = mid - 1
+            else:
+                low = mid
+        boundaries[version] = low
+    return boundaries, findings
+
+
+def trust_surface_for_landing(
+    boundaries: dict[str, int], landed_index: int
+) -> str:
+    """The latest version whose stone was introduced at or before the landing
+    (a smaller index is a later commit)."""
+    in_force = [v for v, s in boundaries.items() if s >= landed_index]
+    return latest_era(in_force)
 
 
 REVIEW_RECORD_PREFIX = "F_Project_Management/W_TRUST/"
@@ -392,66 +444,48 @@ def trust_surface_predicate(name: str) -> "Callable[[str], bool]":
     return classify
 
 
-def trust_surface_at_commit(root: Path, commit: str) -> tuple[str | None, list[str]]:
-    """The surface this gate defined at ``commit``, read from that commit's own
-    copy of this script.
-
-    ``commit`` must already be a verified first-parent landing commit; the
-    caller establishes that.  The two landings that predate versioning are
-    ``v1`` by identity (``PRE_VERSIONING_LANDINGS``) and are not read.  Every
-    other landing's copy must declare its surface (``trust_surface_from_source``);
-    a copy that does not is a finding, a copy naming a version this gate no
-    longer registers is a finding, because ``TRUST_SURFACES`` is append-only,
-    and an absent copy cannot be derived from and fails closed.
-    """
-    if commit.lower() in PRE_VERSIONING_LANDINGS:
-        return PRE_VERSIONING_TRUST_SURFACE, []
-    payload, problems = _read_blob(root, commit, GATE_SCRIPT_PATH)
-    if payload is None:
-        return None, [
-            *problems,
-            f"the gate script is absent at merged_commit {commit}, so the sealed "
-            "trust surface cannot be derived",
-        ]
-    name, parse_findings = trust_surface_from_source(payload)
-    if name is None:
-        return None, [f"merged_commit {commit}: {item}" for item in parse_findings]
-    if name not in TRUST_SURFACES:
-        return None, [
-            f"merged_commit {commit} was sealed under trust surface {name!r}, which "
-            "this gate does not register; TRUST_SURFACES is append-only"
-        ]
-    return name, []
+def trust_surface_at_commit(
+    root: Path, commit: str, main_ref: str = "refs/remotes/origin/main"
+) -> tuple[str | None, list[str]]:
+    """The surface in force at ``commit``, which must be on ``main_ref``'s
+    first-parent history.  Provenance only: no copy of this script is read."""
+    history = _git_bytes(root, "rev-list", "--first-parent", main_ref)
+    if history.returncode != 0:
+        return None, [f"first-parent history of {main_ref} could not be read"]
+    first_parent = history.stdout.decode("ascii", errors="replace").split()
+    if commit not in first_parent:
+        return None, [f"{commit} is not on the first-parent history of {main_ref}"]
+    boundaries, findings = era_boundaries(root, first_parent, main_ref)
+    if findings:
+        return None, findings
+    return trust_surface_for_landing(boundaries, first_parent.index(commit)), []
 
 
 def resolve_marker_trust_surface(
-    marker: dict, root: Path, landed_commit: str
+    marker: dict, boundaries: dict[str, int], landed_index: int
 ) -> tuple[str, list[str]]:
-    """Name the surface a landed marker was sealed under.
-
-    The DERIVATION decides (see ``trust_surface_at_commit``).  A declared
-    ``trust_surface`` is optional and may only agree with it: an explicit
-    value that is not a registered version string — including JSON ``null``,
-    which ``dict.get`` used to conflate with an absent key (review v3,
-    R559-5) — is a finding, and a disagreement is a finding.  Every failure
-    resolves to ``CURRENT_TRUST_SURFACE``, the widest and therefore strictest
-    surface, so a rejected marker must account for more paths, never fewer.
+    """Name the surface a landed marker was sealed under: the era in force at
+    its landing.  A declared ``trust_surface`` is optional and may only agree;
+    an explicit non-version value — JSON ``null`` included, which an
+    absent-key check once conflated with omission — is a finding, and a
+    disagreement is a finding.  Every failure resolves to
+    ``CURRENT_TRUST_SURFACE``, the widest and therefore strictest surface, so
+    a rejected marker must account for more paths, never fewer.
     """
     findings: list[str] = []
-    derived, derive_findings = trust_surface_at_commit(root, landed_commit)
-    findings.extend(derive_findings)
+    in_force = trust_surface_for_landing(boundaries, landed_index)
     if "trust_surface" in marker:
         declared = marker["trust_surface"]
         if not isinstance(declared, str) or declared not in TRUST_SURFACES:
             findings.append(f"unknown trust surface {declared!r} in landed marker")
-        elif derived is not None and declared != derived:
+        elif declared != in_force:
             findings.append(
-                f"landed marker declares trust surface {declared!r} but its "
-                f"merged_commit was sealed under {derived!r}"
+                f"landed marker declares trust surface {declared!r} but {in_force!r} "
+                "was in force at its landing"
             )
-    if findings or derived is None:
+    if findings:
         return CURRENT_TRUST_SURFACE, findings
-    return derived, findings
+    return in_force, findings
 
 
 def is_review_record(path: str) -> bool:
@@ -2469,8 +2503,10 @@ def verify_landed_review_marker(
                 "exact first-parent landing edge is partial or disagrees with "
                 "independent tree-object traversal"
             )
+    boundaries, era_findings = era_boundaries(root, first_parent, main_ref)
+    findings.extend(era_findings)
     surface_name, surface_findings = resolve_marker_trust_surface(
-        marker, root, landed_commit
+        marker, boundaries, landed_index
     )
     findings.extend(surface_findings)
     in_sealed_surface = trust_surface_predicate(surface_name)
@@ -2713,6 +2749,17 @@ def verify_repository_landed_markers(
     )
     if valid_markers is None and not findings:
         findings.append("landed marker registry is missing")
+    # The runtime entry consistency boundary: the surface this process applies
+    # to live candidates must be the latest era stone in the candidate tree.
+    # A copy that widens the constant anywhere — its entry point included —
+    # without laying a stone makes every gate run red here.
+    stones, stone_findings = era_stones_in_tree(root, commit)
+    findings.extend(stone_findings)
+    if latest_era(stones) != CURRENT_TRUST_SURFACE:
+        findings.append(
+            f"the live trust surface {CURRENT_TRUST_SURFACE!r} is not the latest era stone "
+            f"{latest_era(stones)!r} in the candidate tree"
+        )
 
     if findings:
         return findings
@@ -2921,7 +2968,19 @@ def main(argv: list[str] | None = None, *, root: Path = ROOT) -> int:
         help="read one bounded credential from stdin; environment credentials are never inherited",
     )
     parser.add_argument("--gate", action="store_true", help="exit nonzero on any finding")
+    parser.add_argument(
+        "--print-trust-surface",
+        action="store_true",
+        help="print the surface this entry applies to live candidates and the latest era stone, then exit",
+    )
     args = parser.parse_args(list(argv) if argv is not None else None)
+    if args.print_trust_surface:
+        stones, stone_findings = era_stones_in_tree(root, "HEAD")
+        print(json.dumps(
+            {"current": CURRENT_TRUST_SURFACE, "latest_era_stone": latest_era(stones), "problems": stone_findings},
+            sort_keys=True,
+        ))
+        return 0
 
     policy_problems: list[str] = []
     if args.gate and args.base is not None:

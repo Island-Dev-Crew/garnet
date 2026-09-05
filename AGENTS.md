@@ -105,21 +105,23 @@ Never narrow the surface to make a PR green.
 
 Widening the surface is only safe because the surface is versioned. A sealed
 landed marker binds the trust subset of its landing edge, so it is verified
-under the surface it was sealed under. The two pre-versioning landings
-(`PRE_VERSIONING_LANDINGS`) are v1 by identity; every later landing's own copy
-of the gate script, read at its `merged_commit`, must declare its surface in
-two places that agree — the seal line `# garnet-trust-surface: vN` and the
-canonical `CURRENT_TRUST_SURFACE = "vN"` line — and nothing about Python is
-interpreted. A declared marker `trust_surface` may only agree, an explicit
-non-version value (including `null`) is a finding, an unregistered version is
-a finding, a `merged_commit` registered twice is a finding, and every failure
-resolves to the current (widest, therefore strictest) surface. Five earlier
-designs are recorded in the rolling-review contract; do not reintroduce them.
-Never widen `TRUST_KERNEL_PREFIXES` or `TRUST_KERNEL_FILES` in place: add a
-new `TRUST_SURFACES` version, bump `CURRENT_TRUST_SURFACE` **and the seal line**
-in the same change, and re-run
-`python3 -I scripts/test_garnet_trust_kernel_review_status.py`, which pins the
-seal to the constant at every head and lands a v2 marker green under v3.
+under the surface that was in force when it landed, and that is provenance:
+each version after v1 has an era stone
+(`F_Project_Management/W_TRUST/eras/<vN>.era.json`) laid by the change that
+introduced it, a landing's surface is the latest stone introduced at or before
+it on main's first-parent history, and a landing before every stone is v1. No
+copy of the gate script is ever read — six designs that read one were
+rejected by review and are recorded in the rolling-review contract. Stone
+history is append-only; a declared marker `trust_surface` may only agree with
+the era in force; an explicit non-version value (including `null`) is a
+finding; a `merged_commit` registered twice is a finding; every failure
+resolves to the current (widest, therefore strictest) surface. Inside every
+gate run the live `CURRENT_TRUST_SURFACE` must equal the latest stone in the
+candidate tree, so a copy that widens the constant without laying its stone
+cannot run green. To widen: add a `TRUST_SURFACES` version, bump
+`CURRENT_TRUST_SURFACE`, and lay the version's stone in the same change; then
+re-run `python3 -I scripts/test_garnet_trust_kernel_review_status.py`, which
+lands a v2 marker, lays a v3 stone and verifies the registry green.
 
 ## Dogfood PR-Body Evidence Contract
 

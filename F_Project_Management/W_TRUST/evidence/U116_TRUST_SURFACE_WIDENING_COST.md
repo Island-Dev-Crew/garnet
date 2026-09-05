@@ -21,11 +21,11 @@ Files no longer listed individually (subsumed by an added prefix): `garnet-cli/s
 
 A flip means: had this surface been live, that PR would have needed a structured review record. It is the price of the coverage, stated per PR rather than argued.
 
-## Sealed history under derivation
+## Sealed history under the era ledger
 
-The two markers sealed before the surface carried a version derive their era from the gate's own copy at their landing commits — no pin, no declaration:
+The two markers sealed before the surface carried a version landed before the `v2` era stone this change lays, so the ledger places them in v1 — no pin, no declaration, no copy of the gate read:
 
 - `68317ae2` → `v1` (no findings)
 - `41d6ced8` → `v1` (no findings)
 
-The end-to-end regression `TrustSurfaceWideningTests` lands a v2 marker in a fixture repository, widens the live surface to a v3 that adds a prefix, and verifies the registry green with no repository or marker bytes changed.
+The end-to-end regression `TrustSurfaceWideningTests` lands a v2 marker in a fixture repository, lays a v3 stone with the live surface widened, verifies the registry green with no marker bytes changed, shows a v3-era landing that omits a v3-only path reported, and shows a live surface with no stone unable to run green.

@@ -79,12 +79,10 @@ class GitRepoFixture(unittest.TestCase):
         self._git("config", "user.email", "author@example.invalid")
         self._git("config", "user.name", "Author")
         write_lf(self.root / "README.md", "base\n")
-        # The gate derives a landed marker's sealed surface from THIS script's
-        # own copy at the landing commit, so a fixture repository carries a
-        # stub of it at the base: one constant, the current surface.
-        stub = self.root / mod.GATE_SCRIPT_PATH
-        stub.parent.mkdir(parents=True, exist_ok=True)
-        write_lf(stub, f'# {mod._SEAL_WORD}: {mod.CURRENT_TRUST_SURFACE}\nCURRENT_TRUST_SURFACE = "{mod.CURRENT_TRUST_SURFACE}"\n')
+        # The surface in force at a landing is a matter of provenance: the era
+        # stone of the current surface sits at the fixture base, so every
+        # landing after it is in the current era.
+        self._write_stone(mod.CURRENT_TRUST_SURFACE)
         registry = self.root / "F_Project_Management/W_TRUST/LANDED_REVIEW_MARKERS.json"
         registry.parent.mkdir(parents=True, exist_ok=True)
         registry.write_bytes(
@@ -95,7 +93,7 @@ class GitRepoFixture(unittest.TestCase):
                 }
             )
         )
-        self._git("add", "README.md", mod.GATE_SCRIPT_PATH, str(registry.relative_to(self.root)))
+        self._git("add", "README.md", mod.era_stone_path(mod.CURRENT_TRUST_SURFACE), str(registry.relative_to(self.root)))
         self._git("commit", "-m", "base")
         self.base = self._git("rev-parse", "HEAD")
         self._git("branch", "-M", "main")
@@ -103,6 +101,12 @@ class GitRepoFixture(unittest.TestCase):
 
     def tearDown(self) -> None:
         self.temp.cleanup()
+
+    def _write_stone(self, version: str, pull: int = 559) -> str:
+        path = self.root / mod.era_stone_path(version)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(_canonical({"introduced_by_pull_request": pull, "schema": mod.ERA_STONE_SCHEMA, "version": version}))
+        return mod.era_stone_path(version)
 
     def _git(self, *args: str, check: bool = True) -> str:
         result = subprocess.run(
@@ -1757,8 +1761,8 @@ class LandedMarkerTests(GitRepoFixture):
             "head_repository": "Navigata1/garnet",
             "head_repository_id": 6006,
             "merged_commit": self.merged_commit,
-            # Optional: the surface is DERIVED from the landing commit's copy of
-            # the gate script; a declared value may only agree with it.
+            # Optional: the surface in force at the landing comes from the era
+            # ledger; a declared value may only agree with it.
             "trust_surface": mod.CURRENT_TRUST_SURFACE,
             "merged_tree": self.merged_tree,
             "pull_request_id": 7007,
@@ -2264,79 +2268,46 @@ class TrustSurfaceVersionTests(unittest.TestCase):
         self.assertTrue(now("garnet-cli/src/manifest.rs"))
         self.assertTrue(now("scripts/check_dogfood_pr_body.py"))
 
-    def test_the_two_pre_versioning_landings_are_v1_by_identity(self) -> None:
-        # A fixed historical fact: both commits landed before the gate sealed
-        # its surface, both sit on main's first-parent history, and no later
-        # landing is ever added here — later eras come from the seal line.
-        self.assertEqual(
-            {"68317ae258327aade47fc2c07b7b5b580ec7c6ea", "41d6ced858684ac67683d32315920bd50a52976e"},
-            set(mod.PRE_VERSIONING_LANDINGS),
+    def test_every_registered_version_after_v1_has_a_stone_and_the_live_surface_is_the_latest(self) -> None:
+        stones, findings = mod.era_stones_in_tree(mod.ROOT, "HEAD")
+        self.assertEqual([], findings)
+        self.assertEqual(set(mod.TRUST_SURFACES) - {"v1"}, set(stones))
+        self.assertEqual(mod.CURRENT_TRUST_SURFACE, mod.latest_era(stones))
+        self.assertEqual(559, stones["v2"]["introduced_by_pull_request"])
+
+    def test_the_cli_entry_reports_the_live_surface_it_applies(self) -> None:
+        # Review v4 (R559-v4-1): an imported-module check misses a rebinding at
+        # the __main__ entry. The actual entry reports what it applies, and it
+        # must be the latest stone.
+        proc = subprocess.run(
+            [sys.executable, "-I", str(mod.ROOT / "scripts/garnet_trust_kernel_review_status.py"), "--print-trust-surface"],
+            cwd=mod.ROOT, capture_output=True, text=True, check=True,
         )
-        for merged in mod.PRE_VERSIONING_LANDINGS:
+        report = json.loads(proc.stdout)
+        self.assertEqual(mod.CURRENT_TRUST_SURFACE, report["current"])
+        self.assertEqual(report["current"], report["latest_era_stone"])
+        self.assertEqual([], report["problems"])
+
+    def test_the_two_pre_versioning_landings_precede_every_stone(self) -> None:
+        # Provenance, not identity and not a reading of any copy: both landed
+        # before the v2 stone was laid, so they are v1 wherever main is.
+        for merged in ("68317ae258327aade47fc2c07b7b5b580ec7c6ea", "41d6ced858684ac67683d32315920bd50a52976e"):
             self.assertEqual(("v1", []), mod.trust_surface_at_commit(mod.ROOT, merged))
-            ancestor = subprocess.run(
-                ["git", "-C", str(mod.ROOT), "merge-base", "--is-ancestor", merged, "HEAD"],
-                capture_output=True,
-            )
-            self.assertEqual(0, ancestor.returncode, merged)
 
-    def test_this_head_seals_the_live_surface_exactly_once(self) -> None:
-        # The self-consistency every landing must carry: the seal line, the
-        # canonical constant line and the runtime constant agree, and the seal
-        # vocabulary occurs exactly once in the file.
-        source = (mod.ROOT / mod.GATE_SCRIPT_PATH).read_bytes()
-        self.assertEqual((mod.CURRENT_TRUST_SURFACE, []), mod.trust_surface_from_source(source))
-        self.assertEqual(1, source.decode().count(mod._SEAL_WORD))
-        head = subprocess.run(
-            ["git", "-C", str(mod.ROOT), "rev-parse", "HEAD"], capture_output=True, text=True, check=True
-        ).stdout.strip()
-        if head.lower() not in mod.PRE_VERSIONING_LANDINGS and not subprocess.run(
-            ["git", "-C", str(mod.ROOT), "status", "--porcelain", "--", mod.GATE_SCRIPT_PATH],
-            capture_output=True, text=True, check=True,
-        ).stdout.strip():
-            self.assertEqual((mod.CURRENT_TRUST_SURFACE, []), mod.trust_surface_at_commit(mod.ROOT, head))
-
-    def test_the_surface_is_declared_not_interpreted(self) -> None:
-        # Review v3 (R559-v3-1): no inventory of Python binders is sound, so
-        # no Python is interpreted. Two declarations that must agree, counted
-        # over raw lines; every other shape is a finding, never a narrower era.
-        derive = mod.trust_surface_from_source
-        seal = f"# {mod._SEAL_WORD}: "
-        unsealed = (None, [mod._UNSEALED_SURFACE_SOURCE])
-        ok = (seal + 'v2\nCURRENT_TRUST_SURFACE = "v2"\n').encode()
-        self.assertEqual(("v2", []), derive(ok))
-        self.assertEqual(("v2", []), derive(ok.replace(b"\n", b"\r\n")))
-        # walrus, import, tuple target, globals(): irrelevant — the declaration decides
-        for extra in (
-            b'(CURRENT_TRUST_SURFACE := "v9")\n',
-            b"from somewhere import CURRENT_TRUST_SURFACE\n",
-            b'CURRENT_TRUST_SURFACE, X = "v9", 1\n',
-            b'globals()["CURRENT_TRUST_SURFACE"] = "v9"\n',
-            b'if True:\n    CURRENT_TRUST_SURFACE = "v9"\n',
+    def test_era_stone_shape_is_exact(self) -> None:
+        good = _canonical({"introduced_by_pull_request": 559, "schema": mod.ERA_STONE_SCHEMA, "version": "v2"})
+        self.assertEqual([], mod.load_era_stone(good, "v2")[1])
+        for label, payload, version in (
+            ("wrong version", good, "v3"),
+            ("extra key", _canonical({"introduced_by_pull_request": 559, "schema": mod.ERA_STONE_SCHEMA, "version": "v2", "x": 1}), "v2"),
+            ("bad schema", _canonical({"introduced_by_pull_request": 559, "schema": "other", "version": "v2"}), "v2"),
+            ("no pull", _canonical({"introduced_by_pull_request": 0, "schema": mod.ERA_STONE_SCHEMA, "version": "v2"}), "v2"),
+            ("noncanonical", good.replace(b"\n", b"\r\n"), "v2"),
         ):
-            with self.subTest(extra=extra):
-                self.assertEqual(("v2", []), derive(ok + extra))
-        # the shapes that are findings
-        cases = {
-            "no seal": b'CURRENT_TRUST_SURFACE = "v2"\n',
-            "no constant": (seal + "v2\n").encode(),
-            "neither": b"# an unrelated file\n",
-            "empty": b"",
-            "disagree": (seal + 'v1\nCURRENT_TRUST_SURFACE = "v2"\n').encode(),
-            "two seals": (seal + "v1\n" + seal + 'v2\nCURRENT_TRUST_SURFACE = "v2"\n').encode(),
-            "seal in docstring too": ('"""\n' + seal + 'v1\n"""\n' + seal + 'v2\nCURRENT_TRUST_SURFACE = "v2"\n').encode(),
-            "two constants": (seal + 'v2\nCURRENT_TRUST_SURFACE = "v2"\nCURRENT_TRUST_SURFACE = "v1"\n').encode(),
-            "constant in docstring too": (seal + 'v2\n"""\nCURRENT_TRUST_SURFACE = "v1"\n"""\nCURRENT_TRUST_SURFACE = "v2"\n').encode(),
-            "single-quoted constant": (seal + "v2\nCURRENT_TRUST_SURFACE = 'v2'\n").encode(),
-            "indented constant only": (seal + 'v2\n    CURRENT_TRUST_SURFACE = "v2"\n').encode(),
-            "vocabulary elsewhere": (seal + 'v2\nCURRENT_TRUST_SURFACE = "v2"\n# see ' + mod._SEAL_WORD + "\n").encode(),
-            "not utf-8": b"\xff\xfe" + ok,
-        }
-        for label, body in cases.items():
             with self.subTest(label=label):
-                name, findings = derive(body)
-                self.assertIsNone(name, label)
-                self.assertEqual(1, len(findings), (label, findings))
+                document, findings = mod.load_era_stone(payload, version)
+                self.assertIsNone(document, label)
+                self.assertTrue(findings, label)
 
     def test_trust_surface_is_an_allowed_marker_key(self) -> None:
         self.assertIn("trust_surface", mod.LANDED_KEYS)
@@ -2348,131 +2319,170 @@ class TrustSurfaceVersionTests(unittest.TestCase):
         self.assertEqual([], findings)
 
 class MarkerTrustSurfaceDerivationTests(GitRepoFixture):
-    """The sealed surface is DECLARED by the landing commit's own copy of the
-    gate script — a seal line and the canonical constant line, agreeing — and
-    never interpreted (review v3 cure). The two pre-versioning landings are v1
-    by identity."""
+    """The surface in force at a landing comes from the era ledger on main's
+    first-parent history (review v4 cure): no copy of the gate script is read."""
 
-    def _stub(self, body: bytes | None) -> str:
-        path = self.root / mod.GATE_SCRIPT_PATH
-        if body is None:
-            self._git("rm", "-q", mod.GATE_SCRIPT_PATH)
-            self._git("commit", "-m", "no gate script")
-        elif path.read_bytes() != body:
-            self._commit_file(mod.GATE_SCRIPT_PATH, body, "gate stub")
-        return self._git("rev-parse", "HEAD")
+    def _land(self, message: str = "landing") -> str:
+        self._commit_file(f"noise-{message}.txt", message.encode(), message)
+        commit = self._git("rev-parse", "HEAD")
+        self._git("update-ref", "refs/remotes/origin/main", commit)
+        return commit
 
-    def _sealed(self, seal: str, constant: str | None = None) -> bytes:
-        return (f"# {mod._SEAL_WORD}: {seal}\nCURRENT_TRUST_SURFACE = \"{constant or seal}\"\n").encode()
+    def _lay(self, version: str) -> str:
+        path = self._write_stone(version)
+        self._git("add", path)
+        self._git("commit", "-m", f"era stone {version}")
+        commit = self._git("rev-parse", "HEAD")
+        self._git("update-ref", "refs/remotes/origin/main", commit)
+        return commit
 
-    def test_a_pre_versioning_landing_is_v1_without_reading_anything(self) -> None:
-        for merged in mod.PRE_VERSIONING_LANDINGS:
-            self.assertEqual(("v1", []), mod.resolve_marker_trust_surface({}, self.root, merged))
+    def test_a_landing_after_the_current_stone_is_the_current_era(self) -> None:
+        commit = self._land()
+        self.assertEqual(("v2", []), mod.trust_surface_at_commit(self.root, commit))
 
-    def test_a_sealed_landing_derives_its_seal_and_a_declaration_may_only_agree(self) -> None:
-        commit = self._stub(self._sealed("v2"))
-        self.assertEqual(("v2", []), mod.resolve_marker_trust_surface({}, self.root, commit))
-        self.assertEqual(("v2", []), mod.resolve_marker_trust_surface({"trust_surface": "v2"}, self.root, commit))
-        name, findings = mod.resolve_marker_trust_surface({"trust_surface": "v1"}, self.root, commit)
-        self.assertEqual(mod.CURRENT_TRUST_SURFACE, name)
-        self.assertEqual(
-            ["landed marker declares trust surface 'v1' but its merged_commit was sealed under 'v2'"],
-            findings,
-        )
+    def test_the_base_that_laid_the_stone_is_itself_in_that_era(self) -> None:
+        self.assertEqual(("v2", []), mod.trust_surface_at_commit(self.root, self.base))
+
+    def test_a_later_stone_moves_only_later_landings(self) -> None:
+        earlier = self._land("before-v3")
+        wider = (tuple(mod.TRUST_KERNEL_PREFIXES) + ("future-trust/",), tuple(mod.TRUST_KERNEL_FILES))
+        with mock.patch.dict(mod.TRUST_SURFACES, {"v3": wider}), mock.patch.object(mod, "CURRENT_TRUST_SURFACE", "v3"):
+            stone = self._lay("v3")
+            later = self._land("after-v3")
+            self.assertEqual(("v2", []), mod.trust_surface_at_commit(self.root, earlier))
+            self.assertEqual(("v3", []), mod.trust_surface_at_commit(self.root, stone))
+            self.assertEqual(("v3", []), mod.trust_surface_at_commit(self.root, later))
+
+    def test_a_declaration_may_only_agree_with_the_era_in_force(self) -> None:
+        boundaries = {"v2": 5}
+        self.assertEqual(("v2", []), mod.resolve_marker_trust_surface({}, boundaries, 3))
+        self.assertEqual(("v2", []), mod.resolve_marker_trust_surface({"trust_surface": "v2"}, boundaries, 3))
+        self.assertEqual(("v1", []), mod.resolve_marker_trust_surface({}, boundaries, 7))
+        name, findings = mod.resolve_marker_trust_surface({"trust_surface": "v1"}, boundaries, 3)
+        self.assertEqual((mod.CURRENT_TRUST_SURFACE, ["landed marker declares trust surface 'v1' but 'v2' was in force at its landing"]), (name, findings))
 
     def test_explicit_null_or_non_string_version_is_a_finding(self) -> None:
-        commit = self._stub(self._sealed("v2"))
         for value in (None, 7, ["v2"], "v99"):
             with self.subTest(value=value):
-                name, findings = mod.resolve_marker_trust_surface({"trust_surface": value}, self.root, commit)
+                name, findings = mod.resolve_marker_trust_surface({"trust_surface": value}, {"v2": 5}, 3)
                 self.assertEqual(mod.CURRENT_TRUST_SURFACE, name)
                 self.assertEqual([f"unknown trust surface {value!r} in landed marker"], findings)
 
-    def test_an_unsealed_or_inconsistent_copy_is_a_finding_resolving_to_the_widest_surface(self) -> None:
-        for label, body in (
-            ("no seal", b'CURRENT_TRUST_SURFACE = "v2"\n'),
-            ("pre-versioning shape, post-versioning landing", b"# the gate before it versioned its surface\n"),
-            ("seal disagrees", self._sealed("v1", "v2")),
-            ("constant v1 with a later walrus, seal v2", self._sealed("v2", "v1") + b'(CURRENT_TRUST_SURFACE := "v2")\n'),
-            ("two seals", self._sealed("v2") + f"# {mod._SEAL_WORD}: v1\n".encode()),
+    def test_stone_history_must_be_append_only(self) -> None:
+        commit = self._land()
+        for label, action in (
+            ("modified", lambda: self._write_stone("v2", pull=560)),
+            ("deleted", lambda: (self.root / mod.era_stone_path("v2")).unlink()),
         ):
             with self.subTest(label=label):
-                commit = self._stub(body)
-                name, findings = mod.resolve_marker_trust_surface({}, self.root, commit)
-                self.assertEqual(mod.CURRENT_TRUST_SURFACE, name, label)
-                self.assertEqual(1, len(findings), (label, findings))
-                self.assertTrue(findings[0].startswith(f"merged_commit {commit}: "), findings)
+                self._git("checkout", "-q", "-b", f"tamper-{label}", commit)
+                action()
+                self._git("add", "-A")
+                self._git("commit", "-m", f"stone {label}")
+                self._git("update-ref", "refs/remotes/origin/main", self._git("rev-parse", "HEAD"))
+                name, findings = mod.trust_surface_at_commit(self.root, commit)
+                self.assertIsNone(name, label)
+                self.assertTrue(any("append-only" in item for item in findings), (label, findings))
+                self._git("checkout", "-q", "main")
+                self._git("update-ref", "refs/remotes/origin/main", commit)
 
-    def test_an_unregistered_sealed_version_is_a_finding(self) -> None:
-        commit = self._stub(self._sealed("v9"))
-        name, findings = mod.resolve_marker_trust_surface({}, self.root, commit)
-        self.assertEqual(mod.CURRENT_TRUST_SURFACE, name)
-        self.assertEqual(
-            [f"merged_commit {commit} was sealed under trust surface 'v9', which this gate does not register; TRUST_SURFACES is append-only"],
-            findings,
-        )
+    def test_a_stone_for_an_unregistered_version_is_a_finding(self) -> None:
+        self._lay("v9")
+        stones, findings = mod.era_stones_in_tree(self.root, "HEAD")
+        self.assertIn("era stone v9 names a version this gate does not register", findings)
 
-    def test_a_landing_without_the_gate_script_cannot_derive_and_fails_closed(self) -> None:
-        commit = self._stub(None)
-        name, findings = mod.resolve_marker_trust_surface({}, self.root, commit)
-        self.assertEqual(mod.CURRENT_TRUST_SURFACE, name)
-        self.assertTrue(any("cannot be derived" in item for item in findings), findings)
+    def test_a_registered_version_without_a_stone_is_a_finding(self) -> None:
+        with mock.patch.dict(mod.TRUST_SURFACES, {"v3": mod.TRUST_SURFACES["v2"]}):
+            stones, findings = mod.era_stones_in_tree(self.root, "HEAD")
+            self.assertIn("registered trust surface v3 has no era stone at HEAD", findings)
+
+    def test_a_commit_off_the_first_parent_line_has_no_era(self) -> None:
+        self._git("checkout", "-q", "-b", "side")
+        side = self._commit_file("side.txt", b"side\n", "side")
+        self._git("checkout", "-q", "main")
+        name, findings = mod.trust_surface_at_commit(self.root, side)
+        self.assertIsNone(name)
+        self.assertTrue(any("not on the first-parent history" in item for item in findings), findings)
 
 
 class TrustSurfaceWideningTests(LandedMarkerTests):
-    """End to end: a marker sealed under v2 stays green when the live surface
-    widens to v3, and nothing in the repository or the marker changes
-    (review v3, R559-4 — the pin map could not do this)."""
+    """End to end: a marker sealed in the v2 era stays green when a v3 stone is
+    laid and the live surface widens; a landing after the v3 stone must cover
+    v3; and a live surface with no stone cannot run green (review v4 cure)."""
+
+    WIDER = (tuple(mod.TRUST_KERNEL_PREFIXES) + ("future-trust/",), tuple(mod.TRUST_KERNEL_FILES))
 
     def _register(self, marker: dict[str, object]) -> None:
-        self._commit_repository_marker(marker)  # adds, commits, moves origin/main
+        self._commit_repository_marker(marker)
         self._git("update-ref", "refs/remotes/origin/main", self._git("rev-parse", "HEAD"))
+
+    def _lay_v3(self) -> str:
+        path = self._write_stone("v3", pull=600)
+        self._git("add", path)
+        self._git("commit", "-m", "era stone v3")
+        commit = self._git("rev-parse", "HEAD")
+        self._git("update-ref", "refs/remotes/origin/main", commit)
+        return commit
 
     def test_widening_the_live_surface_keeps_a_sealed_v2_marker_green(self) -> None:
         marker = self._marker()
-        del marker["trust_surface"]  # nothing declared; derivation alone
+        del marker["trust_surface"]
         self._register(marker)
         self.assertEqual([], mod.verify_repository_landed_markers(self.root))
-        wider_prefixes = tuple(mod.TRUST_KERNEL_PREFIXES) + ("future-trust/",)
-        with mock.patch.dict(
-            mod.TRUST_SURFACES, {"v3": (wider_prefixes, tuple(mod.TRUST_KERNEL_FILES))}
-        ), mock.patch.object(mod, "CURRENT_TRUST_SURFACE", "v3"):
+        with mock.patch.dict(mod.TRUST_SURFACES, {"v3": self.WIDER}), mock.patch.object(mod, "CURRENT_TRUST_SURFACE", "v3"):
+            self._lay_v3()
             self.assertEqual([], mod.verify_repository_landed_markers(self.root))
 
     def test_a_declared_version_that_agrees_survives_the_widening_too(self) -> None:
-        self._register(self._marker())  # declares v2, the derived value
-        with mock.patch.dict(
-            mod.TRUST_SURFACES,
-            {"v3": (tuple(mod.TRUST_KERNEL_PREFIXES) + ("future-trust/",), tuple(mod.TRUST_KERNEL_FILES))},
-        ), mock.patch.object(mod, "CURRENT_TRUST_SURFACE", "v3"):
+        self._register(self._marker())
+        with mock.patch.dict(mod.TRUST_SURFACES, {"v3": self.WIDER}), mock.patch.object(mod, "CURRENT_TRUST_SURFACE", "v3"):
+            self._lay_v3()
             self.assertEqual([], mod.verify_repository_landed_markers(self.root))
 
+    def test_a_live_surface_with_no_stone_cannot_run_green(self) -> None:
+        # Review v4 (R559-v4-1): a copy that widens the constant at its entry
+        # point without laying a stone. The check runs inside every gate run.
+        self._register(self._marker())
+        with mock.patch.dict(mod.TRUST_SURFACES, {"v3": self.WIDER}), mock.patch.object(mod, "CURRENT_TRUST_SURFACE", "v3"):
+            findings = mod.verify_repository_landed_markers(self.root)
+        self.assertIn("registered trust surface v3 has no era stone at " + self._git("rev-parse", "HEAD"), findings)
+        self.assertIn("the live trust surface 'v3' is not the latest era stone 'v2' in the candidate tree", findings)
+
+    def test_a_landing_after_the_v3_stone_cannot_omit_a_v3_only_path(self) -> None:
+        # The regression the contract promises: a landing in the v3 era whose
+        # record and marker omit a v3-only path is reported.
+        with mock.patch.dict(mod.TRUST_SURFACES, {"v3": self.WIDER}), mock.patch.object(mod, "CURRENT_TRUST_SURFACE", "v3"):
+            self._lay_v3()
+            self._git("checkout", "-q", "-b", "v3-landing")
+            self._commit_file("future-trust/probe.txt", b"v3-only authority\n", "v3-only change")
+            landed = self._git("rev-parse", "HEAD")
+            self._git("update-ref", "refs/remotes/origin/main", landed)
+            marker = self._marker()
+            marker["merged_commit"] = landed
+            marker["merged_tree"] = self._git("rev-parse", "HEAD^{tree}")
+            marker["trust_surface"] = "v2"  # the laundering declaration
+            findings = mod.verify_landed_review_marker(marker, root=self.root, main_ref="refs/remotes/origin/main")
+            self.assertTrue(any("'v3' was in force" in item for item in findings), findings)
+            self.assertTrue(any("future-trust/probe.txt" in item for item in findings), findings)
+            del marker["trust_surface"]
+            findings = mod.verify_landed_review_marker(marker, root=self.root, main_ref="refs/remotes/origin/main")
+            self.assertTrue(any("future-trust/probe.txt" in item for item in findings), findings)
+            self._git("checkout", "-q", "main")
+
     def test_a_merged_commit_registered_twice_is_a_finding(self) -> None:
-        # Replay: a second marker for the same landing edge at another path.
         marker = self._marker()
         self._commit_repository_marker(marker)
         second = "F_Project_Management/W_TRUST/landed/REPLAY.landed-review.json"
         (self.root / second).write_bytes(_canonical(marker))
         registry = self.root / "F_Project_Management/W_TRUST/LANDED_REVIEW_MARKERS.json"
         registry.write_bytes(
-            _canonical(
-                {
-                    "markers": [
-                        "F_Project_Management/W_TRUST/landed/LANDED.landed-review.json",
-                        second,
-                    ],
-                    "schema": "garnet.trust_kernel_landed_review_registry/v1",
-                }
-            )
+            _canonical({"markers": ["F_Project_Management/W_TRUST/landed/LANDED.landed-review.json", second], "schema": "garnet.trust_kernel_landed_review_registry/v1"})
         )
         self._git("add", second, str(registry.relative_to(self.root)))
         self._git("commit", "-m", "replay")
         self._git("update-ref", "refs/remotes/origin/main", self._git("rev-parse", "HEAD"))
         findings = mod.verify_repository_landed_markers(self.root)
-        self.assertTrue(
-            any("registered by more than one landed marker" in item for item in findings),
-            findings,
-        )
+        self.assertTrue(any("registered by more than one landed marker" in item for item in findings), findings)
 
 if __name__ == "__main__":
     unittest.main()

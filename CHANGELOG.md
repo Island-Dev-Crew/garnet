@@ -10,19 +10,23 @@
   the required-context producers are listed, as surface **v2**; v1 is kept
   verbatim as `TRUST_SURFACE_V1_*`. A one-byte change to any of those files
   without a record now fails the gate (it passed at the base).
-- **Sealed history is preserved by a declaration in the landing commit, not
-  by a pin table and not by interpreting Python:** a landed marker binds the
-  trust subset of its landing edge, so it must be verified under the surface
-  it was sealed under. The two pre-versioning landings (#514, #517) are v1 by
-  identity. Every later landing's own copy of the gate script, read at its
-  `merged_commit` — already on main's append-only first-parent history — must
-  carry exactly one seal line `# garnet-trust-surface: vN` and exactly one
-  canonical `CURRENT_TRUST_SURFACE = "vN"` line that agree; a test at every
-  head pins both to the live constant. Five rejected designs are recorded in
-  the rolling-review contract: declaration-first, commit-only pinning, a
-  closed pin map that could not survive a widening, a regular expression
-  fooled by spelling, and a parse of the binding defeated by a walrus and an
-  import — each reproduced by the cross-family review.
+- **Sealed history is preserved by an era ledger, not by reading any copy of
+  the gate:** a landed marker binds the trust subset of its landing edge, so
+  it must be verified under the surface in force when it landed. Each version
+  after v1 has an era stone, `F_Project_Management/W_TRUST/eras/<vN>.era.json`,
+  laid by the change that introduced it (this change lays `v2`); a landing's
+  surface is the latest stone introduced at or before it on main's
+  append-only first-parent history, and a landing before every stone is v1 —
+  which is what the two pre-versioning markers (#514, #517) are. Stone
+  history must be append-only. Inside every gate run the live
+  `CURRENT_TRUST_SURFACE` must equal the latest stone in the candidate tree,
+  and `--print-trust-surface` reports what the actual entry applies, so a copy
+  that widens the constant anywhere without laying its stone cannot run green.
+  Six rejected designs are recorded in the rolling-review contract — a
+  declaration, a pin, a closed pin map, a regular expression, a parse and a
+  seal comment, each reproduced against by the cross-family review; all of
+  them read the landing's copy, and any static reading can be made to
+  disagree with what the copy does.
 - **Fail-closed on the version field:** a declared `trust_surface` may only
   agree with the derivation; an explicit non-version value, JSON `null`
   included, is a finding; an unregistered historical version is a finding; a
