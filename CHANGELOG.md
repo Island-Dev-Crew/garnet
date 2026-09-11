@@ -20,8 +20,9 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   `GARNET_VERSION=0.8.2` installs it.
 - **Known limits:** the Linux assets need glibc 2.39 or newer (Ubuntu 24.04+,
   Debian 13+, Fedora 40+); they do not install on Debian 12, Ubuntu 22.04 or
-  RHEL 9. The release also carries two stale `garnet-0.8.1-lsp-mvp-*.vsix`
-  files next to the 0.8.2 ones.
+  RHEL 9. The VS Code workflow also uploaded two stale
+  `garnet-0.8.1-lsp-mvp-*.vsix` files from a restored build cache; they were
+  removed from the release on 2026-09-11, leaving the two 0.8.2 VSIX files.
 - **Surfaces:** README, FAQ, SECURITY, the site's install section, status and
   getting-started pages, release-signing notes and the installer default now
   name v0.8.2; the release number is a `truth:latest_tag` marker wherever
