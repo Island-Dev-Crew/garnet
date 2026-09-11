@@ -24,6 +24,16 @@ sha256sum --check --ignore-missing SHA256SUMS
 
 Every line you downloaded must print `OK`.
 
+On Windows, in PowerShell, compare the zip's hash with its line in `SHA256SUMS`:
+
+```powershell
+(Get-FileHash .\garnet-<version>-x86_64-pc-windows-msvc.zip -Algorithm SHA256).Hash.ToLower()
+Select-String -Path .\SHA256SUMS -Pattern 'x86_64-pc-windows-msvc.zip'
+```
+
+The two hashes must be identical. `install.ps1` runs this comparison for you.
+Windows assets are published starting with `v0.8.2`.
+
 ## 2. Authenticity — when the release is signed
 
 When the maintainer's signing key is configured, the release also attaches
@@ -72,4 +82,6 @@ against `SHA256SUMS`.
    ```
 3. Cut (or re-cut) a release tag. The `release` job in
    `.github/workflows/linux-packages.yml` signs `SHA256SUMS → SHA256SUMS.asc` when the
-   secret is present, and publishes an explicit `::notice::` (unsigned) when it is not.
+   secret is present. Without the secret a tagged release fails closed, unless the
+   repository variable `ALLOW_UNSIGNED_RELEASE` is set to `true` to ship unsigned on
+   purpose.

@@ -9,6 +9,36 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ## [0.8.2] — 2026-09-02 (workspace version bump; the `v0.8.2` tag is not cut)
 
+### Also in 0.8.2 — release matrix: Linux ARM64, Linux tarballs, a Windows zip and a PowerShell installer (2026-09-11)
+
+- **Added to the release workflow (`.github/workflows/linux-packages.yml`):**
+  a Linux ARM64 build on GitHub's hosted `ubuntu-24.04-arm` runner producing
+  `garnet_<version>-1_arm64.deb`, `garnet-<version>-1.aarch64.rpm` and
+  `garnet-<version>-aarch64-unknown-linux-gnu.tar.gz`, smoke-installed in
+  clean `ubuntu:24.04` and `fedora:40` containers on ARM64 through the same
+  gates as x86_64; a Linux x86_64 tarball from the existing package job; and a
+  Windows job producing `garnet-<version>-x86_64-pc-windows-msvc.zip`. The
+  Windows binary links the C runtime statically, and the job checks its import
+  table for any Visual C++ runtime DLL before running the same smoke gates.
+- **The release job requires the complete nine-asset set** (Linux x86_64 and
+  ARM64 `.deb`, `.rpm` and tarball; macOS Apple Silicon and Intel tarballs;
+  the Windows zip) and fails if any platform is missing. It signs one
+  `SHA256SUMS` over all of them, as before.
+- **Installers:** `docs/install.ps1` is new: it downloads the Windows zip,
+  checks it against `SHA256SUMS`, installs `garnet.exe` under
+  `%LOCALAPPDATA%\Programs\Garnet\bin` and adds that directory to the user
+  PATH. `install.sh` now stops on Windows with the PowerShell command instead
+  of "unsupported OS", and on macOS goes straight to the tarball, since no
+  `.pkg` is published (`GARNET_FORMAT=pkg` still requests one). CI runs both
+  installers end to end against the locally built assets: the `install.sh`
+  tarball path on x86_64 and ARM64, and `install.ps1` on Windows.
+- **Scope:** these assets first ship with the `v0.8.2` tag; `v0.8.1` stays as
+  published, and the public install table changes in the release sweep after
+  the tag. The new jobs are not required status checks yet; adding them to
+  the ruleset is a separate governance change. Windows binaries are not
+  Authenticode-signed, so SmartScreen can warn on first run; integrity and
+  authenticity come from the signed `SHA256SUMS`.
+
 ### Also in 0.8.2 — the trust surface is versioned and sealed history derives its era (U-116) (2026-09-05)
 
 - **Closed U-116:** the rolling review gate decided what needs a structured

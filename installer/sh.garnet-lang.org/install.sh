@@ -82,6 +82,9 @@ detect_triple() {
                 *) err "unsupported macOS architecture: $_arch" ;;
             esac
             ;;
+        MINGW*|MSYS*|CYGWIN*|Windows_NT)
+            err "Windows detected; install from PowerShell instead: irm https://garnet-lang.org/install.ps1 | iex"
+            ;;
         *)
             err "unsupported OS: $_uname"
             ;;
@@ -107,7 +110,8 @@ detect_format() {
                 printf 'tar'
             fi
             ;;
-        Darwin) printf 'pkg' ;;
+        # No signed .pkg is published; GARNET_FORMAT=pkg still requests one.
+        Darwin) printf 'tar' ;;
         *) printf 'tar' ;;
     esac
 }
