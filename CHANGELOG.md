@@ -23,12 +23,13 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   signed hot-reload, but `garnet` does not link that crate; the line is gone.
   `garnet concurrency` said each actor is an OS thread with an mpsc mailbox
   that `@mailbox` overrides, and `garnet trust-report` said the same about
-  threads. Both now describe what the CLI runs: actors inside the
-  interpreter, each with a bounded mailbox of 1024 messages unless
+  threads. `garnet concurrency` now describes what the CLI runs: actors
+  inside the interpreter, each with a bounded mailbox of 1024 messages unless
   `Actor.spawn(capacity)` sets another size; `@mailbox(N)` is range-checked
-  and sets nothing. The README and the Debian package description now say the
-  same, and the package description no longer cites a "136-test security
-  surface". `garnet --help` no longer says a plain `build` emits a manifest.
+  and sets nothing. `garnet trust-report` says its thread count comes from
+  the source, the README says signed hot-reload belongs to the separate Rust
+  actor runtime, and the Debian package description drops its actor claims
+  and the unsourced "136-test security surface". `garnet --help` no longer says a plain `build` emits a manifest.
 - **Fixed:** the `web-api` template that `garnet new` writes said the service
   listens on :8080, that `@caps(net_internal)` lifts the private-network block
   and that `@mailbox(1024)` applies back-pressure. None of that holds for the

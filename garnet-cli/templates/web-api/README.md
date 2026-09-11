@@ -15,14 +15,14 @@ garnet run src/main.garnet
 
 `main` declares `@caps(net, time)`, the budget for the service you build:
 
-- **net** — network access. Outbound TCP (`net::tcp_connect`) always applies
-  Garnet's strict network policy, which refuses private, loopback and
-  link-local addresses; `@caps(net_internal)` does not lift that at run time.
-  `net::tcp_listen` is not bridged into the runtime yet.
+- **net** — network access. `@caps(net_internal)` does not change what
+  `net::tcp_connect` may reach at run time, and `net::tcp_listen` is not
+  bridged into the runtime yet.
 - **time** — timestamps and deadlines (`wall_clock_ms`).
 
-`garnet check` reports an annotated function whose named calls reach a
-primitive needing a capability that function does not declare. At run time,
+`garnet check` reports an annotated function whose named, acyclic calls reach
+a primitive needing a capability that function does not declare; calls
+through function values, closures or cycles are not traced. At run time,
 the file-system, process, environment and outbound-network primitives also
 trap unless `main` declares their capability; the `time` primitives are
 checked by `garnet check` only. The exact scope is
