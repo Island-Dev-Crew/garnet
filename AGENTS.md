@@ -293,6 +293,35 @@ changing it. The contract being active is not a completed watch report. Search
 misses are coverage statements, never evidence that a competitor or standard
 does not exist.
 
+## Release Matrix and Installers
+
+`.github/workflows/linux-packages.yml` builds the release matrix on every run:
+Linux x86_64 and ARM64 `.deb`, `.rpm` and tarball, macOS Apple Silicon and
+Intel tarballs, and the Windows x86_64 zip. The tag-only `release` job
+requires all nine assets by name and composes one `SHA256SUMS` over them; a
+missing platform fails the release. It signs that manifest when
+`GPG_SIGNING_KEY` is set; without the key a tagged release fails closed unless
+the repository variable `ALLOW_UNSIGNED_RELEASE` is `true`. The asset names are a contract shared
+with `docs/install.sh` (`asset_name`) and `docs/install.ps1`: change them
+together.
+
+The required producer jobs (`build-packages`, `smoke-deb`, `smoke-rpm`,
+`shellcheck-installer`, `macos-cli-tarballs`) carry pinned semantic
+fingerprints in `.github/rulesets/required-context-producers.json`, covering
+the workflow's global policy, the job definition and its transitive `needs`.
+Add release work as new optional jobs; editing a required job is a governance
+change to that inventory. `scripts/test_garnet_workflow_schema_policy.py`
+pins the projected context count.
+
+Installers verify before they install. Both check the downloaded asset
+against the release's `SHA256SUMS` before extracting it. `install.ps1`
+follows redirects itself and refuses any hop that is not https, accepts
+`file:///` only for local paths, and reads only the root `garnet.exe` entry
+into one fixed path. `install.sh` restricts curl with `--proto '=https'`,
+stops on Windows before any download, and must stay byte-identical to
+`installer/sh.garnet-lang.org/install.sh`. Integrity is not authenticity:
+that comes from `SHA256SUMS.asc` (`docs/release-signing.md`).
+
 ## Required Contract Index
 
 Every path below is part of the current contract surface and must remain present unless the owning scope is removed or renamed.

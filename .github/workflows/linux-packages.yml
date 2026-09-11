@@ -1,16 +1,27 @@
-# Garnet — Linux packaging + verification CI (v4.2 Phase 6D).
+# Garnet — release packaging + verification CI (v4.2 Phase 6D, widened for 0.8.2).
 #
 # Reproduces the Docker-based verification run manually on 2026-04-17
 # (see F_Project_Management/GARNET_v4_2_Phase_6D_Linux_VERIFIED.md)
-# as a CI job so every push automatically confirms .deb + .rpm still
+# as a CI job so every push automatically confirms the packages still
 # install cleanly and still pass the 6-gate smoke.
 #
-# On tagged releases (`v*`) the job additionally:
-#   - Builds Linux .deb/.rpm packages and macOS CLI tarballs
-#   - Computes one SHA-256 manifest for every release installer artifact
-#   - Uploads packages, tarballs, and SHA256SUMS as release assets
-# These are the files `docs/install.sh` fetches after GitHub Pages serves it at
-# `https://garnet-lang.org/install.sh`.
+# Every run builds the full release matrix:
+#   - Linux x86_64 and ARM64: .deb, .rpm and a CLI tarball
+#   - macOS Apple Silicon and Intel: CLI tarballs
+#   - Windows x86_64: a CLI zip (static C runtime)
+# It smoke-tests every build it can run natively (the Intel macOS tarball is
+# cross-compiled on an Apple Silicon runner and not executed), and runs both
+# public installers end to end against the locally built assets.
+#
+# On tagged releases (`v*`) the release job additionally:
+#   - Requires the complete asset set (a missing platform fails the release)
+#   - Computes one SHA-256 manifest over every asset, and signs it when the
+#     GPG_SIGNING_KEY secret is set; without the key the release fails unless
+#     the repository variable ALLOW_UNSIGNED_RELEASE is exactly 'true'
+#   - Uploads the assets, the SBOM and SHA256SUMS, plus SHA256SUMS.asc only
+#     when the manifest was signed
+# These are the files `docs/install.sh` and `docs/install.ps1` fetch after
+# GitHub Pages serves them at `https://garnet-lang.org/`.
 
 name: Linux packages
 
@@ -31,8 +42,8 @@ env:
 
 jobs:
   # ───────────────────────────────────────────────────────────────────
-  # 1. Build .deb + .rpm in a single rust:1-bookworm container. Produces
-  #    the two package artifacts + the stripped release binary.
+  # 1. Linux x86_64: .deb + .rpm + CLI tarball, and the install.sh
+  #    tarball path run against them.
   # ───────────────────────────────────────────────────────────────────
   build-packages:
     runs-on: ubuntu-latest
@@ -208,11 +219,249 @@ jobs:
           test -f /usr/share/man/man1/garnet.1
 
   # ───────────────────────────────────────────────────────────────────
-  # 4. macOS CLI tarballs for the universal installer fallback path.
-  #    The public installer detects macOS .pkg first, then falls back to
-  #    `garnet-<version>-<target>.tar.gz`; v0.5.0 does not claim a
-  #    signed/notarized .pkg, so these tarballs are the honest Mac release
-  #    assets required before the M5 clean-machine smoke can pass.
+  # 3b. Linux x86_64 CLI tarball, packed from the binary inside the tested
+  #     .deb (no rebuild), with the install.sh tarball path run against it.
+  #     A separate job, so the required package jobs above stay unchanged.
+  # ───────────────────────────────────────────────────────────────────
+  linux-tarball-x86_64:
+    needs: build-packages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+
+      - name: Fetch artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: garnet-linux-packages
+          path: packages/
+
+      - name: Pack the tarball from the packaged binary
+        run: |
+          set -euo pipefail
+          version="$(awk -F'"' '/^version =/ { print $2; exit }' Cargo.toml)"
+          deb="packages/garnet_${version}-1_amd64.deb"
+          test -f "${deb}" || { echo "::error::expected ${deb}"; ls -la packages; exit 1; }
+          rm -rf unpacked package dist
+          dpkg-deb -x "${deb}" unpacked
+          mkdir -p package/bin dist
+          cp unpacked/usr/bin/garnet package/bin/garnet
+          chmod 0755 package/bin/garnet
+          tar -C package -czf "dist/garnet-${version}-x86_64-unknown-linux-gnu.tar.gz" bin/garnet
+          cd dist
+          sha256sum *.tar.gz > SHA256SUMS
+          cat SHA256SUMS
+
+      - name: Installer — install.sh tarball path against the staged tarball
+        run: |
+          set -euo pipefail
+          version="$(awk -F'"' '/^version =/ { print $2; exit }' Cargo.toml)"
+          prefix="${RUNNER_TEMP}/garnet-tar-install"
+          GARNET_VERSION="${version}" GARNET_BASE_URL="file://${PWD}/dist" \
+            GARNET_FORMAT=tar GARNET_INSTALL_MODE=release GARNET_PREFIX="${prefix}" \
+            sh docs/install.sh
+          "${prefix}/bin/garnet" --version | grep -q "garnet ${version}"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: garnet-linux-tarball-x86_64
+          path: dist/*.tar.gz
+          retention-days: 30
+
+  # ───────────────────────────────────────────────────────────────────
+  # 4. Linux ARM64 on GitHub's hosted ARM runner: the same .deb, .rpm and
+  #    tarball, built natively, under the file names install.sh already
+  #    requests for aarch64.
+  # ───────────────────────────────────────────────────────────────────
+  build-packages-arm64:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+
+      - name: Guard — release tag must match Cargo version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          cargo_version="$(awk -F'"' '/^version =/ { print $2; exit }' Cargo.toml)"
+          tag="${GITHUB_REF_NAME}"
+          echo "Cargo version: ${cargo_version} · release tag: ${tag}"
+          if [ "v${cargo_version}" != "${tag}" ]; then
+            echo "::error::release tag ${tag} does not match Cargo version v${cargo_version} — bump the workspace version before tagging."
+            exit 1
+          fi
+          echo "tag matches Cargo version — OK"
+
+      - name: Install Rust toolchain (stable)
+        uses: dtolnay/rust-toolchain@2c7215f132e9ebf062739d9130488b56d53c060c
+        with:
+          toolchain: stable
+
+      - name: Cache cargo registry + target
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-${{ runner.arch }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-${{ runner.arch }}-cargo-
+
+      - name: Install cargo-deb + cargo-generate-rpm
+        run: |
+          cargo install cargo-deb --locked
+          cargo install cargo-generate-rpm --locked
+
+      - name: Build release binary
+        run: |
+          cargo build --release -p garnet-cli
+          file target/release/garnet | tee /dev/stderr | grep -q 'ARM aarch64'
+
+      - name: Build .deb
+        run: |
+          rm -rf target/debian
+          cd garnet-cli
+          cargo deb --no-build
+          ls -la ../target/debian/
+
+      - name: Build .rpm
+        run: |
+          rm -rf target/generate-rpm
+          cargo generate-rpm -p garnet-cli
+          ls -la target/generate-rpm/
+
+      - name: Stage assets (names must match what install.sh requests)
+        run: |
+          set -euo pipefail
+          version="$(awk -F'"' '/^version =/ { print $2; exit }' Cargo.toml)"
+          rm -rf dist package
+          mkdir -p dist package/bin
+          cp target/debian/*.deb dist/
+          cp target/generate-rpm/*.rpm dist/
+          cp target/release/garnet package/bin/garnet
+          chmod 0755 package/bin/garnet
+          tar -C package -czf "dist/garnet-${version}-aarch64-unknown-linux-gnu.tar.gz" bin/garnet
+          for asset in "garnet_${version}-1_arm64.deb" "garnet-${version}-1.aarch64.rpm" \
+                       "garnet-${version}-aarch64-unknown-linux-gnu.tar.gz"; do
+            test -f "dist/${asset}" || { echo "::error::expected asset ${asset} was not produced"; ls -la dist; exit 1; }
+          done
+          cd dist
+          sha256sum *.deb *.rpm *.tar.gz > SHA256SUMS
+          cat SHA256SUMS
+
+      - name: Installer — install.sh tarball path against the staged assets
+        run: |
+          set -euo pipefail
+          version="$(awk -F'"' '/^version =/ { print $2; exit }' Cargo.toml)"
+          prefix="${RUNNER_TEMP}/garnet-tar-install"
+          GARNET_VERSION="${version}" GARNET_BASE_URL="file://${PWD}/dist" \
+            GARNET_FORMAT=tar GARNET_INSTALL_MODE=release GARNET_PREFIX="${prefix}" \
+            sh docs/install.sh
+          "${prefix}/bin/garnet" --version | grep -q "garnet ${version}"
+
+      # No SHA256SUMS in this artifact: the release job composes the one
+      # manifest it signs.
+      - name: Upload artifacts
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: garnet-linux-packages-arm64
+          path: |
+            dist/*.deb
+            dist/*.rpm
+            dist/*.tar.gz
+          retention-days: 30
+
+  # ───────────────────────────────────────────────────────────────────
+  # 5. ARM64 .deb smoke test in clean ubuntu:24.04 — the same 6 gates.
+  # ───────────────────────────────────────────────────────────────────
+  smoke-deb-arm64:
+    needs: build-packages-arm64
+    runs-on: ubuntu-24.04-arm
+    container: ubuntu:24.04
+    steps:
+      - name: Fetch artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: garnet-linux-packages-arm64
+          path: dist/
+
+      - name: Install .deb
+        run: |
+          apt-get update -qq
+          apt-get install -y -qq ./dist/*.deb
+
+      - name: Gate 1 — version banner
+        run: garnet --version | grep -q "Rust Rigor. Ruby Velocity."
+
+      - name: Gate 2 — help lists new/keygen/convert
+        run: |
+          garnet --help | grep -q "new"
+          garnet --help | grep -q "keygen"
+          garnet --help | grep -q "convert"
+
+      - name: Gate 3 — scaffold cli template
+        run: |
+          garnet new --template cli /tmp/app
+          test -f /tmp/app/Garnet.toml
+          test -f /tmp/app/src/main.garnet
+
+      - name: Gate 4 — parser runs
+        run: garnet parse /tmp/app/src/main.garnet | grep -q "parsed"
+
+      - name: Gate 5 — signed-manifest round-trip
+        run: |
+          garnet keygen /tmp/k
+          garnet build --deterministic --sign /tmp/k /tmp/app/src/main.garnet
+          garnet verify /tmp/app/src/main.garnet \
+            /tmp/app/src/main.garnet.manifest.json --signature \
+            | grep -q "signature valid"
+
+      - name: Gate 6 — CapCaps propagator flags coverage gap
+        run: |
+          cat > /tmp/bad.garnet <<'EOF'
+          @caps()
+          def main() { read_file("config.toml") }
+          EOF
+          garnet check /tmp/bad.garnet 2>&1 | grep -q "does not declare .fs."
+
+  # ───────────────────────────────────────────────────────────────────
+  # 6. ARM64 .rpm smoke test in clean fedora:40 — the same gates.
+  # ───────────────────────────────────────────────────────────────────
+  smoke-rpm-arm64:
+    needs: build-packages-arm64
+    runs-on: ubuntu-24.04-arm
+    container: fedora:40
+    steps:
+      - name: Fetch artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: garnet-linux-packages-arm64
+          path: dist/
+
+      - name: Install .rpm
+        run: dnf install -y -q ./dist/*.rpm
+
+      - name: Six gates
+        run: |
+          garnet --version | grep -q "Rust Rigor. Ruby Velocity."
+          garnet --help | grep -q "convert"
+          garnet new --template agent-orchestrator /tmp/agents
+          grep -q "actor Researcher"  /tmp/agents/src/main.garnet
+          grep -q "actor Synthesizer" /tmp/agents/src/main.garnet
+          grep -q "actor Reviewer"    /tmp/agents/src/main.garnet
+          grep -q "Reviewer.spawn(2)"  /tmp/agents/src/main.garnet
+          garnet test /tmp/agents | grep -q "3 passed; 0 failed"
+          garnet run /tmp/agents/src/main.garnet | grep -q "accepted decision score"
+          garnet keygen /tmp/k
+          garnet build --deterministic --sign /tmp/k /tmp/agents/src/main.garnet
+          garnet verify /tmp/agents/src/main.garnet \
+            /tmp/agents/src/main.garnet.manifest.json --signature \
+            | grep -q "signature valid"
+          test -f /usr/share/man/man1/garnet.1
+
+  # ───────────────────────────────────────────────────────────────────
+  # 7. macOS CLI tarballs. No signed/notarized .pkg is published, so the
+  #    installer uses these tarballs on macOS.
   # ───────────────────────────────────────────────────────────────────
   macos-cli-tarballs:
     runs-on: macos-latest
@@ -296,7 +545,161 @@ jobs:
           retention-days: 30
 
   # ───────────────────────────────────────────────────────────────────
-  # 5. Verify the universal installer copies stay in sync and shellcheck clean.
+  # 8. Windows x86_64 CLI zip. The C runtime is linked statically so
+  #    garnet.exe runs on a clean Windows install without the Visual C++
+  #    redistributable; the import table is checked to prove it. Windows on
+  #    ARM runs this build under its x64 emulation.
+  # ───────────────────────────────────────────────────────────────────
+  windows-cli-zip:
+    runs-on: windows-latest
+    env:
+      # Applies to the explicit --target build only, not to build scripts or
+      # proc macros, which run on the host.
+      RUSTFLAGS: -C target-feature=+crt-static
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+
+      # windows-latest defaults to PowerShell; every bash step names its shell.
+      - name: Guard — release tag must match Cargo version
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        run: |
+          cargo_version="$(awk -F'"' '/^version =/ { print $2; exit }' Cargo.toml)"
+          tag="${GITHUB_REF_NAME}"
+          echo "Cargo version: ${cargo_version} · release tag: ${tag}"
+          if [ "v${cargo_version}" != "${tag}" ]; then
+            echo "::error::release tag ${tag} does not match Cargo version v${cargo_version} — bump the workspace version before tagging."
+            exit 1
+          fi
+          echo "tag matches Cargo version — OK"
+
+      - name: Install Rust toolchain (stable)
+        uses: dtolnay/rust-toolchain@2c7215f132e9ebf062739d9130488b56d53c060c
+        with:
+          toolchain: stable
+          targets: x86_64-pc-windows-msvc
+          components: llvm-tools
+
+      - name: Cache cargo registry + target
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-x86_64-pc-windows-msvc-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-x86_64-pc-windows-msvc-cargo-
+
+      - name: Build release binary
+        shell: bash
+        run: cargo build --release --locked -p garnet-cli --target x86_64-pc-windows-msvc
+
+      - name: Static C runtime — garnet.exe imports no Visual C++ runtime DLL
+        shell: bash
+        run: |
+          set -euo pipefail
+          exe="target/x86_64-pc-windows-msvc/release/garnet.exe"
+          readobj="$(find "$(rustc --print sysroot)" -name 'llvm-readobj.exe' | head -1)"
+          test -n "${readobj}" || { echo "::error::llvm-readobj.exe not found in the toolchain"; exit 1; }
+          "${readobj}" --coff-imports "${exe}" | grep -E '^\s*Name:' | sort -u | tee imports.txt
+          if grep -qiE 'vcruntime|msvcp|ucrtbased' imports.txt; then
+            echo "::error::garnet.exe depends on a Visual C++ runtime DLL; the static C runtime did not apply"
+            exit 1
+          fi
+
+      - name: Smoke gates (the same checks as the Linux packages)
+        shell: bash
+        # Each command's output is captured before it is matched: with bash's
+        # pipefail, `garnet check` rejecting the bad program (a non-zero exit,
+        # which is the point of gate 6) would otherwise fail the pipeline.
+        run: |
+          set -euo pipefail
+          version="$(awk -F'"' '/^version =/ { print $2; exit }' Cargo.toml)"
+          garnet="${PWD}/target/x86_64-pc-windows-msvc/release/garnet.exe"
+          expect() {
+            local label="$1" pattern="$2" output="$3"
+            printf '%s\n' "${output}"
+            grep -q -- "${pattern}" <<<"${output}" || { echo "::error::${label}: output lacks '${pattern}'"; exit 1; }
+          }
+          out="$("${garnet}" --version)"
+          expect "gate 1 version" "garnet ${version}" "${out}"
+          expect "gate 1 banner" "Rust Rigor. Ruby Velocity." "${out}"
+          out="$("${garnet}" --help)"
+          for word in new keygen convert; do expect "gate 2 help" "${word}" "${out}"; done
+          rm -rf smoke && mkdir smoke
+          "${garnet}" new --template cli smoke/app
+          test -f smoke/app/Garnet.toml
+          test -f smoke/app/src/main.garnet
+          expect "gate 4 parse" "parsed" "$("${garnet}" parse smoke/app/src/main.garnet)"
+          "${garnet}" keygen smoke/k
+          "${garnet}" build --deterministic --sign smoke/k smoke/app/src/main.garnet
+          expect "gate 5 verify" "signature valid" \
+            "$("${garnet}" verify smoke/app/src/main.garnet smoke/app/src/main.garnet.manifest.json --signature)"
+          printf '%s\n' '@caps()' 'def main() { read_file("config.toml") }' > smoke/bad.garnet
+          out="$("${garnet}" check smoke/bad.garnet 2>&1 || true)"
+          expect "gate 6 capability gap" "does not declare .fs." "${out}"
+
+      - name: Stage the zip
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $version = (Select-String -Path Cargo.toml -Pattern '^version = "([^"]+)"' | Select-Object -First 1).Matches[0].Groups[1].Value
+          $asset = "garnet-$version-x86_64-pc-windows-msvc.zip"
+          Remove-Item -Recurse -Force dist, package -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Force -Path dist, package | Out-Null
+          Copy-Item target/x86_64-pc-windows-msvc/release/garnet.exe package/
+          Copy-Item LICENSE, README.md package/
+          Compress-Archive -Path package/* -DestinationPath "dist/$asset"
+          $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath "dist/$asset").Hash.ToLowerInvariant()
+          # sha256sum format (two spaces), written with LF endings.
+          [IO.File]::WriteAllText("$PWD/dist/SHA256SUMS", "$hash  $asset`n")
+          Get-Content dist/SHA256SUMS
+
+      - name: Installer — install.ps1 end to end against the staged zip
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $version = (Select-String -Path Cargo.toml -Pattern '^version = "([^"]+)"' | Select-Object -First 1).Matches[0].Groups[1].Value
+          $env:GARNET_VERSION = $version
+          $env:GARNET_BASE_URL = ([Uri](Resolve-Path dist).Path).AbsoluteUri
+          $env:GARNET_PREFIX = Join-Path $env:RUNNER_TEMP 'garnet-ps-install'
+          $env:GARNET_NO_MODIFY_PATH = '1'
+          ./docs/install.ps1
+          $out = & (Join-Path $env:GARNET_PREFIX 'bin\garnet.exe') --version
+          if (-not ($out -match "garnet $([regex]::Escape($version))")) { throw "installed garnet.exe reported: $out" }
+
+      # The staged-zip run above uses a file:/// base. These runs exercise the
+      # network path: a real release download follows GitHub's https
+      # redirects (v0.8.1 has no Windows zip, so it must stop at the checksum
+      # lookup), and an http base and a network-share file URL are refused.
+      - name: Installer — install.ps1 refuses unsafe sources
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          function Expect-Failure([hashtable]$Env, [string]$Pattern) {
+            foreach ($key in $Env.Keys) { Set-Item -Path "env:$key" -Value $Env[$key] }
+            $env:GARNET_PREFIX = Join-Path $env:RUNNER_TEMP 'garnet-ps-refusal'
+            $env:GARNET_NO_MODIFY_PATH = '1'
+            $message = $null
+            try { ./docs/install.ps1 } catch { $message = $_.Exception.Message }
+            foreach ($key in $Env.Keys) { Remove-Item -Path "env:$key" -ErrorAction SilentlyContinue }
+            Write-Host "install.ps1 said: $message"
+            if (-not $message -or $message -notmatch $Pattern) { throw "expected a failure matching '$Pattern'" }
+          }
+          Expect-Failure @{ GARNET_VERSION = '0.8.1' } 'lists no garnet-0\.8\.1-x86_64-pc-windows-msvc\.zip'
+          Expect-Failure @{ GARNET_BASE_URL = 'http://example.com/garnet' } 'refusing a non-https download URL'
+          Expect-Failure @{ GARNET_BASE_URL = 'file:////server/share/garnet' } 'not a local path'
+
+      - name: Upload Windows zip artifact
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: garnet-windows-cli-x86_64
+          path: dist/*.zip
+          retention-days: 30
+
+  # ───────────────────────────────────────────────────────────────────
+  # 9. Verify the universal installer copies stay in sync and lint clean.
   # ───────────────────────────────────────────────────────────────────
   shellcheck-installer:
     runs-on: ubuntu-latest
@@ -320,18 +723,27 @@ jobs:
             /work/scripts/preflight_garnet_studio_notarization.sh
 
   # ───────────────────────────────────────────────────────────────────
-  # 6. On tagged release only: publish packages/tarballs + SHA256SUMS
-  #    as a GitHub Release. End-users fetch via garnet-lang.org/install.sh.
+  # 10. On tagged release only: require every platform's assets, then
+  #     publish them with one signed SHA256SUMS as a GitHub Release.
+  #     End-users fetch via garnet-lang.org/install.sh and install.ps1.
   # ───────────────────────────────────────────────────────────────────
   release:
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [smoke-deb, smoke-rpm, macos-cli-tarballs, shellcheck-installer]
+    needs:
+      - smoke-deb
+      - smoke-rpm
+      - linux-tarball-x86_64
+      - smoke-deb-arm64
+      - smoke-rpm-arm64
+      - macos-cli-tarballs
+      - windows-cli-zip
+      - shellcheck-installer
     runs-on: ubuntu-latest
     permissions:
       contents: write
     env:
-      # Signing activates only when the repo provides a GPG key; otherwise the
-      # release ships an UNSIGNED SHA256SUMS (the honest research-grade default).
+      # Signing activates only when the repo provides a GPG key; without one a
+      # tagged release fails closed (see the fail-closed step below).
       HAS_GPG: ${{ secrets.GPG_SIGNING_KEY != '' }}
     steps:
       - name: Checkout (for SBOM generation)
@@ -342,10 +754,11 @@ jobs:
         with:
           toolchain: stable
 
-      - name: Fetch Linux package artifacts
+      - name: Fetch Linux artifacts (x86_64 and ARM64 packages and tarballs)
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
-          name: garnet-linux-packages
+          pattern: garnet-linux-*
+          merge-multiple: true
           path: release-dist/
 
       - name: Fetch macOS CLI tarball artifacts
@@ -354,6 +767,35 @@ jobs:
           pattern: garnet-macos-cli-*
           merge-multiple: true
           path: release-dist/
+
+      - name: Fetch Windows CLI zip artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: garnet-windows-cli-x86_64
+          path: release-dist/
+
+      - name: Require the complete asset set
+        run: |
+          set -euo pipefail
+          version="$(awk -F'"' '/^version =/ { print $2; exit }' Cargo.toml)"
+          missing=0
+          for asset in \
+            "garnet_${version}-1_amd64.deb" \
+            "garnet_${version}-1_arm64.deb" \
+            "garnet-${version}-1.x86_64.rpm" \
+            "garnet-${version}-1.aarch64.rpm" \
+            "garnet-${version}-x86_64-unknown-linux-gnu.tar.gz" \
+            "garnet-${version}-aarch64-unknown-linux-gnu.tar.gz" \
+            "garnet-${version}-x86_64-apple-darwin.tar.gz" \
+            "garnet-${version}-aarch64-apple-darwin.tar.gz" \
+            "garnet-${version}-x86_64-pc-windows-msvc.zip"; do
+            if [ ! -f "release-dist/${asset}" ]; then
+              echo "::error::release asset ${asset} is missing"
+              missing=1
+            fi
+          done
+          ls -la release-dist
+          exit "${missing}"
 
       - name: Generate CycloneDX SBOM (attached to the release)
         run: |
@@ -370,7 +812,7 @@ jobs:
         run: |
           cd release-dist
           rm -f SHA256SUMS
-          sha256sum *.deb *.rpm *.tar.gz *.tgz > SHA256SUMS
+          sha256sum *.deb *.rpm *.tar.gz *.zip *.tgz > SHA256SUMS
           cat SHA256SUMS
 
       - name: Sign SHA256SUMS (activates when GPG_SIGNING_KEY secret is set)
@@ -411,6 +853,7 @@ jobs:
             release-dist/*.deb
             release-dist/*.rpm
             release-dist/*.tar.gz
+            release-dist/*.zip
             release-dist/garnet-sbom-cyclonedx.tgz
             release-dist/SHA256SUMS
           fail_on_unmatched_files: true

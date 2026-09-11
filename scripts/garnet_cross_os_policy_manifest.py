@@ -31,8 +31,13 @@ GIT_TIMEOUT_SECONDS = 15
 # Canonical SHA-256 over the ordered four-suite, 36-test, all-green outcome
 # contract. It intentionally excludes the commit and OS so every matrix leg
 # must reproduce this same value; the manifest binds it back to head and OS.
+# Any change to a suite's test IDs changes it, so it is updated deliberately:
+# #571 renamed test_current_index_projects_34_ordered_contexts to
+# test_current_index_projects_39_ordered_contexts when the release matrix
+# added five contexts (previous value cf3631ea...8cd6, pinned at Lane 1
+# activation). Linux, macOS and Windows all reproduced the new value.
 EXPECTED_ALL_GREEN_PARITY_SHA256 = (
-    "cf3631ea6afd3443d040500c5c453c07c7609c5994975bbff74e6d9f608c8cd6"
+    "08ae8f9511fb7e9b17ddd53fbb5cb7e8aa878c81870ccc99d9c9824a239acf2e"
 )
 
 

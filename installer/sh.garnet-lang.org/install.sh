@@ -107,7 +107,8 @@ detect_format() {
                 printf 'tar'
             fi
             ;;
-        Darwin) printf 'pkg' ;;
+        # No signed .pkg is published; GARNET_FORMAT=pkg still requests one.
+        Darwin) printf 'tar' ;;
         *) printf 'tar' ;;
     esac
 }
@@ -370,8 +371,10 @@ release_install_for_format() {
 }
 
 release_install() {
-    _triple="$(detect_triple)"
-    _format="$(detect_format)"
+    # err inside $(...) exits only the subshell, and a caller's `if` suspends
+    # errexit, so a detection failure is returned explicitly.
+    _triple="$(detect_triple)" || return 1
+    _format="$(detect_format)" || return 1
 
     if release_install_for_format "$_triple" "$_format"; then
         return
@@ -397,6 +400,16 @@ main() {
         auto|release|source) ;;
         *) err "unsupported GARNET_INSTALL_MODE: $GARNET_INSTALL_MODE" ;;
     esac
+
+    # Windows gets its own installer; stop before any download or fallback.
+    # (GARNET_INSTALL_MODE=source still builds from source in a POSIX shell.)
+    if [ "$GARNET_INSTALL_MODE" != "source" ]; then
+        case "$(uname -s 2>/dev/null || printf unknown)" in
+            MINGW*|MSYS*|CYGWIN*|Windows_NT)
+                err "Windows detected; install from PowerShell instead: irm https://garnet-lang.org/install.ps1 | iex"
+                ;;
+        esac
+    fi
 
     if [ "$GARNET_INSTALL_MODE" = "source" ]; then
         source_install
