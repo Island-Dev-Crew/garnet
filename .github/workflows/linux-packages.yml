@@ -5,11 +5,13 @@
 # as a CI job so every push automatically confirms the packages still
 # install cleanly and still pass the 6-gate smoke.
 #
-# Every run builds and smoke-tests the full release matrix:
+# Every run builds the full release matrix:
 #   - Linux x86_64 and ARM64: .deb, .rpm and a CLI tarball
 #   - macOS Apple Silicon and Intel: CLI tarballs
 #   - Windows x86_64: a CLI zip (static C runtime)
-# and runs both public installers end to end against the locally built assets.
+# It smoke-tests every build it can run natively (the Intel macOS tarball is
+# cross-compiled on an Apple Silicon runner and not executed), and runs both
+# public installers end to end against the locally built assets.
 #
 # On tagged releases (`v*`) the release job additionally:
 #   - Requires the complete asset set (a missing platform fails the release)
@@ -663,6 +665,28 @@ jobs:
           ./docs/install.ps1
           $out = & (Join-Path $env:GARNET_PREFIX 'bin\garnet.exe') --version
           if (-not ($out -match "garnet $([regex]::Escape($version))")) { throw "installed garnet.exe reported: $out" }
+
+      # The staged-zip run above uses a file:/// base. These runs exercise the
+      # network path: a real release download follows GitHub's https
+      # redirects (v0.8.1 has no Windows zip, so it must stop at the checksum
+      # lookup), and an http base and a network-share file URL are refused.
+      - name: Installer — install.ps1 refuses unsafe sources
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          function Expect-Failure([hashtable]$Env, [string]$Pattern) {
+            foreach ($key in $Env.Keys) { Set-Item -Path "env:$key" -Value $Env[$key] }
+            $env:GARNET_PREFIX = Join-Path $env:RUNNER_TEMP 'garnet-ps-refusal'
+            $env:GARNET_NO_MODIFY_PATH = '1'
+            $message = $null
+            try { ./docs/install.ps1 } catch { $message = $_.Exception.Message }
+            foreach ($key in $Env.Keys) { Remove-Item -Path "env:$key" -ErrorAction SilentlyContinue }
+            Write-Host "install.ps1 said: $message"
+            if (-not $message -or $message -notmatch $Pattern) { throw "expected a failure matching '$Pattern'" }
+          }
+          Expect-Failure @{ GARNET_VERSION = '0.8.1' } 'lists no garnet-0\.8\.1-x86_64-pc-windows-msvc\.zip'
+          Expect-Failure @{ GARNET_BASE_URL = 'http://example.com/garnet' } 'refusing a non-https download URL'
+          Expect-Failure @{ GARNET_BASE_URL = 'file:////server/share/garnet' } 'not a local path'
 
       - name: Upload Windows zip artifact
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f

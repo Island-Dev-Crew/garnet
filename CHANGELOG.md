@@ -32,8 +32,16 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 - **Installers:** `docs/install.ps1` is new: it downloads the Windows zip,
   checks it against `SHA256SUMS`, installs `garnet.exe` under
   `%LOCALAPPDATA%\Programs\Garnet\bin` and adds that directory to the user
-  PATH. `install.sh` now stops on Windows with the PowerShell command instead
-  of "unsupported OS", and on macOS goes straight to the tarball, since no
+  PATH. It follows download redirects itself and refuses any hop that is not
+  https (Windows PowerShell 5.1 would otherwise follow https to http), accepts
+  `file:///` only for local paths (no network shares), matches the
+  `SHA256SUMS` line exactly and case-sensitively, and reads only the root
+  `garnet.exe` entry from the zip into one fixed path, so no entry name can
+  write outside it (`Expand-Archive` on 5.1 does not contain entries). `install.sh` now stops on Windows, before any download or source
+  fallback, with the PowerShell command instead of "unsupported OS" (a
+  detection failure is now returned explicitly: an error raised inside
+  `$(...)` under an `if` used to let the script continue with an empty
+  target), and on macOS goes straight to the tarball, since no
   `.pkg` is published (`GARNET_FORMAT=pkg` still requests one). CI runs both
   installers end to end against the locally built assets: the `install.sh`
   tarball path on x86_64 and ARM64, and `install.ps1` on Windows.

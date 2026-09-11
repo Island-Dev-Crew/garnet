@@ -13,8 +13,9 @@
 # environment variables instead:
 #   GARNET_VERSION          release version (default 0.8.2)
 #   GARNET_REPO             GitHub owner/name (default Island-Dev-Crew/garnet)
-#   GARNET_BASE_URL         release download base; https:// only, or file:///
-#                           for a local copy of the release assets
+#   GARNET_BASE_URL         release download base: https:// (every redirect
+#                           must stay on https), or file:/// for a local path
+#                           (network shares are refused)
 #   GARNET_PREFIX           install root (default %LOCALAPPDATA%\Programs\Garnet)
 #   GARNET_NO_MODIFY_PATH   set to 1 to leave the user PATH unchanged
 #
@@ -61,14 +62,52 @@
         [Net.ServicePointManager]::SecurityProtocol =
             [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
     }
+    Add-Type -AssemblyName System.Net.Http
+    Add-Type -AssemblyName System.IO.Compression
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
 
+    function Get-LocalPath([string]$Url) {
+        $uri = [Uri]$Url
+        if (-not $uri.IsFile -or $uri.IsUnc -or $uri.LocalPath.StartsWith('\\')) {
+            Fail "refusing a file URL that is not a local path: $Url"
+        }
+        return $uri.LocalPath
+    }
+
+    # Redirects are followed here, one hop at a time, so every hop must stay on
+    # https. Windows PowerShell 5.1's automatic redirects would also follow an
+    # https-to-http redirect, which would let both SHA256SUMS and the zip be
+    # substituted together.
     function Get-Asset([string]$Url, [string]$OutFile) {
-        if ($Url.StartsWith('file:///')) {
-            Copy-Item -LiteralPath ([Uri]$Url).LocalPath -Destination $OutFile
+        if ($Url.StartsWith('file:')) {
+            Copy-Item -LiteralPath (Get-LocalPath $Url) -Destination $OutFile
             return
         }
-        if (-not $Url.StartsWith('https://')) { Fail "refusing a non-https download URL: $Url" }
-        Invoke-WebRequest -Uri $Url -OutFile $OutFile -UseBasicParsing
+        $handler = New-Object System.Net.Http.HttpClientHandler
+        $handler.AllowAutoRedirect = $false
+        $client = New-Object System.Net.Http.HttpClient($handler)
+        try {
+            $current = [Uri]$Url
+            for ($hop = 0; $hop -le 5; $hop++) {
+                if ($current.Scheme -ne 'https') { Fail "refusing a non-https download URL: $current" }
+                $response = $client.GetAsync($current).GetAwaiter().GetResult()
+                try {
+                    $status = [int]$response.StatusCode
+                    if ($status -ge 300 -and $status -lt 400 -and $null -ne $response.Headers.Location) {
+                        $current = New-Object Uri($current, $response.Headers.Location)
+                        continue
+                    }
+                    if (-not $response.IsSuccessStatusCode) { Fail "download failed with HTTP $status: $current" }
+                    [IO.File]::WriteAllBytes($OutFile, $response.Content.ReadAsByteArrayAsync().GetAwaiter().GetResult())
+                    return
+                } finally {
+                    $response.Dispose()
+                }
+            }
+            Fail "too many redirects: $Url"
+        } finally {
+            $client.Dispose()
+        }
     }
 
     $asset = "garnet-$version-$target.zip"
@@ -83,16 +122,18 @@
         try {
             Get-Asset "$baseUrl/SHA256SUMS" $sums
         } catch {
-            Fail ("could not download SHA256SUMS for v$version from $baseUrl. " +
+            Fail ("could not download SHA256SUMS for v$version from $baseUrl ($($_.Exception.Message)). " +
                   'Windows release assets are published starting with v0.8.2; if that release is not out yet, ' +
                   "build the development branch from source (requires Rust): cargo install --git https://github.com/$repo --locked garnet-cli")
         }
 
+        # sha256sum format: 64 hex digits, a space, a mode character (space or
+        # '*'), then the file name, compared exactly and case-sensitively.
         $expected = $null
         foreach ($line in Get-Content -LiteralPath $sums) {
-            $parts = $line.Trim() -split '\s+', 2
-            if ($parts.Count -eq 2 -and $parts[1].TrimStart('*') -eq $asset) {
-                $expected = $parts[0].ToLowerInvariant()
+            if ($line -cmatch '^(?<hash>[0-9a-fA-F]{64}) (?<mode>[ *])(?<name>.+)$' -and
+                [string]::Equals($Matches['name'], $asset, [StringComparison]::Ordinal)) {
+                $expected = $Matches['hash'].ToLowerInvariant()
                 break
             }
         }
@@ -107,13 +148,20 @@
         }
         Say 'SHA-256 verified'
 
-        $unpacked = Join-Path $work 'unpacked'
-        Expand-Archive -LiteralPath $zip -DestinationPath $unpacked
-        $exe = Join-Path $unpacked 'garnet.exe'
-        if (-not (Test-Path -LiteralPath $exe -PathType Leaf)) { Fail "$asset does not contain garnet.exe" }
-
-        New-Item -ItemType Directory -Force -Path $bin | Out-Null
-        Copy-Item -LiteralPath $exe -Destination (Join-Path $bin 'garnet.exe') -Force
+        # Only the root entry named exactly garnet.exe is read, and it is
+        # written to one fixed path, so no entry name can steer a write.
+        $archive = [IO.Compression.ZipFile]::OpenRead($zip)
+        try {
+            $entry = $null
+            foreach ($candidate in $archive.Entries) {
+                if ([string]::Equals($candidate.FullName, 'garnet.exe', [StringComparison]::Ordinal)) { $entry = $candidate; break }
+            }
+            if ($null -eq $entry) { Fail "$asset does not contain garnet.exe at its root" }
+            New-Item -ItemType Directory -Force -Path $bin | Out-Null
+            [IO.Compression.ZipFileExtensions]::ExtractToFile($entry, (Join-Path $bin 'garnet.exe'), $true)
+        } finally {
+            $archive.Dispose()
+        }
         Say "installed garnet.exe into $bin"
     } finally {
         Remove-Item -LiteralPath $work -Recurse -Force -ErrorAction SilentlyContinue
