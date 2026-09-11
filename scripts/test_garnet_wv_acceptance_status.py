@@ -959,6 +959,70 @@ class GarnetWvAcceptanceStatusTests(unittest.TestCase):
             ],
         )
 
+    # Review v5: ``"."`` passed ``_artifact_relative`` because PurePosixPath
+    # drops ``.`` components, leaving no parts at all. ``_bind_parent`` then
+    # duplicated the root descriptor and raised IndexError on ``parts[-1]``,
+    # leaking the duplicate, and ``main()`` printed a traceback instead of
+    # status JSON. The base reporter returned partial for the same manifest.
+
+    def test_artifact_path_naming_no_file_is_a_finding_not_a_crash(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            evidence, manifest = _complete_evidence(root)
+            manifest["artifacts"].append({"path": ".", "sha256": "0" * 64})
+            (evidence / wv.EVIDENCE_MANIFEST).write_bytes(_manifest_bytes(manifest))
+            before = self._open_descriptor_count()
+            status = wv.read_status(root, "WV-6", verify_git=False)
+            after = self._open_descriptor_count()
+        self.assertNotEqual(status.state, "accepted")
+        self.assertIn(
+            "artifact path names no file beneath the evidence root: '.'",
+            status.findings,
+        )
+        self.assertEqual(before, after)
+
+    def test_check_evidence_naming_no_file_is_a_finding_not_a_crash(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            evidence, manifest = _complete_evidence(root)
+            manifest["checks"][0]["evidence"] = ["."]
+            (evidence / wv.EVIDENCE_MANIFEST).write_bytes(_manifest_bytes(manifest))
+            before = self._open_descriptor_count()
+            status = wv.read_status(root, "WV-6", verify_git=False)
+            after = self._open_descriptor_count()
+        self.assertNotEqual(status.state, "accepted")
+        self.assertTrue(
+            any("'.'" in finding for finding in status.findings), status.findings
+        )
+        self.assertEqual(before, after)
+
+    def test_main_reports_status_json_for_an_artifact_naming_no_file(self) -> None:
+        import contextlib
+        import io
+
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            evidence, manifest = _complete_evidence(root)
+            manifest["artifacts"].append({"path": ".", "sha256": "0" * 64})
+            (evidence / wv.EVIDENCE_MANIFEST).write_bytes(_manifest_bytes(manifest))
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                wv.main(["--root", str(root), "--wv", "WV-6"])
+        report = json.loads(out.getvalue())
+        self.assertNotEqual(report["state"], "accepted")
+
+    def test_bind_parent_refuses_a_path_with_no_components(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root_fd = os.open(td, os.O_RDONLY | os.O_DIRECTORY)
+            try:
+                before = self._open_descriptor_count()
+                with self.assertRaises(ValueError):
+                    wv._bind_parent(root_fd, ".", label="probe")
+                after = self._open_descriptor_count()
+            finally:
+                os.close(root_fd)
+        self.assertEqual(before, after)
+
 
 class UnsupportedPlatformTests(unittest.TestCase):
     """Finding 2: the no-dir_fd fallback re-checked and re-read by pathname,

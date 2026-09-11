@@ -52,6 +52,13 @@
   bound directory and the replacement is never read; the reporter's
   docstring states that boundary and the unprivileged same-inode `mmap`
   writer that sits outside the change detector.
+- **An artifact path that names no file is refused before any descriptor
+  is taken** (review v5): `.` passed the path check, because `PurePosixPath`
+  drops `.` components and leaves no parts, and the parent binder then
+  duplicated the root descriptor and raised `IndexError` on the empty parts,
+  leaking the duplicate and escaping `main()`. The path check and the binder
+  both reject it by name now, and that manifest is `partial` again, as it
+  was on the base reporter.
 
 ## Unreleased — gate hardening: dogfood PR-body checker section boundary, exact headings, evidence tokens (2026-09-02)
 

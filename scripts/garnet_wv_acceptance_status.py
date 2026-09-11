@@ -232,6 +232,9 @@ def _bind_parent(root_fd: int, relative: str, *, label: str) -> tuple[int, str]:
     already been proven real.
     """
     parts = PurePosixPath(relative).parts
+    if not parts:
+        # Refused before the duplication, so no descriptor is owned yet.
+        raise ValueError(f"{label} names no file beneath the evidence root")
     try:
         current = os.dup(root_fd)
     except OSError as exc:
@@ -601,6 +604,12 @@ def _artifact_relative(value: object) -> str:
     if value != unicodedata.normalize("NFC", value) or not value.isprintable():
         raise ValueError("artifact path is not canonical text")
     relative = PurePosixPath(value)
+    if not relative.parts:
+        # PurePosixPath drops ``.`` components, so ``"."`` has no parts and
+        # the ``"."`` membership test below can never see it (review v5).
+        raise ValueError(
+            f"artifact path names no file beneath the evidence root: {value!r}"
+        )
     if relative.is_absolute() or ".." in relative.parts or "." in relative.parts:
         raise ValueError(f"artifact path escapes evidence root: {value!r}")
     if relative.as_posix() != value or value == EVIDENCE_MANIFEST:
