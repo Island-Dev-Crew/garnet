@@ -1,24 +1,24 @@
 {
   "schema": "garnet.w-play.browser-proof/1",
-  "captured_at": "2026-09-04T22:58:26.947Z",
+  "captured_at": "2026-09-11T04:11:20.911Z",
   "verdict": "pass",
-  "duration_ms": 1814,
+  "duration_ms": 1445,
   "execution": {
     "engine": "playwright-browser-page",
-    "browser": "152.0.7977.82",
+    "browser": "152.0.7977.83",
     "node_global_present": false,
     "runtime_ready": true,
     "service_workers": "blocked"
   },
   "git": {
-    "tested_commit": "866b89adb66521ace16921e055f22c0932f19fa3",
-    "tested_tree": "2824195b40ace9006a3784a6acfeb1d04d38fda0",
+    "tested_commit": "60317af27cd693a811fc5b8a95271157baa2c522",
+    "tested_tree": "5bea93276283dfd173f5cad3c21d393ce4a80280",
     "runtime_inputs_clean": true
   },
   "host": {
     "os": "darwin",
     "arch": "arm64",
-    "node": "v22.22.2"
+    "node": "v26.8.2"
   },
   "package": {
     "schema": "garnet.playground.wasm-package/1",
@@ -36,7 +36,7 @@
   },
   "runtime_inputs": {
     "schema": "garnet.w-play.runtime-inputs/1",
-    "sha256": "4ee09f57deba71f1323bef3078af349c6e407624b8609f744c730b9ad0ad2741",
+    "sha256": "2f576a49f03e42b283e42175b382db85be1fd197ae408d1391da754e5df24355",
     "files": {
       "apps/garnet-studio/package-lock.json": {
         "bytes": 44280,
@@ -51,16 +51,16 @@
         "sha256": "790a70b22ea92e6f7004eec6196c0807f612d149a2bb40115d31d44ab68927fa"
       },
       "docs/playground.html": {
-        "bytes": 7997,
-        "sha256": "01b12abd2046ebe61de8b7d0b4fa45430981211e68d99ec32a1b3cf7ae775942"
+        "bytes": 8889,
+        "sha256": "7cd9f5ba51f657eaa490682fde6bcec7c9896ced53ffb8cd77ba4c70d2751b77"
       },
       "docs/playground/examples.json": {
         "bytes": 3016,
         "sha256": "eb1b7edb207c2a695b7d51c5b3c4acfac51bf42eb706c0da520b5586a0534d18"
       },
       "docs/playground/live.js": {
-        "bytes": 5110,
-        "sha256": "0c9b32f144a5acbbeb36c29c1822d12ec2293d2ea29a0a10d8e5432d4a958c91"
+        "bytes": 6133,
+        "sha256": "007187b6d1098251ffff827c1fff59c0e346f5e8a5e2f169502ccd09fbcbe26b"
       },
       "docs/playground/pkg/garnet_wasm.js": {
         "bytes": 6581,
@@ -187,7 +187,7 @@
   },
   "visual": {
     "screenshot": "ops/lane2a/evidence/30-playground-browser.png",
-    "screenshot_sha256": "072cde9b0b022b922c8f519fa78612d482e554e323b451bdab3d250a92601341",
+    "screenshot_sha256": "f7dadd3f6c4fe041403752da95c4fc383ce9de325fc1918bcbe6ed55283908c2",
     "desktop": {
       "horizontal_overflow": false,
       "runtime_state": "ready"
