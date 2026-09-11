@@ -929,7 +929,7 @@
     <div class="container">
       <span>no authority without evidence</span>
       <span>research-grade · source v<!-- truth:version -->0.8.2<!-- /truth --></span>
-      <span>last signed v0.8.1</span>
+      <span>last signed <!-- truth:latest_tag -->v0.8.2<!-- /truth --></span>
       <span>built by <b>Island Dev Crew</b></span>
     </div>
   </div>
@@ -1381,7 +1381,7 @@ def main() {
   <div class="container reveal">
     <h3>Get Garnet</h3>
     <h2>Install with one curl command.</h2>
-    <p class="lead">The universal installer now targets the <strong>v0.8.1 release path</strong>. It pulls release packages when they exist, verifies them against <code>SHA256SUMS</code>, and falls back to a source install through <code>cargo install --locked</code> only when no matching release asset exists. The v0.8.1 GitHub Release ships signed garnet-0.8.1-* CLI binaries + a CycloneDX SBOM; detailed productization gates live on the <a href="status.html">readiness status page</a>.</p>
+    <p class="lead">The installer targets the <strong>v0.8.2 release</strong>. It installs the release asset for your platform, verifies it against <code>SHA256SUMS</code>, and falls back to a source install through <code>cargo install --locked</code> only when no asset matches. The v0.8.2 GitHub Release ships signed CLI binaries for macOS, Linux (x86_64 and ARM64) and Windows, plus a CycloneDX SBOM; productization gates are on the <a href="status.html">readiness status page</a>.</p>
 
     <div id="os-detect" hidden style="display:none;align-items:center;gap:12px;margin:0 0 18px;padding:12px 16px;border:1px solid var(--rule);border-radius:10px;background:var(--bg-soft);font-size:14px;color:var(--ink-soft);">
       <span id="os-detect-msg"></span>
@@ -1399,9 +1399,9 @@ def main() {
         var plat=(uad&&uad.platform)?uad.platform:(navigator.platform||'');
         var s=(plat+' '+(navigator.userAgent||'')).toLowerCase();
         var t='';
-        if(s.indexOf('mac')>-1) t='Detected: macOS — the universal installer uses signed v0.8.1 release assets when available, otherwise source fallback. Apple Silicon and Intel CLI tarballs are published; signed .pkg remains credential-gated.';
-        else if(s.indexOf('win')>-1) t='Detected: Windows — no v0.8.1 Windows package is claimed yet; use the source install (needs Rust 1.95+).';
-        else if(s.indexOf('linux')>-1||s.indexOf('android')>-1) t='Detected: Linux — the universal installer uses checksum-verified v0.8.1 x86_64 packages when available; other targets fall back to source.';
+        if(s.indexOf('mac')>-1) t='Detected: macOS — the universal installer uses the signed v0.8.2 CLI tarball for Apple Silicon or Intel, with source fallback. A signed .pkg is not published.';
+        else if(s.indexOf('win')>-1) t='Detected: Windows — run install.ps1 (Windows tab) to install the signed v0.8.2 x86_64 build; the source install needs Rust 1.95+.';
+        else if(s.indexOf('linux')>-1||s.indexOf('android')>-1) t='Detected: Linux — the universal installer uses the checksum-verified v0.8.2 package for x86_64 or ARM64 (.deb, .rpm or tarball); other targets fall back to source.';
         if(!t)return; // unknown platform → no banner, silent
         msg.textContent=t;
         el.hidden=false; el.style.display='flex';
@@ -1411,14 +1411,14 @@ def main() {
     </script>
 
     <div class="install-note" style="margin:8px 0 26px;padding:16px 18px;border:1px solid var(--rule);border-radius:10px;background:var(--bg-soft);font-size:14.5px;color:var(--ink-soft);">
-      <strong style="color:var(--ink);">Before you install.</strong> Prebuilt release packages need <em>no toolchain</em>. The <em>source</em> install needs <strong>Rust 1.95+</strong>; CI also tracks current stable. The latest tagged release is <strong>v0.8.1</strong>, a research-grade milestone; it ships signed <strong>garnet-0.8.1-*</strong> binaries shown below (re-cut 2026-06-07; SHA256SUMS GPG-signed, verify per docs/release-signing.md), and v0.4.2 remains an older release if you need to pin older behavior:
+      <strong style="color:var(--ink);">Before you install.</strong> Prebuilt release packages need <em>no toolchain</em>. The <em>source</em> install needs <strong>Rust 1.95+</strong>; CI also tracks current stable. The latest tagged release is <strong>v0.8.2</strong>, a research-grade milestone. Its assets are below; <code>SHA256SUMS</code> is GPG-signed (verify per docs/release-signing.md), and older releases stay on GitHub Releases:
       <table style="border-collapse:collapse;margin:12px 0 4px;font-size:13.5px;width:100%;">
-        <tr style="color:var(--ink);"><th style="text-align:left;padding:4px 10px;border-bottom:1px solid var(--rule);">Platform</th><th style="text-align:left;padding:4px 10px;border-bottom:1px solid var(--rule);">v0.8.1 asset</th><th style="text-align:left;padding:4px 10px;border-bottom:1px solid var(--rule);">Current path</th></tr>
-        <tr><td style="padding:4px 10px;">macOS · Apple Silicon</td><td style="padding:4px 10px;"><code>garnet-0.8.1-aarch64-apple-darwin.tar.gz</code></td><td style="padding:4px 10px;">release tarball; signed .pkg not claimed</td></tr>
-        <tr><td style="padding:4px 10px;">macOS · Intel</td><td style="padding:4px 10px;"><code>garnet-0.8.1-x86_64-apple-darwin.tar.gz</code></td><td style="padding:4px 10px;">release tarball; signed .pkg not claimed</td></tr>
-        <tr><td style="padding:4px 10px;">Linux x86_64</td><td style="padding:4px 10px;"><code>garnet_0.8.1-1_amd64.deb</code> · <code>garnet-0.8.1-1.x86_64.rpm</code></td><td style="padding:4px 10px;">release package</td></tr>
-        <tr><td style="padding:4px 10px;">Linux aarch64</td><td style="padding:4px 10px;">— no package claimed —</td><td style="padding:4px 10px;">source install</td></tr>
-        <tr><td style="padding:4px 10px;">Windows</td><td style="padding:4px 10px;">— no package claimed —</td><td style="padding:4px 10px;">source install</td></tr>
+        <tr style="color:var(--ink);"><th style="text-align:left;padding:4px 10px;border-bottom:1px solid var(--rule);">Platform</th><th style="text-align:left;padding:4px 10px;border-bottom:1px solid var(--rule);">v0.8.2 asset</th><th style="text-align:left;padding:4px 10px;border-bottom:1px solid var(--rule);">Install path</th></tr>
+        <tr><td style="padding:4px 10px;">macOS · Apple Silicon</td><td style="padding:4px 10px;"><code>garnet-0.8.2-aarch64-apple-darwin.tar.gz</code></td><td style="padding:4px 10px;">install.sh or the tarball; no signed .pkg</td></tr>
+        <tr><td style="padding:4px 10px;">macOS · Intel</td><td style="padding:4px 10px;"><code>garnet-0.8.2-x86_64-apple-darwin.tar.gz</code></td><td style="padding:4px 10px;">install.sh or the tarball; no signed .pkg</td></tr>
+        <tr><td style="padding:4px 10px;">Linux x86_64</td><td style="padding:4px 10px;"><code>garnet_0.8.2-1_amd64.deb</code> · <code>garnet-0.8.2-1.x86_64.rpm</code> · <code>garnet-0.8.2-x86_64-unknown-linux-gnu.tar.gz</code></td><td style="padding:4px 10px;">install.sh, a package or the tarball</td></tr>
+        <tr><td style="padding:4px 10px;">Linux ARM64</td><td style="padding:4px 10px;"><code>garnet_0.8.2-1_arm64.deb</code> · <code>garnet-0.8.2-1.aarch64.rpm</code> · <code>garnet-0.8.2-aarch64-unknown-linux-gnu.tar.gz</code></td><td style="padding:4px 10px;">install.sh, a package or the tarball</td></tr>
+        <tr><td style="padding:4px 10px;">Windows x86_64</td><td style="padding:4px 10px;"><code>garnet-0.8.2-x86_64-pc-windows-msvc.zip</code></td><td style="padding:4px 10px;">install.ps1 or the zip; no .msi</td></tr>
       </table>
       <div style="margin-top:10px;">Verify any manual download before running it (from the folder containing the asset and <code>SHA256SUMS</code>):</div>
 <pre style="margin:8px 0 0;">shasum -a 256 --ignore-missing -c SHA256SUMS</pre>
@@ -1449,8 +1449,8 @@ curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | GARNET
         <div class="install-wrap">
           <button class="copy" data-copy="curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh">Copy</button>
 <pre># Recommended — universal installer:
-# uses v0.8.1 CLI tarballs when available and otherwise falls back
-# to source install. Signed .pkg/notarization is not claimed yet.
+# installs the signed v0.8.2 CLI tarball and otherwise falls back
+# to source install. A signed .pkg / notarization is not published.
 curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh
 
 # Source install (any arch, needs a Rust toolchain):
@@ -1465,14 +1465,14 @@ git clone https://github.com/Island-Dev-Crew/garnet && cd garnet/garnet-cli && c
 <pre># Recommended — universal installer (SHA256SUMS-verified):
 curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh
 
-# Published v0.8.1 release assets:
-#   https://github.com/Island-Dev-Crew/garnet/releases/tag/v0.8.1
+# Published v0.8.2 release assets:
+#   https://github.com/Island-Dev-Crew/garnet/releases/tag/v0.8.2
 
-# Debian/Ubuntu:
-sudo apt install ./garnet_0.8.1-1_amd64.deb
+# Debian/Ubuntu (on ARM64: garnet_0.8.2-1_arm64.deb):
+sudo apt install ./garnet_0.8.2-1_amd64.deb
 
-# Fedora/RHEL:
-sudo dnf install ./garnet-0.8.1-1.x86_64.rpm
+# Fedora/RHEL (on ARM64: garnet-0.8.2-1.aarch64.rpm):
+sudo dnf install ./garnet-0.8.2-1.x86_64.rpm
 
 # Source install (any arch, needs a Rust toolchain):
 git clone https://github.com/Island-Dev-Crew/garnet && cd garnet/garnet-cli && cargo install --path .</pre>
@@ -1480,11 +1480,13 @@ git clone https://github.com/Island-Dev-Crew/garnet && cd garnet/garnet-cli && c
       </div>
       <div class="install-pane" data-pane="windows">
         <div class="install-wrap">
-          <button class="copy" data-copy="git clone https://github.com/Island-Dev-Crew/garnet && cd garnet/garnet-cli && cargo install --path .">Copy</button>
-<pre># Supported today — source install (needs a Rust toolchain):
-git clone https://github.com/Island-Dev-Crew/garnet && cd garnet/garnet-cli && cargo install --path .
+          <button class="copy" data-copy="irm https://garnet-lang.org/install.ps1 | iex">Copy</button>
+<pre># PowerShell (Windows PowerShell 5.1 or PowerShell 7+):
+# installs the signed v0.8.2 x86_64 build after checking SHA256SUMS.
+irm https://garnet-lang.org/install.ps1 | iex
 
-# Windows package evidence is tracked on status.html.</pre>
+# Source install (needs a Rust toolchain):
+git clone https://github.com/Island-Dev-Crew/garnet && cd garnet/garnet-cli && cargo install --path .</pre>
         </div>
       </div>
     </div>
@@ -1748,7 +1750,7 @@ dist/Garnet Studio.app</pre>
       © 2026 Island Development Crew · Dual-licensed MIT OR Apache-2.0 · garnet-lang.org
     </div>
     <div class="copyright" style="margin-top:6px;font-size:12px;">
-      Site updated 2026-09-10 · latest tag Garnet v0.8.1 (research-grade milestone; Release ships signed garnet-0.8.1-* binaries + SBOM) with calibrated productization boundaries
+      Site updated 2026-09-11 · latest tag Garnet <!-- truth:latest_tag -->v0.8.2<!-- /truth --> (research-grade milestone; the Release ships signed binaries for macOS, Linux and Windows, plus an SBOM)
     </div>
     <div class="copyright" style="margin-top:6px;font-size:12px;">
       No social accounts yet — follow development by watching the <a href="https://github.com/Island-Dev-Crew/garnet" target="_blank" rel="noopener noreferrer">repository</a>.

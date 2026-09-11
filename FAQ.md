@@ -1,6 +1,6 @@
 # Garnet — Frequently Asked Questions
 
-Last updated: 2026-06-11 · latest tag <!-- truth:latest_tag -->v0.8.1<!-- /truth --> (research-grade milestone; the Release ships signed garnet-0.8.1-* CLI binaries + SBOM, re-cut 2026-06-07)
+Last updated: 2026-09-11 · latest tag <!-- truth:latest_tag -->v0.8.2<!-- /truth --> (research-grade milestone; the Release ships signed CLI binaries for macOS, Linux and Windows, plus an SBOM)
 
 ---
 
@@ -54,7 +54,7 @@ Memory: Paper VI Experiment 4 measured 21% peak RSS reduction on the multi-agent
 
 **<!-- truth:latest_tag -->v0.8.1<!-- /truth --> is research-grade and not production-complete.** Specifically:
 
-- **Ready**: scaffolding (`garnet new`), the four-language converter (`garnet convert`), deterministic + signed builds (`garnet build --deterministic --sign`), CapCaps enforcement, scaffolded `garnet test`, the <!-- truth:primitive_count -->80<!-- /truth --> bridged stdlib registry primitives, parser fuzz harness, rules-based compiler advisory mode, the S16 LSP surface (diagnostics, hover, go-to-definition, document/workspace symbols, CST-precise rename), release-backed VSIX assets, signed v0.8.1 Linux/macOS CLI release assets, and deterministic cross-machine CI.
+- **Ready**: scaffolding (`garnet new`), the four-language converter (`garnet convert`), deterministic + signed builds (`garnet build --deterministic --sign`), CapCaps enforcement, scaffolded `garnet test`, the <!-- truth:primitive_count -->80<!-- /truth --> bridged stdlib registry primitives, parser fuzz harness, rules-based compiler advisory mode, the S16 LSP surface (diagnostics, hover, go-to-definition, document/workspace symbols, CST-precise rename), release-backed VSIX assets, signed Linux, macOS and Windows CLI release assets, and deterministic cross-machine CI.
 - **Active-partial**: macOS Studio packaging without Developer ID notarization, Windows/Linux Studio target proof, bytecode VM performance path, LSP hover/go-to-def screenshot hardening, promo video human/aesthetic acceptance, proof/benchmark measurements, and provider-neutral advisory handoffs.
 - **Pending**: Apple Developer ID notarization, signed `.pkg`, Windows `.msi`, Linux desktop package/runtime proof, Marketplace/OpenVSX publication, provider-backed LLM assist, mechanized proof, external empirical study data, and native backend lowering.
 
@@ -90,7 +90,7 @@ Yes — the dual MIT / Apache-2.0 license explicitly permits commercial use, mod
 
 ## Do I need the Rust toolchain to use Garnet?
 
-Not on platforms with a matching published release asset. The universal installer prefers the signed `garnet-0.8.1-*` release asset, verifies it against `SHA256SUMS` (GPG-signed — see [`docs/release-signing.md`](docs/release-signing.md)), and uses source fallback only when no matching package exists or when you force `GARNET_INSTALL_MODE=source`. Source fallback requires Rust 1.95+ (the same floor as building from source below; Garnet CI tracks current stable).
+Not on platforms with a matching published release asset. The installers (`install.sh`, and `install.ps1` on Windows) prefer the signed release asset for your platform, verifies it against `SHA256SUMS` (GPG-signed — see [`docs/release-signing.md`](docs/release-signing.md)), and uses source fallback only when no matching package exists or when you force `GARNET_INSTALL_MODE=source`. Source fallback requires Rust 1.95+ (the same floor as building from source below; Garnet CI tracks current stable).
 
 ## How do deterministic signed builds work?
 
@@ -132,7 +132,7 @@ Signing is opt-in. Without `--sign`, the build still produces a deterministic ma
 
 The full corpus in this repository: seven research papers plus four addenda, the canonical Mini-Spec v1.0, the engineering workspace, current examples, v0.5 slice ledger, release evidence, public site/blog artifacts, and stage handoff documents. Start with [CURRENT_STATE.md](CURRENT_STATE.md), [F_Project_Management/GARNET_CURRENT_VS_HISTORICAL_LEDGER.md](F_Project_Management/GARNET_CURRENT_VS_HISTORICAL_LEDGER.md), and [F_Project_Management/GARNET_v0_5_SLICE_DOGFOOD.md](F_Project_Management/GARNET_v0_5_SLICE_DOGFOOD.md) before relying on older v4.2 handoffs.
 
-## What's coming after v0.8.1?
+## What's coming after v0.8.2?
 
 - Front door + truth guard: machine-generated public numbers (`docs/truth.json`), README/site truth wiring, and version-narrative cleanup — the W-REBUILD RB-0 band.
 - Foundation rebuild (zero language-semantics change): caps bitset, crash-surface sweep, registry-derived stdlib dispatch, parser-substrate unification, environment rebuild — then a Jon-gated backend-decision memo.

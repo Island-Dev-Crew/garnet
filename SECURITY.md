@@ -4,8 +4,9 @@
 
 | Version | Status          | Security fixes |
 |---------|-----------------|----------------|
-| 0.8.1   | Current release | ✅ Yes         |
-| 0.8.0   | Previous        | ✅ Yes (critical only) |
+| 0.8.2   | Current release | ✅ Yes         |
+| 0.8.1   | Previous        | ✅ Yes (critical only) |
+| 0.8.0   | Previous        | ❌ No          |
 | 0.5.0   | Previous        | ❌ No          |
 | ≤ 0.4.x | Archived        | ❌ No          |
 
@@ -18,7 +19,7 @@ Garnet follows a forward-compatible security support window: the current release
 Instead, use one of:
 
 1. **GitHub Security Advisory** (preferred): open a private advisory at [github.com/Island-Dev-Crew/garnet/security/advisories/new](https://github.com/Island-Dev-Crew/garnet/security/advisories/new). GitHub notifies the maintainer privately; the disclosure stays invisible to the public until published.
-2. **Email**: `jon-isaac@islanddevcrew.com`. **Voice/SMS (security reports only)**: +1 256-652-5534. PGP-encrypt if you have a key reference from a prior handoff; otherwise plaintext is fine — the maintainer will respond with a secure channel. Please reserve the phone line for security disclosure, not general or support questions.
+2. **Email**: `hello@garnet-lang.org`, with "security" in the subject. Plaintext is fine; the maintainer will reply with a secure channel.
 
 ### What to include
 
@@ -88,9 +89,9 @@ No in-house cryptography. All primitives are battle-tested libraries with establ
 
 ## Release signing
 
-Every `v*` tag pushed to the GitHub repo triggers `.github/workflows/linux-packages.yml`. On a tag, the workflow builds `.deb` + `.rpm` packages (`build-packages` job) and macOS CLI tarballs (`macos-cli-tarballs` job: `garnet-<version>-{aarch64,x86_64}-apple-darwin.tar.gz`); its `release` job then generates a CycloneDX SBOM (`garnet-sbom-cyclonedx.tgz`), composes one `SHA256SUMS` over the `.deb`, `.rpm`, `.tar.gz`, and `.tgz` assets, and publishes them as GitHub Release assets. When the `GPG_SIGNING_KEY` repository secret is present, the job also signs `SHA256SUMS` and attaches the detached signature `SHA256SUMS.asc`; when it is absent, the job fails closed unless the repository variable `ALLOW_UNSIGNED_RELEASE=true` is set. The `v0.8.1` Release carries `SHA256SUMS.asc` and the SBOM; `v0.8.0` predates signing and carries an unsigned `SHA256SUMS`. The public key is [docs/garnet-release-signing.pub.asc](docs/garnet-release-signing.pub.asc) (fingerprint `04D5 6F91 F038 17DD FFEB  C62A C14D F6E7 1395 6ED1`); the verification procedure is in [docs/release-signing.md](docs/release-signing.md). The VS Code extension `.vsix` assets on the same Release are published by `.github/workflows/vscode-extension.yml` and are not covered by `SHA256SUMS`.
+Every `v*` tag pushed to the GitHub repo triggers `.github/workflows/linux-packages.yml`. On a tag, the workflow builds Linux `.deb`, `.rpm` and tarball assets for x86_64 and ARM64, macOS CLI tarballs (`garnet-<version>-{aarch64,x86_64}-apple-darwin.tar.gz`) and a Windows zip (`garnet-<version>-x86_64-pc-windows-msvc.zip`); its `release` job requires all nine, generates a CycloneDX SBOM (`garnet-sbom-cyclonedx.tgz`), composes one `SHA256SUMS` over the `.deb`, `.rpm`, `.tar.gz`, `.zip` and `.tgz` assets, and publishes them as GitHub Release assets. When the `GPG_SIGNING_KEY` repository secret is present, the job also signs `SHA256SUMS` and attaches the detached signature `SHA256SUMS.asc`; when it is absent, the job fails closed unless the repository variable `ALLOW_UNSIGNED_RELEASE=true` is set. The `v0.8.1` and `v0.8.2` Releases carry `SHA256SUMS.asc` and the SBOM; `v0.8.0` predates signing and carries an unsigned `SHA256SUMS`. The public key is [docs/garnet-release-signing.pub.asc](docs/garnet-release-signing.pub.asc) (fingerprint `04D5 6F91 F038 17DD FFEB  C62A C14D F6E7 1395 6ED1`); the verification procedure is in [docs/release-signing.md](docs/release-signing.md). The VS Code extension `.vsix` assets on the same Release are published by `.github/workflows/vscode-extension.yml` and are not covered by `SHA256SUMS`.
 
-The `https://garnet-lang.org/install.sh` installer (`docs/install.sh`) fetches `SHA256SUMS` from the same GitHub Release and verifies the SHA-256 of each downloaded asset before running the native installer; it does not fetch or verify `SHA256SUMS.asc`.
+The installers, `https://garnet-lang.org/install.sh` (`docs/install.sh`) and `https://garnet-lang.org/install.ps1` (`docs/install.ps1`), fetch `SHA256SUMS` from the same GitHub Release and verify the SHA-256 of each downloaded asset before installing it; neither fetches or verifies `SHA256SUMS.asc`.
 
 Current universal-installer integrity is SHA-256 based. Platform signing remains platform-specific: macOS packages should be Developer ID signed and notarized, and Windows MSI packages should be Authenticode signed and timestamped before publication. Do not claim release-signature verification in the installer until a public release key is pinned in the script and the verification path is implemented.
 

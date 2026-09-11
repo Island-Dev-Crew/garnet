@@ -70,7 +70,7 @@ enum DistributionCatalogEntry {
                 probePath: nil,
                 catalog: .ready,
                 detail:
-                    "Separate from the .app: the v0.8.1 release ships a GPG-signed SHA256SUMS + SBOM for the garnet CLI tarballs."
+                    "Separate from the .app: each signed release ships a GPG-signed SHA256SUMS + SBOM for the garnet CLI assets."
             ),
             (
                 name: "Gatekeeper acceptance",

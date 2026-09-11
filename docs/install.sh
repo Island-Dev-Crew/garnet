@@ -1,5 +1,5 @@
 #!/bin/sh
-# Garnet universal installer, v0.8.1 stable-release default.
+# Garnet universal installer, v0.8.2 stable-release default.
 #
 # Public bootstrap URL:
 #   curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh
@@ -11,7 +11,7 @@
 
 set -eu
 
-GARNET_VERSION="${GARNET_VERSION:-0.8.1}"
+GARNET_VERSION="${GARNET_VERSION:-0.8.2}"
 case "${GARNET_VERSION}" in
   v*)
     GARNET_VERSION="${GARNET_VERSION#v}"

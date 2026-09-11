@@ -10,7 +10,7 @@ built for the code agents write and humans accept.</strong></p>
 <p align="center"><em>No authority without evidence. Acceptance is a decision made on evidence the author cannot fake.</em></p>
 
 <p align="center">
-  <a href="https://github.com/Island-Dev-Crew/garnet/releases/tag/v0.8.1">Release <!-- truth:latest_tag -->v0.8.1<!-- /truth --> · signed binaries</a> ·
+  <a href="https://github.com/Island-Dev-Crew/garnet/releases/latest">Release <!-- truth:latest_tag -->v0.8.1<!-- /truth --> · signed binaries</a> ·
   <a href="LICENSE">MIT OR Apache-2.0</a> ·
   <a href="https://garnet-lang.org">garnet-lang.org</a> ·
   <a href="https://garnet-lang.org/status.html">Verified today / Still open</a> ·
@@ -18,7 +18,7 @@ built for the code agents write and humans accept.</strong></p>
   <a href="FAQ.md">FAQ</a>
 </p>
 
-<p align="center"><sub>Source on <code>main</code> is <!-- truth:version -->0.8.2<!-- /truth -->; the last signed release is v0.8.1.</sub></p>
+<p align="center"><sub>Source on <code>main</code> is <!-- truth:version -->0.8.2<!-- /truth -->; the last signed release is <!-- truth:latest_tag -->v0.8.2<!-- /truth -->.</sub></p>
 
 ---
 
@@ -126,9 +126,10 @@ curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh
 ```
 
 Release-first, source-fallback. <!-- truth:latest_tag -->v0.8.1<!-- /truth --> ships signed
-`.deb` / `.rpm` / macOS tarballs with a GPG-signed `SHA256SUMS` — verify per
-[docs/release-signing.md](docs/release-signing.md). No matching package for your platform?
-The installer builds from source (Rust 1.95+; CI also tracks current stable — per
+`.deb` / `.rpm` packages and tarballs for Linux (x86_64, ARM64), macOS tarballs and a Windows
+zip, with a GPG-signed `SHA256SUMS`; verify per [docs/release-signing.md](docs/release-signing.md).
+On Windows, run `irm https://garnet-lang.org/install.ps1 | iex` in PowerShell. No matching
+package for your platform? The installer builds from source (Rust 1.95+; CI also tracks current stable — per
 [CONTRIBUTING.md](CONTRIBUTING.md)), or:
 
 ```sh
@@ -157,7 +158,7 @@ production-complete** — and this README will never tell you otherwise.
 
 | Verified today | Still open |
 |---|---|
-| Signed v0.8.1 release: `.deb`, `.rpm`, macOS tarballs, SBOM, GPG-signed sums | macOS `.pkg` notarization, Windows `.msi` (credential-gated) |
+| Signed <!-- truth:latest_tag -->v0.8.2<!-- /truth --> release: Linux x86_64/ARM64 `.deb`, `.rpm` and tarballs, macOS tarballs, Windows zip, SBOM, GPG-signed sums | macOS `.pkg` notarization, Windows `.msi` (credential-gated) |
 | `@caps` + `@max_depth` enforced on interpreter **and** VM; cross-OS trap parity recorded | OS-sandbox enforcement beyond Linux seccomp |
 | Capability-bounded acceptance demo: agent code accepted *and refused* on evidence, sealed | **Under construction:** `garnet build --evidence` (W-SHIP; no shipping CLI flag); independent verification of the self-found red-team fix |
 | <!-- truth:primitive_count -->80<!-- /truth --> capability- and stability-tagged stdlib primitives | Production VM performance (unbenchmarked, unclaimed) |
