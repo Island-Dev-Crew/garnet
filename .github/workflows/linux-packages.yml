@@ -15,9 +15,11 @@
 #
 # On tagged releases (`v*`) the release job additionally:
 #   - Requires the complete asset set (a missing platform fails the release)
-#   - Computes one SHA-256 manifest over every asset and signs it (fail-closed:
-#     unsigned only when ALLOW_UNSIGNED_RELEASE is set; see the release job)
-#   - Uploads the assets, the SBOM, SHA256SUMS and SHA256SUMS.asc
+#   - Computes one SHA-256 manifest over every asset, and signs it when the
+#     GPG_SIGNING_KEY secret is set; without the key the release fails unless
+#     the repository variable ALLOW_UNSIGNED_RELEASE is exactly 'true'
+#   - Uploads the assets, the SBOM and SHA256SUMS, plus SHA256SUMS.asc only
+#     when the manifest was signed
 # These are the files `docs/install.sh` and `docs/install.ps1` fetch after
 # GitHub Pages serves them at `https://garnet-lang.org/`.
 
