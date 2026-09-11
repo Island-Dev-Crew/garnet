@@ -1,6 +1,116 @@
 # Changelog
 
-## Unreleased — capability-gate walk no longer hides declared authority (2026-09-03)
+All notable changes to Garnet are recorded here.
+
+Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+This file is updated in the same PR as the work it tracks (per the v0.5 slice
+contract). Lines added here are part of the calibrated record — if a
+slice ships labeled "partial," its CHANGELOG entry says so explicitly.
+
+## [0.8.2] — 2026-09-02 (workspace version bump; the `v0.8.2` tag is not cut)
+
+### Also in 0.8.2 — site: the language site returns as the front door (2026-09-10)
+
+- **Changed:** `docs/index.html` is the long-scroll language site again
+  (restored from the #534 page), carrying the September hero, wordmark and
+  sentence. `check → diff-caps → seal` is the first code on the page, and the
+  committed WebAssembly playground mounts beneath it on request.
+- **Changed — promo lane:** the thirty-second promo is no longer embedded on
+  the front door. The recorded demonstration (take-03) takes its slot,
+  labelled by what each act ran on: the check in the browser playground; the
+  diff, control and seal on a source build of the CLI at `452a0e2`. The promo
+  assets stay in `docs/assets/` for the promo lane's own surfaces
+  (`docs/promo/composition.html`, the site-sync harness).
+- **Fixed:** copy restored from the older page is bounded to
+  `C_Language_Specification/GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md` (U-91):
+  the check-time claim, the mode-boundary bridge, the crossing log, FFI and
+  UDP, and what `garnet verify` checks.
+- **Also in #566:** the restored page's own defects were fixed before it
+  landed: content below the hero stayed invisible without JavaScript, phones
+  had no navigation, a 390 px viewport overflowed, and heading accents fell
+  below WCAG contrast. The footer carries the IDC mark (the asset proposed in
+  #565), right-sized.
+- **Fixed (round two):** the Convert section no longer calls converted output
+  "sandboxed": its `@sandbox` and `@caps()` markers are not enforced, and as
+  emitted today the output does not pass `garnet check`; the call-site count is described as a tally, not a crossing
+  analysis; muted text reaches 4.6:1; scripted scrolling honours reduced
+  motion; both tab groups expose tab roles, state and arrow-key navigation; the
+  silent recording has a text version; `omarchy.html` carries the IDC mark.
+- **Fixed (round two):** the hot-reload card named a `reload_signed` API that
+  does not exist; `ActorAddress::reload` takes no signature, and the Ed25519
+  reload-authorisation module is not yet wired into it. The card says so. The
+  service worker lets video and audio bypass it entirely, and its cache moves
+  to `garnet-web-v5`, so a whole file cached under v4 is dropped.
+- **Record:** the take-03 recording was published by the merge of #566
+  (2026-09-10), whose description stated that approving it was the
+  publication decision. Its opening and closing cards still carry the
+  capture's pre-publication *unpublished · hold* stamp. #566's squash message
+  still says the clip is "of the source CLI", that the page is 84 KB and that
+  390 px does not overflow; all three were corrected before merge (the check
+  act runs in the browser playground; the page is 92 KB).
+- **Scope:** docs, service worker and ledger only; no shipped-binary behavior
+  change; no gate file and no trust-kernel path.
+
+### Minimum Shelf flagship resealed for 0.8.2 (2026-09-04)
+
+- **The bump broke the committed flagship, and the fix is a reseal, not a relaxed
+  validator.** `Manifest::from_module` derives `parser_version` and `interp_version`
+  from `CARGO_PKG_VERSION`, and `minimum_shelf.rs` compares the complete build
+  manifest, so the 0.8.2 CLI refused the 0.8.1-sealed `tool.seal.json`
+  (`sealed_flagship_loads_end_to_end` and `native_stdio_initialize_list_call_and_error`
+  red). `garnet seal` is deterministic, so the reseal differs from the old seal in
+  exactly the two version fields. `SHELF_PACKAGE.json` is rebound to the new seal,
+  the three `TRUSTED_*_BLAKE3` constants and the smoke pins follow, and the reseal
+  is recorded in `ops/lane2b/evidence/11-f2-version-bump-reseal-green.txt` beside
+  the untouched F1 evidence. Found by the cross-family review of this PR.
+- **Coupling worth naming:** the shelf's trust root is pinned to the CLI version.
+  Every future version bump is also a reseal ceremony until that pin is decoupled.
+
+> **Cut truth:** this section moves the in-tree version to **0.8.2** ahead of any
+> tag, per Jon's ruling of 2026-09-02 (bump first, tag after). **No `v0.8.2` tag
+> exists at this commit**; tags on origin remain `v0.4.2`, `v0.5.0`, `v0.8.0`,
+> `v0.8.1`, and the published Release stays the signed `garnet-0.8.1-*` build.
+> Cutting the `v0.8.2` tag is Jon's act. v0.8.2 is a **research-grade
+> positioning release**, not production / 1.0.
+
+**What the build enforces at this SHA.** `@caps` and `@max_depth` are enforced on
+both backends (interpreter and VM) by deterministic, test-proven traps; seccomp is
+applied on Linux only. `@bounded` (Wasmtime fuel), memory, time, `@mailbox`, and
+the macOS/Windows OS-sandbox application remain declared-not-enforced.
+
+**WV-6 is `partial`.** `python3 -I scripts/garnet_wv_acceptance_status.py --wv WV-6`
+reports `"state": "partial"`, `"ok": false`, `"landed_main_sha": null`, with the
+findings "product content digest mismatch (… != 6f2d5f0b…)" and "product
+path count mismatch (… != 1646)" — the accepted reference is `6f2d5f0b…/1646`; the
+current product digest and path count are not pinned here because every commit that
+touches the product tree, this one included, moves them. The reason is U-58, the acceptance
+squash-successor gap: the acceptance pins `reviewedHeadSha` `8426ca76…` by exact
+equality, squash merges orphan that lineage, and the bounded successor-rebind
+procedure is Lane 1's open deliverable
+(`F_Project_Management/W_TRUST/AUGUST_2026_ARC_REGISTER_SWEEP_2026-08-27.md`, U-58).
+
+**The register runs U-04 … U-90** (census 73 at the Landing Arc 3 sweep,
+`F_Project_Management/W_TRUST/LANDING_ARC_3_REGISTER_SWEEP_2026-09-02.md`). The
+ledger records refusals per finding, not as a total: eight under U-64
+(`AUGUST_2026_ARC_REGISTER_SWEEP_2026-08-27.md`) and two under U-89
+(`LANDING_ARC_3_REGISTER_SWEEP_2026-09-02.md`); no aggregate refusal count exists
+in the register files, and none is asserted here.
+
+**Locked doors.** The Shelf door on the front door stays locked; it opens with the
+first sealed packages on the shelf. Launch stays HOLD (`Launch ready: False` in
+`F_Project_Management/LAUNCH/LAUNCH_READINESS.md`): the launch-critical gates still
+open are the shelf (`minimum_sealed_shelf`: manual-deferred) and the live playground
+(`live_wasm_playground`: remaining), and per the 2026-09-02 ruling launch also waits
+on a reproduced ultrapunch. FIRE/HOLD is Jon's alone.
+
+**Naming.** "English is how you tell an agent what to do. Garnet lang is how anyone
+else can trust what it did." — the front door's line; the name is **Garnet lang**.
+
+The sections below are the entries previously recorded as unreleased since
+`v0.8.1`, consolidated here in their existing order with their text unchanged
+(headings demoted one level; the "Unreleased —" prefix removed).
+
+### Also in 0.8.2 — capability-gate walk no longer hides declared authority (2026-09-03)
 
 - **Fixed a BLOCKING authority-widening defect (crown scope C, B-1):** the
   shared collector behind `garnet diff-caps` / `caps` / `verify` skipped any
@@ -43,40 +153,7 @@
   tally — that disclosure is `diff-caps`-only. Absence of `skipped_path_count`
   in a verdict means a pre-cure binary produced it, NOT that the walk was total.
 
-## Unreleased — gate hardening: dogfood PR-body checker section boundary, exact headings, evidence tokens (2026-09-02)
-
-### `scripts/check_dogfood_pr_body.py` — crown D-1, hardening H3-01, crown D-N4 cured
-
-- **Fixed (D-1, blocking):** a section ended only at the next literal `### `;
-  a higher-level `## ` heading closes the section in Markdown but was ignored,
-  so a checked item under a later, unrelated `## ` section satisfied the
-  evidence contract. A section now ends at the next heading of the same or
-  higher level; a deeper heading stays inside it.
-- **Fixed (H3-01, medium):** headings matched by prefix and any non-empty
-  checked item counted as evidence, so `### Current truth — none stated` with
-  `- [x] x` under Local, Remote and Evidence passed. Headings now match the
-  contract text exactly after trailing-whitespace normalization, and a checked
-  item counts only when it carries an evidence token (a command/path/value in
-  backticks, a repo path, a 7–40 hex SHA, an `https://` URL, a `#PR`
-  reference, or a numeric result; Remote verification also accepts the named
-  CI/PR check with its expected status, the evidence bundle also a named
-  artifact and where it lives). A vacuous item fails with a problem naming the
-  section and the token classes it needs.
-- **Fixed (D-N4):** the `git diff --name-only` subprocess is bounded at 30 s
-  and fails closed with an explicit `::error::` on timeout.
-- **Calibration:** the merged bodies of #540–#546 all pass; #545 and #546 are
-  committed as positive fixtures under `scripts/fixtures/dogfood_pr_bodies/`.
-  The named-check and named-artifact classes exist because every merged
-  Remote line reads "Fresh PR checks are required to settle before handoff;
-  no CI conclusion is claimed in advance." and #542/#544 name their artifact
-  in prose; the rule was widened rather than the bodies rewritten.
-- **Scope:** gate-script hardening only; no shipped-binary behavior change.
-  This PR modifies the gate it merges under → integrity rule 1:
-  human-merge-only, Codex reviews first. `scripts/check_*` is not a
-  rolling-gate trust prefix (H3-02, a separate act), so the rolling gate
-  reports `touched_paths []` for this change.
-
-## Unreleased — U-91 entry-budget capability enforcement (2026-09-03)
+### Also in 0.8.2 — U-91 entry-budget capability enforcement (2026-09-03)
 
 - **Fixed authority laundering through call edges the checker cannot see:** all
   15 gated host-authority primitives now require the PROGRAM ENTRY's declared
@@ -119,7 +196,40 @@
   backends now refuse these programs, but which of the two gates fires first
   still depends on whether the helper lowered natively or fell back.
 
-## Unreleased — Lane 0 evidence durability repair (2026-07-16)
+### Also in 0.8.2 — gate hardening: dogfood PR-body checker section boundary, exact headings, evidence tokens (2026-09-02)
+
+#### `scripts/check_dogfood_pr_body.py` — crown D-1, hardening H3-01, crown D-N4 cured
+
+- **Fixed (D-1, blocking):** a section ended only at the next literal `### `;
+  a higher-level `## ` heading closes the section in Markdown but was ignored,
+  so a checked item under a later, unrelated `## ` section satisfied the
+  evidence contract. A section now ends at the next heading of the same or
+  higher level; a deeper heading stays inside it.
+- **Fixed (H3-01, medium):** headings matched by prefix and any non-empty
+  checked item counted as evidence, so `### Current truth — none stated` with
+  `- [x] x` under Local, Remote and Evidence passed. Headings now match the
+  contract text exactly after trailing-whitespace normalization, and a checked
+  item counts only when it carries an evidence token (a command/path/value in
+  backticks, a repo path, a 7–40 hex SHA, an `https://` URL, a `#PR`
+  reference, or a numeric result; Remote verification also accepts the named
+  CI/PR check with its expected status, the evidence bundle also a named
+  artifact and where it lives). A vacuous item fails with a problem naming the
+  section and the token classes it needs.
+- **Fixed (D-N4):** the `git diff --name-only` subprocess is bounded at 30 s
+  and fails closed with an explicit `::error::` on timeout.
+- **Calibration:** the merged bodies of #540–#546 all pass; #545 and #546 are
+  committed as positive fixtures under `scripts/fixtures/dogfood_pr_bodies/`.
+  The named-check and named-artifact classes exist because every merged
+  Remote line reads "Fresh PR checks are required to settle before handoff;
+  no CI conclusion is claimed in advance." and #542/#544 name their artifact
+  in prose; the rule was widened rather than the bodies rewritten.
+- **Scope:** gate-script hardening only; no shipped-binary behavior change.
+  This PR modifies the gate it merges under → integrity rule 1:
+  human-merge-only, Codex reviews first. `scripts/check_*` is not a
+  rolling-gate trust prefix (H3-02, a separate act), so the rolling gate
+  reports `touched_paths []` for this change.
+
+### Also in 0.8.2 — Lane 0 evidence durability repair (2026-07-16)
 
 - **Fixed Windows checkout fidelity:** every `ops/**/evidence/**` path is now
   byte-exact, preventing `core.autocrlf=true` from changing sealed LF evidence
@@ -134,25 +244,19 @@
 - **Honest scope:** bounded Lane 0 gate repair only. Launch remains HOLD at
   band 3; no Lane 1, 2A, or 2B implementation and no Jon-only action occurred.
 
-All notable changes to Garnet are recorded here.
 
-Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
-This file is updated in the same PR as the work it tracks (per the v0.5 slice
-contract). Lines added here are part of the calibrated-honesty record — if a
-slice ships labeled "partial," its CHANGELOG entry says so explicitly.
-
-## Unreleased — Minimum Shelf MCP lifecycle core (2026-07-15)
+### Minimum Shelf MCP lifecycle core (2026-07-15)
 
 - **Added:** a pure released-MCP `2025-11-25` session core with initialize negotiation, mandatory ping, the initialized transition, exact bounded request IDs, and explicit respond/no-response/close actions.
 - **Fail-closed boundary:** initialization is the first valid interaction, orphan responses close silently, exhausted sessions close after one bounded error, and unadvertised methods never reach a placeholder router.
 - **Honest boundary:** capabilities remain empty; this is not stdio, a tool host, Garnet execution, `.mcpcaps` enforcement, sealing, registry publication, or launch evidence. Duplicate-key and message/depth/node limits remain required before transport.
 
-## Unreleased — GOV-009 authenticated governance object and collection transport (2026-07-15)
+### GOV-009 authenticated governance object and collection transport (2026-07-15)
 
 - **Added:** a standard-library-only authenticated GitHub REST transport with exact-repository URL binding, strict JSON and physical RFC Link parsing, plus bounded complete page-number collection retrieval. Collection requests start at canonical page one, validate every relation, bind numeric repository rewrites through one named authenticated preflight, and return the whole chain or zero rows.
 - **Honest boundary:** this is page-number HTTP completeness only. Stable domain-row identity, atomic snapshots, cursor/since pagination, governance verdicts, reviewed-head or latest-attempt selection, freshness/outcome grading, admin authority, context 32 activation, and CI/workflow changes remain deferred.
 
-## Unreleased — W-PLAY check/diff Wasm adapter (2026-07-15)
+### W-PLAY check/diff Wasm adapter (2026-07-15)
 
 - **Added** `garnet.wasm.check/1` and `garnet.wasm.diff-caps/1` native/JSON/
   `wasm-bindgen` adapters over the existing parser and checker. Diagnostics,
@@ -160,7 +264,7 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 - **Honest boundary:** this declared-surface-only adapter does not add the live
   page, reproducible package provenance, Playwright proof, or a browser-live claim.
 
-## Unreleased — S114/Wasm current-truth reconciliation (2026-07-14)
+### S114/Wasm current-truth reconciliation (2026-07-14)
 
 - **Corrected current normative surfaces:** S114 is
   `independently-re-verified-with-fixes`, and Jon separately recorded
@@ -180,9 +284,9 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   capability-scope fixture now exact-checks acceptance, embedder, and
   Wasm-versus-browser boundaries in addition to counting bounded claims.
 
-## Unreleased — gate fix: dogfood PR-body checker skipped `.github/` paths (2026-07-13)
+### gate fix: dogfood PR-body checker skipped `.github/` paths (2026-07-13)
 
-### `scripts/check_dogfood_pr_body.py` — path normalization closed a silent gate hole
+#### `scripts/check_dogfood_pr_body.py` — path normalization closed a silent gate hole
 
 - **Fixed:** `is_sensitive_path` normalized paths with `lstrip("./")`, which
   strips leading `.` and `/` as a character SET — `.github/workflows/ci.yml`
@@ -199,9 +303,9 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   This PR modifies the gate it merges under → integrity rule 1:
   human-merge-only (parked for Jon, no autonomous-merge record).
 
-## Unreleased — S114 acceptance, code hardening: embedder strict-by-default (2026-07-12)
+### S114 acceptance, code hardening: embedder strict-by-default (2026-07-12)
 
-### `garnet-interp` — `Interpreter::new()` is now strict (deny-by-default)
+#### `garnet-interp` — `Interpreter::new()` is now strict (deny-by-default)
 
 - **Changed (deliberate contract reversal, S114 acceptance cond. #5):** a
   default `Interpreter::new()` now REFUSES a host-authority primitive reached
@@ -224,9 +328,9 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   the VM's per-run entry frame) are unaffected. Documented in the capability
   enforcement scope table (`C_Language_Specification/GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md`).
 
-## Unreleased — W-PLAY Task 1: Garnet runs in WebAssembly (2026-07-11)
+### W-PLAY Task 1: Garnet runs in WebAssembly (2026-07-11)
 
-### `garnet-wasm` (new crate) + `garnet-interp` additive output capture
+#### `garnet-wasm` (new crate) + `garnet-interp` additive output capture
 
 - **Added** the `garnet-wasm` crate: `run_source(src)` loads Garnet source
   under `main`'s `@caps` entry frame (the CLI run lane's authority gate),
@@ -248,9 +352,9 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   page slice); the wasm surface exposes `run_source` only — check/diff-caps
   surfaces land with the diff-caps demo slice.
 
-## Unreleased — Studio Agent-Loop Console (Phase 5) (2026-06-28)
+### Studio Agent-Loop Console (Phase 5) (2026-06-28)
 
-### Studio — Agent-Loop Console (`apps/garnet-studio`)
+#### Studio — Agent-Loop Console (`apps/garnet-studio`)
 
 - **Added** a power-only "Agent-Loop Console" panel that renders an existing
   `garnet agent-loop --record-dir` dossier as a **four-gate pipeline** —
@@ -294,9 +398,9 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   read-only fs — no scripts / CI / gate change, no frozen crate, no capability widening
   (`core:default`), no new crate dependency. Research-grade prototype (v0.x.x).
 
-## Unreleased — Studio Enforced / Declared Legend (Phase 4) (2026-06-28)
+### Studio Enforced / Declared Legend (Phase 4) (2026-06-28)
 
-### Studio — Enforced / Declared Legend (`apps/garnet-studio`)
+#### Studio — Enforced / Declared Legend (`apps/garnet-studio`)
 
 - **Added** a power-only "Enforced / Declared Legend" panel that makes Garnet's
   calibrated honesty visible: which capability fences the runtime actually
@@ -334,9 +438,9 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   `apps/garnet-studio` (non-frozen) — no scripts / CI / gate change, no frozen crate, no
   capability widening (`core:default`), no new crate dependency. Research-grade prototype (v0.x.x).
 
-## Unreleased — Studio Velocity Editor (Phase 3) (2026-06-28)
+### Studio Velocity Editor (Phase 3) (2026-06-28)
 
-### Studio — Velocity Editor live check (`apps/garnet-studio`)
+#### Studio — Velocity Editor live check (`apps/garnet-studio`)
 
 - **Added** a Velocity Editor to the Parse / Check / Run panel: a source buffer plus a
   debounced (200 ms) `studio_velocity_check` that runs `garnet check --format json` on the
@@ -367,9 +471,9 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   `apps/garnet-studio` (non-frozen) — no scripts / CI / gate change, no frozen crate, no
   capability widening (`core:default`), no new crate dependency. Research-grade prototype (v0.x.x).
 
-## Unreleased — Studio Diff-Caps Review Gate (Phase 2) (2026-06-28)
+### Studio Diff-Caps Review Gate (Phase 2) (2026-06-28)
 
-### Studio — Diff-Caps Review Gate (`apps/garnet-studio`)
+#### Studio — Diff-Caps Review Gate (`apps/garnet-studio`)
 
 - **Added** `studio_diff_caps(old_path, new_path)` + a power-only **Diff-Caps Review**
   panel that renders `garnet diff-caps --machine`'s `garnet.diff-caps.machine/1` verdict.
@@ -396,9 +500,9 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   `apps/garnet-studio` (non-frozen) — no scripts/CI/gate change, no frozen crate, no
   capability widening (`core:default`). Research-grade prototype (v0.x.x).
 
-## Unreleased — Studio dead-weight cleanup (Phase 1) (2026-06-28)
+### Studio dead-weight cleanup (Phase 1) (2026-06-28)
 
-### Studio — dead-weight removal (`apps/garnet-studio`)
+#### Studio — dead-weight removal (`apps/garnet-studio`)
 
 - **Removed the Taxonomy UI panel** (nav button + section + its frontend loader and the
   orphaned `.taxonomy`/`.pills` CSS). It was a static mirror of a Rust constant. The
@@ -421,9 +525,9 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   gate it merges under. That removal is prepared as a separate Jon-merge slice. Also
   deferred: the theme switcher and the CLI Health demotion.
 
-## Unreleased — Studio Windows bootstrap runner (Phase 0) (2026-06-28)
+### Studio Windows bootstrap runner (Phase 0) (2026-06-28)
 
-### Studio — typed GUI bootstrap runner (`apps/garnet-studio`)
+#### Studio — typed GUI bootstrap runner (`apps/garnet-studio`)
 
 - **Added** `studio_bootstrap_run_step` — a typed, allowlisted Tauri command that runs
   one of four named Windows setup steps (`preflight`, `install-python`, `build-cli`,
@@ -463,9 +567,9 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   build, e2e 9/9, shell + status contracts 8 + 17, `--studio-smoke` passed. Research-grade
   prototype (v0.x.x), not production/1.0.
 
-## Unreleased — WV-4 Studio Playwright ledger record (2026-06-27)
+### WV-4 Studio Playwright ledger record (2026-06-27)
 
-### WV-4 — Playwright Studio-UI harness (`apps/garnet-studio`)
+#### WV-4 — Playwright Studio-UI harness (`apps/garnet-studio`)
 
 - **Recorded** the WV-4 Playwright Studio-UI harness in this ledger. The harness
   itself landed in **#422** (squash `952b3be`), but that PR touched zero docs; this
@@ -498,9 +602,9 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   Garnet remains a research-grade prototype (v0.x.x), not production/1.0; this changes
   nothing about that.
 
-## Unreleased — Studio macOS parity + judged enhancement set (2026-06-12)
+### Studio macOS parity + judged enhancement set (2026-06-12)
 
-### Security — S114-FIX-2: deny-by-default capability mediation (close residual fail-open lanes)
+#### Security — S114-FIX-2: deny-by-default capability mediation (close residual fail-open lanes)
 
 - **Context:** the 2026-06-25 **independent, cross-lineage** re-verification (OpenAI
   Codex) of the S114 capability-enforcement claim found two HIGHs the Claude fleet
@@ -534,7 +638,7 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   OS-sandbox remain declared-not-enforced. S114 is independently-re-verified-with-fixes
   **pending Jon's acceptance**, not self-attested-closed; the relabel and tag stay Jon's.
 
-### Foundation HARDEN — cyclic-value render guard (`Value::display`/`debug`)
+#### Foundation HARDEN — cyclic-value render guard (`Value::display`/`debug`)
 
 - **Fixed (stack-overflow abort → bounded render):** `Value::display()`/`debug()`
   recursed through container values with **no cycle or depth guard**, so a
@@ -567,7 +671,7 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   rendering," not "collect cycles"). No behavior change for acyclic values.
   Workspace 2085/0; clippy `--all-targets -D warnings` clean; no gate modified.
 
-### Foundation HARDEN — process-abort firewall on the `eval`/`repl`/`test`/`doctest` lanes (J8)
+#### Foundation HARDEN — process-abort firewall on the `eval`/`repl`/`test`/`doctest` lanes (J8)
 
 - **Added** `garnet-cli/src/panic_firewall.rs` — a `catch_unwind`-based firewall
   giving the four interpreter-invoking lanes that ran the interpreter on the
@@ -613,7 +717,7 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   firewall. No "enforced/abort-proof" claim beyond what the trap tests prove.
   Workspace 2079/0; clippy `--all-targets -D warnings` clean; no gate modified.
 
-### Foundation HARDEN — checked `+`/`-`/`*`/unary-`-` integer overflow (RFC-0002 implementation)
+#### Foundation HARDEN — checked `+`/`-`/`*`/unary-`-` integer overflow (RFC-0002 implementation)
 
 - **Changed (abort/wrap → diagnostic, both backends):** `i64` `+`, `-`, `*`,
   and unary `-` overflow was the worst-of-both-worlds the trust kernel can't
@@ -659,7 +763,7 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   Workspace 2062/0; `cargo clippy --workspace --all-targets -D warnings` clean;
   trust-kernel gates unchanged (no gate modified by this slice).
 
-### RB-4b.3 — per-pass caps re-check on VM lowering (W-REBUILD Foundation · Directive 7)
+#### RB-4b.3 — per-pass caps re-check on VM lowering (W-REBUILD Foundation · Directive 7)
 
 - **Added** `garnet_vm::caps_recheck` — the GHC-Core "re-check the invariant
   after every lowering pass" pattern applied to the AST→bytecode lowering.
@@ -698,7 +802,7 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   planted trap proves. Workspace 2013/0; enforcement-parity + all trust-kernel
   gates unchanged.
 
-### W-REBUILD — final workstream report (Foundation band closeout · docs-only)
+#### W-REBUILD — final workstream report (Foundation band closeout · docs-only)
 
 - **Added** `F_Project_Management/W_REBUILD/W_REBUILD_FINAL_REPORT.md` — the
   closeout report for the Foundation rebuild band (RB-0 … RB-7, all merged to
@@ -711,7 +815,7 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   production, no backend built, the full Directive-7 vision not delivered, no
   release). Docs-only; no code/gate change.
 
-### RB-7 — the REPL joy slice (W-REBUILD Foundation)
+#### RB-7 — the REPL joy slice (W-REBUILD Foundation)
 
 - **Rebuilt** `garnet repl` as the "joy" REPL in `garnet-cli/src/cmd/repl.rs` on
   [`reedline`](https://crates.io/crates/reedline) (v0.48): history, multiline
@@ -743,7 +847,7 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   half); wasm playground deferred to a separate W-PLAY spike (not in RB-7); RB-7
   proceeds now as the REPL slice only (no RB-5 / no indexed-frame rewrite).
 
-### RB-6 — backend/IR decision memo (DRAFT) + RB-5 sequencing decision (W-REBUILD Foundation · docs-only)
+#### RB-6 — backend/IR decision memo (DRAFT) + RB-5 sequencing decision (W-REBUILD Foundation · docs-only)
 
 - **Recorded** Jon's **RB-5 sequencing decision (Option C, 2026-06-14):** RB-5 is
   sequenced with RB-6, not rejected — the RB-5 baseline is RB-6's before-number;
@@ -765,7 +869,7 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   merged, no `.wasm` executed, no code/AST/`Value`/gate touched; feasibility-compile
   + memo only.
 
-### RB-5 — environment rebuild · STOP+REPORT (W-REBUILD Foundation · docs-only)
+#### RB-5 — environment rebuild · STOP+REPORT (W-REBUILD Foundation · docs-only)
 
 - **Added** `F_Project_Management/W_REBUILD/RB5_ENV_REBUILD_STOP_REPORT_2026-06-14.md`
   — the scheduled STOP+REPORT after RB-5, with measured numbers, before the RB-6
@@ -782,7 +886,7 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   the RB-6 IR decision** (Option C); decision A/B/C/D escalated to Jon. No code,
   AST, gate, or `Value` touched.
 
-### RB-4b.4 — editions note + spec reconciliation (W-REBUILD Foundation · docs-only)
+#### RB-4b.4 — editions note + spec reconciliation (W-REBUILD Foundation · docs-only)
 
 - **Added** the **editions spec note** to `garnet-parser-v0.3/AGENTS.md`
   (parked there, not in the maintainer-owned `GARNET_v1_0_Mini_Spec.md`,
@@ -807,7 +911,7 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   AST and CST remain parallel, awaiting an adopter). No code or spec-semantics
   change; docs-only.
 
-### RB-4b.2 — `SyntaxError` spans + the LSP single-parse finding (W-REBUILD Foundation)
+#### RB-4b.2 — `SyntaxError` spans + the LSP single-parse finding (W-REBUILD Foundation)
 
 - **Re-scoped from "typed views + LSP single-parse" (Jon, 2026-06-12)** after a
   measured blocker surfaced: dropping `parse_source` from the LSP would
@@ -839,7 +943,7 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   surfaced via the CLI `line:col` output (the only `SyntaxError`-span
   consumer). Workspace green.
 
-### W-REBUILD stop-report rulings (docs) — Jon's nine J-queue decisions
+#### W-REBUILD stop-report rulings (docs) — Jon's nine J-queue decisions
 
 - The nine RB-band stop-report decisions are **resolved** and recorded inline
   in `W_REBUILD_SPEC.md` (RESOLVED blocks on the RB-1/RB-2/RB-3/RB-4b
@@ -876,20 +980,20 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   run path + locator dedup queued as the next slices.
 - New contract: `apps/garnet-studio-macos/AGENTS.md` (+ checker registration).
 
-## [Unreleased]
+### Post-cut work (S121+) — the former `[Unreleased]` block
 
 _Post-cut work (S121+) lands here. S121–S130 delivered: the Truth Sync Gate, doc
 modernization, the v0.8.1 version bump + release guard + SBOM/signing wiring, the
 signed re-cut, and this post-re-cut truth-sync._
 
-### Minimum Shelf MCP initialize-schema boundary
+#### Minimum Shelf MCP initialize-schema boundary
 
 - **Added (schema only):** released MCP `2025-11-25` initialize parameter,
   client capability, implementation/icon metadata, URI, and `_meta` shape
   validation. Lifecycle state, request IDs, tools, stdio, execution, sealing,
   reporting, and host enforcement remain deferred.
 
-### MIT readiness test pins re-anchored to post-#364 re-sealed committed evidence
+#### MIT readiness test pins re-anchored to post-#364 re-sealed committed evidence
 
 - **Fixed (test truth, no reporter change):** six stale pins in
   `scripts/test_garnet_mit_readiness_status.py` for the
@@ -958,7 +1062,7 @@ signed re-cut, and this post-re-cut truth-sync._
   open-gates copy (clean-VM re-proof at the new stamp, Linux launch, signing,
   MSI, winget, notarization) still reads as open.
 
-### RB-2 follow-up — interp `%= 0` is now "division by zero" (cross-backend parity)
+#### RB-2 follow-up — interp `%= 0` is now "division by zero" (cross-backend parity)
 
 - **Fixed (observable error-string change, interp only):** `a %= 0` in the
   interpreter's compound-assign path (`garnet-interp-v0.3/src/stmt.rs`,
@@ -977,7 +1081,7 @@ signed re-cut, and this post-re-cut truth-sync._
   `%= 0` changes to "division by zero" — now identical to `/= 0` and
   expression-path `% 0`.
 
-### RB-4b.1 — substrate fidelity (W-REBUILD Foundation)
+#### RB-4b.1 — substrate fidelity (W-REBUILD Foundation)
 
 - **Changed:** `garnet_cst::cst_to_ast` is now **span-exact** with
   `parse_source` — the projected AST equals the recursive-descent parser's
@@ -1027,7 +1131,7 @@ signed re-cut, and this post-re-cut truth-sync._
   is unaffected — it takes fail-fast errors from `parse_source`, not from
   `parse_cst`). Workspace 2004/0.
 
-### RB-4a — rowan unification (W-REBUILD Foundation)
+#### RB-4a — rowan unification (W-REBUILD Foundation)
 
 - **Removed:** `garnet-parser-v0.3/src/cst.rs` — #221's post-hoc parser CST,
   the self-described "temporary legacy migration oracle" — plus its four
@@ -1071,7 +1175,7 @@ signed re-cut, and this post-re-cut truth-sync._
   Desktop-evidence drift vs pinned distribution-lane percentages
   (identical failure set on clean `06fa88b`; flagged as a follow-up).
 
-### RB-3 — registry-derived dispatch (W-REBUILD Foundation · keystone)
+#### RB-3 — registry-derived dispatch (W-REBUILD Foundation · keystone)
 
 - **Changed:** the interpreter's native installation is now DERIVED — one
   loop joining `garnet_stdlib::registry::all_prims()` against the
@@ -1135,7 +1239,7 @@ signed re-cut, and this post-re-cut truth-sync._
   names them load-bearing-to-be (RB-7 `?doc` WILL be their first consumer
   — nothing reads `PrimMeta.doc` yet).
 
-### RB-2 — crash-surface sweep (W-REBUILD Foundation)
+#### RB-2 — crash-surface sweep (W-REBUILD Foundation)
 
 - **Changed (abort → diagnostic, both backends):** `i64::MIN / -1` and
   `i64::MIN % -1` were uncontrolled aborts in the interpreter (expression
@@ -1193,7 +1297,7 @@ signed re-cut, and this post-re-cut truth-sync._
   zero". Fixing it changes an observable error string — deferred to its
   own slice (closed by the RB-2 follow-up entry above).
 
-### RB-1 — caps lattice → `CapSet(u16)` bitset (W-REBUILD Foundation)
+#### RB-1 — caps lattice → `CapSet(u16)` bitset (W-REBUILD Foundation)
 
 - **Changed:** the CapCaps propagator's capability representation is now
   `garnet_check::CapSet` — a `Copy` `u16` bitset over the closed capability
