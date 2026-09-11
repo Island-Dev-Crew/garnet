@@ -32,11 +32,15 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   named `--help` (any flag was taken as the keyfile path). `--help` and `-h`
   now print usage; any other argument starting with `-` is a usage error
   (exit 2) and writes nothing.
-- **Security:** the key file was created with default permissions and
-  tightened to `0600` afterwards, so the secret was briefly readable by other
-  users. On Unix it is now created with mode `0600`.
-- `garnet-cli/tests/keygen_cli.rs`: the two flag tests failed before the fix;
-  the mode test is a control, since the old code also ended at `0600`.
+- **Security:** the key was written with default permissions and tightened
+  to `0600` afterwards, so it was briefly readable by other users; an
+  existing world-readable keyfile, or one another process held open, received
+  the key before the chmod. On Unix the key is now written to a new `0600`
+  file beside the keyfile and renamed over it, so it never enters a file
+  others can read.
+- `garnet-cli/tests/keygen_cli.rs`: the two flag tests and the
+  existing-file test failed before the fix; the new-file mode test is a
+  control, since the old code also ended at `0600`.
 
 ### Also in 0.8.2 — what the packages say matches what the binary does (2026-09-11)
 

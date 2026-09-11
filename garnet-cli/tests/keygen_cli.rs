@@ -34,6 +34,44 @@ fn keygen_rejects_other_flags_without_writing() {
     assert!(!dir.path().join("-x").exists(), "a key was written to -x");
 }
 
+/// Overwriting an existing, world-readable keyfile must not put the new key
+/// into that file: a reader who opened it earlier would see the key before
+/// any chmod. The key goes into a fresh 0600 file that replaces the old one.
+#[cfg(unix)]
+#[test]
+fn keygen_never_writes_the_key_into_an_existing_loose_file() {
+    use std::io::{Read, Seek};
+    use std::os::unix::fs::PermissionsExt;
+    let dir = tempfile::TempDir::new().unwrap();
+    let path = dir.path().join("old.key");
+    std::fs::write(&path, "old contents\n").unwrap();
+    std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o644)).unwrap();
+    let mut held = std::fs::File::open(&path).unwrap();
+
+    let out = keygen_in(dir.path(), "old.key");
+    assert!(out.status.success(), "{out:?}");
+
+    let mut seen = String::new();
+    held.rewind().unwrap();
+    held.read_to_string(&mut seen).unwrap();
+    assert_eq!(
+        seen, "old contents\n",
+        "the new key was written into the old 0644 file"
+    );
+    let mode = std::fs::metadata(&path).unwrap().permissions().mode();
+    assert_eq!(mode & 0o777, 0o600, "key file mode {mode:o}");
+    assert_eq!(std::fs::read_to_string(&path).unwrap().trim_end().len(), 64);
+    let names: Vec<_> = std::fs::read_dir(dir.path())
+        .unwrap()
+        .map(|e| e.unwrap().file_name())
+        .collect();
+    assert_eq!(
+        names,
+        vec![std::ffi::OsString::from("old.key")],
+        "leftover files"
+    );
+}
+
 #[test]
 fn keygen_writes_a_hex_key_and_prints_the_public_key() {
     let dir = tempfile::TempDir::new().unwrap();
