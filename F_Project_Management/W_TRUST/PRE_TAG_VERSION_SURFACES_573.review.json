@@ -1,0 +1,34 @@
+{
+  "author_emails": [
+    "email:jon-isaac@islanddevcrew.com"
+  ],
+  "author_ids": [
+    275140286
+  ],
+  "base_commit": "2fb052c725ec98f6cecfbffcd562118dec7ac593",
+  "blocking_findings": [],
+  "content_digest": "sha256:f0c46dfdb3e29699728f057ccfb350bdfee79d06cd409b8126696754840d3554",
+  "head_repository": "Island-Dev-Crew/garnet",
+  "head_repository_id": 1218183013,
+  "pull_request_id": 4507027242,
+  "pull_request_number": 573,
+  "repository": "Island-Dev-Crew/garnet",
+  "repository_id": 1218183013,
+  "review_scope": "Content proof binds exactly reviewed_head 17eefc2fcce6f181841e31a0e731c573d7bf75c0 and does not extend or backdate reviewed_head coverage. OpenAI Codex cross-family seat, review v3 on 2026-09-11, verdict CONFIRM with zero blocking findings on a delta review of 765aa8d..17eefc2 that extends review v2's confirmation of R1-R9 and every low at 17eefc2fcce6f181841e31a0e731c573d7bf75c0; void if the head moves before this sanctioned record-only write. Implementer seat: Claude Opus 5. LINEAGE: 98a3b1c (the garnet-cli description no longer ends in (v0.8.1)) -> c4aa01b (the shipped man page rewritten; garnet-cli/tests/man_page.rs) -> review v1 REJECT at c4aa01b (R1 release labels in doc/fmt and a false CHANGELOG scan claim; R2/R3 build and exit statuses in the man page; R4-R7 checker, runtime @caps, seccomp and caps-log overstated; R8 high, the packaged systemd unit could not start; R9 actor claims in the banner, concurrency, trust-report, README and deb description; R10 the web-api template) -> 243661c (cure of every finding) -> 765aa8d (Debian maintainer hello@garnet-lang.org, Jon's decision) -> review v2 REJECT at 765aa8d (R1-R9 and every low confirmed cured; N1 high, the web-api template README claimed outbound TCP refuses loopback, which ::ffff:127.0.0.1 disproved on both backends; N2 medium, the same README omitted the named, acyclic checker limit; N3 low, the CHANGELOG actor summary) -> 17eefc2 (text cure of N1-N3; the NetPolicy IPv4-in-IPv6 bypass is fixed in a separate PR). WHAT IT CARRIES: garnet --version names no release and lists only linked components; garnet doc and the doc/fmt help carry no stale release labels; garnet concurrency and trust-report describe the interpreter's managed actors; the man page documents every --help entry with the checker limits, the 15 entry-gated runtime primitives and measured exit statuses, pinned by garnet-cli/tests/man_page.rs; the systemd unit verifies /etc/garnet/entry.garnet against its signed manifest under DynamicUser with a StateDirectory for the machine key, and was run under systemd 252 (Debian bookworm) with a Linux garnet built from 765aa8d: it ran the signed program to a clean exit and refused an entry edited after signing; the unit from 2fb052c failed at ExecStartPre. Local verification at 765aa8d: cargo test --workspace 2253 passed with 0 failed in 179 binaries, clippy -D warnings, cargo doc -D warnings, cargo check --locked on Rust 1.95, the cross-OS manifest, truth --check and 24 agent contracts all pass; at 17eefc2, which changes only the web-api template README and CHANGELOG, cargo test -p garnet-cli passes 548 tests. CI's cargo test legs run only after the approval lets agent documentation contracts pass. The exact base..reviewed_head Git author set is email:jon-isaac@islanddevcrew.com; the authenticated GitHub author and committer principal is IslandDevCrew ID 275140286. IDC-Trust-Review ID 306739987 is the approval-event carrier only. MERGE AUTHORITY: garnet-cli/Cargo.toml and garnet-cli/src/ are on the trust surface, so this record plus an authenticated approval from a principal disjoint from the author set is required; the PR modifies no gate it merges under. Touched paths garnet-cli/Cargo.toml, garnet-cli/src/cmd/concurrency.rs, garnet-cli/src/cmd/doc.rs, garnet-cli/src/cmd/fmt.rs, garnet-cli/src/cmd/trust_report.rs, garnet-cli/src/lib.rs; content digest sha256:f0c46dfdb3e29699728f057ccfb350bdfee79d06cd409b8126696754840d3554; sole pre-record problem structured review record is missing. Standards axis: none. Spec axis: none. This premerge record is reviewer evidence only; it is not carrier approval, a GitHub approval, re-evaluation, merge, commit, push, tag, or release.",
+  "review_state": "APPROVED",
+  "reviewed_head": "17eefc2fcce6f181841e31a0e731c573d7bf75c0",
+  "reviewed_tree": "5447ecffb73f353b7c668633b5154e7dcb5a9c64",
+  "reviewer_id": 306739987,
+  "reviewer_login": "IDC-Trust-Review",
+  "schema": "garnet.trust_kernel_review_record/v2",
+  "state": "premerge",
+  "touched_paths": [
+    "garnet-cli/Cargo.toml",
+    "garnet-cli/src/cmd/concurrency.rs",
+    "garnet-cli/src/cmd/doc.rs",
+    "garnet-cli/src/cmd/fmt.rs",
+    "garnet-cli/src/cmd/trust_report.rs",
+    "garnet-cli/src/lib.rs"
+  ],
+  "verdict": "pass"
+}
