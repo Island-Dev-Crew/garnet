@@ -1,0 +1,31 @@
+{
+  "author_emails": [
+    "email:jon-isaac@islanddevcrew.com"
+  ],
+  "author_ids": [
+    275140286
+  ],
+  "base_commit": "a4986ecd10fdf27c590e64f6d9b4044eaeb8873f",
+  "blocking_findings": [],
+  "content_digest": "sha256:a0802e6f65dde37ac38a7fd2eac632ae60543b6d17be5b9f718fc709310eee8a",
+  "head_repository": "Island-Dev-Crew/garnet",
+  "head_repository_id": 1218183013,
+  "pull_request_id": 4508033019,
+  "pull_request_number": 574,
+  "repository": "Island-Dev-Crew/garnet",
+  "repository_id": 1218183013,
+  "review_scope": "Content proof binds exactly reviewed_head 45be9166821323e5936674d8c7d388e0af96ea43 and does not extend or backdate reviewed_head coverage. OpenAI Codex cross-family seat, review v3 on 2026-09-11, verdict CONFIRM with no medium-or-higher findings on a delta review of 012a45a..45be916 that extends reviews v1 and v2 (network fix, reproducible Wasm rebuild and red counts confirmed in v1; the existing-file keygen cure confirmed in v2) at 45be9166821323e5936674d8c7d388e0af96ea43; void if the head moves before this sanctioned record-only write. Implementer seat: Claude Opus 5. LINEAGE: 39288dc (garnet-stdlib net.rs: is_allowed also judges the IPv4 address carried by IPv4-mapped, IPv4-compatible, NAT64 64:ff9b::/96 and 6to4 2002::/16 IPv6 addresses, strict and permit_internal; the bypass ::ffff:127.0.0.1 was found by Codex review v2 of #573) -> 60df017 (keygen: --help/-h print usage, other -prefixed first arguments exit 2 and write nothing, key file created 0600) -> 608c05c (playground Wasm package rebuilt reproducibly with the pinned toolchain because garnet-stdlib is an input) -> 8637b64 (W-PLAY browser proof re-run, PASS) -> review v1 REJECT at 8637b64 (medium: an existing 0644 keyfile received the key before the chmod; v1 confirmed the network fix on both backends, no false denial of public addresses, the reproducible Wasm rebuild and every red count) -> 012a45a (keygen writes a new 0600 file created with create_new beside the keyfile and renames it over the keyfile; a test holding the old 0644 file open failed before and passes after) -> review v2 REJECT at 012a45a (v1 finding confirmed cured; medium: an entry already at the temporary name was deleted after create_new refused it; low: 0600 wording inexact under restrictive umasks) -> 45be916 (cleanup only for a temp file this call created, pinned by a unit test that failed with the v2 cleanup; wording says 0600 or stricter). Local verification at 45be916: cargo test --workspace 2265 passed with 0 failed in 181 binaries; clippy -D warnings, cargo doc -D warnings, cargo fmt, the cross-OS manifest, garnet_wasm_readiness --gate, truth --check and 24 agent contracts pass; the W-PLAY browser proof (1663 ms, 6 requests) and the playground failure-mode smoke (10 journeys) pass. CI's cargo test legs run only after the approval lets agent documentation contracts pass. Pre-existing and out of scope, listed for 0.8.3: NAT64 local-use, Teredo, IPv4-translated and site-local IPv6 forms stay policy-allowed, and the source bridge always uses the strict policy. The exact base..reviewed_head Git author set is email:jon-isaac@islanddevcrew.com; the authenticated GitHub author and committer principal is IslandDevCrew ID 275140286. IDC-Trust-Review ID 306739987 is the approval-event carrier only. MERGE AUTHORITY: garnet-stdlib/src/ and garnet-cli/src/ are on the trust surface, so this record plus an authenticated approval from a principal disjoint from the author set is required; the PR modifies no gate it merges under. Touched paths garnet-cli/src/bin/garnet.rs, garnet-cli/src/cmd/keygen.rs, garnet-stdlib/src/net.rs; content digest sha256:a0802e6f65dde37ac38a7fd2eac632ae60543b6d17be5b9f718fc709310eee8a; sole pre-record problem structured review record is missing. Standards axis: none. Spec axis: none. This premerge record is reviewer evidence only; it is not carrier approval, a GitHub approval, re-evaluation, merge, commit, push, tag, or release.",
+  "review_state": "APPROVED",
+  "reviewed_head": "45be9166821323e5936674d8c7d388e0af96ea43",
+  "reviewed_tree": "21f50d1a2069f03d687480126a5e0d7abf83f02b",
+  "reviewer_id": 306739987,
+  "reviewer_login": "IDC-Trust-Review",
+  "schema": "garnet.trust_kernel_review_record/v2",
+  "state": "premerge",
+  "touched_paths": [
+    "garnet-cli/src/bin/garnet.rs",
+    "garnet-cli/src/cmd/keygen.rs",
+    "garnet-stdlib/src/net.rs"
+  ],
+  "verdict": "pass"
+}
