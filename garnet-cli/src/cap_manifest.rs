@@ -8,12 +8,12 @@
 //! build [`crate::manifest::Manifest`], which carries source/AST hashes but no
 //! capability surface.
 
-use crate::cmd::verify_gate::collect_targets;
+use crate::cmd::verify_gate::{collect_targets, collect_targets_with_omissions, ScanOmissions};
 use crate::diagnostics::json_escape;
 use crate::{edition_manifest, read_file};
 use garnet_check::{capability_surface, CapabilitySurface};
 use std::collections::BTreeSet;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 /// Schema identifier baked into every capability manifest. Bump when the shape
 /// changes; older consumers reject manifests they do not recognize.
@@ -132,11 +132,33 @@ pub fn merge_surfaces(surfaces: Vec<CapabilitySurface>) -> CapabilitySurface {
 /// Returns a usage / parse / IO error message on failure.
 pub fn surface_for_path(path: &Path) -> Result<CapabilitySurface, String> {
     let targets = collect_targets(path).map_err(|e| e.to_string())?;
+    surface_from_targets(path, &targets)
+}
+
+/// [`surface_for_path`] plus the tally of directories the walk refused to read.
+///
+/// Crown C B-1: a caller that GATES on this surface should disclose the tally;
+/// today `diff-caps` does and `caps` / `verify` / `sandbox-policy` do not. A
+/// `.garnet` file under a skipped directory declares authority that is simply
+/// unread — which is not the same claim as the diff-caps `scope` string, and
+/// is not covered by it: `scope` disclaims *undeclared* authority.
+pub fn surface_for_path_with_omissions(
+    path: &Path,
+) -> Result<(CapabilitySurface, ScanOmissions), String> {
+    let (targets, omissions) = collect_targets_with_omissions(path).map_err(|e| e.to_string())?;
+    Ok((surface_from_targets(path, &targets)?, omissions))
+}
+
+/// The capability surface of an already-collected target list. Both public
+/// entry points walk through the one shared collector in `verify_gate`
+/// (`collect_targets` is `collect_targets_with_omissions` without the tally)
+/// and hand the result here, so they cannot diverge on what they read.
+fn surface_from_targets(path: &Path, targets: &[PathBuf]) -> Result<CapabilitySurface, String> {
     if targets.is_empty() {
         return Err(format!("no .garnet files found under {}", path.display()));
     }
     let mut surfaces = Vec::with_capacity(targets.len());
-    for target in &targets {
+    for target in targets {
         let src = read_file(target)?;
         let resolved = edition_manifest::resolve_edition_for(target)?;
         if let Some(warning) = resolved.warning {
