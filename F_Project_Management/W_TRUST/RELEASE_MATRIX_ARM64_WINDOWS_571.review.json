@@ -1,0 +1,30 @@
+{
+  "author_emails": [
+    "email:jon-isaac@islanddevcrew.com"
+  ],
+  "author_ids": [
+    275140286
+  ],
+  "base_commit": "af53a41c7fae728a46bf89e8e31994abf972916c",
+  "blocking_findings": [],
+  "content_digest": "sha256:f65d74e6ee470d95a91cefb535871aa1c3b5fdab107ce61ae00e16e3bd09212c",
+  "head_repository": "Island-Dev-Crew/garnet",
+  "head_repository_id": 1218183013,
+  "pull_request_id": 4502433213,
+  "pull_request_number": 571,
+  "repository": "Island-Dev-Crew/garnet",
+  "repository_id": 1218183013,
+  "review_scope": "Content proof binds exactly reviewed_head 853834e4af3fbb7c23a5595bd839560b08f59b3d and does not extend or backdate reviewed_head coverage. OpenAI Codex cross-family seat, review round v4 on 2026-09-11, verdict CONFIRM with delta_identical true and no findings (feaeda1..853834e is header comments only; the header states the signing and upload conditions exactly; install.ps1 parses with zero errors under PowerShell 7.6.6; the governance suites and all 24 agent contracts pass; the five required producers match their pinned fingerprints), following review v3 at feaeda1, which re-ran every installer reproduction against the committed file at 853834e4af3fbb7c23a5595bd839560b08f59b3d; void if the head moves before this sanctioned record-only write. Implementer seat: Claude Opus 5. LINEAGE: 5166266 (first release matrix) -> 3611e15 (Windows bash steps name their shell; the smoke gates capture output, because pipefail failed gate 6 on the deliberately rejected program) -> 4115877 (the required producer jobs build-packages, smoke-deb, smoke-rpm, shellcheck-installer and macos-cli-tarballs restored byte-identical to main so their pinned semantic fingerprints match; the x86_64 tarball packed from the tested .deb in a new optional job; the schema policy test moved from 34 to 39 contexts); review v1 at 4115877 REJECTED on two highs (Expand-Archive zip-slip on the PowerShell 5.1 archive module; https-to-http redirects on 5.1), three mediums (UNC file URLs; install.sh continued past its Windows error; no AGENTS.md contract) and two lows (loose SHA256SUMS parsing; the header overstated macOS smoke) -> f9d3c1d (install.ps1 reads only the root garnet.exe entry into a fixed path, follows redirects itself with https on every hop, accepts file:/// only for local paths and parses SHA256SUMS exactly; install.sh stops on Windows in main before any download and returns detection failures explicitly; windows-cli-zip adds a refusal step; AGENTS.md gains the release-matrix and installer contract); review v2 at f9d3c1d REJECTED on one high (a $status: string made PowerShell reject the whole script, failing the Windows installer steps in CI) and one low (signing described as unconditional) -> feaeda1 (${status}; signing wording qualified); review v3 at feaeda1 REJECTED on one low only (the workflow header's signing and upload conditions), after confirming install.ps1 parses with zero errors under PowerShell 7.6.6, every installer reproduction at the committed file, and windows-cli-zip green in CI at feaeda1 -> 853834e (the header comment states both conditions exactly; comment-only). WHAT IT CARRIES: the release workflow builds and smoke-tests Linux ARM64 .deb, .rpm and tarball on ubuntu-24.04-arm, a Linux x86_64 tarball, and a Windows x86_64 zip with a static C runtime whose import table is checked; both installers run end to end in CI against the staged assets; the release job requires the complete nine-asset set and composes one SHA256SUMS, signed under the unchanged fail-closed rule; docs/install.ps1 is new and install.sh points Windows to it and goes straight to the tarball on macOS. CI at feaeda1, the last content change (853834e changes only header comments): 29 checks concluded success on GitHub-hosted runners, including build-packages-arm64, smoke-deb-arm64, smoke-rpm-arm64, linux-tarball-x86_64, windows-cli-zip with both install.ps1 steps, both macos-cli-tarballs and every required producer; the two failures were the advisory Base-controlled trust policy and agent documentation contracts at step 99, the rolling review that awaits this record. The governance suites and the agent contracts pass locally; the only rolling-gate problem is this missing record. The exact base..reviewed_head Git author set is email:jon-isaac@islanddevcrew.com; the authenticated GitHub author and committer principal is IslandDevCrew ID 275140286. IDC-Trust-Review ID 306739987 is the approval-event carrier only. MERGE AUTHORITY: modifies .github/workflows/linux-packages.yml, CI that the merge runs under, so Integrity Rule 1 makes the merge human-only (Jon); the trust-kernel paths require this record plus an authenticated approval from a principal disjoint from the author set. Touched paths .github/workflows/linux-packages.yml, scripts/test_garnet_workflow_schema_policy.py; content digest sha256:f65d74e6ee470d95a91cefb535871aa1c3b5fdab107ce61ae00e16e3bd09212c; sole pre-record problem structured review record is missing. Standards axis: none. Spec axis: none. This premerge record is reviewer evidence only; it is not carrier approval, a GitHub approval, re-evaluation, merge, commit, push, tag, or release; the v0.8.2 tag and Release remain Jon's.",
+  "review_state": "APPROVED",
+  "reviewed_head": "853834e4af3fbb7c23a5595bd839560b08f59b3d",
+  "reviewed_tree": "aa08b5644ada4f57957bfa0d1ad89b45e368928a",
+  "reviewer_id": 306739987,
+  "reviewer_login": "IDC-Trust-Review",
+  "schema": "garnet.trust_kernel_review_record/v2",
+  "state": "premerge",
+  "touched_paths": [
+    ".github/workflows/linux-packages.yml",
+    "scripts/test_garnet_workflow_schema_policy.py"
+  ],
+  "verdict": "pass"
+}
