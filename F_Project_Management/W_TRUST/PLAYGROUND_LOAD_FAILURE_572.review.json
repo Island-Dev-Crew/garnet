@@ -1,0 +1,29 @@
+{
+  "author_emails": [
+    "email:jon-isaac@islanddevcrew.com"
+  ],
+  "author_ids": [
+    275140286
+  ],
+  "base_commit": "c81a697dda44d35cb4f32c04b3c0b33dfa4548a0",
+  "blocking_findings": [],
+  "content_digest": "sha256:d07943e0ab5a2d66d5b95a7f3fb2ffeb7c5e281e746e33433932eea817a12d03",
+  "head_repository": "Island-Dev-Crew/garnet",
+  "head_repository_id": 1218183013,
+  "pull_request_id": 4502468994,
+  "pull_request_number": 572,
+  "repository": "Island-Dev-Crew/garnet",
+  "repository_id": 1218183013,
+  "review_scope": "Content proof binds exactly reviewed_head f53b94ea3954dab36bffa44a7b1a2c120ec95bd6 and does not extend or backdate reviewed_head coverage. OpenAI Codex cross-family seat, review round v6 on 2026-09-11, verdict CONFIRM with delta_identical true and no findings (f53b94e's parents are exactly 9415732 and c81a697; every file this PR changes other than CHANGELOG.md is blob-identical to 9415732, and CHANGELOG adds only the unchanged playground block first under [0.8.2]; main changed none of the W-PLAY runtime inputs, so the browser proof still binds; the cross-OS governance manifest reports ok with main's pinned parity; the gate reports the same content digest as at 9415732 and only this missing record) at f53b94ea3954dab36bffa44a7b1a2c120ec95bd6; void if the head moves before this sanctioned record-only write. Implementer seat: Claude Opus 5. LINEAGE: 60317af (a failed module load becomes visible; presets load alongside the runtime; the page opens on the Hello preset; service worker cache garnet-web-v6) -> review v1 REJECT at 9689586 (medium: no regression coverage; low: an edit undone to the original text was overwritten) -> e86a725 -> review v2 REJECT at 293a9a4 (an edit made before the module evaluated was untracked; delayed journeys could pass without exercising the regression) -> 147c338 -> review v3 REJECT at c1de8fa (a changed source whose input event was still pending could be replaced; held requests were not released on unexpected errors) -> f827200 -> review v4 REJECT at c2d735b (the editing-a-preset journey shared normal load's scope) -> 9415732, CONFIRMED by review v5 (delta-identical) -> f53b94e merges main c81a697 (#571) and folds this PR's CHANGELOG entry first under [0.8.2]; every other file is byte-identical to 9415732. WHAT IT CARRIES: docs/playground.html and docs/playground/live.js make a module that fails to load say so (Runtime failed, the cause and a working local server command), load the committed presets alongside the WebAssembly runtime (a disabled Examples unavailable entry if they cannot load), and open the Hello preset only when no edit is recorded (on beforeinput and input, from the moment the textarea exists) and the source still equals its original text; docs/service-worker.js moves to garnet-web-v6; the W-PLAY browser proof was re-captured at f827200 and still binds every runtime input; scripts/smoke_garnet_playground_failure_modes.mjs (new) drives ten journeys in headless Chrome with faults injected by page.route, all passing at f53b94e, while against the page before this PR six fail, against the earlier text comparison one fails, against the in-module flag two fail, and against the textarea flag alone one fails. CI at 9415732 concluded with 24 checks passing and only the advisory Base-controlled trust policy and agent documentation contracts at step 99 failing; f53b94e adds only main's #571 changes and the CHANGELOG fold. Locally at f53b94e the Rust 1.95 MSRV check passes, cargo test --workspace passes 2251 tests in 178 binaries with 0 failures, the cross-OS governance manifest reports ok, and all ten playground journeys pass; the cargo test legs run in CI once agent documentation contracts passes, which awaits this record. The exact base..reviewed_head Git author set is email:jon-isaac@islanddevcrew.com; the authenticated GitHub author and committer principal is IslandDevCrew ID 275140286. IDC-Trust-Review ID 306739987 is the approval-event carrier only. MERGE AUTHORITY: scripts/smoke_garnet_playground_failure_modes.mjs is on the trust surface (scripts/smoke_garnet_), so this record plus an authenticated approval from a principal disjoint from the author set is required; the PR modifies no gate it merges under. Touched paths scripts/smoke_garnet_playground_failure_modes.mjs; content digest sha256:d07943e0ab5a2d66d5b95a7f3fb2ffeb7c5e281e746e33433932eea817a12d03; sole pre-record problem structured review record is missing. Standards axis: none. Spec axis: none. This premerge record is reviewer evidence only; it is not carrier approval, a GitHub approval, re-evaluation, merge, commit, push, tag, or release.",
+  "review_state": "APPROVED",
+  "reviewed_head": "f53b94ea3954dab36bffa44a7b1a2c120ec95bd6",
+  "reviewed_tree": "58fd79820649d11fe7f7db447888618ec75ba298",
+  "reviewer_id": 306739987,
+  "reviewer_login": "IDC-Trust-Review",
+  "schema": "garnet.trust_kernel_review_record/v2",
+  "state": "premerge",
+  "touched_paths": [
+    "scripts/smoke_garnet_playground_failure_modes.mjs"
+  ],
+  "verdict": "pass"
+}
