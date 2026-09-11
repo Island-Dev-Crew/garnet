@@ -18,9 +18,10 @@ const DEFAULT_TIMEOUT_MS: u64 = 30_000;
 const UDP_AMP_MAX_RATIO: usize = 3;
 
 /// NetDefaults policy. Default = strict (deny RFC1918 + loopback +
-/// link-local + cloud metadata). `permit_internal = true` lifts the
-/// strict denial — corresponding source-layer requirement is
-/// `@caps(net_internal)`.
+/// link-local + cloud metadata, including those IPv4 hosts written as
+/// IPv4-mapped, IPv4-compatible, NAT64 or 6to4 IPv6 addresses).
+/// `permit_internal = true` lifts the strict denial — corresponding
+/// source-layer requirement is `@caps(net_internal)`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct NetPolicy {
     pub permit_internal: bool,
@@ -45,7 +46,12 @@ fn is_unconditionally_denied(ip: &IpAddr) -> bool {
                 || v4.is_documentation()     // 192.0.2/24, 198.51.100/24, 203.0.113/24
                 || is_v4_reserved(v4)
         }
-        IpAddr::V6(v6) => v6.is_unspecified() || v6.is_multicast() || is_v6_documentation(v6),
+        IpAddr::V6(v6) => {
+            v6.is_unspecified()
+                || v6.is_multicast()
+                || is_v6_documentation(v6)
+                || embedded_v4(v6).is_some_and(|v4| is_unconditionally_denied(&IpAddr::V4(v4)))
+        }
     }
 }
 
@@ -66,9 +72,35 @@ fn is_internal_or_unconditional(ip: &IpAddr) -> bool {
         IpAddr::V6(v6) => {
             v6.is_loopback()
                 || is_v6_unique_local(v6)    // fc00::/7
-                || is_v6_link_local(v6) // fe80::/10
+                || is_v6_link_local(v6)      // fe80::/10
+                || embedded_v4(v6).is_some_and(|v4| is_internal_or_unconditional(&IpAddr::V4(v4)))
         }
     }
+}
+
+/// The IPv4 address an IPv6 address stands for when the IPv6 form reaches an
+/// IPv4 host: IPv4-mapped (`::ffff:a.b.c.d`), IPv4-compatible (`::a.b.c.d`,
+/// deprecated), the NAT64 well-known prefix (`64:ff9b::/96`) and 6to4
+/// (`2002::/16`). The policy judges that IPv4 address too, so an internal
+/// IPv4 host cannot be reached through its IPv6 spelling.
+fn embedded_v4(v6: &Ipv6Addr) -> Option<Ipv4Addr> {
+    if let Some(v4) = v6.to_ipv4_mapped() {
+        return Some(v4);
+    }
+    let s = v6.segments();
+    let o = v6.octets();
+    let low32 = Ipv4Addr::new(o[12], o[13], o[14], o[15]);
+    // IPv4-compatible; `::` and `::1` stay IPv6 (unspecified and loopback).
+    if s[..6] == [0; 6] && u32::from(low32) > 1 {
+        return Some(low32);
+    }
+    if s[0] == 0x0064 && s[1] == 0xff9b && s[2..6] == [0; 4] {
+        return Some(low32);
+    }
+    if s[0] == 0x2002 {
+        return Some(Ipv4Addr::new(o[2], o[3], o[4], o[5]));
+    }
+    None
 }
 
 fn is_v4_reserved(v4: &Ipv4Addr) -> bool {
@@ -312,6 +344,82 @@ mod tests {
     fn tcp_connect_to_loopback_strict_returns_netdenied() {
         // 127.0.0.1:1 — strict policy should refuse before attempting.
         match tcp_connect("127.0.0.1", 1, NetPolicy::default()) {
+            Err(StdError::NetDenied(_)) => {}
+            other => panic!("expected NetDenied, got {other:?}"),
+        }
+    }
+
+    // ─── IPv4 carried inside IPv6 is judged as IPv4 ─────────────────────
+    // An IPv6 socket reaches the embedded IPv4 host for these forms, so the
+    // policy must judge the embedded address, not only the IPv6 wrapper.
+    #[test]
+    fn strict_policy_denies_ipv4_mapped_internal() {
+        for a in [
+            "::ffff:127.0.0.1",
+            "::ffff:10.0.0.1",
+            "::ffff:192.168.1.1",
+            "::ffff:169.254.169.254",
+            "::ffff:100.64.0.1",
+        ] {
+            assert!(
+                !is_allowed(&ip(a), NetPolicy::default()),
+                "{a} must be denied"
+            );
+        }
+    }
+    #[test]
+    fn strict_policy_denies_nat64_and_6to4_internal() {
+        for a in [
+            "64:ff9b::7f00:1",    // NAT64 of 127.0.0.1
+            "64:ff9b::a9fe:a9fe", // NAT64 of 169.254.169.254
+            "2002:7f00:1::1",     // 6to4 of 127.0.0.1
+            "2002:a9fe:a9fe::1",  // 6to4 of 169.254.169.254
+            "2002:c0a8:101::1",   // 6to4 of 192.168.1.1
+        ] {
+            assert!(
+                !is_allowed(&ip(a), NetPolicy::default()),
+                "{a} must be denied"
+            );
+        }
+    }
+    #[test]
+    fn strict_policy_denies_ipv4_compatible_internal() {
+        for a in ["::7f00:1", "::a00:1"] {
+            assert!(
+                !is_allowed(&ip(a), NetPolicy::default()),
+                "{a} must be denied"
+            );
+        }
+    }
+    #[test]
+    fn strict_policy_permits_embedded_public_v4() {
+        for a in ["::ffff:8.8.8.8", "64:ff9b::808:808", "2002:808:808::1"] {
+            assert!(
+                is_allowed(&ip(a), NetPolicy::default()),
+                "{a} must be allowed"
+            );
+        }
+    }
+    #[test]
+    fn permit_internal_judges_embedded_v4_like_v4() {
+        let p = NetPolicy {
+            permit_internal: true,
+        };
+        assert!(is_allowed(&ip("::ffff:127.0.0.1"), p));
+        for a in [
+            "::ffff:0.0.0.0",
+            "::ffff:255.255.255.255",
+            "::ffff:224.0.0.1",
+            "::ffff:192.0.2.1",
+        ] {
+            assert!(!is_allowed(&ip(a), p), "{a} must stay denied");
+        }
+    }
+    #[test]
+    fn tcp_connect_to_ipv4_mapped_loopback_strict_returns_netdenied() {
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = listener.local_addr().unwrap().port();
+        match tcp_connect("::ffff:127.0.0.1", port, NetPolicy::default()) {
             Err(StdError::NetDenied(_)) => {}
             other => panic!("expected NetDenied, got {other:?}"),
         }

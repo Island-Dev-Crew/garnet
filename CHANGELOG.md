@@ -9,6 +9,23 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ## [0.8.2] — 2026-09-02 (workspace version bump; the `v0.8.2` tag is not cut)
 
+### Also in 0.8.2 — the network policy judges IPv4 carried inside IPv6 (2026-09-11)
+
+- **Security:** under the strict network policy, `net::tcp_connect` refused
+  `127.0.0.1` but connected to `::ffff:127.0.0.1`, the same host written as
+  an IPv4-mapped IPv6 address, on both backends. NAT64 (`64:ff9b::/96`),
+  6to4 (`2002::/16`) and IPv4-compatible (`::a.b.c.d`) spellings of private,
+  loopback, link-local and cloud-metadata IPv4 hosts passed the same way.
+  The policy now also judges the IPv4 address those forms carry, with and
+  without `@caps(net_internal)`. Found by the cross-family review of the
+  v0.8.2 pre-tag PR. Six new unit tests in `garnet-stdlib/src/net.rs` (five
+  failed before the fix; the sixth, which permits public IPv4 behind these
+  forms, is a control) and `garnet-cli/tests/net_policy_embedded_v4.rs`,
+  which runs the probe on `--interp` and `--vm` against a local listener
+  (the listener received a connection before the fix).
+- The playground Wasm package and its browser proof are rebuilt, because
+  `garnet-stdlib` is one of their inputs.
+
 ### Also in 0.8.2 — what the packages say matches what the binary does (2026-09-11)
 
 - **Fixed:** `garnet --version` prints the crate description, and that
