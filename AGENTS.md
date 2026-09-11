@@ -298,8 +298,10 @@ does not exist.
 `.github/workflows/linux-packages.yml` builds the release matrix on every run:
 Linux x86_64 and ARM64 `.deb`, `.rpm` and tarball, macOS Apple Silicon and
 Intel tarballs, and the Windows x86_64 zip. The tag-only `release` job
-requires all nine assets by name and signs one `SHA256SUMS` over them; a
-missing platform fails the release. The asset names are a contract shared
+requires all nine assets by name and composes one `SHA256SUMS` over them; a
+missing platform fails the release. It signs that manifest when
+`GPG_SIGNING_KEY` is set; without the key a tagged release fails closed unless
+the repository variable `ALLOW_UNSIGNED_RELEASE` is `true`. The asset names are a contract shared
 with `docs/install.sh` (`asset_name`) and `docs/install.ps1`: change them
 together.
 

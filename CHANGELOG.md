@@ -27,8 +27,9 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   `scripts/test_garnet_workflow_schema_policy.py` now expects 39 contexts.
 - **The release job requires the complete nine-asset set** (Linux x86_64 and
   ARM64 `.deb`, `.rpm` and tarball; macOS Apple Silicon and Intel tarballs;
-  the Windows zip) and fails if any platform is missing. It signs one
-  `SHA256SUMS` over all of them, as before.
+  the Windows zip) and fails if any platform is missing. It composes one
+  `SHA256SUMS` over all of them and signs it under the unchanged fail-closed
+  rule (unsigned only when `ALLOW_UNSIGNED_RELEASE` is `true`).
 - **Installers:** `docs/install.ps1` is new: it downloads the Windows zip,
   checks it against `SHA256SUMS`, installs `garnet.exe` under
   `%LOCALAPPDATA%\Programs\Garnet\bin` and adds that directory to the user

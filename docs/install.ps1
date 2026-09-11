@@ -97,7 +97,7 @@
                         $current = New-Object Uri($current, $response.Headers.Location)
                         continue
                     }
-                    if (-not $response.IsSuccessStatusCode) { Fail "download failed with HTTP $status: $current" }
+                    if (-not $response.IsSuccessStatusCode) { Fail "download failed with HTTP ${status}: $current" }
                     [IO.File]::WriteAllBytes($OutFile, $response.Content.ReadAsByteArrayAsync().GetAwaiter().GetResult())
                     return
                 } finally {
