@@ -1,0 +1,30 @@
+{
+  "author_emails": [
+    "email:jon-isaac@islanddevcrew.com"
+  ],
+  "author_ids": [
+    275140286
+  ],
+  "base_commit": "1eee5eca5ed6bf8289a9989bf5d8ea5ddf793660",
+  "blocking_findings": [],
+  "content_digest": "sha256:c8001f724f2bfdc87b933a64f86c87d4effaefa49b8b329aa73e37e5c67763f0",
+  "head_repository": "Island-Dev-Crew/garnet",
+  "head_repository_id": 1218183013,
+  "pull_request_id": 4429405990,
+  "pull_request_number": 552,
+  "repository": "Island-Dev-Crew/garnet",
+  "repository_id": 1218183013,
+  "review_scope": "Content proof binds exactly reviewed_head b9ddbb1324385df15d2b1dbad6a236f61cd31ba2 and does not extend or backdate reviewed_head coverage. OpenAI Codex cross-family seat, full review round v6 on 2026-09-11, verdict CONFIRM with no findings (all seven required checks pass: the v5 cure and fourteen no-file path probes, 36/36 tests with the four new tests red at f9815b9b, a 625-run fault-injection sweep, the adversarial evidence trees, WV-6/WV-7 parity, merge integrity, compile and contracts) at b9ddbb1324385df15d2b1dbad6a236f61cd31ba2; void if the head moves before this sanctioned record-only write. Implementer seat: Claude Opus 5. LINEAGE: v1 REJECT at daddbdef (seven findings), v2 REJECT at da1a312f, v3 REJECT at 7acdd432, v4 REJECT at c49e1ca0, each cured in the branch; v5 REJECT at f9815b9b on one medium (a manifest artifact path \".\" passed _artifact_relative because PurePosixPath('.').parts is empty, _bind_parent duplicated the root descriptor and raised IndexError, leaking the duplicate and escaping main()), cured at 920be355 (empty parts are refused by name in _artifact_relative and before os.dup in _bind_parent; four tests, each red at f9815b9b); b9ddbb13 merges main 1eee5eca and folds the CHANGELOG entry under [0.8.2] as additions only, with the reporter, its test and AGENTS.md blob-identical to 920be355. Main did not touch the reporter, its test or AGENTS.md between the original base 452a0e2 and 1eee5eca. WHAT IT CARRIES: crown finding D-2 cured in scripts/garnet_wv_acceptance_status.py (every JSON evidence file read once through a descriptor bound to what was checked; BOM, carriage returns and non-UTF-8 manifest bytes rejected by name; the evidence root and every intermediate artifact component bound with O_DIRECTORY|O_NOFOLLOW; no pathname fallback where dir_fd is unsupported; every descriptor release named, never retried). WV-6 and WV-7 reporter JSON over the committed evidence is byte-identical between the base and HEAD reporters (WV-6 partial on the product-digest and path-count findings; WV-7 pending). The exact base..reviewed_head Git author set is email:jon-isaac@islanddevcrew.com; the authenticated GitHub author and committer principal is IslandDevCrew ID 275140286. IDC-Trust-Review ID 306739987 is the approval-event carrier only. MERGE AUTHORITY: touches scripts/garnet_wv_acceptance_status.py, a gate reporter, so Integrity Rule 1 makes the merge human-only (Jon), and the trust-kernel paths require this record plus an authenticated approval from a principal disjoint from the author set. Touched paths scripts/garnet_wv_acceptance_status.py, scripts/test_garnet_wv_acceptance_status.py; content digest sha256:c8001f724f2bfdc87b933a64f86c87d4effaefa49b8b329aa73e37e5c67763f0; sole pre-record problem structured review record is missing. Standards axis: none. Spec axis: none. This premerge record is reviewer evidence only; it is not carrier approval, a GitHub approval, re-evaluation, merge, commit, push, tag, or release.",
+  "review_state": "APPROVED",
+  "reviewed_head": "b9ddbb1324385df15d2b1dbad6a236f61cd31ba2",
+  "reviewed_tree": "f8c80ead4ab1d8b2184c53eb32b2e44d498c4dd6",
+  "reviewer_id": 306739987,
+  "reviewer_login": "IDC-Trust-Review",
+  "schema": "garnet.trust_kernel_review_record/v2",
+  "state": "premerge",
+  "touched_paths": [
+    "scripts/garnet_wv_acceptance_status.py",
+    "scripts/test_garnet_wv_acceptance_status.py"
+  ],
+  "verdict": "pass"
+}

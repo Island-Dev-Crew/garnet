@@ -54,7 +54,7 @@ Total: ~22K LOC Rust, 857+ passing tests, zero clippy warnings with `-D warnings
 Garnet uses **one public release version, plus honest independent crate semver**:
 
 - The **public release version** is `garnet-cli`, which inherits
-  `[workspace.package].version` (currently **0.8.1**) via `version.workspace = true`.
+  `[workspace.package].version` (currently **0.8.2**) via `version.workspace = true`.
   This is what `garnet --version`, the git tag, and the release assets carry.
 - The **internal library crates** (`garnet-parser`, `garnet-check`, `garnet-interp`,
   `garnet-memory`, `garnet-vm`, `garnet-stdlib`, `garnet-convert`, …) carry their

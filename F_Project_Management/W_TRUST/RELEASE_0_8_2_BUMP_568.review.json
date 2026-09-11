@@ -1,0 +1,31 @@
+{
+  "author_emails": [
+    "email:242020839+navigata1@users.noreply.github.com",
+    "email:jon-isaac@islanddevcrew.com"
+  ],
+  "author_ids": [
+    242020839,
+    275140286
+  ],
+  "base_commit": "f0a4a675197321608584352ef6c4c201c1b65339",
+  "blocking_findings": [],
+  "content_digest": "sha256:bf2bd6dd016b0cd7bb382bc5d00e41fa5b4fb37abc33c7919e091f5621ea1751",
+  "head_repository": "Navigata1/garnet",
+  "head_repository_id": 1220086908,
+  "pull_request_id": 4501229511,
+  "pull_request_number": 568,
+  "repository": "Island-Dev-Crew/garnet",
+  "repository_id": 1218183013,
+  "review_scope": "Content proof binds exactly reviewed_head 813b9bfa5bc37cdedbe8530dc10ae22f12ba8b2e and does not extend or backdate reviewed_head coverage. OpenAI Codex cross-family seat, delta-identical-scope review on 2026-09-10, verdict CONFIRM (delta_identical true), at 813b9bfa5bc37cdedbe8530dc10ae22f12ba8b2e; void if the head moves before this sanctioned record-only write. Implementer seat: Claude Opus 5. LINEAGE: re-creates PR #563 (itself re-creating #550) on a fresh branch from f0a4a675 after #551, #564, #566 and #567 moved main past #563's record base d22a1c0 (U-122: a record cannot be carried across an update); #563 is closed with a pointer. The reviewer compared all 22 files against #563's delta-identical-confirmed head 96a0c699: 19 are byte-identical; CHANGELOG.md is 96a0c69's ledger plus two blocks folded under [0.8.2] from main's Unreleased entries added since d22a1c0 (the site entry for #566/#567 and the dogfood PR-body checker hardening of #551), additions only; docs/index.html is main's page with its two truth:version markers set to 0.8.2 (#563's latest_tag hunk targeted the #545 evidence strip, which the page no longer carries); CURRENT_STATE.md is a clean three-way merge of #563's VSIX line and #564's scope-fence line. It confirmed no record file and no conflict artefacts, and re-ran cargo test -p garnet-cli minimum_shelf and --test minimum_shelf_package --test mcp_stdio, xtask truth --check, garnet_wasm_readiness.py, smoke_garnet_minimum_shelf.py on HEAD and on f0a4a67 (the same four pre-existing product-digest and path-count findings on both, 1661 versus 1646 paths), and the rolling gate diagnostic (touched_paths Cargo.lock; content digest identical to #563's record). The absence of a v0.8.2 tag was checked by the implementer with git ls-remote (none); the reviewer sandbox had no network. WHAT IT CARRIES: the workspace version bump 0.8.1 -> 0.8.2 (the tag is NOT cut and remains Jon-only); the consolidated [0.8.2] changelog; the rebuilt W-PLAY package and browser proof on the bumped inputs; and the 0.8.2 Minimum Shelf reseal (U-120). The exact base..reviewed_head Git author set is email:242020839+navigata1@users.noreply.github.com and email:jon-isaac@islanddevcrew.com; the authenticated GitHub author and committer principals are IslandDevCrew ID 275140286 and Navigata1 ID 242020839. IDC-Trust-Review ID 306739987 is the approval-event carrier only. MERGE AUTHORITY: touches Cargo.lock (trust file) and requires this record plus an authenticated approval from a principal disjoint from the author set. scripts/smoke_garnet_minimum_shelf.py is changed only in its pins; whether that makes this human-merge-only under Integrity Rule 1 is Jon's reading, and the approval is his either way. Touched paths Cargo.lock; content digest sha256:bf2bd6dd016b0cd7bb382bc5d00e41fa5b4fb37abc33c7919e091f5621ea1751; sole pre-record problem structured review record is missing. Standards axis: none. Spec axis: none. This premerge record is reviewer evidence only; it is not carrier approval, a GitHub approval, re-evaluation, merge, commit, push, tag, or release.",
+  "review_state": "APPROVED",
+  "reviewed_head": "813b9bfa5bc37cdedbe8530dc10ae22f12ba8b2e",
+  "reviewed_tree": "cfaf5bb866f15190b5d4592985a96b91268502b9",
+  "reviewer_id": 306739987,
+  "reviewer_login": "IDC-Trust-Review",
+  "schema": "garnet.trust_kernel_review_record/v2",
+  "state": "premerge",
+  "touched_paths": [
+    "Cargo.lock"
+  ],
+  "verdict": "pass"
+}
