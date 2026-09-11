@@ -7,6 +7,20 @@ This file is updated in the same PR as the work it tracks (per the v0.5 slice
 contract). Lines added here are part of the calibrated record — if a
 slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
+## [Unreleased]
+
+### Site — the social card shows the current front door (2026-09-11)
+
+- **Fixed:** link previews on X and elsewhere showed the June card
+  (`docs/assets/garnet-og.png`: "Rust Rigor. Ruby Velocity.", mode bullets,
+  a wireframe gem); the file was never updated after the front door changed.
+  A new 1200×630 card, `docs/assets/garnet-og-20260911.jpg` (121 KB), renders
+  the current hero: the plate, the `GarneT` wordmark, the two hero sentences
+  and `garnet-lang.org`. The landing and Omarchy pages point `og:image` and
+  `twitter:image` at it under a new filename, so scrapers that cached the old
+  URL fetch the new image. `why.html` still uses the old card until its own
+  trust-reviewed change.
+
 ## [0.8.2] — 2026-09-11 (tag `v0.8.2` → `f25ffb5`; the workspace moved to 0.8.2 on 2026-09-02)
 
 ### Released 0.8.2 — signed binaries for every desktop platform (2026-09-11)
