@@ -253,7 +253,7 @@ pub(crate) fn collect_targets(path: &Path) -> std::io::Result<Vec<PathBuf>> {
     Ok(collect_targets_with_omissions(path)?.0)
 }
 
-/// [`collect_targets`] plus the tally of directories the walk refused to read.
+/// `collect_targets` plus the tally of directories the walk refused to read.
 pub fn collect_targets_with_omissions(
     path: &Path,
 ) -> std::io::Result<(Vec<PathBuf>, ScanOmissions)> {
