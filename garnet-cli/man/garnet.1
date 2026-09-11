@@ -1,7 +1,10 @@
-.\" Garnet CLI manual page — v4.2 Phase 6A.
-.\" Install location: /usr/share/man/man1/garnet.1 (compressed to .gz by
-.\"                   the .deb / .rpm build process).
-.TH GARNET 1 "April 2026" "garnet 0.4.2" "User Commands"
+.\" garnet(1) — the Garnet command-line toolchain.
+.\" The .deb and .rpm packages install this page at /usr/share/man/man1/garnet.1;
+.\" the macOS .pkg script installs it under /usr/local/share/man/man1/.
+.\" The SUBCOMMANDS section must list exactly the subcommands `garnet --help`
+.\" prints, and the .TH line names no release (`garnet --version` reports it);
+.\" garnet-cli/tests/man_page.rs fails when either drifts.
+.TH GARNET 1 "2026-09-11" "garnet" "User Commands"
 
 .SH NAME
 garnet \- the Garnet dual-mode language toolchain
@@ -10,141 +13,235 @@ garnet \- the Garnet dual-mode language toolchain
 .B garnet
 .I SUBCOMMAND
 .RI [ ARGS ]
+.br
+.B garnet \-\-version
+.br
+.B garnet \-\-help
 
 .SH DESCRIPTION
 .B garnet
-is the command-line driver for the Garnet language platform. Garnet is a dual-mode
-language: managed mode (\fIdef\fR + ARC + exceptions) feels Ruby-like; safe mode
-(\fI@safe\fR + \fIfn\fR + ownership + Result) feels Rust-like. The mode boundary
-auto-bridges errors and ARC-affine semantics.
-
-This binary exposes the full toolchain: parser, interpreter, safe-mode checker
-(including the CapCaps call-graph propagator), REPL, code converter for four
-source languages, deterministic-build manifest generator, Ed25519 signed-manifest
-support, and project scaffolding for three canonical templates.
+is the command-line driver for Garnet, a research-grade language prototype
+(v0.x, not a 1.0 production release).
+Garnet has two modes in one grammar: managed mode (\fIdef\fR, ARC and
+exceptions) feels like Ruby; safe mode (\fI@safe\fR, \fIfn\fR, ownership and
+\fIResult\fR) feels like Rust.
+The mode boundary bridges errors and ownership automatically.
+.PP
+Functions declare the OS authority they need with \fI@caps(...)\fR, and the
+checker verifies those declarations transitively across named, acyclic calls.
+The trust-spine subcommands (\fBcaps\fR, \fBdiff\-caps\fR, \fBseal\fR,
+\fBcaps\-log\fR, \fBagent\-loop\fR and the \fBverify\fR acceptance gate) turn
+that capability surface into manifests, diffs, attestations, a transparency
+log and acceptance decisions.
 
 .SH SUBCOMMANDS
 
-.TP
-.B new --template \fINAME\fR \fIDIR\fR
-Scaffold a new Garnet project at \fIDIR\fR from the named template. Templates:
-\fBcli\fR (minimal CLI), \fBweb-api\fR (HTTP/1.1 service), \fBagent-orchestrator\fR
-(Researcher / Synthesizer / Reviewer actors with first-class memory kinds).
-Default template is \fBcli\fR.
+.SS Projects
 
 .TP
-.B parse \fIFILE\fR
-Parse \fIFILE\fR and print a structural summary of the module.
+.B new \-\-template \fITEMPLATE\fR \fIDIR\fR
+Scaffold a new project at \fIDIR\fR.
+\fITEMPLATE\fR is \fBcli\fR, \fBweb\-api\fR or \fBagent\-orchestrator\fR
+(Researcher, Synthesizer and Reviewer actors).
 
 .TP
-.B check \fIFILE\fR
-Run the safe-mode checker. Performs syntactic safe-mode restrictions,
-annotation-bounds validation, borrow-check skeleton, and the transitive
-CapCaps propagator (v3.4.1). Reports violations of \fI@caps(...)\fR coverage.
+.B add \fIPATH\fR \fR[\fB\-\-name\fR \fIID\fR]
+Vendor a local Garnet directory into \fI.garnet/vendor\fR.
+This is not a package registry.
+
+.TP
+.B test \fR[\fIDIR\fR]
+Discover and run every function whose name starts with \fBtest_\fR in the
+project's \fItests/*.garnet\fR files.
+
+.SS Language
+
+.TP
+.B parse \fR[\fB\-\-mode\fR \fBast\fR|\fBcst\fR] \fIFILE\fR
+Parse \fIFILE\fR and print a structural summary.
+
+.TP
+.B check \fR[\fB\-\-suggest\fR] [\fB\-\-format\fR \fBhuman\fR|\fBjson\fR] \fIFILE\fR
+Run the safe-mode checker, including the CapCaps propagator, which reports
+every function whose declared \fI@caps(...)\fR does not cover the
+capabilities its calls require.
+\fB\-\-format json\fR emits structured diagnostics.
 
 .TP
 .B run \fIFILE\fR
-Parse, load, and invoke \fBmain\fR if the module defines one.
-
-.TP
-.B test \fR[\fIPROJECT-DIR\fR] \fR[\fB--filter\fR \fISUBSTR\fR] \fR[\fB--no-main\fR]
-Discover and run every function whose name starts with \fBtest_\fR in
-the project's \fItests/*.garnet\fR files (and \fIsrc/main.garnet\fR
-unless \fB--no-main\fR is passed). Mirrors the Cargo \fBcargo test\fR
-convention: a test fails iff its body raises an exception.
+Parse and load \fIFILE\fR, then invoke \fBmain\fR if the module defines one.
 
 .TP
 .B eval \fI"EXPR"\fR
-Evaluate a single Garnet expression and print the result.
+Evaluate a single expression and print the result.
 
 .TP
 .B repl \fR[\fIFILE\fR]
-Interactive REPL. Optionally preload a file before the first prompt.
+Start an interactive REPL, optionally preloading \fIFILE\fR.
 
 .TP
-.B build \fR[\fB--deterministic\fR] \fR[\fB--sign\fR \fIKEYFILE\fR] \fIFILE\fR
-Build \fIFILE\fR. With \fB--deterministic\fR, emit a provenance manifest
-alongside the binary at \fIFILE\fB.manifest.json\fR — source hash, AST hash,
-prelude hash, target triple, and deterministic flags. With \fB--sign\fR, also
-sign the manifest with the Ed25519 key stored at \fIKEYFILE\fR; the
-resulting manifest carries a \fIsigner_pubkey\fR and \fIsignature\fR pair
-that any consumer can verify via \fBgarnet verify\fR.
+.B fmt \fR[\fB\-\-check\fR|\fB\-\-stdout\fR] \fIFILE\fR
+Normalize the whitespace of a Garnet source file.
 
 .TP
-.B verify \fIFILE\fR \fIMANIFEST\fR \fR[\fB--signature\fR]
-Verify the on-disk manifest matches a fresh build of \fIFILE\fR. Unsigned
-manifests pass hash-only verification; signed manifests always require a
-valid Ed25519 signature. Passing \fB--signature\fR makes signature presence
-mandatory — an unsigned manifest will then fail.
+.B doc \fR[\fB\-\-stdout\fR|\fB\-\-out\fR \fIPATH\fR] \fIFILE\fR
+Extract \fB///\fR doc comments into a Markdown summary.
+
+.TP
+.B doctest \fR[\fB\-\-format\fR \fBhuman\fR|\fBjson\fR] \fIFILE\fR
+Run the Garnet code examples in \fB///\fR doc comments.
+
+.SS Trust spine
+
+.TP
+.B caps \fR[\fB\-\-standard\-profile\fR] \fIPATH\fR
+Emit the capability manifest for \fIPATH\fR, or with
+\fB\-\-standard\-profile\fR the S98 draft standard profile.
+
+.TP
+.B diff\-caps \fR[\fB\-\-machine\fR] \fIOLD\fR \fINEW\fR
+Diff two capability surfaces.
+Exits nonzero when \fINEW\fR grants authority \fIOLD\fR did not.
+\fB\-\-machine\fR prints a deterministic single-line JSON verdict for
+automated reviewers.
+
+.TP
+.B seal \fIFILE\fR
+Emit an in-toto attestation (a seal) for \fIFILE\fR, ready for cosign to sign.
+
+.TP
+.B caps\-log \fIFILE\fR \fR[\fB\-\-log\fR \fIPATH\fR] | \fB\-\-verify\fR \fILOG\fR
+Append the capability surface of \fIFILE\fR to an append-only transparency
+log, or verify an existing log.
+
+.TP
+.B agent\-loop \-\-baseline \fIOLD\fR \fB\-\-proposal\fR \fINEW\fR
+Accept agent-authored code only when diff-caps and enforced-kernel evidence
+support it, then seal it.
+
+.TP
+.B verify \fIPATH\fR \fR[\fB\-\-external\-band\fR \fI1\-5\fR] [\fB\-\-caps\-baseline\fR \fIOLD\fR]
+Acceptance gate: an edition-aware parse and safe-mode check that reports a
+merge-confidence band, the minimum of the internal, external and diff-caps
+bands.
+Exits nonzero on a fatal finding.
+
+.TP
+.B trust\-report \fIFILE\fR
+Print a structural trust report: actor and thread counts and the capability
+surface.
+
+.TP
+.B sandbox \fR[\fB\-\-format\fR \fBhuman\fR|\fBjson\fR] \fIFILE\fR
+Generate the seccomp, WASI and egress policy implied by the declared
+\fI@caps(...)\fR of \fIFILE\fR.
+Generation only: this subcommand enforces nothing.
+
+.TP
+.B mcp\-caps \fR[\fB\-\-format\fR \fBhuman\fR|\fBjson\fR] \fIFILE\fR
+Report the capability surface of an MCP tool set.
+
+.TP
+.B mcp\-serve \-\-package \fIDIR\fR
+Serve the one verified local Shelf package over raw-byte stdio.
+
+.TP
+.B bounds \fIFILE\fR
+Report the declared \fI@bounded(N)\fR fuel budgets (the Wasmtime-fuel target).
+Fuel budgets are declared, not enforced.
+
+.TP
+.B ceilings \fIFILE\fR
+Identify explosive operations (loops and spawns) and the default-ceiling
+policy.
+
+.TP
+.B concurrency \fIFILE\fR
+Report the actor concurrency contract (ask and tell protocols).
+
+.SS Build and release
+
+.TP
+.B build \fR[\fB\-\-deterministic\fR] [\fB\-\-sign\fR \fIKEYFILE\fR] \fIFILE\fR
+Emit a provenance manifest for \fIFILE\fR at \fIFILE\fB.manifest.json\fR.
+With \fB\-\-sign\fR, sign it with the Ed25519 key stored in \fIKEYFILE\fR.
+
+.TP
+.B verify \fIFILE\fR \fIMANIFEST\fR \fR[\fB\-\-signature\fR]
+Check that \fIMANIFEST\fR matches a fresh build of \fIFILE\fR.
+A signed manifest always needs a valid Ed25519 signature;
+\fB\-\-signature\fR also rejects an unsigned one.
 
 .TP
 .B keygen \fIKEYFILE\fR
-Generate a fresh Ed25519 signing keypair. Writes the hex-encoded signing
-key to \fIKEYFILE\fR (chmod 0600 on UNIX) and prints the hex public key
-to stdout. The public key is what consumers use to recognize the
-signer.
+Generate an Ed25519 signing keypair: write the signing key to \fIKEYFILE\fR
+and print the public key.
 
 .TP
 .B convert \fILANG\fR \fIFILE\fR
-Convert a source file in \fILANG\fR (one of: rust, ruby, python, go) to
-Garnet. Emits four artifacts: the converted .garnet file, a lineage JSON
-mapping every emitted AST node back to its source span, a
-MIGRATE_TODO.md checklist, and a metrics summary. Output carries
-\fI@sandbox\fR by default — human audit lifts the sandbox by changing to
-\fI@sandbox(unquarantine)\fR and adding explicit \fI@caps(...)\fR.
+Convert Rust, Ruby, Python or Go source to Garnet.
+Writes the converted \fI.garnet\fR file with a \fI.lineage.json\fR,
+a \fI.migrate_todo.md\fR checklist and a \fI.metrics.json\fR summary.
+The output carries \fI@sandbox\fR; lifting it is a human decision.
+
+.SS Information
 
 .TP
 .B version
-Print the wordmark + toolchain versions.
+Print the toolchain versions and the wordmark.
 
 .TP
 .B help
-Print a one-screen usage summary.
+Print the subcommand summary.
 
 .SH CAPABILITY MODEL
+A function declares its OS authority with \fI@caps(...)\fR.
+The checker computes the capabilities each function needs from what it
+calls and reports a coverage error when the declaration leaves one out:
+a function that calls \fIread_file\fR must declare \fI@caps(fs)\fR.
+\fBmain\fR must declare its capabilities; \fI@caps()\fR is correct for a
+program that needs none.
+.PP
+The capabilities are \fBfs\fR (file-system read and write), \fBnet\fR
+(public TCP/UDP), \fBnet_internal\fR (RFC 1918 and loopback TCP/UDP),
+\fBenv\fR (process environment), \fBproc\fR (process spawn and signals),
+\fBtime\fR (wall clock and sleep), \fBffi\fR (\fIextern "C"\fR calls) and
+\fB*\fR (a wildcard, rejected in safe-mode functions).
 
-Every Garnet function declares its OS-authority budget via \fI@caps(...)\fR.
-The v3.4.1 CapCaps call-graph propagator verifies the declaration transitively:
-a function that calls \fIfs::read_file\fR (which requires \fBfs\fR) must declare
-\fI@caps(fs)\fR, or inherit it via a user-fn caller that does.
-
-Known capabilities: \fBfs\fR (filesystem), \fBnet\fR (outbound sockets, gated
-by NetDefaults), \fBnet_internal\fR (lifts NetDefaults' RFC1918 / loopback
-denial), \fBtime\fR (clock + sleep), \fBproc\fR (subprocess spawn), \fBffi\fR
-(C FFI), and \fB*\fR (wildcard; managed-mode only).
-
-The \fBmain\fR function MUST declare its capabilities explicitly — an empty
-\fI@caps()\fR is acceptable for purely-computational programs.
+.SH ENFORCEMENT SCOPE
+Only \fI@caps\fR and \fI@max_depth\fR are enforced at run time, by both
+the tree-walking interpreter and the bytecode VM.
+\fI@bounded\fR fuel budgets, memory and time limits, and \fI@mailbox\fR are
+declared but not enforced.
+OS-level sandboxing (seccomp) is applied on Linux only; on macOS and Windows
+it is declared but not enforced.
 
 .SH EXAMPLES
-
 Create a new CLI project and run it:
-
+.PP
 .RS
 .nf
-garnet new --template cli my_app
+garnet new \-\-template cli my_app
 cd my_app
 garnet run src/main.garnet
 .fi
 .RE
-
-Build a reproducible, signed release:
-
+.PP
+Build a reproducible, signed manifest and verify it:
+.PP
 .RS
 .nf
 garnet keygen my.key
-garnet build --deterministic --sign my.key src/main.garnet
-garnet verify src/main.garnet src/main.garnet.manifest.json --signature
+garnet build \-\-deterministic \-\-sign my.key src/main.garnet
+garnet verify src/main.garnet src/main.garnet.manifest.json \-\-signature
 .fi
 .RE
-
+.PP
 Convert a Ruby file to Garnet:
-
+.PP
 .RS
 .nf
 garnet convert ruby legacy.rb
-# Produces legacy.garnet (with @sandbox header), legacy.garnet.lineage.json,
-# legacy.garnet.migrate_todo.md, legacy.garnet.metrics.json
 .fi
 .RE
 
@@ -154,32 +251,40 @@ garnet convert ruby legacy.rb
 Success.
 .TP
 .B 1
-Failure during build or verification.
+The command ran and reported a problem, such as a checker diagnostic or a
+failed verification.
 .TP
 .B 2
-Usage error (unknown flag, missing argument, malformed subcommand).
+Usage error: an unknown subcommand, a missing argument or a malformed flag.
+.PP
+\fBdiff\-caps\fR and the \fBverify\fR acceptance gate use a nonzero status as
+described under SUBCOMMANDS.
 
 .SH FILES
 .TP
-.I .garnet-cache/
-Per-project HMAC'd cache (v3.3 CacheHMAC) storing parse failures, prior
-strategies, and knowledge-graph rows. Machine-specific; never commit.
-
+.I .garnet\-cache/episodes.log
+Per-project log of CLI invocations.
+Each record carries a BLAKE3 keyed MAC under a per-machine key; records that
+fail it are skipped.
+Machine-specific; do not commit it.
 .TP
-.I <file>.garnet.manifest.json
-Deterministic build manifest emitted by \fBbuild --deterministic\fR.
+.I .garnet/vendor/
+Local directories vendored by \fBgarnet add\fR.
+.TP
+.I FILE\fB.manifest.json\fR
+The manifest written by \fBgarnet build\fR.
 
 .SH SEE ALSO
-The full Garnet documentation corpus lives at
-.UR https://garnet-lang.org/docs
-.UE .
-Research papers (I–VII) + Mini-Spec v1.0 are shipped in the repository at
-.I Garnet_Final/A_Research_Papers/
-and
-.IR Garnet_Final/C_Language_Specification/ .
+The project site is \%https://garnet\-lang.org; start with
+\%https://garnet\-lang.org/getting\-started.html.
+The source repository, \%https://github.com/Island\-Dev\-Crew/garnet,
+holds the research papers in
+.I A_Research_Papers/
+and the Mini-Spec in
+.IR C_Language_Specification/ .
 
 .SH AUTHOR
-Jon — Island Development Crew.
+Jon \(em Island Development Crew.
 
 .SH LICENSE
 MIT OR Apache-2.0 (dual-licensed; choose either).

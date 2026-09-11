@@ -9,7 +9,7 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ## [0.8.2] — 2026-09-02 (workspace version bump; the `v0.8.2` tag is not cut)
 
-### Also in 0.8.2 — `garnet --version` no longer names a release (2026-09-11)
+### Also in 0.8.2 — the binary and the man page no longer name an old release (2026-09-11)
 
 - **Fixed:** `garnet --version` prints the crate description, and that
   description ended in "(v0.8.1)", so a 0.8.2 build would have reported
@@ -17,6 +17,16 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   the number comes from the workspace `version` alone. It was the only
   release version compiled into the binaries: a scan of every crate manifest
   and of the shipped crates' sources found no other.
+- **Fixed:** the `garnet(1)` man page, which the `.deb` and `.rpm` install,
+  still had the header `garnet 0.4.2` / "April 2026", listed none of the
+  trust-spine subcommands (`caps`, `diff-caps`, `seal`, `agent-loop`,
+  `sandbox`, `caps-log` and ten more), pointed at `Garnet_Final/` paths that no
+  longer exist, and linked `garnet-lang.org/docs`, which returns 404. It now
+  documents the 29 subcommands `garnet --help` lists, states that only `@caps`
+  and `@max_depth` are enforced, and names no release in its header. A new
+  test, `garnet-cli/tests/man_page.rs`, fails when the page and `--help` list
+  different subcommands or the header carries a version number; against the
+  previous page both of its tests fail.
 
 ### Also in 0.8.2 — playground: a runtime that fails to load says so (2026-09-11)
 
