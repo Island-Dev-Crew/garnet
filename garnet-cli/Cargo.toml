@@ -51,7 +51,7 @@ path-guid    = "AEFB1A62-6C5B-4F9E-8D3F-49F5E2C9F702"
 
 [package.metadata.deb]
 name = "garnet"
-maintainer = "Jon <jon@island-dev-crew.example>"
+maintainer = "Island Development Crew <hello@garnet-lang.org>"
 copyright = "2026, Island Development Crew"
 license-file = ["../LICENSE", "0"]
 extended-description = """\

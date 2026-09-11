@@ -56,6 +56,9 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   fails when the page and `--help` list different entries or the header
   carries a version number; against the previous page both of its tests
   fail.
+- **Changed:** the Debian package maintainer is now
+  `Island Development Crew <hello@garnet-lang.org>`, replacing the placeholder
+  `jon@island-dev-crew.example`.
 
 ### Also in 0.8.2 — playground: a runtime that fails to load says so (2026-09-11)
 
