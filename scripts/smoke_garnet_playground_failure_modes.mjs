@@ -195,12 +195,15 @@ try {
     check(journey, state.picker === "hello", `picker is "${state.picker}", expected "hello"`);
     check(journey, state.source === hello.source, "editor does not hold the Hello preset source");
     check(journey, errors.length === 0, `console or page errors: ${JSON.stringify(errors)}`);
+  }));
 
-    const editJourney = "editing a preset";
+  await runJourney("editing a preset", (journey) => withPage(browser, async () => {}, async (page) => {
+    await open(page, baseUrl);
+    if (!(await waitUntil(page, journey, "the Hello preset never appeared", helloListed))) return;
     await page.locator("#example-picker").selectOption("hello");
     await page.locator("#source-editor").fill(`${hello.source}\n# edited\n`);
     const edited = await pageState(page);
-    check(editJourney, edited.picker === "", `picker is "${edited.picker}" after an edit, expected Custom source`);
+    check(journey, edited.picker === "", `picker is "${edited.picker}" after an edit, expected Custom source`);
   }));
 
   for (const [journey, fulfil] of [
