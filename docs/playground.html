@@ -217,7 +217,7 @@
   <section class="editors" aria-label="Source editors">
     <div class="editor">
       <label for="source-editor">Current source</label>
-      <textarea id="source-editor" spellcheck="false" autocapitalize="off" oninput="this.dataset.edited = 'true'">@caps()
+      <textarea id="source-editor" spellcheck="false" autocapitalize="off" onbeforeinput="this.dataset.edited = 'true'" oninput="this.dataset.edited = 'true'">@caps()
 def main() {
   println("Hello from Garnet!")
   0

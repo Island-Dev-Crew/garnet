@@ -134,10 +134,12 @@ async function loadExamples() {
     option.dataset.source = example.source;
     ui.example.appendChild(option);
   }
-  // Open on the canonical Hello example, named in the picker, unless the
-  // visitor has already typed in the editor.
+  // Open on the canonical Hello example, named in the picker, only when no
+  // edit has been recorded and the source still holds its original text. The
+  // second condition covers an edit whose input event the browser has not
+  // dispatched yet (the HTML standard lets it wait for a pause in typing).
   const hello = [...ui.example.options].find((option) => option.value === "hello");
-  if (hello && ui.source.dataset.edited !== "true") {
+  if (hello && ui.source.dataset.edited !== "true" && ui.source.value === ui.source.defaultValue) {
     hello.selected = true;
     ui.source.value = hello.dataset.source;
   }
@@ -148,8 +150,9 @@ ui.example.addEventListener("change", () => {
   if (option?.dataset.source) ui.source.value = option.dataset.source;
 });
 // Once the source no longer matches the chosen preset, the picker says so.
-// (The textarea records any edit itself, in data-edited, from the moment it
-// exists, so an edit made before this module runs is not lost.)
+// (The textarea records any edit itself, in data-edited, on beforeinput and
+// input, from the moment it exists, so an edit made before this module runs
+// is not lost.)
 ui.source.addEventListener("input", () => {
   const option = ui.example.selectedOptions[0];
   if (option?.dataset.source && option.dataset.source !== ui.source.value) ui.example.value = "";
