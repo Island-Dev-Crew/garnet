@@ -257,6 +257,23 @@ def main() {
     <p><a href="/index.html#install">Install</a> · <a href="https://github.com/Island-Dev-Crew/garnet" rel="noopener noreferrer">Source</a></p>
   </footer>
 </main>
-<script type="module" src="playground/live.js"></script>
+<script>
+  // A module that never loads (a 404, or a server that sends .js with a
+  // non-JavaScript type) never runs, so live.js cannot report it. The
+  // module's error event calls this instead of leaving "Loading runtime".
+  function garnetPlaygroundLoadFailed() {
+    const status = document.getElementById("runtime-status");
+    status.textContent = "Runtime failed";
+    status.dataset.state = "error";
+    const runState = document.getElementById("run-state");
+    runState.textContent = "Runtime unavailable";
+    runState.dataset.state = "denied";
+    document.getElementById("run-result").textContent =
+      "The playground script did not load. A server hosting these files must send " +
+      ".js files as text/javascript and .wasm files as application/wasm, for example " +
+      "python3 -m http.server --directory docs";
+  }
+</script>
+<script type="module" src="playground/live.js" onerror="garnetPlaygroundLoadFailed()"></script>
 </body>
 </html>

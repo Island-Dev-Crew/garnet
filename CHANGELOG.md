@@ -9,6 +9,23 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ## [0.8.2] — 2026-09-02 (workspace version bump; the `v0.8.2` tag is not cut)
 
+### Also in 0.8.2 — playground: a runtime that fails to load says so (2026-09-11)
+
+- **Fixed:** when `playground/live.js` could not load (a 404, or a server that
+  sends `.js` with a non-JavaScript type), the module never ran, and the page
+  sat on "Loading runtime" with only "Custom source" in the picker and no
+  error. The module's error event now switches the status to "Runtime
+  failed" and names the cause and a working local server command.
+- **Changed:** the committed presets load alongside the WebAssembly runtime
+  instead of after it, so they stay visible if the runtime fails to start; a
+  preset list that cannot load shows a disabled "Examples unavailable" entry.
+  The page opens on the "Hello, Garnet" preset unless the visitor has already
+  edited the source.
+- **Service worker:** cache `garnet-web-v6` replaces `garnet-web-v5`, so
+  returning visitors fetch the new page and adapter instead of cached copies.
+- The W-PLAY browser proof (`F_Project_Management/LAUNCH/W_PLAY_BROWSER_PROOF.json`)
+  and its screenshot were re-captured on the changed runtime inputs.
+
 ### Also in 0.8.2 — the trust surface is versioned and sealed history derives its era (U-116) (2026-09-05)
 
 - **Closed U-116:** the rolling review gate decided what needs a structured
