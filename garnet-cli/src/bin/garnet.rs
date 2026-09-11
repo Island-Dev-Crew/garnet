@@ -206,11 +206,29 @@ fn main() -> ExitCode {
             // `garnet keygen <keyfile>` — create a fresh Ed25519 signing key
             // and write it to `<keyfile>`. Prints the public key to stdout
             // so the caller can record it as the expected signer.
-            if args.len() < 2 {
-                eprintln!("usage: garnet keygen <keyfile>");
-                return ExitCode::from(2);
+            // A flag is never taken as the keyfile, so `--help` cannot write a
+            // signing key to a file named `--help`.
+            match args.get(1).map(String::as_str) {
+                Some("--help" | "-h") => {
+                    println!("usage: garnet keygen <keyfile>");
+                    println!();
+                    println!("  Generate an Ed25519 signing keypair: write the signing key to");
+                    println!(
+                        "  <keyfile> (created with mode 0600 on Unix) and print the public key."
+                    );
+                    ExitCode::SUCCESS
+                }
+                Some(flag) if flag.starts_with('-') => {
+                    eprintln!("garnet keygen: unknown flag {flag} (for a file with that name, use ./{flag})");
+                    eprintln!("usage: garnet keygen <keyfile>");
+                    ExitCode::from(2)
+                }
+                Some(path) => cmd::keygen::run(PathBuf::from(path)),
+                None => {
+                    eprintln!("usage: garnet keygen <keyfile>");
+                    ExitCode::from(2)
+                }
             }
-            cmd::keygen::run(PathBuf::from(&args[1]))
         }
         "verify" => {
             // Routed by positional-arg count:

@@ -12,12 +12,28 @@ pub fn run(keyfile: PathBuf) -> ExitCode {
     let key_hex = manifest::signing_key_to_hex(&signing_key);
     // Write with a trailing newline — POSIX-friendly.
     let body = format!("{key_hex}\n");
-    if let Err(e) = std::fs::write(&keyfile, body) {
+    // On Unix a new keyfile is created with mode 0600, so the secret is never
+    // readable by others, not even between the write and the chmod below.
+    #[cfg(unix)]
+    let written = {
+        use std::io::Write;
+        use std::os::unix::fs::OpenOptionsExt;
+        std::fs::OpenOptions::new()
+            .write(true)
+            .create(true)
+            .truncate(true)
+            .mode(0o600)
+            .open(&keyfile)
+            .and_then(|mut f| f.write_all(body.as_bytes()))
+    };
+    #[cfg(not(unix))]
+    let written = std::fs::write(&keyfile, body);
+    if let Err(e) = written {
         eprintln!("failed to write keyfile {}: {e}", keyfile.display());
         return ExitCode::from(1);
     }
-    // Best-effort UNIX permission tightening. On Windows, this is a no-op —
-    // caller should use an ACL or keep the file in a protected directory.
+    // An existing file keeps its old mode when reopened, so tighten it too.
+    // On Windows this is a no-op — use an ACL or a protected directory.
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;

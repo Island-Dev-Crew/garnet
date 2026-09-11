@@ -26,6 +26,18 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 - The playground Wasm package and its browser proof are rebuilt, because
   `garnet-stdlib` is one of their inputs.
 
+### Also in 0.8.2 — `garnet keygen` keeps the signing key private (2026-09-11)
+
+- **Fixed:** `garnet keygen --help` wrote a new secret signing key to a file
+  named `--help` (any flag was taken as the keyfile path). `--help` and `-h`
+  now print usage; any other argument starting with `-` is a usage error
+  (exit 2) and writes nothing.
+- **Security:** the key file was created with default permissions and
+  tightened to `0600` afterwards, so the secret was briefly readable by other
+  users. On Unix it is now created with mode `0600`.
+- `garnet-cli/tests/keygen_cli.rs`: the two flag tests failed before the fix;
+  the mode test is a control, since the old code also ended at `0600`.
+
 ### Also in 0.8.2 — what the packages say matches what the binary does (2026-09-11)
 
 - **Fixed:** `garnet --version` prints the crate description, and that
