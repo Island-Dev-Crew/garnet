@@ -135,9 +135,9 @@ async function loadExamples() {
     ui.example.appendChild(option);
   }
   // Open on the canonical Hello example, named in the picker, unless the
-  // visitor has already edited the source.
+  // visitor has already typed in the editor.
   const hello = [...ui.example.options].find((option) => option.value === "hello");
-  if (hello && !sourceEdited) {
+  if (hello && ui.source.dataset.edited !== "true") {
     hello.selected = true;
     ui.source.value = hello.dataset.source;
   }
@@ -148,10 +148,9 @@ ui.example.addEventListener("change", () => {
   if (option?.dataset.source) ui.source.value = option.dataset.source;
 });
 // Once the source no longer matches the chosen preset, the picker says so.
-// Any edit also stops the Hello preset from replacing the source later.
-let sourceEdited = false;
+// (The textarea records any edit itself, in data-edited, from the moment it
+// exists, so an edit made before this module runs is not lost.)
 ui.source.addEventListener("input", () => {
-  sourceEdited = true;
   const option = ui.example.selectedOptions[0];
   if (option?.dataset.source && option.dataset.source !== ui.source.value) ui.example.value = "";
 });

@@ -4,13 +4,17 @@
 // The W-PLAY browser proof (smoke_garnet_playground_browser.mjs) covers the
 // working runtime. This script covers what happens around it: a module that
 // never loads must say so, presets must survive a runtime failure, and the
-// opening Hello preset must never overwrite a visitor's edit.
+// opening Hello preset must never overwrite a visitor's edit, including an
+// edit made before the adapter module has run.
 //
 // It drives the committed docs/ tree in headless Chrome through the Studio
 // npm ci tree's @playwright/test, the same trust path as the browser proof.
-// Faults are injected with page.route, so no fixture files are needed. Every
-// journey runs to completion and records its own failures; a wait that times
-// out is a failure of that journey, not a crash of the script.
+// Faults are injected with page.route. A journey that depends on timing holds
+// the intercepted request open until its edits are done, checks that the
+// request really was intercepted, and only then releases it, so no journey
+// can pass because a response happened to arrive early. Every journey runs to
+// completion and records its own failures; a wait that times out is a failure
+// of that journey, not a crash of the script.
 //
 // Usage: node scripts/smoke_garnet_playground_failure_modes.mjs [--chrome path]
 import { readFileSync, existsSync } from "node:fs";
@@ -86,8 +90,32 @@ async function waitUntil(page, journey, detail, predicate) {
   }
 }
 
+// Wait for a condition on this side of the browser.
+async function waitHere(journey, detail, condition) {
+  const deadline = Date.now() + WAIT_MS;
+  while (Date.now() < deadline) {
+    if (condition()) return true;
+    await new Promise((resolveTick) => setTimeout(resolveTick, 25));
+  }
+  return check(journey, false, detail);
+}
+
+// Intercept one request and hold it open until release() is called.
+async function hold(page, pattern) {
+  let release;
+  const released = new Promise((resolveRelease) => { release = resolveRelease; });
+  let intercepted = false;
+  await page.route(pattern, async (route) => {
+    intercepted = true;
+    await released;
+    await route.continue();
+  });
+  return { release: () => release(), intercepted: () => intercepted };
+}
+
 const runtimeSettled = () => document.getElementById("runtime-status").dataset.state !== "loading";
-const presetsListed = () => document.getElementById("example-picker").options.length > 1;
+const anyPresetEntry = () => document.getElementById("example-picker").options.length > 1;
+const helloListed = () => [...document.getElementById("example-picker").options].some((option) => option.value === "hello");
 
 async function pageState(page) {
   return page.evaluate(() => ({
@@ -107,23 +135,26 @@ async function pageState(page) {
   }));
 }
 
-async function openPage(browser, baseUrl, routes = async () => {}) {
+async function newPage(browser) {
   const page = await browser.newPage();
   const errors = [];
   page.on("pageerror", (error) => errors.push(`pageerror: ${error.message}`));
   page.on("console", (message) => {
     if (message.type() === "error") errors.push(message.text());
   });
-  await routes(page);
-  await page.goto(`${baseUrl}/playground.html`, { waitUntil: "domcontentloaded" });
   return { page, errors };
+}
+
+async function open(page, baseUrl) {
+  await page.goto(`${baseUrl}/playground.html`, { waitUntil: "domcontentloaded" });
 }
 
 async function normalLoad(browser, baseUrl, hello) {
   const journey = "normal load";
-  const { page, errors } = await openPage(browser, baseUrl);
+  const { page, errors } = await newPage(browser);
+  await open(page, baseUrl);
   if (await waitUntil(page, journey, "the runtime never settled", runtimeSettled) &&
-      await waitUntil(page, journey, "the presets never appeared", presetsListed)) {
+      await waitUntil(page, journey, "the Hello preset never appeared", helloListed)) {
     const state = await pageState(page);
     check(journey, state.ready && state.runtimeState === "ready", `runtime not ready (${state.runtime})`);
     check(journey, state.picker === "hello", `picker is "${state.picker}", expected "hello"`);
@@ -140,7 +171,9 @@ async function normalLoad(browser, baseUrl, hello) {
 }
 
 async function moduleFailure(browser, baseUrl, journey, fulfil) {
-  const { page } = await openPage(browser, baseUrl, (target) => target.route("**/playground/live.js", fulfil));
+  const { page } = await newPage(browser);
+  await page.route("**/playground/live.js", fulfil);
+  await open(page, baseUrl);
   if (await waitUntil(page, journey, 'the status stayed "Loading runtime"', runtimeSettled)) {
     const state = await pageState(page);
     check(journey, state.runtime === "Runtime failed" && state.runtimeState === "error", `status is "${state.runtime}"/${state.runtimeState}`);
@@ -152,10 +185,11 @@ async function moduleFailure(browser, baseUrl, journey, fulfil) {
 
 async function presetsMissing(browser, baseUrl) {
   const journey = "presets 404";
-  const { page } = await openPage(browser, baseUrl, (target) =>
-    target.route("**/playground/examples.json", (route) => route.fulfill({ status: 404, body: "not found" })));
+  const { page } = await newPage(browser);
+  await page.route("**/playground/examples.json", (route) => route.fulfill({ status: 404, body: "not found" }));
+  await open(page, baseUrl);
   if (await waitUntil(page, journey, "the runtime never settled", runtimeSettled) &&
-      await waitUntil(page, journey, "the picker never listed an unavailable entry", presetsListed)) {
+      await waitUntil(page, journey, "the picker never listed an unavailable entry", anyPresetEntry)) {
     const state = await pageState(page);
     check(journey, state.ready, `runtime not ready (${state.runtime})`);
     check(journey, state.options.some((option) => option.text === "Examples unavailable" && option.disabled), "no disabled Examples unavailable entry");
@@ -165,35 +199,80 @@ async function presetsMissing(browser, baseUrl) {
   await page.close();
 }
 
-const delayedPresets = (target) => target.route("**/playground/examples.json", async (route) => {
-  await new Promise((resolveDelay) => setTimeout(resolveDelay, 1_500));
-  await route.continue();
-});
+async function runtimeFails(browser, baseUrl, hello) {
+  const journey = "runtime fails, presets still load";
+  const { page } = await newPage(browser);
+  await page.route("**/playground/pkg/garnet_wasm_bg.wasm", (route) => route.fulfill({ status: 404, body: "not found" }));
+  await open(page, baseUrl);
+  if (await waitUntil(page, journey, "the runtime never settled", runtimeSettled) &&
+      await waitUntil(page, journey, "the Hello preset never appeared", helloListed)) {
+    const state = await pageState(page);
+    check(journey, !state.ready && state.runtimeState === "error", `status is "${state.runtime}"/${state.runtimeState}`);
+    check(journey, !state.options.some((option) => option.text === "Examples unavailable"), "presets reported unavailable");
+    check(journey, state.picker === "hello" && state.source === hello.source, "the Hello preset did not open");
+  }
+  await page.close();
+}
 
 async function editBeforePresets(browser, baseUrl) {
   const journey = "edit before presets arrive";
-  const { page } = await openPage(browser, baseUrl, delayedPresets);
-  const typed = "@caps()\ndef main() { 7 }\n";
-  await page.locator("#source-editor").fill(typed);
-  if (await waitUntil(page, journey, "the presets never appeared", presetsListed)) {
-    const state = await pageState(page);
-    check(journey, state.source === typed, "the visitor's edit was replaced");
-    check(journey, state.picker === "", `picker is "${state.picker}"`);
+  const { page } = await newPage(browser);
+  const presets = await hold(page, "**/playground/examples.json");
+  await open(page, baseUrl);
+  if (await waitHere(journey, "the presets request was never made", presets.intercepted)) {
+    const typed = "@caps()\ndef main() { 7 }\n";
+    await page.locator("#source-editor").fill(typed);
+    presets.release();
+    if (await waitUntil(page, journey, "the Hello preset never arrived", helloListed)) {
+      const state = await pageState(page);
+      check(journey, state.source === typed, "the visitor's edit was replaced");
+      check(journey, state.picker === "", `picker is "${state.picker}"`);
+    }
   }
+  presets.release();
   await page.close();
 }
 
 async function editThenRestore(browser, baseUrl) {
   const journey = "edit then restore before presets arrive";
-  const { page } = await openPage(browser, baseUrl, delayedPresets);
-  const original = await page.locator("#source-editor").inputValue();
-  await page.locator("#source-editor").fill(`${original}# scratch\n`);
-  await page.locator("#source-editor").fill(original);
-  if (await waitUntil(page, journey, "the presets never appeared", presetsListed)) {
-    const state = await pageState(page);
-    check(journey, state.source === original, "the restored source was replaced by the Hello preset");
-    check(journey, state.picker === "", `picker is "${state.picker}"`);
+  const { page } = await newPage(browser);
+  const presets = await hold(page, "**/playground/examples.json");
+  await open(page, baseUrl);
+  if (await waitHere(journey, "the presets request was never made", presets.intercepted)) {
+    const original = await page.locator("#source-editor").inputValue();
+    await page.locator("#source-editor").fill(`${original}# scratch\n`);
+    await page.locator("#source-editor").fill(original);
+    presets.release();
+    if (await waitUntil(page, journey, "the Hello preset never arrived", helloListed)) {
+      const state = await pageState(page);
+      check(journey, state.source === original, "the restored source was replaced by the Hello preset");
+      check(journey, state.picker === "", `picker is "${state.picker}"`);
+    }
   }
+  presets.release();
+  await page.close();
+}
+
+async function editBeforeAdapter(browser, baseUrl) {
+  const journey = "edit before the adapter module runs";
+  const { page } = await newPage(browser);
+  const adapter = await hold(page, "**/playground/live.js");
+  // A held module script also holds DOMContentLoaded (module scripts are
+  // deferred), so this journey waits only for the navigation to commit and
+  // the editor to exist.
+  await page.goto(`${baseUrl}/playground.html`, { waitUntil: "commit" });
+  await page.waitForSelector("#source-editor");
+  if (await waitHere(journey, "the adapter request was never made", adapter.intercepted)) {
+    const typed = "@caps()\ndef main() { 11 }\n";
+    await page.locator("#source-editor").fill(typed);
+    adapter.release();
+    if (await waitUntil(page, journey, "the Hello preset never arrived", helloListed)) {
+      const state = await pageState(page);
+      check(journey, state.source === typed, "an edit made before the adapter ran was replaced");
+      check(journey, state.picker === "", `picker is "${state.picker}"`);
+    }
+  }
+  adapter.release();
   await page.close();
 }
 
@@ -203,7 +282,7 @@ const { chromium } = STUDIO_REQUIRE("@playwright/test");
 const examples = JSON.parse(readFileSync(resolve(DOCS, "playground/examples.json"), "utf-8")).examples;
 const hello = examples.find((example) => example.name === "hello");
 if (!hello) throw new Error("examples.json has no hello preset");
-const JOURNEYS = 7;
+const JOURNEYS = 9;
 
 const server = await serveDocs();
 const baseUrl = `http://127.0.0.1:${server.address().port}`;
@@ -217,8 +296,10 @@ try {
     status: 404, contentType: "text/plain", body: "not found",
   }));
   await presetsMissing(browser, baseUrl);
+  await runtimeFails(browser, baseUrl, hello);
   await editBeforePresets(browser, baseUrl);
   await editThenRestore(browser, baseUrl);
+  await editBeforeAdapter(browser, baseUrl);
 } finally {
   await browser.close();
   server.close();

@@ -21,18 +21,22 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   preset list that cannot load shows a disabled "Examples unavailable" entry.
   The page opens on the "Hello, Garnet" preset unless the visitor has already
   edited the source.
-- **Edits are tracked, not inferred:** the Hello preset replaces the source
-  only if the visitor has not typed in the editor at all, so an edit that is
-  then undone back to the original text is kept (the cross-family review
-  reproduced the overwrite against a text comparison). Editing a preset
-  returns the picker to "Custom source".
+- **Edits are tracked on the editor itself:** the source textarea records any
+  input in a `data-edited` attribute from the moment it exists, so an edit made
+  before the adapter module has run, or undone back to the original text, is
+  never replaced by the Hello preset (the cross-family review reproduced both
+  overwrites). Editing a preset returns the picker to "Custom source".
 - **Regression coverage:** `scripts/smoke_garnet_playground_failure_modes.mjs`
-  drives the committed page in headless Chrome through seven journeys (normal
-  load, module served as `text/plain`, module 404, presets 404, an edit before
-  the presets arrive, an edit then restore, and an edited preset), injecting
-  each fault with `page.route`. Against the page before this change five of
-  the seven fail (the two edit journeys guard behaviour this change adds), and
-  against the text comparison the edit-then-restore journey fails.
+  drives the committed page in headless Chrome through nine journeys: normal
+  load, an edited preset, the module served as `text/plain`, the module 404,
+  presets 404, a WebAssembly runtime failure with presets still loading, an
+  edit before the presets arrive, an edit then restore, and an edit before
+  the adapter module runs. Faults are injected with `page.route`, and the
+  timing journeys hold the intercepted request until their edits are done.
+  Measured: all nine pass; against the page before this change six fail;
+  against the earlier text comparison the edit-then-restore journey fails;
+  against the earlier in-module flag the edit-before-the-adapter journey
+  fails.
 - **Service worker:** cache `garnet-web-v6` replaces `garnet-web-v5`, so
   returning visitors fetch the new page and adapter instead of cached copies.
 - The W-PLAY browser proof (`F_Project_Management/LAUNCH/W_PLAY_BROWSER_PROOF.json`)
