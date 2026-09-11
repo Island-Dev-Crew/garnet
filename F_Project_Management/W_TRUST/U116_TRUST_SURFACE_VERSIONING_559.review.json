@@ -1,0 +1,33 @@
+{
+  "author_emails": [
+    "email:jon-isaac@islanddevcrew.com"
+  ],
+  "author_ids": [
+    275140286
+  ],
+  "base_commit": "64bb7bd32f411b5837a56ff549bb00ee11a1fcaa",
+  "blocking_findings": [],
+  "content_digest": "sha256:3014095d28e37fce0b424f33498fb2ac3328e61fd8b63aec6baf34c62984c07f",
+  "head_repository": "Island-Dev-Crew/garnet",
+  "head_repository_id": 1218183013,
+  "pull_request_id": 4429830696,
+  "pull_request_number": 559,
+  "repository": "Island-Dev-Crew/garnet",
+  "repository_id": 1218183013,
+  "review_scope": "Content proof binds exactly reviewed_head fe58c8bb05ef4e3d9bebc6010998b372cbcf212e and does not extend or backdate reviewed_head coverage. OpenAI Codex cross-family seat, delta-identical-scope review on 2026-09-11, verdict CONFIRM with delta_identical true and no findings (all six required checks pass: 4940aee..1ff71ac is exactly the two v7 precision notes; the seven behavioural and documentary blobs match 1ff71ac and AGENTS.md is main plus #559's additions; 182/182 gate tests and 44/44 dogfood-checker tests; all 518 main first-parent commits classify v1, #568 and #552 lay no stone, and all 14 candidate parent edges pass custody; the joint __main__ rebinding and an injected ls-tree failure remain findings; no retired vocabulary) at fe58c8bb05ef4e3d9bebc6010998b372cbcf212e; void if the head moves before this sanctioned record-only write. Implementer seats: Claude Fable 5.1 (content, review rounds v1-v7) and Claude Opus 5 (the update onto main and this record). LINEAGE: v1 REJECT at 80180fb9, v2 at c9461388, v3 at 92174cac, v4 at 0cb0af3e, v5 at 457332b2 and v6 at 29a600c5, each cured in the branch; review v7 CONFIRMED 4940aee on base 452a0e2. 1ff71ac applies v7's two precision notes (docs only: CHANGELOG, the rolling-review spec and the U-116 cost document). fe58c8b merges main 64bb7bd into 1ff71ac: the gate script, both test files, the dogfood checker, the era stone, the spec and the cost document are blob-identical to 1ff71ac; AGENTS.md is main's plus exactly #559's 47 added lines; CHANGELOG folds the U-116 entry under [0.8.2], additions only. Main did not touch any of #559's behavioural files between 452a0e2 and 64bb7bd. WHAT IT CARRIES: U-116, the trust surface is versioned (CURRENT_TRUST_SURFACE v2, era stone F_Project_Management/W_TRUST/eras/v2.era.json introduced by #559) and sealed history derives its era from main's first-parent history; the capability walk, the manifest verifier, the dogfood checker and the eras/ ledger join the surface; absence is a verified listing and custody covers every parent edge. At fe58c8b the gate's 182 tests pass and --print-trust-surface reports current v2, latest era stone v2, no problems. The exact base..reviewed_head Git author set is email:jon-isaac@islanddevcrew.com; the authenticated GitHub author and committer principal is IslandDevCrew ID 275140286. IDC-Trust-Review ID 306739987 is the approval-event carrier only. MERGE AUTHORITY: modifies scripts/garnet_trust_kernel_review_status.py and scripts/check_dogfood_pr_body.py, the gate it merges under, so Integrity Rule 1 makes the merge human-only (Jon); the trust-kernel paths require this record plus an authenticated approval from a principal disjoint from the author set. Touched paths F_Project_Management/W_TRUST/eras/v2.era.json, scripts/check_dogfood_pr_body.py, scripts/garnet_trust_kernel_review_status.py, scripts/test_check_dogfood_pr_body.py, scripts/test_garnet_trust_kernel_review_status.py; content digest sha256:3014095d28e37fce0b424f33498fb2ac3328e61fd8b63aec6baf34c62984c07f; sole pre-record problem structured review record is missing. Standards axis: none. Spec axis: C_Language_Specification/GARNET_TRUST_KERNEL_ROLLING_REVIEW.md (the versioned-surface contract). This premerge record is reviewer evidence only; it is not carrier approval, a GitHub approval, re-evaluation, merge, commit, push, tag, or release.",
+  "review_state": "APPROVED",
+  "reviewed_head": "fe58c8bb05ef4e3d9bebc6010998b372cbcf212e",
+  "reviewed_tree": "895e8e3fce98b596ca087b2a7b9321bc650a34c7",
+  "reviewer_id": 306739987,
+  "reviewer_login": "IDC-Trust-Review",
+  "schema": "garnet.trust_kernel_review_record/v2",
+  "state": "premerge",
+  "touched_paths": [
+    "F_Project_Management/W_TRUST/eras/v2.era.json",
+    "scripts/check_dogfood_pr_body.py",
+    "scripts/garnet_trust_kernel_review_status.py",
+    "scripts/test_check_dogfood_pr_body.py",
+    "scripts/test_garnet_trust_kernel_review_status.py"
+  ],
+  "verdict": "pass"
+}
