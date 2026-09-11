@@ -6,7 +6,7 @@
 
 **Project Period:** April 11–17, 2026 (7 calendar days from initial concept to verified working implementation)
 
-**Contact:** Jony02@hotmail.com | garnet-lang.org
+**Contact:** hello@garnet-lang.org | garnet-lang.org
 
 ---
 

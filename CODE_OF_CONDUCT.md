@@ -32,7 +32,7 @@ Beyond the general Contributor Covenant, Garnet holds contributors to the same r
 
 ## Enforcement
 
-Instances of abusive, harassing, or otherwise unacceptable behavior may be reported by contacting the project maintainer at `jon@island-dev-crew.example` (replace with actual contact). All complaints will be reviewed and investigated promptly and fairly.
+Instances of abusive, harassing, or otherwise unacceptable behavior may be reported by contacting the project maintainer at `hello@garnet-lang.org`. All complaints will be reviewed and investigated promptly and fairly.
 
 The maintainer is obligated to respect the privacy and security of the reporter of any incident.
 

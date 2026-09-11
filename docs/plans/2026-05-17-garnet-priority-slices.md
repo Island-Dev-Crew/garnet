@@ -61,7 +61,7 @@
 
 ### Task 3: Contact truth (SECURITY.md + footer P0-4)
 
-**Files:** Modify `SECURITY.md` (replace `jon@island-dev-crew.example` → `jon-isaac@islanddevcrew.com`; add `Voice/SMS (security only): +1 256-652-5534`). Create `docs/logo-policy.html` (one page: name/mark usage, no-endorsement). Modify `docs/index.html` footer: add “Code of Conduct” (→ GitHub `CODE_OF_CONDUCT.md`) and “Logo Policy” (→ `/logo-policy.html`) links; keep existing Security link.
+**Files:** Modify `SECURITY.md` (replace the placeholder address with the maintainer's private email and add a voice/SMS line; both since replaced by `hello@garnet-lang.org`). Create `docs/logo-policy.html` (one page: name/mark usage, no-endorsement). Modify `docs/index.html` footer: add “Code of Conduct” (→ GitHub `CODE_OF_CONDUCT.md`) and “Logo Policy” (→ `/logo-policy.html`) links; keep existing Security link.
 
 **Verify:** `python3 - <<'…'` HTML parser feed parses `index.html` and `logo-policy.html` with no exceptions; footer `<footer>` 1/1; `grep -c island-dev-crew.example SECURITY.md` → 0.
 

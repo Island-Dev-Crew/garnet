@@ -20,8 +20,10 @@ is under heavy concurrent agent load (~40 PRs/day, `docs/index.html` edited
 ## Constraints / decisions (user-approved)
 
 - Coordination convention lands **first** (de-risks all later slices).
-- Phone `+1 256-652-5534` goes in **SECURITY.md only**, not the public site.
-  Email `jon-isaac@islanddevcrew.com` is the primary security contact.
+- A private phone line goes in **SECURITY.md only**, not the public site, and
+  a private email is the primary security contact. (On 2026-09-11 both were
+  replaced by `hello@garnet-lang.org`; the values are removed here because
+  `docs/` is published.)
 - Toolchain-management copy uses **truth-matched "planned" framing** (no fake commands).
 - Every slice is its own dogfood PR: branch from fresh `origin/main` → change →
   verify → Desktop dogfood bundle → PR → merge → next. Explicit/deferred-boundary
@@ -46,7 +48,8 @@ unaddressed during the run).
    Linux distribution lane (headline stuck at 58.6%). Add the lane, explicitly
    scored from the status script. Verification: `test_garnet_mit_readiness_status.py`.
 3. **Contact truth (P0-4).** SECURITY.md: replace placeholder with
-   `jon-isaac@islanddevcrew.com` + the phone as a voice/SMS disclosure line.
+   the maintainer's private email + a voice/SMS disclosure line (both since
+   replaced by `hello@garnet-lang.org`).
    Footer: add Code of Conduct + Security (exist) + a new one-page Logo Policy.
 4. **Prereq + arch + checksum callout (P0-2 + overlooked).** Install section:
    state Rust 1.75+ needed only for source; explicit supported-arch matrix
