@@ -35,12 +35,15 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 - **Security:** the key was written with default permissions and tightened
   to `0600` afterwards, so it was briefly readable by other users; an
   existing world-readable keyfile, or one another process held open, received
-  the key before the chmod. On Unix the key is now written to a new `0600`
-  file beside the keyfile and renamed over it, so it never enters a file
-  others can read.
+  the key before the chmod. On Unix the key is now written to a new file
+  created with mode `0600` (stricter if the umask removes more bits) beside
+  the keyfile and renamed over it, so it never enters a file others can
+  read. An entry already sitting at the temporary name is refused and left
+  untouched.
 - `garnet-cli/tests/keygen_cli.rs`: the two flag tests and the
   existing-file test failed before the fix; the new-file mode test is a
-  control, since the old code also ended at `0600`.
+  control, since the old code also ended at `0600`. A unit test in
+  `keygen.rs` checks that a pre-existing temporary-name file is not removed.
 
 ### Also in 0.8.2 — what the packages say matches what the binary does (2026-09-11)
 

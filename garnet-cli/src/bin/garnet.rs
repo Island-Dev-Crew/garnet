@@ -214,7 +214,7 @@ fn main() -> ExitCode {
                     println!();
                     println!("  Generate an Ed25519 signing keypair: write the signing key to");
                     println!(
-                        "  <keyfile> (created with mode 0600 on Unix) and print the public key."
+                        "  <keyfile> (mode 0600 or stricter on Unix) and print the public key."
                     );
                     ExitCode::SUCCESS
                 }
