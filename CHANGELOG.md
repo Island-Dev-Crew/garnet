@@ -16,10 +16,15 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   `garnet_<version>-1_arm64.deb`, `garnet-<version>-1.aarch64.rpm` and
   `garnet-<version>-aarch64-unknown-linux-gnu.tar.gz`, smoke-installed in
   clean `ubuntu:24.04` and `fedora:40` containers on ARM64 through the same
-  gates as x86_64; a Linux x86_64 tarball from the existing package job; and a
-  Windows job producing `garnet-<version>-x86_64-pc-windows-msvc.zip`. The
-  Windows binary links the C runtime statically, and the job checks its import
-  table for any Visual C++ runtime DLL before running the same smoke gates.
+  gates as x86_64; a `linux-tarball-x86_64` job that packs the Linux x86_64
+  tarball from the binary inside the tested `.deb`; and a Windows job
+  producing `garnet-<version>-x86_64-pc-windows-msvc.zip`. The Windows binary
+  links the C runtime statically, and the job checks its import table for any
+  Visual C++ runtime DLL before running the same smoke gates. The required
+  producer jobs (`build-packages`, `smoke-deb`, `smoke-rpm`,
+  `shellcheck-installer`, `macos-cli-tarballs`) are unchanged, so their
+  pinned semantic fingerprints still match; every new job is optional, and
+  `scripts/test_garnet_workflow_schema_policy.py` now expects 39 contexts.
 - **The release job requires the complete nine-asset set** (Linux x86_64 and
   ARM64 `.deb`, `.rpm` and tarball; macOS Apple Silicon and Intel tarballs;
   the Windows zip) and fails if any platform is missing. It signs one

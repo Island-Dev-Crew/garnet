@@ -41,12 +41,15 @@ def snapshot(*contents: str) -> object:
     ) for index, content in enumerate(contents))
     return policy.yaml_policy.WorkflowYamlSnapshot(documents, ())
 class WorkflowSchemaPolicyTests(unittest.TestCase):
-    def test_current_index_projects_34_ordered_contexts(self) -> None:
+    def test_current_index_projects_39_ordered_contexts(self) -> None:
         result = policy.workflow_projection(PATH.parents[1])
         contexts = [item.context for workflow in result.workflows for item in workflow.contexts]
-        self.assertEqual((result.problems, len(result.workflows), len(contexts)), ((), 12, 34))
+        self.assertEqual((result.problems, len(result.workflows), len(contexts)), ((), 12, 39))
         self.assertIn("cargo test (windows-latest)", contexts)
         self.assertIn("Publish VSIX release assets", contexts)
+        for release_job in ("build-packages-arm64", "smoke-deb-arm64", "smoke-rpm-arm64",
+                            "linux-tarball-x86_64", "windows-cli-zip"):
+            self.assertIn(release_job, contexts)
         with self.assertRaises(FrozenInstanceError):
             result.workflows[0].events = ()
     def test_projected_sources_filters_steps_and_scalar_style_survive(self) -> None:
