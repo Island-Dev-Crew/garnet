@@ -511,9 +511,6 @@ jobs:
   # ───────────────────────────────────────────────────────────────────
   windows-cli-zip:
     runs-on: windows-latest
-    defaults:
-      run:
-        shell: bash
     env:
       # Applies to the explicit --target build only, not to build scripts or
       # proc macros, which run on the host.
@@ -522,8 +519,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
 
+      # windows-latest defaults to PowerShell; every bash step names its shell.
       - name: Guard — release tag must match Cargo version
         if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
         run: |
           cargo_version="$(awk -F'"' '/^version =/ { print $2; exit }' Cargo.toml)"
           tag="${GITHUB_REF_NAME}"
@@ -552,9 +551,11 @@ jobs:
           restore-keys: ${{ runner.os }}-x86_64-pc-windows-msvc-cargo-
 
       - name: Build release binary
+        shell: bash
         run: cargo build --release --locked -p garnet-cli --target x86_64-pc-windows-msvc
 
       - name: Static C runtime — garnet.exe imports no Visual C++ runtime DLL
+        shell: bash
         run: |
           set -euo pipefail
           exe="target/x86_64-pc-windows-msvc/release/garnet.exe"
@@ -567,27 +568,36 @@ jobs:
           fi
 
       - name: Smoke gates (the same checks as the Linux packages)
+        shell: bash
+        # Each command's output is captured before it is matched: with bash's
+        # pipefail, `garnet check` rejecting the bad program (a non-zero exit,
+        # which is the point of gate 6) would otherwise fail the pipeline.
         run: |
           set -euo pipefail
           version="$(awk -F'"' '/^version =/ { print $2; exit }' Cargo.toml)"
           garnet="${PWD}/target/x86_64-pc-windows-msvc/release/garnet.exe"
-          "${garnet}" --version | grep -q "garnet ${version}"
-          "${garnet}" --version | grep -q "Rust Rigor. Ruby Velocity."
-          "${garnet}" --help | grep -q "new"
-          "${garnet}" --help | grep -q "keygen"
-          "${garnet}" --help | grep -q "convert"
+          expect() {
+            local label="$1" pattern="$2" output="$3"
+            printf '%s\n' "${output}"
+            grep -q -- "${pattern}" <<<"${output}" || { echo "::error::${label}: output lacks '${pattern}'"; exit 1; }
+          }
+          out="$("${garnet}" --version)"
+          expect "gate 1 version" "garnet ${version}" "${out}"
+          expect "gate 1 banner" "Rust Rigor. Ruby Velocity." "${out}"
+          out="$("${garnet}" --help)"
+          for word in new keygen convert; do expect "gate 2 help" "${word}" "${out}"; done
           rm -rf smoke && mkdir smoke
           "${garnet}" new --template cli smoke/app
           test -f smoke/app/Garnet.toml
           test -f smoke/app/src/main.garnet
-          "${garnet}" parse smoke/app/src/main.garnet | grep -q "parsed"
+          expect "gate 4 parse" "parsed" "$("${garnet}" parse smoke/app/src/main.garnet)"
           "${garnet}" keygen smoke/k
           "${garnet}" build --deterministic --sign smoke/k smoke/app/src/main.garnet
-          "${garnet}" verify smoke/app/src/main.garnet \
-            smoke/app/src/main.garnet.manifest.json --signature \
-            | grep -q "signature valid"
+          expect "gate 5 verify" "signature valid" \
+            "$("${garnet}" verify smoke/app/src/main.garnet smoke/app/src/main.garnet.manifest.json --signature)"
           printf '%s\n' '@caps()' 'def main() { read_file("config.toml") }' > smoke/bad.garnet
-          "${garnet}" check smoke/bad.garnet 2>&1 | grep -q "does not declare .fs."
+          out="$("${garnet}" check smoke/bad.garnet 2>&1 || true)"
+          expect "gate 6 capability gap" "does not declare .fs." "${out}"
 
       - name: Stage the zip
         shell: pwsh
