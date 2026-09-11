@@ -9,6 +9,15 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ## [0.8.2] — 2026-09-02 (workspace version bump; the `v0.8.2` tag is not cut)
 
+### Also in 0.8.2 — `garnet --version` no longer names a release (2026-09-11)
+
+- **Fixed:** `garnet --version` prints the crate description, and that
+  description ended in "(v0.8.1)", so a 0.8.2 build would have reported
+  `garnet 0.8.2 (… (v0.8.1).)`. The description no longer carries a version;
+  the number comes from the workspace `version` alone. It was the only
+  release version compiled into the binaries: a scan of every crate manifest
+  and of the shipped crates' sources found no other.
+
 ### Also in 0.8.2 — playground: a runtime that fails to load says so (2026-09-11)
 
 - **Fixed:** when `playground/live.js` could not load (a 404, or a server that
