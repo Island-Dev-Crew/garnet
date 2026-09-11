@@ -1420,6 +1420,7 @@ def main() {
         <tr><td style="padding:4px 10px;">Linux ARM64</td><td style="padding:4px 10px;"><code>garnet_0.8.2-1_arm64.deb</code> · <code>garnet-0.8.2-1.aarch64.rpm</code> · <code>garnet-0.8.2-aarch64-unknown-linux-gnu.tar.gz</code></td><td style="padding:4px 10px;">install.sh, a package or the tarball</td></tr>
         <tr><td style="padding:4px 10px;">Windows x86_64</td><td style="padding:4px 10px;"><code>garnet-0.8.2-x86_64-pc-windows-msvc.zip</code></td><td style="padding:4px 10px;">install.ps1 or the zip; no .msi</td></tr>
       </table>
+      <div style="margin-top:10px;">The Linux packages and tarballs need glibc 2.39 or newer (Ubuntu 24.04+, Debian 13+, Fedora 40+); on older distributions use the source install.</div>
       <div style="margin-top:10px;">Verify any manual download before running it (from the folder containing the asset and <code>SHA256SUMS</code>):</div>
 <pre style="margin:8px 0 0;">shasum -a 256 --ignore-missing -c SHA256SUMS</pre>
     </div>

@@ -7,7 +7,25 @@ This file is updated in the same PR as the work it tracks (per the v0.5 slice
 contract). Lines added here are part of the calibrated record — if a
 slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
-## [0.8.2] — 2026-09-02 (workspace version bump; the `v0.8.2` tag is not cut)
+## [0.8.2] — 2026-09-11 (tag `v0.8.2` → `f25ffb5`; the workspace moved to 0.8.2 on 2026-09-02)
+
+### Released 0.8.2 — signed binaries for every desktop platform (2026-09-11)
+
+- **Released:** the `v0.8.2` GitHub Release carries nine binary assets
+  (Linux x86_64 and ARM64 `.deb`, `.rpm` and tarballs; macOS arm64 and
+  x86_64 tarballs; a Windows x86_64 zip), a CycloneDX SBOM, `SHA256SUMS` and
+  `SHA256SUMS.asc`. Verified after publishing: GPG `GOODSIG` with primary key
+  `04D5 6F91 F038 17DD FFEB  C62A C14D F6E7 1395 6ED1`, all ten checksums OK,
+  the macOS arm64 binary reports `garnet 0.8.2`, and `install.sh` with
+  `GARNET_VERSION=0.8.2` installs it.
+- **Known limits:** the Linux assets need glibc 2.39 or newer (Ubuntu 24.04+,
+  Debian 13+, Fedora 40+); they do not install on Debian 12, Ubuntu 22.04 or
+  RHEL 9. The release also carries two stale `garnet-0.8.1-lsp-mvp-*.vsix`
+  files next to the 0.8.2 ones.
+- **Surfaces:** README, FAQ, SECURITY, the site's install section, status and
+  getting-started pages, release-signing notes and the installer default now
+  name v0.8.2; the release number is a `truth:latest_tag` marker wherever
+  prose repeats it. The only public contact is `hello@garnet-lang.org`.
 
 ### Also in 0.8.2 — the network policy judges IPv4 carried inside IPv6 (2026-09-11)
 

@@ -10,7 +10,7 @@ built for the code agents write and humans accept.</strong></p>
 <p align="center"><em>No authority without evidence. Acceptance is a decision made on evidence the author cannot fake.</em></p>
 
 <p align="center">
-  <a href="https://github.com/Island-Dev-Crew/garnet/releases/latest">Release <!-- truth:latest_tag -->v0.8.1<!-- /truth --> · signed binaries</a> ·
+  <a href="https://github.com/Island-Dev-Crew/garnet/releases/latest">Release <!-- truth:latest_tag -->v0.8.2<!-- /truth --> · signed binaries</a> ·
   <a href="LICENSE">MIT OR Apache-2.0</a> ·
   <a href="https://garnet-lang.org">garnet-lang.org</a> ·
   <a href="https://garnet-lang.org/status.html">Verified today / Still open</a> ·
@@ -125,9 +125,10 @@ and aimed at agent-authored code:
 curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh
 ```
 
-Release-first, source-fallback. <!-- truth:latest_tag -->v0.8.1<!-- /truth --> ships signed
+Release-first, source-fallback. <!-- truth:latest_tag -->v0.8.2<!-- /truth --> ships signed
 `.deb` / `.rpm` packages and tarballs for Linux (x86_64, ARM64), macOS tarballs and a Windows
 zip, with a GPG-signed `SHA256SUMS`; verify per [docs/release-signing.md](docs/release-signing.md).
+The Linux assets need glibc 2.39+ (Ubuntu 24.04+, Debian 13+, Fedora 40+).
 On Windows, run `irm https://garnet-lang.org/install.ps1 | iex` in PowerShell. No matching
 package for your platform? The installer builds from source (Rust 1.95+; CI also tracks current stable — per
 [CONTRIBUTING.md](CONTRIBUTING.md)), or:
@@ -153,7 +154,7 @@ garnet verify src/main.garnet src/main.garnet.manifest.json --signature
 
 ## Verified today / Still open
 
-Garnet is a **research-grade prototype (<!-- truth:latest_tag -->v0.8.1<!-- /truth -->), not
+Garnet is a **research-grade prototype (<!-- truth:latest_tag -->v0.8.2<!-- /truth -->), not
 production-complete** — and this README will never tell you otherwise.
 
 | Verified today | Still open |

@@ -7,8 +7,12 @@ This is the first file a fresh MIT reviewer, contributor, or agent should read
 after `README.md`. It separates current executable truth from historical proof,
 research corpus material, generated artifacts, and local scratch.
 
-> **v0.8.1 milestone truth (re-cut 2026-06-07).** The latest tag is **`v0.8.1`**
-> (annotated → commit `8107c01`), a research-grade milestone covering the
+> **Latest release: `v0.8.2` (2026-09-11, tag → `f25ffb5`).** Signed binaries
+> for Linux x86_64/ARM64 (glibc 2.39+), macOS and Windows; see `CHANGELOG.md`
+> `[0.8.2]`. The v0.8.1 summary below remains accurate for that release.
+>
+> **v0.8.1 milestone truth (re-cut 2026-06-07).** `v0.8.1`
+> (annotated → commit `8107c01`) was a research-grade milestone covering the
 > S91–S120 trust-kernel / capability-bounded-acceptance runway (enforced
 > `@caps` + `@max_depth` on both interpreter and VM backends; cross-OS
 > trap-parity; the `agent-loop` accept/reject + seal "ultrapunch"; Linux-only
@@ -20,7 +24,7 @@ research corpus material, generated artifacts, and local scratch.
 > **independently-re-verified-with-fixes**; Jon's separate scoped governance
 > acceptance is recorded as `accepted-scoped` (2026-07-12) — neither fact is
 > an independence relabel or a self-attested closure). The `v0.8.1`
-> Release ships **signed `garnet-0.8.1-*` CLI binaries** (`.deb`/`.rpm`/darwin
+> Release shipped **signed `garnet-0.8.1-*` CLI binaries** (`.deb`/`.rpm`/darwin
 > tarballs) + a CycloneDX SBOM + a GPG-signed `SHA256SUMS.asc` — the S91–S120
 > work is now in the published binary (verify per `docs/release-signing.md`).
 > Not production / 1.0. The narrative below still carries v0.5-era detail; for

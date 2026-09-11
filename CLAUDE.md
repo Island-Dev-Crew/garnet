@@ -22,14 +22,15 @@ Before editing, read:
 
 Verify with `git` before relying on any line here.
 
-- **Latest tagged release: `v0.8.1`** (annotated tag → commit `8107c01`,
-  re-cut signed 2026-06-07). `v0.8.0` (`cc165e8`) and `v0.4.2`/`v0.5.0` precede it.
-- **Binary status:** the `v0.8.1` Release ships **signed `garnet-0.8.1-*` CLI
-  binaries** (`.deb`/`.rpm`/darwin tarballs) + a CycloneDX SBOM + a GPG-signed
-  `SHA256SUMS.asc` (public key in `docs/garnet-release-signing.pub.asc`, fpr
-  `04D5…6ED1`; verify per `docs/release-signing.md`). The S91–S120 trust-kernel
-  work is in the published 0.8.1 binary. The older `v0.8.0` tag still carries the
-  `garnet-0.5.0-*` build. Still research-grade, not production/1.0.
+- **Latest tagged release: `v0.8.2`** (annotated tag → commit `f25ffb5`,
+  2026-09-11). `v0.8.1` (`8107c01`), `v0.8.0` (`cc165e8`) and `v0.4.2`/`v0.5.0`
+  precede it.
+- **Binary status:** the `v0.8.2` Release ships **signed `garnet-0.8.2-*` CLI
+  binaries**: Linux x86_64 and ARM64 `.deb`/`.rpm`/tarballs (glibc 2.39+), macOS
+  arm64/x86_64 tarballs and a Windows x86_64 zip, plus a CycloneDX SBOM and a
+  GPG-signed `SHA256SUMS.asc` (public key in `docs/garnet-release-signing.pub.asc`,
+  fpr `04D5…6ED1`; verify per `docs/release-signing.md`). The older `v0.8.0` tag
+  still carries the `garnet-0.5.0-*` build. Still research-grade, not production/1.0.
 - **Remotes:** `origin` = `Island-Dev-Crew/garnet` (main); `fork` =
   `Navigata1/garnet` (PRs open from the fork → origin).
 - Garnet is a **research-grade prototype (v0.x.x), not production / 1.0.**

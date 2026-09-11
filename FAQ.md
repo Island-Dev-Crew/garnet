@@ -52,7 +52,7 @@ Memory: Paper VI Experiment 4 measured 21% peak RSS reduction on the multi-agent
 
 ## Is Garnet production-ready?
 
-**<!-- truth:latest_tag -->v0.8.1<!-- /truth --> is research-grade and not production-complete.** Specifically:
+**<!-- truth:latest_tag -->v0.8.2<!-- /truth --> is research-grade and not production-complete.** Specifically:
 
 - **Ready**: scaffolding (`garnet new`), the four-language converter (`garnet convert`), deterministic + signed builds (`garnet build --deterministic --sign`), CapCaps enforcement, scaffolded `garnet test`, the <!-- truth:primitive_count -->80<!-- /truth --> bridged stdlib registry primitives, parser fuzz harness, rules-based compiler advisory mode, the S16 LSP surface (diagnostics, hover, go-to-definition, document/workspace symbols, CST-precise rename), release-backed VSIX assets, signed Linux, macOS and Windows CLI release assets, and deterministic cross-machine CI.
 - **Active-partial**: macOS Studio packaging without Developer ID notarization, Windows/Linux Studio target proof, bytecode VM performance path, LSP hover/go-to-def screenshot hardening, promo video human/aesthetic acceptance, proof/benchmark measurements, and provider-neutral advisory handoffs.
