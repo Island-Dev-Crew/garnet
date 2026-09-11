@@ -137,7 +137,7 @@ async function loadExamples() {
   // Open on the canonical Hello example, named in the picker, unless the
   // visitor has already edited the source.
   const hello = [...ui.example.options].find((option) => option.value === "hello");
-  if (hello && ui.source.value === ui.source.defaultValue) {
+  if (hello && !sourceEdited) {
     hello.selected = true;
     ui.source.value = hello.dataset.source;
   }
@@ -148,7 +148,10 @@ ui.example.addEventListener("change", () => {
   if (option?.dataset.source) ui.source.value = option.dataset.source;
 });
 // Once the source no longer matches the chosen preset, the picker says so.
+// Any edit also stops the Hello preset from replacing the source later.
+let sourceEdited = false;
 ui.source.addEventListener("input", () => {
+  sourceEdited = true;
   const option = ui.example.selectedOptions[0];
   if (option?.dataset.source && option.dataset.source !== ui.source.value) ui.example.value = "";
 });
