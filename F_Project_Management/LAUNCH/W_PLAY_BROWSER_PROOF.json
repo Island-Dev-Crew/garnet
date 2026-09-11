@@ -1,8 +1,8 @@
 {
   "schema": "garnet.w-play.browser-proof/1",
-  "captured_at": "2026-09-11T04:48:11.964Z",
+  "captured_at": "2026-09-11T05:01:18.827Z",
   "verdict": "pass",
-  "duration_ms": 1278,
+  "duration_ms": 1279,
   "execution": {
     "engine": "playwright-browser-page",
     "browser": "152.0.7977.83",
@@ -11,8 +11,8 @@
     "service_workers": "blocked"
   },
   "git": {
-    "tested_commit": "147c338e5b70647b7bd738b7e3201cdeee13626e",
-    "tested_tree": "54cac9db838f9e26b012042408901b75ae1f8297",
+    "tested_commit": "f827200619e23070af17fb32d6d83513e052658e",
+    "tested_tree": "4f8c5e1e18d5b72bb6bfa95f01e70403d553cec0",
     "runtime_inputs_clean": true
   },
   "host": {
@@ -36,7 +36,7 @@
   },
   "runtime_inputs": {
     "schema": "garnet.w-play.runtime-inputs/1",
-    "sha256": "73d25d0a695eca9e7fc0b67e84181b0ee492646325a65ab9be64239d3c4d1985",
+    "sha256": "cb21d10769513ed8586ca75582434c5b43f631dd578d8249804ed2013b005b25",
     "files": {
       "apps/garnet-studio/package-lock.json": {
         "bytes": 44280,
@@ -51,16 +51,16 @@
         "sha256": "790a70b22ea92e6f7004eec6196c0807f612d149a2bb40115d31d44ab68927fa"
       },
       "docs/playground.html": {
-        "bytes": 8928,
-        "sha256": "55e551e802df21cab4e95c78bac9d39b7e11ca929e39e51beb5750ed56e8c6a2"
+        "bytes": 8973,
+        "sha256": "79747cd760fb06c9c73cb9def52b0e96da916f4b5d4735a4576b58032a25a577"
       },
       "docs/playground/examples.json": {
         "bytes": 3016,
         "sha256": "eb1b7edb207c2a695b7d51c5b3c4acfac51bf42eb706c0da520b5586a0534d18"
       },
       "docs/playground/live.js": {
-        "bytes": 6270,
-        "sha256": "9fe7c49bab4e8a2f3deebd3b93a2f1de97c60eeb882b16111fbb0852dfbb2f58"
+        "bytes": 6530,
+        "sha256": "882b91d1a5503ee6f6d03d9c934c0541a25bd960426aecbd553004e1dd31a45d"
       },
       "docs/playground/pkg/garnet_wasm.js": {
         "bytes": 6581,
@@ -187,7 +187,7 @@
   },
   "visual": {
     "screenshot": "ops/lane2a/evidence/30-playground-browser.png",
-    "screenshot_sha256": "f7dadd3f6c4fe041403752da95c4fc383ce9de325fc1918bcbe6ed55283908c2",
+    "screenshot_sha256": "072cde9b0b022b922c8f519fa78612d482e554e323b451bdab3d250a92601341",
     "desktop": {
       "horizontal_overflow": false,
       "runtime_state": "ready"
