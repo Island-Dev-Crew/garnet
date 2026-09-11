@@ -55,13 +55,14 @@ maintainer = "Jon <jon@island-dev-crew.example>"
 copyright = "2026, Island Development Crew"
 license-file = ["../LICENSE", "0"]
 extended-description = """\
-Garnet is a dual-mode agent-native language platform. Managed mode
-(def + ARC + exceptions) feels Ruby-like. Safe mode (@safe + fn + ownership
-+ Result) feels Rust-like. The mode boundary auto-bridges errors and
-ARC-affine semantics. First-class memory primitives for agent cores,
-typed actors with bounded mailboxes + Ed25519 signed hot-reload,
-deterministic signed manifests, and a 136-test security surface across
-four hardening layers."""
+Garnet is a research-grade (v0.x) dual-mode, agent-native language. Managed
+mode (def + ARC + exceptions) feels like Ruby; safe mode (@safe + fn +
+ownership + Result) feels like Rust, and the mode boundary bridges errors and
+ownership. Functions declare their OS authority with @caps(...), and the
+garnet CLI checks those declarations and turns the capability surface into
+manifests, diffs, in-toto seals and acceptance decisions. At run time only
+@caps and @max_depth are enforced, and @caps only for the 15 entry-gated host
+primitives. See garnet(1)."""
 depends = "$auto, ca-certificates"
 section = "devel"
 priority = "optional"

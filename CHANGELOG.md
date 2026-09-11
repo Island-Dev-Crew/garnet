@@ -9,24 +9,53 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ## [0.8.2] — 2026-09-02 (workspace version bump; the `v0.8.2` tag is not cut)
 
-### Also in 0.8.2 — the binary and the man page no longer name an old release (2026-09-11)
+### Also in 0.8.2 — what the packages say matches what the binary does (2026-09-11)
 
 - **Fixed:** `garnet --version` prints the crate description, and that
   description ended in "(v0.8.1)", so a 0.8.2 build would have reported
-  `garnet 0.8.2 (… (v0.8.1).)`. The description no longer carries a version;
-  the number comes from the workspace `version` alone. It was the only
-  release version compiled into the binaries: a scan of every crate manifest
-  and of the shipped crates' sources found no other.
+  `garnet 0.8.2 (… (v0.8.1).)`. The description no longer carries a version.
+  `garnet doc` stamped "v0.4.2 markdown extractor" into every file it wrote,
+  and the `doc` and `fmt` help described a "v0.4.2 scope" and a "v0.5.x"
+  roadmap; those labels are gone. The version strings left in the crates
+  linked into `garnet` are component and edition versions, such as
+  `garnet-parser 0.3.0` and the `v1.0` edition.
+- **Fixed:** the `--version` banner listed `garnet-actor-runtime 0.4.0` with
+  signed hot-reload, but `garnet` does not link that crate; the line is gone.
+  `garnet concurrency` said each actor is an OS thread with an mpsc mailbox
+  that `@mailbox` overrides, and `garnet trust-report` said the same about
+  threads. Both now describe what the CLI runs: actors inside the
+  interpreter, each with a bounded mailbox of 1024 messages unless
+  `Actor.spawn(capacity)` sets another size; `@mailbox(N)` is range-checked
+  and sets nothing. The README and the Debian package description now say the
+  same, and the package description no longer cites a "136-test security
+  surface". `garnet --help` no longer says a plain `build` emits a manifest.
+- **Fixed:** the `web-api` template that `garnet new` writes said the service
+  listens on :8080, that `@caps(net_internal)` lifts the private-network block
+  and that `@mailbox(1024)` applies back-pressure. None of that holds for the
+  generated project, whose listener is a placeholder; its README and comments
+  now say so.
+- **Fixed:** the systemd unit the `.deb` and `.rpm` install could not start.
+  Its `ExecStartPre` ran `garnet verify` on `/usr/bin/garnet`, which reads
+  Garnet source and fails on the binary; it cited a signer pin
+  (`/etc/garnet/expected_signer.txt`) that nothing reads; and it ran as a
+  `garnet` user the packages do not create. The unit now verifies
+  `/etc/garnet/entry.garnet` against its signed manifest, runs as a transient
+  user with a private state directory for the machine key, and says that the
+  signature check does not pin a key. Under systemd 252 the old unit fails at
+  `ExecStartPre`; the new one runs a signed program to a clean exit and
+  refuses one edited after signing.
 - **Fixed:** the `garnet(1)` man page, which the `.deb` and `.rpm` install,
-  still had the header `garnet 0.4.2` / "April 2026", listed none of the
-  trust-spine subcommands (`caps`, `diff-caps`, `seal`, `agent-loop`,
-  `sandbox`, `caps-log` and ten more), pointed at `Garnet_Final/` paths that no
-  longer exist, and linked `garnet-lang.org/docs`, which returns 404. It now
-  documents the 29 subcommands `garnet --help` lists, states that only `@caps`
-  and `@max_depth` are enforced, and names no release in its header. A new
-  test, `garnet-cli/tests/man_page.rs`, fails when the page and `--help` list
-  different subcommands or the header carries a version number; against the
-  previous page both of its tests fail.
+  had the header `garnet 0.4.2` / "April 2026", was missing 16 of the 29
+  subcommands `garnet --help` lists (among them `caps`, `diff-caps`, `seal`,
+  `agent-loop`, `sandbox` and `caps-log`), pointed at `Garnet_Final/` paths
+  that no longer exist, and linked `garnet-lang.org/docs`, which returns 404.
+  It now documents every `--help` entry, including both `verify` forms; the
+  limits of `garnet check`; which primitives `@caps` enforces at run time;
+  that `garnet sandbox` applies no policy; and the exit statuses as measured.
+  Its header names no release. A new test, `garnet-cli/tests/man_page.rs`,
+  fails when the page and `--help` list different entries or the header
+  carries a version number; against the previous page both of its tests
+  fail.
 
 ### Also in 0.8.2 — playground: a runtime that fails to load says so (2026-09-11)
 

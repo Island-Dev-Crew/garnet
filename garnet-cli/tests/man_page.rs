@@ -1,15 +1,15 @@
 //! The shipped man page (`garnet-cli/man/garnet.1`, installed by the .deb and
-//! .rpm at /usr/share/man/man1/garnet.1) documents exactly the subcommands
-//! `garnet --help` lists, and its header names no release.
+//! .rpm at /usr/share/man/man1/garnet.1) documents exactly the subcommand
+//! entries `garnet --help` lists, and its header names no release.
 
-use std::collections::BTreeSet;
 use std::process::Command;
 
 const MAN_PAGE: &str = include_str!("../man/garnet.1");
 
-/// Subcommand names from `garnet --help`. Entries are indented exactly four
+/// Subcommand entries from `garnet --help`, sorted, one per entry (so the
+/// two `verify` forms count twice). Entries are indented exactly four
 /// spaces; continuation lines are indented further and skipped.
-fn help_subcommands() -> BTreeSet<String> {
+fn help_subcommands() -> Vec<String> {
     let out = Command::new(env!("CARGO_BIN_EXE_garnet"))
         .arg("--help")
         .output()
@@ -21,7 +21,7 @@ fn help_subcommands() -> BTreeSet<String> {
     );
     let text = String::from_utf8(out.stdout).expect("help output is UTF-8");
     let mut in_list = false;
-    let mut names = BTreeSet::new();
+    let mut names = Vec::new();
     for line in text.lines() {
         if line == "SUBCOMMANDS:" {
             in_list = true;
@@ -32,20 +32,21 @@ fn help_subcommands() -> BTreeSet<String> {
         }
         if let Some(rest) = line.strip_prefix("    ") {
             if rest.starts_with(|c: char| c.is_ascii_lowercase()) {
-                names.insert(rest.split_whitespace().next().unwrap().to_string());
+                names.push(rest.split_whitespace().next().unwrap().to_string());
             }
         }
     }
+    names.sort();
     names
 }
 
-/// Subcommand names tagged in the man page: the first word of each `.B` line
-/// that follows a `.TP` inside the SUBCOMMANDS section, with roff's `\-`
-/// read as `-`.
-fn man_subcommands() -> BTreeSet<String> {
+/// Subcommand entries tagged in the man page, sorted: the first word of each
+/// `.B` line that follows a `.TP` inside the SUBCOMMANDS section, with
+/// roff's `\-` read as `-`.
+fn man_subcommands() -> Vec<String> {
     let mut in_section = false;
     let mut after_tp = false;
-    let mut names = BTreeSet::new();
+    let mut names = Vec::new();
     for line in MAN_PAGE.lines() {
         if let Some(title) = line.strip_prefix(".SH ") {
             in_section = title.trim() == "SUBCOMMANDS";
@@ -65,11 +66,12 @@ fn man_subcommands() -> BTreeSet<String> {
                     .split_whitespace()
                     .next()
                     .expect("tag names a subcommand");
-                names.insert(tag.replace("\\-", "-"));
+                names.push(tag.replace("\\-", "-"));
             }
             after_tp = false;
         }
     }
+    names.sort();
     names
 }
 
@@ -81,11 +83,10 @@ fn man_page_lists_exactly_the_help_subcommands() {
         "parsed too few subcommands from --help: {help:?}"
     );
     let man = man_subcommands();
-    let missing: Vec<_> = help.difference(&man).collect();
-    let extra: Vec<_> = man.difference(&help).collect();
-    assert!(
-        missing.is_empty() && extra.is_empty(),
-        "man/garnet.1 drifted from `garnet --help`: missing {missing:?}; not in --help {extra:?}"
+    assert_eq!(
+        man, help,
+        "man/garnet.1 drifted from `garnet --help` (entries are compared one for one, so both \
+         `verify` forms must appear in each)"
     );
 }
 

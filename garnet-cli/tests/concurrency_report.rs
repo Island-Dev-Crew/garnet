@@ -34,7 +34,11 @@ fn reports_actor_protocols_ask_and_tell() {
     assert!(s.contains("actor Counter"), "{s}");
     assert!(s.contains("get/0: ask"), "get() -> Int is an ask: {s}");
     assert!(s.contains("incr/0: tell"), "incr() is a tell: {s}");
-    assert!(s.contains("BOUNDED mpsc mailbox"), "model note: {s}");
+    assert!(s.contains("BOUNDED mailbox"), "model note: {s}");
+    assert!(
+        !s.contains("Each actor is an OS thread"),
+        "the CLI runs actors in the interpreter, not one OS thread each: {s}"
+    );
 }
 
 #[test]

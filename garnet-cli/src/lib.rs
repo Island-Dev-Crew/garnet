@@ -102,9 +102,6 @@ pub fn print_version() {
         "  memory    garnet-memory 0.3.0 (Mnemos — Memory Core reference impl; production roadmap in MEMORY_CORE_ROADMAP.md, Rung 5)"
     );
     println!(
-        "  actor-rt  garnet-actor-runtime 0.4.0 (Result-returning ask, hot-reloadable + signed reload, Rung 6)"
-    );
-    println!(
         "  stdlib    garnet-stdlib 0.4.0 ({} registry primitives, dispatch derived from the registry)",
         garnet_stdlib::registry::all_prims().len()
     );
@@ -166,7 +163,7 @@ pub fn print_help() {
     );
     println!("    build  [--deterministic] [--sign <key>] <file>");
     println!(
-        "                                     Emit a (deterministic, optionally signed) manifest"
+        "                                     Parse and report; --deterministic writes a manifest, --sign signs it"
     );
     println!(
         "    verify <path>                    Acceptance gate: edition-aware parse + safe-mode"

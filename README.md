@@ -113,8 +113,9 @@ and aimed at agent-authored code:
   Ed25519 signature; releases ship a CycloneDX SBOM and GPG-signed checksums.
 - **Agent-native memory** — `memory working|episodic|semantic|procedural` as language keywords,
   so the runtime knows which kind it's allocating.
-- **Typed actors** — bounded mailboxes, compiler-checked protocols, Ed25519-signed hot-reload
-  with BLAKE3 schema fingerprints.
+- **Typed actors** — compiler-checked protocols and bounded mailboxes in the interpreter the CLI
+  runs. Ed25519-signed hot-reload with BLAKE3 schema fingerprints is in the separate Rust actor
+  runtime (`garnet-actor-runtime`), which the `garnet` binary does not include.
 
 [GitHub's language bar](https://api.github.com/repos/Island-Dev-Crew/garnet/languages) counted this repository as **38.7% Python** at the 2026-08-31 `f6d3285` main snapshot because the trust and verification harness is Python; the product compiler and runtime are Rust.
 

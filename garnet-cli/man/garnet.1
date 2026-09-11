@@ -62,9 +62,10 @@ Parse \fIFILE\fR and print a structural summary.
 
 .TP
 .B check \fR[\fB\-\-suggest\fR] [\fB\-\-format\fR \fBhuman\fR|\fBjson\fR] \fIFILE\fR
-Run the safe-mode checker, including the CapCaps propagator, which reports
-every function whose declared \fI@caps(...)\fR does not cover the
-capabilities its calls require.
+Run the safe-mode checker.
+Its CapCaps propagator reports an annotated function whose declared
+\fI@caps(...)\fR does not cover what its named, acyclic calls reach; see
+CAPABILITY MODEL for the limits.
 \fB\-\-format json\fR emits structured diagnostics.
 
 .TP
@@ -111,8 +112,11 @@ Emit an in-toto attestation (a seal) for \fIFILE\fR, ready for cosign to sign.
 
 .TP
 .B caps\-log \fIFILE\fR \fR[\fB\-\-log\fR \fIPATH\fR] | \fB\-\-verify\fR \fILOG\fR
-Append the capability surface of \fIFILE\fR to an append-only transparency
-log, or verify an existing log.
+Print a hash-chained entry recording the capability surface of \fIFILE\fR;
+with \fB\-\-log\fR, append it to the local file \fIPATH\fR.
+\fB\-\-verify\fR checks the hash chain of a local log.
+This is a local stub: there is no witness, signed tree head or inclusion
+proof.
 
 .TP
 .B agent\-loop \-\-baseline \fIOLD\fR \fB\-\-proposal\fR \fINEW\fR
@@ -122,9 +126,9 @@ support it, then seal it.
 .TP
 .B verify \fIPATH\fR \fR[\fB\-\-external\-band\fR \fI1\-5\fR] [\fB\-\-caps\-baseline\fR \fIOLD\fR]
 Acceptance gate: an edition-aware parse and safe-mode check that reports a
-merge-confidence band, the minimum of the internal, external and diff-caps
-bands.
-Exits nonzero on a fatal finding.
+merge-confidence band, the minimum of the signals present: the internal
+check, plus \fB\-\-external\-band\fR and the diff-caps comparison when given.
+A low band alone does not fail the command; a fatal finding does.
 
 .TP
 .B trust\-report \fIFILE\fR
@@ -163,8 +167,11 @@ Report the actor concurrency contract (ask and tell protocols).
 
 .TP
 .B build \fR[\fB\-\-deterministic\fR] [\fB\-\-sign\fR \fIKEYFILE\fR] \fIFILE\fR
-Emit a provenance manifest for \fIFILE\fR at \fIFILE\fB.manifest.json\fR.
-With \fB\-\-sign\fR, sign it with the Ed25519 key stored in \fIKEYFILE\fR.
+Parse \fIFILE\fR and report its item count.
+With \fB\-\-deterministic\fR, also write a provenance manifest, which records
+the source and AST hashes, to \fIFILE\fB.manifest.json\fR.
+\fB\-\-sign\fR requires \fB\-\-deterministic\fR and signs that manifest with
+the Ed25519 key stored in \fIKEYFILE\fR.
 
 .TP
 .B verify \fIFILE\fR \fIMANIFEST\fR \fR[\fB\-\-signature\fR]
@@ -196,9 +203,18 @@ Print the subcommand summary.
 
 .SH CAPABILITY MODEL
 A function declares its OS authority with \fI@caps(...)\fR.
-The checker computes the capabilities each function needs from what it
-calls and reports a coverage error when the declaration leaves one out:
-a function that calls \fIread_file\fR must declare \fI@caps(fs)\fR.
+\fBgarnet check\fR follows named calls from each annotated function, through
+unannotated helpers, and reports a coverage error when a capability the chain
+needs is missing from the declaration: if \fBmain\fR declares \fI@caps()\fR
+and calls a helper that calls \fIread_file\fR, it reports that \fBmain\fR does
+not declare \fBfs\fR.
+The check has limits.
+It builds no edge for a call through a function value (an alias, a
+parameter, an actor handler), inside a closure or a string interpolation, or
+through \fImethod_missing\fR; it does not check the body of an unannotated
+function on its own; and a primitive reached only through a cycle of calls is
+not reported.
+\fBgarnet run\fR does not run the checker.
 \fBmain\fR must declare its capabilities; \fI@caps()\fR is correct for a
 program that needs none.
 .PP
@@ -207,14 +223,33 @@ The capabilities are \fBfs\fR (file-system read and write), \fBnet\fR
 \fBenv\fR (process environment), \fBproc\fR (process spawn and signals),
 \fBtime\fR (wall clock and sleep), \fBffi\fR (\fIextern "C"\fR calls) and
 \fB*\fR (a wildcard, rejected in safe-mode functions).
+\fBnet_internal\fR and \fBffi\fR are checker vocabulary only: no runtime
+primitive is gated on them.
 
 .SH ENFORCEMENT SCOPE
-Only \fI@caps\fR and \fI@max_depth\fR are enforced at run time, by both
-the tree-walking interpreter and the bytecode VM.
-\fI@bounded\fR fuel budgets, memory and time limits, and \fI@mailbox\fR are
-declared but not enforced.
-OS-level sandboxing (seccomp) is applied on Linux only; on macOS and Windows
-it is declared but not enforced.
+At run time, \fI@caps\fR is enforced for the 15 entry-gated host primitives:
+the file-system calls (\fIread_file\fR, \fIwrite_file\fR, \fIread_bytes\fR,
+\fIwrite_bytes\fR, \fIlist_dir\fR), \fInet::tcp_connect\fR, the environment
+and process calls, and \fIstd::log::to_file\fR.
+Calling one traps unless both the calling chain and the program's entry
+function declare the capability.
+The \fBtime\fR primitives and UUID v4/v7 need \fI@caps(time)\fR at check time
+only and run undeclared.
+\fI@max_depth\fR is enforced.
+Both hold identically in the tree-walking interpreter and the bytecode VM.
+.PP
+\fI@bounded\fR fuel budgets, memory and time limits, and the \fI@mailbox\fR
+annotation are declared but not enforced.
+.PP
+\fBgarnet sandbox\fR generates a seccomp, WASI and egress policy and applies
+none of it.
+On Linux that policy has been applied, and shown to trap, by a separate C
+reference harness (\fItools/seccomp\-apply\fR in the source repository) that
+these packages do not install; on macOS and Windows it is not applied.
+.PP
+The full table is
+\fIC_Language_Specification/GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md\fR in the
+source repository.
 
 .SH EXAMPLES
 Create a new CLI project and run it:
@@ -251,14 +286,16 @@ garnet convert ruby legacy.rb
 Success.
 .TP
 .B 1
-The command ran and reported a problem, such as a checker diagnostic or a
-failed verification.
+The command ran and reported a problem: for example a checker diagnostic, a
+file that cannot be read, or a \fBdiff\-caps\fR result in which the new
+surface grants more authority.
 .TP
 .B 2
-Usage error: an unknown subcommand, a missing argument or a malformed flag.
+A usage error (an unknown subcommand, a missing argument or a malformed
+flag), and also a failed manifest check by
+\fBverify\fR \fIFILE\fR \fIMANIFEST\fR.
 .PP
-\fBdiff\-caps\fR and the \fBverify\fR acceptance gate use a nonzero status as
-described under SUBCOMMANDS.
+Scripts should treat any nonzero status as failure.
 
 .SH FILES
 .TP
@@ -272,7 +309,7 @@ Machine-specific; do not commit it.
 Local directories vendored by \fBgarnet add\fR.
 .TP
 .I FILE\fB.manifest.json\fR
-The manifest written by \fBgarnet build\fR.
+The manifest written by \fBgarnet build \-\-deterministic\fR.
 
 .SH SEE ALSO
 The project site is \%https://garnet\-lang.org; start with

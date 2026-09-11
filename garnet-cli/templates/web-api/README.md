@@ -1,43 +1,45 @@
 # {{name}}
 
-An HTTP/1.1 API service generated with `garnet new --template web-api`.
+An HTTP/1.1 API service scaffold generated with `garnet new --template web-api`.
+It does not listen on a port yet: `serve_forever` in `src/main.garnet` is a
+placeholder for the listener you write.
 
 ## Run
 
 ```sh
 garnet run src/main.garnet
-# service listens on :8080
+# prints a startup line and the placeholder message, then exits
 ```
 
 ## Capability model
 
-This service declares `@caps(net, time)`:
+`main` declares `@caps(net, time)`, the budget for the service you build:
 
-- **net** — bind the listener, accept connections, send responses. The
-  v3.4 NetDefaults gate denies outbound connections to RFC1918 / loopback
-  / link-local by default; lift the gate per-function with
-  `@caps(net_internal)` only if the service genuinely needs to reach
-  internal addresses.
-- **time** — request deadlines, timestamp logging.
+- **net** — network access. Outbound TCP (`net::tcp_connect`) always applies
+  Garnet's strict network policy, which refuses private, loopback and
+  link-local addresses; `@caps(net_internal)` does not lift that at run time.
+  `net::tcp_listen` is not bridged into the runtime yet.
+- **time** — timestamps and deadlines (`wall_clock_ms`).
 
-The service CANNOT touch the filesystem, spawn subprocesses, or hot-reload
-without adding the corresponding cap. `garnet check` will reject the
-build if any function transitively invokes a primitive whose required
-cap is not in the service's declared set.
+`garnet check` reports an annotated function whose named calls reach a
+primitive needing a capability that function does not declare. At run time,
+the file-system, process, environment and outbound-network primitives also
+trap unless `main` declares their capability; the `time` primitives are
+checked by `garnet check` only. The exact scope is
+`C_Language_Specification/GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md` in the
+Garnet repository.
 
-## BoundedMail
+## Bounded mailboxes
 
-Each actor handling requests should cap its mailbox explicitly:
+Each managed actor has a bounded mailbox: 1024 messages unless you pass
+another size to `spawn`. A `tell` to a full mailbox fails.
 
 ```garnet
-actor RequestHandler {
-  @mailbox(1024)   # BoundedMail; back-pressures at 1024 in-flight
-  protocol handle(req: Request) -> Response
-  ...
-}
+let handler = RequestHandler.spawn(256)
 ```
 
-See v3.4 Security V2 §3 for the BoundedMail rationale.
+The `@mailbox(N)` annotation is range-checked by `garnet check` but does not
+set the capacity.
 
 ## Deployment
 

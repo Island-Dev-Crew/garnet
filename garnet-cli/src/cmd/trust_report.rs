@@ -1,16 +1,15 @@
 //! `garnet trust-report <file>` — structural trust report for a Garnet source.
 //!
-//! ## v0.5.1 scope (honest, S7)
+//! ## Scope (S7)
 //!
 //! Counts the actor declarations + capability surface in a parsed Garnet
 //! source and prints a one-screen report including the literal line
-//! `actors: N / threads: N`. The `threads` count equals the `actors`
-//! count because `garnet-actor-runtime/src/runtime.rs` spawns one OS
-//! thread per actor (see its header: "Spawn-and-mailbox runtime: each
-//! actor gets one OS thread plus a mpsc"). The bridge from managed-mode
-//! `actor` declarations to that runtime is the existing path; this
-//! command surfaces the count so external CI / dogfood blocks can
-//! grep for it.
+//! `actors: N / threads: N`. That line is a structural count taken from
+//! the source: `threads` repeats the actor count because the separate
+//! `garnet-actor-runtime` crate spawns one OS thread per actor. This CLI
+//! does not link that runtime; `garnet run` executes actors inside the
+//! interpreter, without a thread per actor. The line stays because
+//! external CI and dogfood blocks grep for it.
 //!
 //! What this command DOES today:
 //! - Parses + checks the source, then walks the AST.
@@ -21,7 +20,7 @@
 //! - Prints the per-actor and per-function caps surface so reviewers see
 //!   what OS authority the program asks for.
 //!
-//! What this command does NOT do (honest partial):
+//! What this command does NOT do:
 //! - Spawn the runtime or measure actual thread counts. The report is
 //!   structural, derived from the source AST.
 //! - Verify mailbox sizes or message-type Sendable boundaries beyond
@@ -84,14 +83,13 @@ pub fn run(path: PathBuf) -> ExitCode {
     };
     let counts = collect(&module);
 
-    // The header carries the literal `actors: N / threads: N` line because
-    // every actor in `garnet-actor-runtime/src/runtime.rs` gets one OS
-    // thread plus an mpsc mailbox by construction. This is structural,
-    // not a live runtime measurement.
+    // The header keeps the literal `actors: N / threads: N` line (see the
+    // module docs): a structural count, not a runtime measurement.
     let n_actors = counts.actors.len();
     println!("garnet trust-report for {}", path.display());
     println!("actors: {n_actors} / threads: {n_actors}");
-    println!("  (one OS thread + mpsc mailbox per actor per actor-runtime/src/runtime.rs)");
+    println!("  (counted from the source: `garnet run` executes actors in the interpreter;");
+    println!("   one OS thread per actor is the separate garnet-actor-runtime crate)");
     println!();
     println!("Actors ({n_actors}):");
     if counts.actors.is_empty() {
@@ -114,7 +112,7 @@ pub fn run(path: PathBuf) -> ExitCode {
         );
     }
     println!();
-    println!("Honest scope: this report is structural (AST-derived); it does not");
+    println!("Scope: this report is structural (AST-derived); it does not");
     println!("spawn the runtime, measure live thread counts, or audit mailbox sizes.");
 
     ExitCode::SUCCESS

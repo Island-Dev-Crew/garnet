@@ -1,58 +1,56 @@
-# Linux .deb + .rpm packaging (v4.2 Phase 6A)
+# Linux .deb and .rpm packaging
+
+Release packages are built by `.github/workflows/linux-packages.yml` on every
+`v*` tag. To build them locally from the workspace root:
 
 ## Build `.deb`
 
 ```sh
 cargo install cargo-deb
-cd garnet-cli
-cargo build --release
-cargo deb
-# Output: target/debian/garnet_0.4.2-1_amd64.deb
+cargo build --release -p garnet-cli
+(cd garnet-cli && cargo deb --no-build)
+# Output: target/debian/garnet_<version>-1_<arch>.deb
 ```
 
 ## Build `.rpm`
 
 ```sh
 cargo install cargo-generate-rpm
-cd garnet-cli
-cargo build --release
-cargo generate-rpm
-# Output: target/generate-rpm/garnet-0.4.2-1.x86_64.rpm
+cargo build --release -p garnet-cli
+cargo generate-rpm -p garnet-cli
+# Output: target/generate-rpm/garnet-<version>-1.<arch>.rpm
 ```
 
-## Install + verify (Debian/Ubuntu)
+## Install and check (Debian/Ubuntu)
 
 ```sh
-sudo apt install ./target/debian/garnet_0.4.2-1_amd64.deb
+sudo apt install ./target/debian/garnet_<version>-1_<arch>.deb
 garnet --version
-# Expected: wordmark + "Rust Rigor. Ruby Velocity. One Coherent Language."
+man garnet
 ```
 
-## Install + verify (Fedora/RHEL)
+## Install and check (Fedora/RHEL)
 
 ```sh
-sudo dnf install ./target/generate-rpm/garnet-0.4.2-1.x86_64.rpm
+sudo dnf install ./target/generate-rpm/garnet-<version>-1.<arch>.rpm
 garnet --version
 ```
 
 ## Systemd service
 
-The package installs `/usr/lib/systemd/system/garnet-actor.service`
-**disabled by default**. Operators who want the actor-runtime to start
-at boot run:
+The packages install `/usr/lib/systemd/system/garnet-actor.service`,
+disabled. It runs one Garnet program, `/etc/garnet/entry.garnet`, and its
+`ExecStartPre` refuses to start unless that file matches the signed
+deterministic manifest beside it (`garnet build --deterministic --sign`
+writes `entry.garnet.manifest.json`). The check proves the signature is valid;
+it does not pin which key signed it, so keep `/etc/garnet` writable by root
+only. The unit's comments give the setup steps. The service runs as a
+transient user (`DynamicUser=yes`) and keeps its machine key and run cache in
+`/var/lib/garnet`.
 
-```sh
-sudo systemctl enable --now garnet-actor
-```
+Under systemd 252 (Debian bookworm) the unit runs a signed entry program to a
+clean exit and refuses to start one edited after signing.
 
-The service unit runs an `ExecStartPre=garnet verify ... --signature`
-check before starting, so a tampered binary or missing signature
-prevents the runtime from coming up. See the service file for the
-hardening defaults (NoNewPrivileges, ProtectSystem=strict, restrictive
-SystemCallFilter, etc.).
+## Package repositories
 
-## Repository signing (future)
-
-Post-MIT: package a `.list` file for APT and a `.repo` file for DNF
-pointing at `pkg.garnet-lang.org` so consumers can `apt install garnet`
-/ `dnf install garnet` without hand-fetching the bundle.
+There is no APT or DNF repository yet; install the release packages directly.

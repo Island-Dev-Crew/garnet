@@ -61,8 +61,11 @@ pub fn run(path: PathBuf) -> ExitCode {
     }
     println!(
         "\nGarnet concurrency model: ACTORS (not async/await — `async` is reserved for a future \
-         edition). Each actor is an OS thread with a BOUNDED mpsc mailbox (the default capacity \
-         closes the unbounded-mailbox DoS class; override with @mailbox). See \
+         edition). In this CLI, actors run inside the interpreter: each one has a BOUNDED \
+         mailbox of 1024 messages unless `Actor.spawn(capacity)` sets another size, and a \
+         `tell` to a full mailbox fails. The @mailbox(N) annotation is range-checked by \
+         `garnet check` but does not set the capacity. The thread-per-actor runtime is the \
+         separate garnet-actor-runtime crate, which this binary does not include. See \
          C_Language_Specification/GARNET_CONCURRENCY_CONTRACT.md."
     );
     ExitCode::SUCCESS

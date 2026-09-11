@@ -1,6 +1,6 @@
 //! `garnet fmt <file>` — whitespace-normalize a Garnet source file.
 //!
-//! ## v0.4.2 scope (honest)
+//! ## Scope
 //!
 //! This is **not** a full code formatter. The parser is trivia-dropping
 //! (comments and whitespace are not preserved on the AST), so a
@@ -155,9 +155,8 @@ fn print_help() {
     println!("    --check          report if changes are needed; exit 1 if so (CI use)");
     println!("    --stdout         print the normalized form; leave the file untouched");
     println!();
-    println!("  v0.4.2 scope: whitespace only. Full AST-driven formatting (alignment,");
-    println!("  import sorting, spacing rules) is a v0.5.x roadmap item — gates on a");
-    println!("  trivia-preserving CST in the parser.");
+    println!("  Scope: whitespace only. It does not align code, sort imports or apply");
+    println!("  spacing rules; that needs a parser that preserves comments and layout.");
 }
 
 #[cfg(test)]
