@@ -6,12 +6,12 @@ findings. `F_Project_Management/WINDOWS_AUDIT_S1_S80.md` is the tracked burn-dow
 ledger; the machine ledgers (`.dogfood/windows-core-audit.json`,
 `.dogfood/windows-audit-goal.json`) are committed beside it.
 
-This gate asserts the burn-down is honestly tracked: every open finding appears in
+This gate asserts the burn-down is explicitly tracked: every open finding appears in
 the doc **with an owning slice**, and the committed machine ledgers pin HEAD
 `cc165e8`. It does not run any Windows command (planning lane is Mac); Windows
 proofs are recorded back into the doc by the Windows lane.
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 A tracking gate over imported audit evidence. It does not re-run the audit or claim
 any finding fixed — it only enforces that each open finding has an owning slice.
 """

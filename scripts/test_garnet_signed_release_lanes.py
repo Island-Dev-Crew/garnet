@@ -35,7 +35,7 @@ class SignedReleaseLanesTests(unittest.TestCase):
         by_id = {l.id: l for l in s.lanes}
         self.assertEqual(by_id["release-artifact"].status, "deferred")
         self.assertEqual(by_id["supply-chain-attestation"].status, "partial")
-        # External-tool lanes are honestly NOT claimed as Garnet-owned.
+        # External-tool lanes are explicitly NOT claimed as Garnet-owned.
         self.assertFalse(by_id["release-artifact"].owned_by_garnet)
         self.assertFalse(by_id["supply-chain-attestation"].owned_by_garnet)
 

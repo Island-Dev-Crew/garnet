@@ -12,7 +12,7 @@ the evidence-integrity gate to verify every sealed bundle — not merely that do
 exist. `--lenient` drops the cross-OS-matrix hard requirement for a python-only CI
 job; default is strict.
 
-## CRITICAL honesty scope (do not soften)
+## CRITICAL scope (do not soften)
 This gate does **NOT** cut a tag and does **NOT** push one. "READY TO CUT" means the
 evidence supports the decision — it is a recommendation. The v0.8.1 cut (s120) is a
 human act reserved to Jon; the release TAG stays Jon's. Garnet remains a
@@ -66,7 +66,7 @@ DEFERRED_FOR_V0_8_1 = [
     "Adopted capability-manifest standard — RFC-0001 is intent + reference impl; "
     "no OWASP/LF body has adopted anything.",
     "Two LOW red-team findings (caps-log tail; seal subject-digest) — open within "
-    "their honest stub/mitigated scope.",
+    "their explicit stub/mitigated scope.",
 ]
 
 HONESTY_ANCHORS = [
@@ -125,7 +125,7 @@ def _runway(ledger: dict) -> list[SliceState]:
 
 
 def _low_confidence(ledger: dict) -> list[str]:
-    """Merged runway slices whose recorded confidence is below 5 (honest surfacing,
+    """Merged runway slices whose recorded confidence is below 5 (explicit surfacing,
     not a hard fail — e.g. s107's null-confidence Mac-Codex row)."""
     by_id = {s["id"]: s for s in ledger.get("slices", [])}
     out = []
@@ -235,12 +235,12 @@ def render_markdown(r: ReleaseReadiness) -> str:
     if r.low_confidence_slices:
         lines += [
             "",
-            f"## Merged-but-sub-5-confidence (surfaced honestly): "
+            f"## Merged-but-sub-5-confidence (surfaced explicitly): "
             f"{', '.join(r.low_confidence_slices)}",
         ]
     lines += ["", "## Deferred / out of scope for v0.8.1"]
     lines += [f"- {d}" for d in r.deferred_for_v0_8_1]
-    lines += ["", "## Honesty anchors (verbatim — do not soften)"]
+    lines += ["", "## Claim anchors (verbatim — do not soften)"]
     lines += [f"- {a}" for a in r.honesty_anchors]
     lines += ["", f"> {r.tag_note}", ""]
     return "\n".join(lines)

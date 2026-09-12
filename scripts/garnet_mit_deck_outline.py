@@ -105,7 +105,7 @@ def _slides(
         DeckSlide(
             id="converter-advisory",
             title="Converter Strategy",
-            headline="Convert where fidelity is honest; advise where native boundaries matter.",
+            headline="Convert where fidelity holds; advise where native boundaries matter.",
             body=[
                 "provider-neutral handoff packets exist; provider-backed LLM conversion is not active.",
                 "Active deterministic conversion remains Rust, Ruby, Python, and Go.",
@@ -149,7 +149,7 @@ def _slides(
                 "docs/status.html",
                 "scripts/smoke_garnet_pages_pwa.sh",
             ],
-            speaker_note="Use this to show polish and honesty together: compelling front door, precise status room.",
+            speaker_note="Use this to show polish and accuracy together: compelling front door, precise status room.",
         ),
         DeckSlide(
             id="blocked-gates",

@@ -19,7 +19,7 @@ class GovernanceTests(unittest.TestCase):
     def test_governance_present_and_honest(self) -> None:
         r = gv.read_status()
         self.assertTrue(r.governance_present)
-        self.assertTrue(r.governance_honest, "GOVERNANCE.md must keep the honest single-maintainer status")
+        self.assertTrue(r.governance_honest, "GOVERNANCE.md must keep the explicit single-maintainer status")
 
     def test_rfc_process_present(self) -> None:
         self.assertTrue(gv.read_status().rfc_process_present)
@@ -28,7 +28,7 @@ class GovernanceTests(unittest.TestCase):
         self.assertTrue(gv.read_status().rfc0001_references_standard)
 
     def test_rfc0001_marks_donation_as_intent_not_accepted(self) -> None:
-        # The honesty anchor: no foundation has adopted anything.
+        # The claim anchor: no foundation has adopted anything.
         self.assertTrue(gv.read_status().rfc0001_marks_intent_not_accepted)
 
     def test_gate_passes_on_real_repo(self) -> None:

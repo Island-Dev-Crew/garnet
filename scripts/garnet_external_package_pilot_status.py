@@ -10,9 +10,9 @@ runs in the `cargo test --workspace` matrix on every OS.
 This reporter is a static anti-overclaim gate (the agent-contracts CI job builds
 no compiler): it verifies the pilot test exists, the registry-stub infrastructure
 (`build_index`/`resolve`/`verify_package` + the slopguard) is present, and the
-honest-scope doc exists. The binary-backed proof is the cargo matrix.
+scope doc exists. The binary-backed proof is the cargo matrix.
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 A LOCAL filesystem registry-stub pilot, NOT a live public ecosystem: no HTTP, no
 publish/auth, no SemVer ranges, no signatures. The slopguard is a deterministic
 heuristic ("prompt to verify"), not a security guarantee.
@@ -91,11 +91,11 @@ def render_markdown(r: PilotStatus) -> str:
         + (f" (missing: {r.missing_markers})" if r.missing_markers else ""),
         f"- registry infra (build_index/resolve/verify_package): {'yes' if r.registry_infra_present else 'NO'}",
         f"- slopguard (slopsquatting heuristic): {'yes' if r.slopguard_present else 'NO'}",
-        f"- honest-scope doc present: {'yes' if r.doc_present else 'NO'}",
+        f"- scope doc present: {'yes' if r.doc_present else 'NO'}",
         "",
         "The pilot resolves an external package, BLAKE3-verifies it, detects "
         "tampering, refuses a nonexistent dependency, and flags a hallucinated "
-        "near-miss (slopsquatting). Honest scope: a LOCAL filesystem registry-stub "
+        "near-miss (slopsquatting). Scope: a LOCAL filesystem registry-stub "
         "pilot, NOT a live public ecosystem; the slopguard is a heuristic, not a "
         "security guarantee.",
         "",

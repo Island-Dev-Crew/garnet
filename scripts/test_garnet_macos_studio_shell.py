@@ -158,7 +158,7 @@ class GarnetMacosStudioShellTests(unittest.TestCase):
         self.assertGreaterEqual(
             total,
             30,
-            "every control should explain itself with claim-boundary-honest copy",
+            "every control should explain itself with claim-boundary-accurate copy",
         )
 
     # ── Row 8 · Evidence readers ─────────────────────────────────────────
@@ -249,7 +249,7 @@ class GarnetMacosStudioShellTests(unittest.TestCase):
         self.assertIn('firstIndex(of: "{")', cmd, "must slice from the first JSON brace")
 
     def test_enforced_declared_legend_boundary_is_not_widened(self) -> None:
-        # M4: the legend is a load-bearing honesty surface. Pin the
+        # M4: the legend is a load-bearing claim surface. Pin the
         # enforced-vs-declared boundary so a future edit cannot silently widen it:
         # ONLY @caps + @max_depth are enforced; @bounded/@mailbox/memory/time are
         # declared; the OS sandbox is deferred and seccomp is Linux-only.
@@ -292,7 +292,7 @@ class GarnetMacosStudioShellTests(unittest.TestCase):
         # The four gates, in order.
         for gate in ('case check', 'case diffCaps', 'case run', 'case seal'):
             self.assertIn(gate, bridge)
-        # Honesty anchors: verdict from decision.md, capability+depth only, seal != approval.
+        # Claim anchors: verdict from decision.md, capability+depth only, seal != approval.
         self.assertIn("never recomputed", bridge.lower(), "the verdict-verbatim rule must be documented")
         self.assertIn("@caps + @max_depth", bridge, "the enforced kernel pair must be named")
         # The seal gate must only pass when a seal was actually parsed.
@@ -317,7 +317,7 @@ class GarnetMacosStudioShellTests(unittest.TestCase):
         self.assertIn('"sudo"', bridge, "the allowlist must forbid sudo")
         self.assertIn("| sh", bridge, "the allowlist must forbid remote-pipe execution")
         self.assertIn("rm -rf", bridge, "the allowlist must forbid destructive removals")
-        # The honesty copy: generate-only, never runs, no sudo, no profile edit.
+        # The claim copy: generate-only, never runs, no sudo, no profile edit.
         section = read(APP / "Sources" / "GarnetStudio" / "BootstrapSection.swift")
         self.assertIn("never runs them", section)
         self.assertIn("never uses sudo", section)
@@ -331,7 +331,7 @@ class GarnetMacosStudioShellTests(unittest.TestCase):
         self.assertIn('case distribution = "Distribution"', main, "distribution section must be wired")
         self.assertIn("$0 != .distribution", main, "distribution must be a power-only section")
         bridge = read(DISTRIBUTION_BRIDGE)
-        self.assertIn("unsigned and un-notarized", bridge, "the honest posture must be stated")
+        self.assertIn("unsigned and un-notarized", bridge, "the explicit posture must be stated")
         self.assertIn("Notarization (Apple notary)", bridge)
         self.assertIn("Code signing (Developer ID)", bridge)
         self.assertIn("Gatekeeper", bridge)
@@ -342,7 +342,7 @@ class GarnetMacosStudioShellTests(unittest.TestCase):
         )
 
     def test_converter_help_makes_no_os_sandbox_overclaim(self) -> None:
-        # M1 honesty-cleanup: the Convert action help once claimed "sandboxed
+        # M1 claim-cleanup: the Convert action help once claimed "sandboxed
         # output" while the converter writes plain files to the local evidence
         # dir with NO OS sandbox. The overclaim must not return. (A future M4
         # "declared-not-enforced" deferred-row label is a different surface; this
@@ -350,7 +350,7 @@ class GarnetMacosStudioShellTests(unittest.TestCase):
         main = read(MAIN)
         self.assertNotIn("sandboxed", main, "the 'sandboxed output' converter overclaim must not return")
         self.assertNotIn("sandbox", main, "no Studio copy may claim an OS sandbox the converter does not provide")
-        self.assertIn("Active conversion", main, "Convert help must still describe active conversion honestly")
+        self.assertIn("Active conversion", main, "Convert help must still describe active conversion explicitly")
 
 
 if __name__ == "__main__":

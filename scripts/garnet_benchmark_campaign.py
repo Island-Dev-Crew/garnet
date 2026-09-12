@@ -7,7 +7,7 @@ reporter inventories the full **campaign** — every bench, what it measures, an
 the command to run it — and gates that the declared set still exists (a bench
 cannot silently vanish).
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 This inventories and verifies the harnesses **exist**; it does **not** run them
 and reports **no measurements**. Criterion numbers are environment-specific and
 are recorded by an explicit campaign run (`cargo bench`), not fabricated here.

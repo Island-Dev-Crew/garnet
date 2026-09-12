@@ -11,7 +11,7 @@ This complements `smoke_garnet_novel_compositions.py` (which fuses Paper-VI
 contributions) and `smoke_garnet_studio_domain_matrix.py` (the 12 domains) — this
 one is about *style*: what good Garnet looks like.
 
-## Honest scope
+## Scope
 A style/discipline corpus, not a performance or coverage claim. "Idiomatic" here
 means: clean checker output + the hardening-band idioms, proven deterministically.
 """

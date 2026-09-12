@@ -588,7 +588,7 @@ def render_markdown(r: WasmReadiness) -> str:
         f"- wasmtime present here (optional): {r.wasmtime_present}",
         f"- miette `fancy` detected: {r.miette_fancy_detected} (recorded WV-5 build proves it is not a blocker)",
         "",
-        "Honest scope: WV-5 alone proves a real interpreter-to-Wasm build and "
+        "Scope: WV-5 alone proves a real interpreter-to-Wasm build and "
         "Node execution. Browser readiness is promoted separately only when the "
         "committed package and strict Playwright proof both validate.",
         "",

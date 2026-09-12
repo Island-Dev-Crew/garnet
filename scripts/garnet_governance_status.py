@@ -4,15 +4,15 @@
 Formalizes how changes land through a documented **RFC + edition process** over
 ad-hoc BDFL fiat, and records the intent to donate Garnet's capability-manifest
 format to a neutral body (OWASP / Linux Foundation) as RFC-0001 — while staying
-honest that Garnet is a single-maintainer research-grade project.
+explicit that Garnet is a single-maintainer research-grade project.
 
 This reporter is a static anti-overclaim gate. It verifies:
-  - `GOVERNANCE.md` exists and states the honest single-maintainer status;
+  - `GOVERNANCE.md` exists and states the explicit single-maintainer status;
   - the RFC process (`rfcs/README.md` + `0000-template.md`) exists;
   - RFC-0001 exists, references the real capability-manifest standard, and marks
     the OWASP/LF donation as intent/draft (NOT an accepted standard).
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 Single-maintainer governance for a research-grade prototype — no steering
 committee, no foundation, no adopted standard. The donation is intent + a draft.
 """
@@ -53,7 +53,7 @@ def read_status() -> GovernanceStatus:
     gov = _read(GOVERNANCE)
     rfc0001 = _read(RFC_0001)
     governance_present = bool(gov)
-    # Honest status: must disclaim a steering committee / institutional permanence.
+    # Explicit status: must disclaim a steering committee / institutional permanence.
     governance_honest = "single-maintainer governance" in gov and "not" in gov.lower()
     rfc_process = RFC_README.is_file() and RFC_TEMPLATE.is_file()
     rfc0001_present = bool(rfc0001)
@@ -90,7 +90,7 @@ def render_markdown(r: GovernanceStatus) -> str:
         "",
         f"_Schema {r.schema}._",
         "",
-        f"- `GOVERNANCE.md` present + honest single-maintainer status: "
+        f"- `GOVERNANCE.md` present + explicit single-maintainer status: "
         f"{'yes' if r.governance_present and r.governance_honest else 'NO'}",
         f"- RFC process (README + template): {'yes' if r.rfc_process_present else 'NO'}",
         f"- RFC-0001 (cap-manifest standard) present: {'yes' if r.rfc0001_present else 'NO'}",
@@ -99,7 +99,7 @@ def render_markdown(r: GovernanceStatus) -> str:
         f"- RFC-0001 marks the OWASP/LF donation as intent/draft (not accepted): "
         f"{'yes' if r.rfc0001_marks_intent_not_accepted else 'NO'}",
         "",
-        "Honest scope: single-maintainer governance for a research-grade prototype "
+        "Scope: single-maintainer governance for a research-grade prototype "
         "— no steering committee, no foundation, no adopted standard. The "
         "capability-manifest donation is intent + a draft (RFC-0001).",
         "",

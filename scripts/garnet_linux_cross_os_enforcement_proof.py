@@ -357,7 +357,7 @@ def render_markdown(data: dict[str, object]) -> str:
         for row in traps:
             if isinstance(row, dict):
                 lines.append(f"- `{row.get('trap')}`: `{row.get('status')}`")
-    lines.extend(["", "## Honest Scope", ""])
+    lines.extend(["", "## Scope", ""])
     scope = data.get("honest_scope", [])
     if isinstance(scope, list):
         for item in scope:

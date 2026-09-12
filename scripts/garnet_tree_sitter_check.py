@@ -6,12 +6,12 @@ rule thunks are never executed) and asserts the grammar's name and that every
 expected CORE rule is present. This validates the grammar's *structure* without
 the tree-sitter CLI.
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 This does **not** compile the grammar (`tree-sitter generate`) or run corpus
 tests — that requires the tree-sitter CLI, which is not present in this build
 environment. It checks that `grammar.js` is loadable and declares the expected
 core rules. If Node is unavailable, the check reports `node_available: false`
-and the gate is a no-op (it cannot run), reported honestly.
+and the gate is a no-op (it cannot run), reported explicitly.
 """
 from __future__ import annotations
 
@@ -134,7 +134,7 @@ def render_markdown(c: TreeSitterCheck) -> str:
             "",
             f"**Grammar structurally OK: {'yes' if c.ok else 'NO'}.**",
             "",
-            "Honest scope: structural validation only — not compiled "
+            "Scope: structural validation only — not compiled "
             "(`tree-sitter generate`) or corpus-tested here (CLI absent).",
             "",
         ]

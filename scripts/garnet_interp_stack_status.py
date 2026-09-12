@@ -13,7 +13,7 @@ This is a static anti-regression gate: it asserts the interpreter entry in
 `run_interpreter_inner`, so a future edit cannot quietly drop back to the default
 stack.
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 Raising the stack covers deep-but-finite recursion (e.g. the audit fixture); it is
 NOT an unbounded guarantee — recursion past the large stack still overflows, which
 is the `@bounded` enforcement story (S89). Mac-authored + Mac-tested (a 5000-deep

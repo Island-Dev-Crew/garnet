@@ -401,7 +401,7 @@ def render_markdown(data: dict) -> str:
     lines.extend(
         [
             "",
-            "## Honest Scope",
+            "## Scope",
             "",
             *[f"- {item}" for item in data.get("honest_scope", [])],
             "",

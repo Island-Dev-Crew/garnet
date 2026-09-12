@@ -10,13 +10,13 @@ change and the loop ACCEPTS it ONLY on enforced evidence —
   3. `seal` (S38): an accepted proposal is attested, recording the autonomous
      acceptance + agent/model/gate-version provenance (S65/S66; Rule 3).
 
-This static anti-regression gate asserts the harness, its honesty anchor, and the
+This static anti-regression gate asserts the harness, its claim anchor, and the
 accept/reject/trap tests stay in place. (It is intentionally NOT wired into CI:
 adding a CI gate is a gate-definition change and would require a human merge per
 the gate-independence rule; the loop's CI-enforced proof is the
 `garnet-cli/tests/agent_loop.rs` integration suite under `cargo test --workspace`.)
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 Acceptance rests ONLY on the two ENFORCED ceilings — `@caps` host-authority +
 `@max_depth` recursion. The verdict is "accepted on capability+depth evidence",
 never "fully bounded"/"sandboxed"/"safe". `@bounded` (Wasmtime fuel), memory, time,
@@ -75,7 +75,7 @@ def read_status() -> AgentLoopStatus:
         and "tool=garnet-agent-loop" in h
         and "gate_version" in h
     )
-    honesty = "ACCEPTED on capability+depth evidence" in h and "declared-not-enforced" in h
+    anchors_ok = "ACCEPTED on capability+depth evidence" in h and "declared-not-enforced" in h
     # S103: an accept emits the 4 trust artifacts into --record-dir; the demo +
     # its test (accept + the widening-refusal punch) exist.
     four_artifact = (
@@ -99,7 +99,7 @@ def read_status() -> AgentLoopStatus:
         and three_stage
         and rule2
         and rule3
-        and honesty
+        and anchors_ok
         and four_artifact
         and dispatched
         and tests_present
@@ -110,7 +110,7 @@ def read_status() -> AgentLoopStatus:
         three_stage_gate=three_stage,
         rule2_widening_refused=rule2,
         rule3_provenance_recorded=rule3,
-        honesty_anchor_present=honesty,
+        honesty_anchor_present=anchors_ok,
         four_artifact_dossier=four_artifact,
         dispatched=dispatched,
         accept_reject_tests_present=tests_present,
@@ -133,7 +133,7 @@ def render_markdown(r: AgentLoopStatus) -> str:
         f"{'yes' if r.rule3_provenance_recorded else 'NO'}",
         f"- S103 — accept emits the 4 trust artifacts + demo (accept & widen-refusal): "
         f"{'yes' if r.four_artifact_dossier else 'NO'}",
-        f"- honesty anchor (\"accepted on capability+depth evidence\"): "
+        f"- claim anchor (\"accepted on capability+depth evidence\"): "
         f"{'yes' if r.honesty_anchor_present else 'NO'}",
         f"- dispatched + accept/reject/trap tests present: "
         f"{'yes' if r.dispatched and r.accept_reject_tests_present else 'NO'}",
@@ -152,7 +152,7 @@ def main(argv: list[str] | None = None) -> int:
         "--gate",
         action="store_true",
         help="exit non-zero unless the agent-loop harness, its 3-stage gate, the "
-        "Rule-2 refusal, the Rule-3 provenance, the honesty anchor, and the "
+        "Rule-2 refusal, the Rule-3 provenance, the claim anchor, and the "
         "accept/reject/trap tests are all present.",
     )
     args = parser.parse_args(list(argv) if argv is not None else None)

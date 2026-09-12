@@ -3,7 +3,7 @@
 
 Makes the Garnet VS Code extension marketplace-READY (every field a publish
 requires is present and cannot silently regress) and documents the publish path —
-while honestly deferring the credentialed publish itself.
+while explicitly deferring the credentialed publish itself.
 
 The publish path has three steps:
 1. **Build the VSIX** — `vscode-extension.yml` builds it on every push.
@@ -13,7 +13,7 @@ The publish path has three steps:
    (credential/account territory; a release-truth decision for Jon, not made
    here). This gate ensures step 3 would not fail on missing manifest metadata.
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 This does not publish anything and does not bundle marketplace credentials. It
 checks the extension manifest + assets are publish-ready and reports the path;
 the actual OpenVSX/Marketplace publish is deferred to a human with the tokens.
@@ -100,7 +100,7 @@ def render_markdown(r: PublishReadiness) -> str:
         lines.append(f"- {step}")
     lines += [
         "",
-        "Honest scope: this gate makes the extension marketplace-READY and "
+        "Scope: this gate makes the extension marketplace-READY and "
         "documents the path; it does not publish and does not bundle credentials. "
         "The OpenVSX/Marketplace publish needs OVSX_TOKEN/VSCE_PAT — deferred to a "
         "human with the tokens.",

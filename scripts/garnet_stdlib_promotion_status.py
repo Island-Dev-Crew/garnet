@@ -22,7 +22,7 @@ This reporter parses `garnet-stdlib/src/registry.rs` and verifies the wave was
 **principled and scoped**: every `core::*` primitive is Stable, and `std::*`
 still carries Experimental entries (proof it was not a blanket flip).
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 Promotion reflects a real stability judgement, not warning-suppression. Examples
 that use `std::*` experimental utilities (e.g. `novel_04`–`novel_06`) still emit
 correct stability warnings; only the core-only example (`novel_07`) goes clean.
@@ -95,7 +95,7 @@ def render_markdown(r: PromotionStatus) -> str:
         "",
         "The wave promotes the foundational core layer (frozen semantics, no host "
         "authority) and KEEPS std::* experimental (host authority / evolving APIs). "
-        "Honest scope: a real stability judgement, not warning-suppression — std::*"
+        "Scope: a real stability judgement, not warning-suppression — std::*"
         "-using examples still warn correctly; only core-only examples go clean.",
         "",
     ]

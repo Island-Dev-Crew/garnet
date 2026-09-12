@@ -12,7 +12,7 @@ the CI matrix, distinguishing two axes per OS:
   tarball, deb/rpm). This is the "just packaging" axis; its absence is reported,
   not gated.
 
-**Honest scope:** this is a single-OS checkout. The script does **not** run
+**Scope:** this is a single-OS checkout. The script does **not** run
 Windows/Linux builds — it verifies the *CI matrix* covers them and gates against
 silent regression of that coverage. The actual cross-OS execution is attested by
 CI, not by this script. `--gate` exits non-zero if any target OS lacks the
@@ -87,7 +87,7 @@ def _distribution_evidence(os_name: str) -> tuple[bool, str]:
         return present, "linux-packages.yml (deb/rpm smoke)" if present else "none"
     if os_name == "windows-latest":
         # The Windows *Studio* installer is tracked separately; there is no
-        # Windows CLI distribution artifact today. Report honestly.
+        # Windows CLI distribution artifact today. Report explicitly.
         present = False
         return present, "none (Windows CLI packaging not yet wired; Studio installer is separate)"
     return False, "none"

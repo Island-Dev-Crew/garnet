@@ -6,7 +6,7 @@ recorder keeps the evidence: ACCEPT emits the four trust artifacts and verifies
 the transparency-log chain; REJECT proves both a capability widening and an
 over-depth proposal are refused and never sealed.
 
-Honest scope: WSL/Linux rows produced by this script are reproduction /
+Scope: WSL/Linux rows produced by this script are reproduction /
 portability evidence unless a separate real-kernel enforcement proof says
 otherwise. This script does not prove seccomp, OS-sandbox application, Wasmtime
 fuel, production readiness, or v1.0 readiness.
@@ -274,7 +274,7 @@ def render_markdown(data: dict) -> str:
             f"- widening refused and never sealed: {'yes' if data['reject_widen']['refused'] and not data['reject_widen']['sealed'] else 'NO'}",
             f"- over-depth refused and never sealed: {'yes' if data['reject_overdepth']['refused'] and not data['reject_overdepth']['sealed'] else 'NO'}",
             "",
-            "Honest scope: accepted on capability + depth evidence only. WSL/Linux rows "
+            "Scope: accepted on capability + depth evidence only. WSL/Linux rows "
             "from this recorder are portability-repro evidence unless paired with a "
             "separate real-kernel enforcement proof. This is not seccomp, OS-sandbox, "
             "Wasmtime fuel, production, or v1.0 proof.",

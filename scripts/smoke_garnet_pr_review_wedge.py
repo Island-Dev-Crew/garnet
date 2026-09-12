@@ -15,7 +15,7 @@ liable to wave through. The demo proves the machine catches it:
 3. `garnet sandbox` (S46) shows the consequence: egress flips `deny-all` →
    `allow`.
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 The "human PR review collapses under AI volume" claim is the **motivating
 thesis** (see `F_Project_Management/GARNET_PR_REVIEW_WEDGE.md`), **not** a
 measurement made here. This harness measures only that the machine gates fire as

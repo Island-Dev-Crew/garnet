@@ -450,7 +450,7 @@ def render_markdown(data: dict[str, object]) -> str:
             f"| `{comparison.get('id')}` | `{str(byte_equal).lower()}` | "
             f"{comparison.get('delta', '')} |"
         )
-    lines.extend(["", "## Honest Scope", ""])
+    lines.extend(["", "## Scope", ""])
     lines.extend(f"- {item}" for item in data.get("honest_scope", []) if isinstance(item, str))
     lines.append("")
     return "\n".join(lines)

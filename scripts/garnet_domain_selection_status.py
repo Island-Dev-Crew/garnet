@@ -3,12 +3,12 @@
 
 S105 selects the demonstrator domains for the v0.8.1 real-world-proof finale and,
 for each, the specific trust-artifact delta a non-Garnet build cannot produce —
-honestly grounded in what Garnet actually produces (the 4 artifacts + the diff-caps
+explicitly grounded in what Garnet actually produces (the 4 artifacts + the diff-caps
 refusal + the enforced @caps/@max_depth trap). Each domain ships a per-OS Stage-X
-proof command. This static gate asserts the selection, its honesty filter, and the
+proof command. This static gate asserts the selection, its claim filter, and the
 enforced-only scope stay in place.
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 All domains rest ONLY on the enforced ceilings (`@caps` + `@max_depth`).
 `@bounded`/memory/time/`@mailbox`/OS-sandbox remain declared-not-enforced. The
 novelty is the INTEGRATION (a sealed, autonomous capability-diff gate), not any
@@ -63,7 +63,7 @@ def read_status() -> DomainSelectionStatus:
     mcp_corrected = (
         "does **NOT** accept" in doc and ".mcpcaps" in doc
     ) or "diff-caps` does **NOT**" in doc
-    honesty = (
+    anchors_ok = (
         "accepted on capability + depth evidence" in doc
         and 'never "fully bounded"' in doc
     )
@@ -74,7 +74,7 @@ def read_status() -> DomainSelectionStatus:
         and enforced_only
         and rejected
         and mcp_corrected
-        and honesty
+        and anchors_ok
         and stage_x
     )
     return DomainSelectionStatus(
@@ -85,7 +85,7 @@ def read_status() -> DomainSelectionStatus:
         enforced_only=enforced_only,
         rejected_overclaims_present=rejected,
         mcp_overclaim_corrected=mcp_corrected,
-        honesty_anchor_present=honesty,
+        honesty_anchor_present=anchors_ok,
         stage_x_proofs_present=stage_x,
         ok=ok,
     )
@@ -101,10 +101,10 @@ def render_markdown(r: DomainSelectionStatus) -> str:
         f"- demonstrator domains: {r.domain_count} ({'ok' if r.enough_domains else 'OUT OF RANGE'})",
         f"- enforced-only scope (@caps + @max_depth; rest declared-not-enforced): "
         f"{'yes' if r.enforced_only else 'NO'}",
-        f"- rejected-overclaims (honesty filter) present: "
+        f"- rejected-overclaims (claim filter) present: "
         f"{'yes' if r.rejected_overclaims_present else 'NO'}",
         f"- mcp `diff-caps` overclaim corrected: {'yes' if r.mcp_overclaim_corrected else 'NO'}",
-        f"- honesty anchor (\"accepted on capability + depth evidence\"): "
+        f"- claim anchor (\"accepted on capability + depth evidence\"): "
         f"{'yes' if r.honesty_anchor_present else 'NO'}",
         f"- per-OS Stage-X proofs + cross-OS-complete rule: "
         f"{'yes' if r.stage_x_proofs_present else 'NO'}",
@@ -121,9 +121,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--gate",
         action="store_true",
-        help="exit non-zero unless the selection doc has 5-10 domains, the honesty "
+        help="exit non-zero unless the selection doc has 5-10 domains, the accuracy "
         "filter (rejected overclaims incl. the corrected mcp diff-caps claim), the "
-        "enforced-only scope, the honesty anchor, and per-OS Stage-X proofs.",
+        "enforced-only scope, the claim anchor, and per-OS Stage-X proofs.",
     )
     args = parser.parse_args(list(argv) if argv is not None else None)
 

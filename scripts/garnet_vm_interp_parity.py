@@ -17,7 +17,7 @@ deterministic surface — and deliberately ignore stderr, because:
 Program *output* (stdout) is deterministic across cache state, so it is the
 sound channel for a semantic-parity comparison.
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 This is **corpus-based** parity over the shipped examples, NOT a proof of total
 semantic equivalence between the backends. Divergences (if any) are reported, not
 hidden. The stderr wrapper-prefix difference is a known, cosmetic,
@@ -116,7 +116,7 @@ def render_markdown(r: ParityResult) -> str:
         "",
         "Parity is compared on the deterministic surface (stdout + exit code); the "
         "VM's cosmetic `vm error:` stderr prefix and episodic-cache stderr notes are "
-        "ignored by design. Honest scope: corpus-based parity over the shipped "
+        "ignored by design. Scope: corpus-based parity over the shipped "
         "examples, not a proof of total backend equivalence.",
         "",
     ]

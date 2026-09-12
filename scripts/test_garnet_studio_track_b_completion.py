@@ -3,7 +3,7 @@
 
 The capstone dossier records the M0–M8 arc. This pins it to reality so it cannot
 silently drift: it must record every merged slice's PR number, the seven
-multi-pass catches, the green ladder, and the load-bearing honesty anchors
+multi-pass catches, the green ladder, and the load-bearing claim anchors
 (enforced = @caps + @max_depth; the .app is unsigned/un-notarized; etc.).
 """
 from __future__ import annotations

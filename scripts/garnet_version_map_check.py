@@ -16,7 +16,7 @@ It checks two things:
      old labels in prose behind a correction banner; only the bold table cells
      are forbidden, so quoted references do not false-positive.
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 This gate guards documentation consistency only. It does NOT cut, push, or
 authorize any tag — tagging stays a human release-truth decision.
 """

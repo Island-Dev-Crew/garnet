@@ -34,7 +34,7 @@ class Exp3StatusTests(unittest.TestCase):
         self.assertIn("pass", r.recorded_outcome["h3c"])
 
     def test_c3_revision_quote_is_verbatim_in_exec_doc(self) -> None:
-        # The honesty anchor must stay in sync with the source execution doc.
+        # The claim anchor must stay in sync with the source execution doc.
         self.assertTrue(ex.read_status(run_harness=False).c3_revision_in_doc)
 
     def test_gate_passes_running_harness_provider_free(self) -> None:

@@ -30,7 +30,7 @@ class SafeSubsetTests(unittest.TestCase):
         self.assertEqual(ss.main(["--gate", "--format", "json"]), 0)
 
     def test_proposed_mode_marked_not_implemented(self) -> None:
-        # The honesty anchor: the linear/effect mode must be marked NOT IMPLEMENTED.
+        # The claim anchor: the linear/effect mode must be marked NOT IMPLEMENTED.
         spec = ss.SPEC.read_text(encoding="utf-8")
         self.assertIn("NOT IMPLEMENTED", spec)
         self.assertIn("linear capabilities", spec)

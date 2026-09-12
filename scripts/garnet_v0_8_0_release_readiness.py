@@ -4,14 +4,14 @@
 Aggregates the whole v0.8 train into one verdict: are the hardening band
 (S41–S49 + the S50 beta gate) and the adoption band (S51–S59) merged, and do all
 their anti-rot sub-gates still pass? It renders a READY / NOT-READY verdict and
-the honest in/deferred inventory for a `v0.8.0` release.
+the explicit in/deferred inventory for a `v0.8.0` release.
 
-## CRITICAL honesty scope (do not soften)
+## CRITICAL scope (do not soften)
 This gate does **NOT** cut a tag. Since S83, `v0.8.0` may already appear in
 `existing_tags` because Jon cut it as a separate release-truth act. "READY TO TAG"
 means the evidence supports the decision — it is a recommendation, not the act.
 Garnet remains a *research-grade prototype (v0.x.x), not production-complete*; the
-verbatim honesty anchors are surfaced, not changed.
+verbatim claim anchors are surfaced, not changed.
 """
 from __future__ import annotations
 
@@ -57,7 +57,7 @@ DEFERRED_FOR_V0_8_0 = [
 
 HONESTY_ANCHORS = [
     "research-grade prototype (v0.x.x) — not production-complete",
-    "Paper VI scorecard: 4 supported, 2 partial (downgraded honestly), 0 refuted, 1 pending-infra",
+    "Paper VI scorecard: 4 supported, 2 partial (downgraded to match proof), 0 refuted, 1 pending-infra",
     "human/aesthetic acceptance remains open",
 ]
 
@@ -168,10 +168,10 @@ def render_markdown(r: ReleaseReadiness) -> str:
     ]
     for g in r.sub_gates:
         lines.append(f"| {g.name} | {'✅' if g.passed else f'❌ exit {g.exit_code}'} |")
-    lines += ["", "## Deferred for v0.8.0 (honest)"]
+    lines += ["", "## Deferred for v0.8.0"]
     for d in r.deferred_for_v0_8_0:
         lines.append(f"- {d}")
-    lines += ["", "## Honesty anchors (verbatim)"]
+    lines += ["", "## Claim anchors (verbatim)"]
     for a in r.honesty_anchors:
         lines.append(f'- "{a}"')
     lines += ["", f"> {r.tag_note}", ""]

@@ -8,19 +8,19 @@ the reproducible *shape* of the study — the provider-backed measurement is opt
 
   1. inventories the harness (10 snapshots, both lane scripts, aggregate/analyze);
   2. actually RUNS the harness's provider-free mode (both lanes harness-only) and
-     `aggregate.py`, confirming they run and emit the honest "harness-only" shape
+     `aggregate.py`, confirming they run and emit the explicit "harness-only" shape
      without inventing measurements;
   3. records the pre-registered H₃ and the v4.0 OUTCOME **verbatim** — h₃a is the
-     honestly-downgraded partial (6.5% speedup, below the 10% threshold), h₃b and
+     downgraded-to-match-proof partial (6.5% speedup, below the 10% threshold), h₃b and
      h₃c pass — citing `GARNET_v4_0_PAPER_VI_EXECUTION.md`.
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 This reporter does NOT re-measure h₃a's timing speedup (machine-dependent; the
 determinism doctrine forbids inventing measurements) and does NOT call any LLM
 provider. The provider-backed RE-RUN is **pending-infra** (same boundary as Exp 1:
 no provider / API credits). The recorded partial (6.5%, CI [3.1%, 9.8%]) stands;
-the 10% claim is downgraded honestly per the pre-registration. The verbatim Paper
-VI §C3 revision is surfaced as an honesty anchor, not softened.
+the 10% claim is downgraded to match proof per the pre-registration. The verbatim Paper
+VI §C3 revision is surfaced as a claim anchor, not softened.
 """
 from __future__ import annotations
 
@@ -54,7 +54,7 @@ PAPER_VI_C3_REVISION = (
     "On evolving 800-LOC codebases, the compiler-as-agent's measurable speedup is "
     "6.5% (CI [3.1%, 9.8%]); the stronger 10% claim awaits a 5K-LOC re-run."
 )
-# The verbatim honesty anchor — a contiguous fragment that must remain in the
+# The verbatim claim anchor — a contiguous fragment that must remain in the
 # exec doc (the doc wraps the full sentence across blockquote lines).
 C3_VERBATIM_ANCHOR = "6.5% (CI [3.1%, 9.8%])"
 
@@ -151,8 +151,8 @@ def render_markdown(r: Exp3Status) -> str:
         f'**Paper VI §C3 revision (verbatim): "{r.paper_vi_c3_revision}"** '
         f"(present in exec doc: {'yes' if r.c3_revision_in_doc else 'NO'})",
         "",
-        "Honest scope: h₃a's timing speedup is machine-dependent and is NOT "
-        "re-measured here; no LLM is called. The 10% claim is downgraded honestly "
+        "Scope: h₃a's timing speedup is machine-dependent and is NOT "
+        "re-measured here; no LLM is called. The 10% claim is downgraded to match proof "
         "to the recorded 6.5% partial.",
         "",
     ]

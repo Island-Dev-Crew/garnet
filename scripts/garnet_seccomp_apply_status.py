@@ -6,9 +6,9 @@ apply path and PROVES, on a real Linux kernel (the Mac's UTM Debian-12 ARM64 gue
 that the GENERATED policy is applied and deterministically traps a denied syscall
 (`socket` under `@caps(fs)`), while `@caps(fs, net)` allows it (policy-driven). This
 static gate asserts the harness, the reproduce script, the recorded proof, and the
-honest scope stay in place.
+scope stay in place.
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 Linux seccomp only (macOS sandbox-exec / Windows AppContainer named-deferred). It
 proves the GENERATED policy is enforceable, not that a program is "safe". The apply
 path is a reference C harness (the proof VM has no Rust); a garnet-native Linux apply
@@ -74,7 +74,7 @@ def read_status() -> SeccompApplyStatus:
     # Policy-driven: @caps(fs,net) allows socket (same harness, opposite result).
     policy_driven = "ALLOWED" in proof and "policy-driven" in proof
     doc_present = bool(doc)
-    honesty = (
+    anchors_ok = (
         "Linux seccomp only" in doc
         and "named-deferred" in doc
         and "not" in doc
@@ -89,7 +89,7 @@ def read_status() -> SeccompApplyStatus:
         and proof_deterministic
         and policy_driven
         and doc_present
-        and honesty
+        and anchors_ok
     )
     return SeccompApplyStatus(
         schema="garnet.seccomp_apply/v1",
@@ -100,7 +100,7 @@ def read_status() -> SeccompApplyStatus:
         proof_deterministic=proof_deterministic,
         policy_driven=policy_driven,
         doc_present=doc_present,
-        honesty_anchor_present=honesty,
+        honesty_anchor_present=anchors_ok,
         ok=ok,
     )
 
@@ -118,7 +118,7 @@ def render_markdown(r: SeccompApplyStatus) -> str:
         f"{'yes' if r.proof_recorded else 'NO'}",
         f"- trap deterministic (3 runs): {'yes' if r.proof_deterministic else 'NO'}",
         f"- policy-driven (@caps(fs,net) allows socket): {'yes' if r.policy_driven else 'NO'}",
-        f"- record doc + honesty anchors: "
+        f"- record doc + claim anchors: "
         f"{'yes' if r.doc_present and r.honesty_anchor_present else 'NO'}",
         "",
         "S46 generated -> applied + trapped on a real Linux kernel (UTM Debian-12 "
@@ -135,7 +135,7 @@ def main(argv: list[str] | None = None) -> int:
         "--gate",
         action="store_true",
         help="exit non-zero unless the apply harness, the reproduce script, the "
-        "recorded deterministic + policy-driven proof, and the honest-scope doc "
+        "recorded deterministic + policy-driven proof, and the scope doc "
         "are all present.",
     )
     args = parser.parse_args(list(argv) if argv is not None else None)

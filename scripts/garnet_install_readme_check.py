@@ -12,7 +12,7 @@ command the actual installer no longer matches. This gate ties the two together:
 must be byte-identical (modulo the comment prefix), and both must reference the
 canonical install URL. `--gate` fails on any drift.
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 This is a **doc-consistency** check, not a live end-to-end install test (the
 installer pulls GitHub Releases over the network). `install.sh` is separately
 shellcheck-gated (the `shellcheck-installer` CI job); this gate does not duplicate
@@ -93,7 +93,7 @@ def render_markdown(c: InstallReadmeCheck) -> str:
             "",
             f"**Install docs consistent: {'yes' if c.consistent else 'NO'}.**",
             "",
-            "Honest scope: a doc-consistency check, not a live network install "
+            "Scope: a doc-consistency check, not a live network install "
             "test; install.sh is separately shellcheck-gated.",
             "",
         ]

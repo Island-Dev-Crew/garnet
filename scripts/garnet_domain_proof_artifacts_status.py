@@ -3,7 +3,7 @@
 
 The six demonstrator domains (S105) are rendered as proof artifacts in
 `F_Project_Management/GARNET_DOMAIN_PROOF_ARTIFACTS.md`. This gate keeps that doc
-HONEST and CONSISTENT with the recorded Mac-native execution floor
+ACCURATE and CONSISTENT with the recorded Mac-native execution floor
 (`proofs/mac/domains/*/garnet-mac-domain-proofs.json`) — it does not re-run the
 domains (the floor already did, 6/6 passed); it asserts the doc faithfully reflects
 the floor and never over-claims.
@@ -15,10 +15,10 @@ It checks, sourcing truth from the JSON, that:
     `transparency_log.jsonl` (the accept path) is presented as sealed, and the doc
     says "no seal" for the refusal/report domains;
   - the MCP domain is marked enforced=false in BOTH the JSON and the doc;
-  - the honest fences (not seccomp / not OS-sandbox / not Wasmtime fuel / not
+  - the explicit fences (not seccomp / not OS-sandbox / not Wasmtime fuel / not
     production-v1.0 / simulated agent) are present in the doc.
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 This is the macOS-native row only — not Windows/Linux completion (S109), not seccomp,
 not OS-sandbox on macOS, not Wasmtime fuel, not an MCP-host runtime budget, not a
 live-LLM agent, not production/v1.0. The doc must keep those fences.
@@ -115,7 +115,7 @@ def read_status() -> DomainStatus:
     # The doc must say "no seal" for the refusal/report domains (>=3 occurrences).
     refusals_unsealed = low.count("no seal") >= 3
 
-    # MCP domain: enforced=false in the JSON AND surfaced honestly in the doc.
+    # MCP domain: enforced=false in the JSON AND surfaced explicitly in the doc.
     mcp = next((d for d in domains if d.get("id") == "mcp_tool_authority_creep"), {})
     mcp_false = mcp.get("enforced") is False and "enforced=false" in low
 
@@ -164,7 +164,7 @@ def render_markdown(r: DomainStatus) -> str:
             f"{'yes' if r.refusals_unsealed_in_doc else 'NO'}",
             f"- MCP domain enforced=false (JSON + doc): "
             f"{'yes' if r.mcp_enforced_false else 'NO'}",
-            f"- honest fences present: {'yes' if r.fences_present else 'NO'}",
+            f"- explicit fences present: {'yes' if r.fences_present else 'NO'}",
             "",
             "Six domains rendered as Mac-native proof artifacts: accept seals (4 trust "
             "artifacts), the four refusal/report domains do not, the MCP lens is a "
@@ -183,7 +183,7 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="exit non-zero unless the doc faithfully reflects the recorded Mac "
         "domain floor (all 6 labels, only the accept domain sealed, refusals "
-        "unsealed, MCP enforced=false, honest fences).",
+        "unsealed, MCP enforced=false, explicit fences).",
     )
     args = parser.parse_args(list(argv) if argv is not None else None)
 

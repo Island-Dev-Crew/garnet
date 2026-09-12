@@ -407,7 +407,7 @@ def render_markdown(summary: dict) -> str:
     lines.extend(
         [
             "",
-            "## Honesty Notes",
+            "## Scope Notes",
             "",
             "- A passed expected-failure case means Garnet rejected the unsafe path with the expected diagnostic.",
             "- This matrix proves current CLI parse/check/run behavior for the selected examples only.",

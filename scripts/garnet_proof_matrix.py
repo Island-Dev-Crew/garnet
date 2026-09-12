@@ -6,7 +6,7 @@ inventory of (a) the 12 application domains Garnet is demonstrated across and
 (b) the 7 novel Paper VI contributions, each anchored to in-repo evidence whose
 existence is checked.
 
-## Honest scope (do not soften — Paper VI anchors)
+## Scope (do not soften — Paper VI anchors)
 
 This is an **evidence inventory**, not empirical proof and not a re-adjudication
 of Paper VI's per-contribution verdicts. It does NOT claim measurements,
@@ -15,7 +15,7 @@ exist across the repo's docs, so this matrix lists the seven contributions **by
 title** and quotes Paper VI's own aggregate scorecard **verbatim** rather than
 assigning a support verdict per contribution:
 
-    Paper VI scorecard: "4 supported, 2 partial (downgraded honestly),
+    Paper VI scorecard: "4 supported, 2 partial (downgraded to match proof),
     0 refuted, 1 pending-infra"
 
 The matrix proves a narrower, falsifiable thing: every contribution is *exercised*
@@ -35,7 +35,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 PAPER_VI_SCORECARD = (
-    "4 supported, 2 partial (downgraded honestly), 0 refuted, 1 pending-infra"
+    "4 supported, 2 partial (downgraded to match proof), 0 refuted, 1 pending-infra"
 )
 
 
@@ -194,7 +194,7 @@ def render_markdown(m: ProofMatrix) -> str:
         f"**Every contribution exercised by existing evidence: "
         f"{'yes' if m.every_contribution_exercised else 'NO'}.**",
         "",
-        "Honest scope: this inventory shows each contribution is *exercised* by "
+        "Scope: this inventory shows each contribution is *exercised* by "
         "in-repo evidence that exists; it does not re-adjudicate Paper VI's "
         "per-contribution support verdicts (quoted verbatim above) and makes no "
         "measurement, mechanized-proof, or external-study claim.",

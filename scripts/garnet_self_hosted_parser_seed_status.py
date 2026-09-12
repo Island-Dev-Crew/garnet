@@ -13,7 +13,7 @@ binary is built, RUNS the proof: `garnet check` (expects 0 diagnostics) and
 the gate falls back to static well-formedness — the binary-backed proof runs in
 the canonical-examples CI job, which builds the compiler.
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 A SEED toward self-hosting, NOT the production parser (`garnet-parser-v0.3`). It
 recognizes def headers + @caps lines; it does not build a full AST or handle the
 whole grammar (nested braces, expressions, types, comments). Full self-hosting
@@ -122,7 +122,7 @@ def render_markdown(r: SeedStatus) -> str:
         f"- `garnet run` matches expected output: {'yes' if r.run_matches else ('n/a' if not r.binary_available else f'NO {r.missing_run_lines}')}",
         "",
         "The seed parses a subset of Garnet's OWN `def` syntax (name + arity + "
-        "@caps managed flag) using Stable `str::` primitives. Honest scope: a SEED, "
+        "@caps managed flag) using Stable `str::` primitives. Scope: a SEED, "
         "NOT the production parser; no full AST / grammar. Full self-hosting is roadmap.",
         "",
     ]

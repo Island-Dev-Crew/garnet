@@ -705,7 +705,7 @@ def render_markdown(data: dict[str, object]) -> str:
     lines.extend(
         [
             "",
-            "## Honest Scope",
+            "## Scope",
             "",
             "- Mac row only; Windows/Linux completion waits for their committed rows.",
             "- Negative proofs have no seal by design.",

@@ -629,7 +629,7 @@ def render_markdown(data: dict) -> str:
         f"- WSLg display: `{wslg.get('display')}` / `{wslg.get('wayland_display')}`\n"
         f"- Process observed: `{wslg.get('process_observed')}`\n"
         f"- Window observed: `{wslg.get('window_observed')}`\n\n"
-        "## Honest Scope\n\n"
+        "## Scope\n\n"
         f"{honest_scope}\n\n"
         "## Commands\n\n"
         f"{commands}\n"

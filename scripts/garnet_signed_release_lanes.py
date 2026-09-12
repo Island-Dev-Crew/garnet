@@ -16,7 +16,7 @@ actually ACTIVE so it cannot silently regress:
    **PARTIAL**: Garnet produces (and now writes) the predicate; `cosign` is
    detected, never bundled — supply-chain *signing* is external.
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 Garnet does **not** sign its own supply chain and does **not** bundle
 cosign/GPG/minisign. Lanes 2 and 3 are deferred/partial by design; their status
 is reported, not faked. Only lane 1 (in-language manifest signing, which Garnet
@@ -117,7 +117,7 @@ def render_markdown(s: SignedReleaseLanes) -> str:
         f"**Active lane (program-manifest signing) wired: "
         f"{'yes' if s.active_lane_ok else 'NO'}.**",
         "",
-        "Honest scope: Garnet does not sign its own supply chain or bundle "
+        "Scope: Garnet does not sign its own supply chain or bundle "
         "cosign/GPG/minisign. Lanes 2 (release-artifact) and 3 (supply-chain) are "
         "deferred/partial by design — external signing tools. Only lane 1, which "
         "Garnet fully owns, is gated.",

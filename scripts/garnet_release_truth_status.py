@@ -12,7 +12,7 @@ coexisting so they cannot drift apart again:
   2. **The S80 PR produced cut-readiness evidence only** — the gate is advisory;
      the cut was a separate human act. This sentence must remain alongside (1).
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 Pure docs/ledger reconciliation. No tag is cut here (the tag already exists); the
 full Keep-a-Changelog restructure remains a deferred decision for Jon.
 """

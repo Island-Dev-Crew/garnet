@@ -8,10 +8,10 @@ and an explicit "What we refuse to claim") + `scripts/reproduce_ultrapunch.sh`
 (runs accept + reject end-to-end). The reproduction itself is pinned by
 `garnet-cli/tests/ultrapunch_demo.rs` under `cargo test`.
 
-This static gate asserts the record, its honesty anchors, and the two-level
+This static gate asserts the record, its claim anchors, and the two-level
 symmetry stay in place.
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 The record claims acceptance on capability + depth evidence ONLY (`@caps` +
 `@max_depth` enforced). `@bounded`/memory/time/`@mailbox`/OS-sandbox remain
 declared-not-enforced; the agent is simulated/scripted, not a live LLM (S94).
@@ -60,7 +60,7 @@ def read_status() -> UltrapunchStatus:
         and "transparency_log.jsonl" in doc
     )
     two_level = "Two-level symmetry" in doc and "dogfoods the exact acceptance" in doc
-    honesty = (
+    anchors_ok = (
         "accepted on capability + depth evidence" in doc
         and "declared-not-enforced" in doc
         and "What we refuse to claim" in doc
@@ -80,7 +80,7 @@ def read_status() -> UltrapunchStatus:
         record_present
         and four
         and two_level
-        and honesty
+        and anchors_ok
         and refusal
         and script_present
         and demo_pinned
@@ -90,7 +90,7 @@ def read_status() -> UltrapunchStatus:
         record_present=record_present,
         four_artifacts_named=four,
         two_level_symmetry_explicit=two_level,
-        honesty_anchor_present=honesty,
+        honesty_anchor_present=anchors_ok,
         refusal_documented=refusal,
         reproduce_script_present=script_present,
         demo_pinned=demo_pinned,
@@ -109,7 +109,7 @@ def render_markdown(r: UltrapunchStatus) -> str:
         f"- two-level symmetry explicit (Garnet dogfoods its own acceptance): "
         f"{'yes' if r.two_level_symmetry_explicit else 'NO'}",
         f"- refusal (the punch) documented: {'yes' if r.refusal_documented else 'NO'}",
-        f"- honesty anchor + \"What we refuse to claim\": "
+        f"- claim anchor + \"What we refuse to claim\": "
         f"{'yes' if r.honesty_anchor_present else 'NO'}",
         f"- reproduce script + demo test pinned: "
         f"{'yes' if r.reproduce_script_present and r.demo_pinned else 'NO'}",
@@ -128,7 +128,7 @@ def main(argv: list[str] | None = None) -> int:
         "--gate",
         action="store_true",
         help="exit non-zero unless the ultrapunch evidence record, the 4 named "
-        "artifacts, the two-level symmetry, the honesty anchors, the documented "
+        "artifacts, the two-level symmetry, the claim anchors, the documented "
         "refusal, the reproduce script, and the pinned demo are all present.",
     )
     args = parser.parse_args(list(argv) if argv is not None else None)

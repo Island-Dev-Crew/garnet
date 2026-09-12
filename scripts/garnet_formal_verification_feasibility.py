@@ -7,11 +7,11 @@ eBPF-verifier path the trajectory research lists as a multi-year bet.
 `C_Language_Specification/GARNET_FORMAL_VERIFICATION_FEASIBILITY.md` is the study.
 
 This reporter is a static anti-overclaim gate: it verifies the study exists,
-states its verdict and honest scope, and that the foundation it builds on is real
+states its verdict and scope, and that the foundation it builds on is real
 (`explosive.rs`'s undecidability stance is in tree). It does NOT run or imply any
 verification.
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 A feasibility study only — no verifier, no termination proof, no SMT or
 proof-assistant integration, no `@caps`-soundness theorem ships. Assessment, not
 implemented behavior.
@@ -92,7 +92,7 @@ def render_markdown(r: FeasibilityStatus) -> str:
         "Verdict: a verified bounded-loop checker for the safe subset (eBPF-style) "
         "is the feasible first provable increment; `@caps` soundness is feasible "
         "only atop the S74 linear-capability mode; whole-language verification is "
-        "not feasible. Honest scope: a feasibility STUDY — no verifier, no proof, "
+        "not feasible. Scope: a feasibility STUDY — no verifier, no proof, "
         "no theorem ships.",
         "",
     ]

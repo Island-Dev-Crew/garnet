@@ -599,7 +599,7 @@ def render_markdown(data: dict[str, object]) -> str:
     lines.extend(
         [
             "",
-            "## Honest Scope",
+            "## Scope",
             "",
             *[f"- {scope}" for scope in data.get("honest_scope", []) if isinstance(scope, str)],
         ]

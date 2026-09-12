@@ -313,7 +313,7 @@ def _validate_record(record: ProofRecord, expected_platform: str) -> ProofRecord
     if len(record.commands) < 3:
         notes.append("expected s101_gate, bounded_enforcement, and caps_enforcement")
     if expected_platform == "wsl" and "not enforcement" not in record.honesty_scope:
-        notes.append("WSL honesty scope must say not enforcement")
+        notes.append("WSL claim scope must say not enforcement")
     record.notes = notes
     record.ok = record.ok and not notes
     return record
@@ -346,7 +346,7 @@ def render_record_markdown(record: ProofRecord) -> str:
             f"_Schema {record.schema}._",
             "",
             f"- tier: `{record.tier}`",
-            f"- honesty scope: {record.honesty_scope}",
+            f"- claim scope: {record.honesty_scope}",
             f"- git head: `{record.git_head or 'unknown'}`",
             f"- commands: {_commands_summary(record.commands)}",
             f"- required traps: {', '.join(record.required_traps) or 'none'}",

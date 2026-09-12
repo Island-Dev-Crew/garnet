@@ -18,7 +18,7 @@ S86 keeps the default mode lenient for Python-only CI, but adds
 > release-truth decision reserved for Jon. "READY TO CUT" is evidence-backed
 > advice, not the act of tagging. Only `v0.4.2` / `v0.5.0` are tagged today.
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 v0.8.0 is a **research-grade prototype** milestone, not a production/1.0 claim.
 The deferred-for-v0.8.0 list (runtime sandbox enforcement, external signing,
 marketplace publish, WASM execution, LLM tier, empirical Paper VI proofs) stands.
@@ -63,7 +63,7 @@ RUNWAY_GATES = [
 
 HONESTY_ANCHORS = [
     "research-grade prototype (v0.x.x) — not production-complete",
-    "Paper VI scorecard: 4 supported, 2 partial (downgraded honestly), 0 refuted, 1 pending-infra",
+    "Paper VI scorecard: 4 supported, 2 partial (downgraded to match proof), 0 refuted, 1 pending-infra",
     "the v0.8.0 cut is a release-truth decision for Jon — not made by this gate",
 ]
 

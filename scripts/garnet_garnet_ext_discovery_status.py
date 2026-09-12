@@ -13,7 +13,7 @@ This is a static anti-regression gate: it asserts the collector is case-insensit
 and that the capability surfaces still route through the shared collector — so a
 future edit cannot quietly re-introduce the case-sensitive skip.
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 Mac-authored + Mac-unit-tested (macOS preserves filename case, so a `BAD.GARNET`
 fixture reproduces the skip). The end-to-end Windows proof
 (`garnet verify <dir with BAD.GARNET>` → exit 1 on a real Windows FS) is recorded

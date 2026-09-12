@@ -30,7 +30,7 @@ class LlmSuggestReadinessTests(unittest.TestCase):
         r = ls.read_readiness()
         self.assertEqual(
             r.paper_vi_scorecard,
-            "4 supported, 2 partial (downgraded honestly), 0 refuted, 1 pending-infra",
+            "4 supported, 2 partial (downgraded to match proof), 0 refuted, 1 pending-infra",
         )
 
     def test_gate_passes_on_real_repo(self) -> None:
