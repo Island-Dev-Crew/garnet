@@ -2,7 +2,9 @@
 
 **Subject:** Garnet's Memory Core (the architectural subsystem) and **Mnemos** (its v0.4.x reference implementation crate, `garnet-memory-v0.3/`).
 **Status of this document:** Forward-looking. Work items are not committed to a delivery date here; that belongs in per-version handoffs in `F_Project_Management/`.
-**As of:** 2026-05-09 (v0.5 readiness Phase 6P in progress).
+**As of:** 2026-05-09 (v0.5 readiness Phase 6P in progress). Not refreshed since;
+read the state below as of May 2026, not as current — the workspace has released
+v0.8.2 in the meantime.
 
 ---
 

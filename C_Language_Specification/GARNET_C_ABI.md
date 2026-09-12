@@ -41,7 +41,10 @@ def c_file_size(path) { ... }   # native (ffi) + touches the filesystem (fs)
 - `garnet seal` attests **both** (`aggregate: ["ffi","fs"]`).
 
 So compound native authority is declared, diff-gated (S37), sandbox-surfaced
-(S46), and sealed (S38) — no native call can smuggle in an undeclared authority.
+(S46), and sealed (S38). That is a declaration record, not containment: `ffi` has
+no runtime gate, native calls bypass both seccomp and WASI
+(`GARNET_SANDBOX_POLICY.md`), and the checker surfaces only what a named, acyclic
+call edge from an annotated function reaches.
 
 ## Scope (do not soften)
 

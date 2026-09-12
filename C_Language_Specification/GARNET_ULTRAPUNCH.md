@@ -98,8 +98,10 @@ discipline at two levels*:
 | Refusal | a capability widening / failed gate **blocks merge** (human merge required for gate-definition changes) | a widening is **refused, never sealed** |
 | Provenance | the seal/evidence chain records agent/model/gate-version | the seal records agent/model/gate-version |
 
-This slice — and every slice in this runway — was accepted by the **outer** loop:
-the dogfood-readiness gate scored it 5/5, CI went green, and it merged autonomously.
+This slice was accepted by the **outer** loop: the dogfood-readiness gate scored it
+5/5 and CI went green. No per-slice merge record is reproduced here, and a change to
+a gate's own definition is human-merge-only (row above), so "every slice in this
+runway merged autonomously" is **unverified** and is not claimed.
 Garnet does to its *own* construction exactly what the demo does to the simulated
 agent's code. That is the strongest form of the claim: not "we built a gate", but
 "we accept our own agent-authored construction through it."
@@ -111,8 +113,10 @@ agent's code. That is the strongest form of the claim: not "we built a gate", bu
   application are declared-not-enforced (named, never faked).
 - **diff-caps reads the DECLARED surface** — it does not prove the absence of
   *undeclared* authority (that is the sandbox-policy job, S46; OS application is
-  infra-deferred). The enforced `@caps` trap (S100) is the runtime backstop for
-  declared-but-unchained authority.
+  proven for **Linux seccomp only**, through the reference apply harness —
+  `GARNET_SECCOMP_APPLY.md` — with macOS and Windows named-deferred). The enforced
+  `@caps` trap (S100) is the runtime backstop for the 15 entry-gated host-authority
+  primitives, not for the whole declared surface.
 - **The agent is simulated.** No live-model claim is made here; the attested `model`
   is `simulated`. The live-LLM lane is S94 (`[ACCT-GATED]`).
 - **Self-declared provenance.** The seal's authorship/attestation are bound to the

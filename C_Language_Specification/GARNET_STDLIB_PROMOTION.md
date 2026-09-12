@@ -16,7 +16,9 @@ The whole `core::*` layer — **30 primitives** — Experimental → Stable:
 - `core::math::*` — abs, sqrt, pow, floor, ceil, round
 
 Stdlib stability distribution moves from 27 Stable / 59 Experimental to
-**57 Stable / 29 Experimental**.
+**57 Stable / 29 Experimental** at S76. Those are S76 figures. The live registry
+has changed since: `garnet-stdlib/src/registry.rs` `build_prims()` now carries 80
+rows — **54 Stable / 26 Experimental**.
 
 ## Promotion criteria (a primitive is promoted iff ALL hold)
 

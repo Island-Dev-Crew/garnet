@@ -29,8 +29,11 @@ proof is `garnet-registry-stub/tests/external_package_pilot.rs` (runs in the
 - The **slopguard is a deterministic heuristic** (separator-confusable +
   Damerau–Levenshtein), explicitly *"a prompt to verify, not a security
   guarantee"*: "known names" are the local index, not a global ecosystem feed.
-- `garnet add` vendors **local** paths only and does not yet load vendored deps
-  into the symbol table (`garnet run` is unaffected by vendored bytes today).
+- `garnet add` vendors **local** paths only. `garnet run` **does** preload those
+  vendored sources into the interpreter's global environment before user `main`
+  (S12 — `garnet-cli/src/cmd/run.rs` `preload_dependencies`, fail-closed on any
+  dependency setup failure); the `--vm` path does not, and named
+  `use <dep>::<sym>` resolution is still undefined.
 
 The pilot proves the resolution + integrity + slopsquatting-defense *mechanism*
 on a local registry; productionizing the transport/publish/SemVer/signature

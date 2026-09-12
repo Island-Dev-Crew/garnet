@@ -38,6 +38,10 @@ S35–S38).
 `garnet seal <file> --provenance-chain` validates the conventional attestation
 keys `agent`, `model`, and `prompt_sha256`, then binds them to the current seal's
 `source_blake3` and subject `artifact_blake3` (`build_manifest.ast_hash`). The
+subject digest is **capability-blind**: `stable_ast_repr` omits `@caps`, so two
+programs differing only in declared capabilities share one `artifact_blake3`
+(`GARNET_RED_TEAM.md`); what distinguishes them in the predicate is the differing
+`source_blake3` and `capability_manifest`. The
 predicate gains a deterministic `"provenance_chain"` object:
 
 ```sh

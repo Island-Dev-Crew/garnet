@@ -20,11 +20,12 @@ visible, intentional act rather than a build-profile accident.
 
 ## Why
 
-Today's behavior is the worst of both worlds and the central reason this is a
-ruling rather than a quiet default: **release builds silently wrap** (wrong
-answers, no signal) while **debug builds abort** — arithmetic semantics differ
-by build profile, which directly contradicts the trust kernel's claim that the
-seal attests what the program actually does. Checked-by-default makes
+The behavior this ruling replaced was the worst of both worlds, and the central
+reason this is a ruling rather than a quiet default: **release builds silently
+wrapped** (wrong answers, no signal) while **debug builds aborted** — arithmetic
+semantics differed by build profile, which directly contradicts the trust
+kernel's claim that the seal attests what the program actually does. The checked
+`+`/`-`/`*`/unary-`-` slice has since landed (see Status). Checked-by-default makes
 arithmetic **loud, deterministic, and profile-independent**, and matches the
 precedent already shipped for the all-profile `i64::MIN / -1` and `% 0` cases
 (RB-2 [#389](https://github.com/Island-Dev-Crew/garnet/pull/389),

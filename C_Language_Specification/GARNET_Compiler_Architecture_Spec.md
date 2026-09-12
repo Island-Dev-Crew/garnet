@@ -3,6 +3,12 @@
 **Date:** April 16, 2026
 **Anchor:** *"Where there is no vision, the people perish." — Proverbs 29:18*
 
+> **Status — design document, not as-built.** The shipped toolchain is a single
+> `garnet` binary (`garnet-cli/src/bin/garnet.rs`) carrying a tree-walk
+> interpreter, a bytecode VM (`garnet-vm/`) and a Wasm build (`garnet-wasm/`).
+> There is no `garnetc` crate in the workspace and no LLVM or Cranelift backend.
+> Read the native-codegen pipeline below as a design target.
+
 ---
 
 ## 1. Overview

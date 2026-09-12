@@ -19,7 +19,10 @@ These are the deterministic control: stable, fast, no network, no model.
 
 Provider-backed suggestions — richer, context-aware advice behind the same
 `Suggestion` shape. This tier is **pending-infra**: no LLM provider is wired in
-this environment, and S69 does **not** call one or add a firing advisory. It is
+this environment, and S69 does **not** call one or add a firing advisory. A
+feature-gated provider layer has since landed in `garnet-suggest-llm/` behind the
+`llm` Cargo feature; the default build keeps the crate inert, so the pending-infra
+status stands. It is
 the open leg of the Paper VI scorecard:
 
 > "4 supported, 2 partial (downgraded honestly), 0 refuted, **1 pending-infra**"

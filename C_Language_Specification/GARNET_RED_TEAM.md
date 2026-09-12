@@ -74,7 +74,8 @@ blind — the defect was solely in the surface derivation.)
   laundering `proc` through an impl method **or** a top-level helper while `main
   @caps()` TRAPs (`requires program entry @caps(proc)`) on both `--interp` and `--vm`,
   no subprocess spawned. (This is why `proc` resisted the same impl-method placement
-  that broke the single-gated `fs`/`net`/`env`.)
+  that broke `fs`/`net`/`env`, which were single-gated at the time of this run; the
+  U-91 cure has since made all 15 gated primitives entry-gated — `registry.rs`.)
 - **`@max_depth` self-recursion** traps deterministically at depth `N+1` on both
   backends; mutual recursion through the annotated name traps; out-of-range
   `@max_depth(9999)` is rejected (`1..=64`).
@@ -99,14 +100,19 @@ blind — the defect was solely in the surface derivation.)
   (`active_frames==0`) is no longer "out of scope": the independent re-verification
   showed it let `eval`/`test`/`doctest`/`repl`/dependency-preload execute load/eval-time
   host authority unenforced. The `garnet` binary is now **deny-by-default** at
-  `active_frames==0` (complete mediation / fail-safe default); only library/embedder
-  direct calls (no Garnet program context) keep the permissive default.
+  `active_frames==0` (complete mediation / fail-safe default), and
+  `Interpreter::new()` is strict by default for embedders too. The permissive
+  default survives only behind the explicit `Interpreter::new_permissive()` opt-out
+  and on raw public Env/Value/eval calls that never enter an `Interpreter` method
+  (`GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md`).
 
 ## Scope
 
 The enforced ceilings in scope are: the diff-caps widening gate, the agent-loop
 acceptance gate, the runtime `@caps` host-authority trap (fs/net/env/proc), the
-`@max_depth` per-function-name recursion trap, the static `check` caps-coverage, and
+`@max_depth` per-function-name recursion trap, the static `check` caps-coverage
+**within its U-91 bounds** (named, acyclic call edges from an annotated function —
+`GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md`), and
 (Linux) the applied seccomp policy. The original impl-method HIGH and the two
 independent-re-verification HIGHs (load-time `let`/`const` `@caps` bypass;
 invalid-`@max_depth` seal) are fixed, and the deny-by-default residual closure

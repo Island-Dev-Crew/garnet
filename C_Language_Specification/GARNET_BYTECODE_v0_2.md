@@ -8,6 +8,12 @@ supersedes `GARNET_BYTECODE_v0_1.md` (which stays for archival reference). The
 two load-bearing changes over v0.1 are the **explicit call-frame execution
 model** and the **`GARNVM02` self-describing header**.
 
+> **The current magic is `GARNVM03`, not `GARNVM02`.** S99 version-bumped the
+> header and added a per-function `@max_depth` ceiling after the fallback-reason
+> field (`garnet-vm/src/codec.rs`, `const MAGIC: &[u8; 8] = b"GARNVM03"`). The
+> layout recorded below is the v0.2 state; `GARNVM02` artifacts are not readable
+> by the current deserializer.
+
 ## Current Truth
 
 - The tree-walk interpreter remains the semantic reference.
@@ -120,8 +126,9 @@ count and per-function reasons rather than hiding them.
 ## Non-Claims
 
 - No production native compiler proof is claimed.
-- No stable cross-version bytecode ABI is claimed (`GARNVM02` is a tightened,
-  self-describing schema, not a frozen format).
+- No stable cross-version bytecode ABI is claimed (the schema is tightened and
+  self-describing, not frozen — the magic has since moved `GARNVM02` →
+  `GARNVM03`).
 - No tail-call optimization (deep recursion costs one heap frame per call).
 - No OS-thread actor bridge.
 - No full safe-mode lowering.

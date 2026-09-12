@@ -83,8 +83,10 @@ gate (now also asserting the VM enforcement).
   fuel stays deferred. No claim of total backend equivalence (this is `@max_depth` /
   `@caps` trap-parity, not whole-language equivalence).
 - This is a **seed**: one enforced ceiling. Mac-authored + Mac-tested; the Windows
-  trap re-proves via the cross-OS `cargo test` matrix (recorded
-  Windows-proof-pending in `WINDOWS_AUDIT_S1_S80.md`).
+  and Linux traps are recorded rather than pending — the S109 cross-OS trap-parity
+  matrix carries a passing `max_depth` row for mac, linux and windows
+  (`scripts/garnet_cross_os_trap_parity_matrix.py`;
+  `proofs/cross-os/matrix/cross-os-trap-parity-20260604-s109/`).
 
 ---
 
@@ -100,6 +102,10 @@ primitive** whose required capability no frame in the call chain declared:
 | `std::process::spawn` / `spawn_args` / `output` / `wait` / `exit_code` | `proc` |
 | `fs::read_file` / `write_file` / `read_bytes` / `write_bytes` / `list_dir` | `fs` |
 | `std::log::to_file` | `fs` |
+| `net::tcp_connect` | `net` |
+
+Fifteen primitives in total — the whole gated surface, pinned by
+`entry_gates_are_the_whole_gated_surface` in `registry.rs`.
 
 ```
 $ garnet run --interp env.garnet      # @caps() main calls std::env::get
@@ -110,10 +116,14 @@ runtime error: capability: `std::env::get` requires @caps(env), not declared in 
 backstop**: a program that the checker would reject (a managed fn using authority
 it did not declare) is caught at execution. Each managed function pushes its
 declared `@caps` onto a per-run thread-local context (`eval.rs` `CapsGuard`,
-RAII-unwound); a primitive is permitted iff the **union** of the active frames'
-caps contains the requirement (or a `@caps(*)` wildcard). The static caps-graph
-propagates caps up every managed frame, so a *checked* program always carries the
-cap — only under-declared programs trap.
+RAII-unwound). Since U-91 every gated primitive is `Guard::GateEntry`
+(`registry.rs` asserts `(Gate, GateEntry) == (0, 15)`), so a call is permitted
+only when an active frame declares the capability **and** the program-entry
+frame's own budget covers it — a helper's declaration no longer satisfies it for
+an entry point that declared nothing. The static caps-graph propagates caps only
+across the named, acyclic call edges it can build from an annotated function, so
+passing `garnet check` is not proof that a program declares every capability it
+reaches (`GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md`).
 
 ### VM trap-parity (S100)
 
@@ -142,12 +152,16 @@ runs both backends and asserts the identical trap + exit code.
 
 - **Host-authority surfaces only** — env / process / fs / net / log-to-file. Pure
   computation is unaffected.
-- **No managed-program frame ⇒ allowed.** A direct host/test call (no managed
-  function on the stack) has no `@caps` context to enforce against, so it runs —
-  this keeps the Rust stdlib-bridge tests valid.
+- **No managed-program frame ⇒ denied by default.** S114-FIX-2 closed this path:
+  `eval.rs` `deny_no_frame()` refuses a gated primitive reached with no managed
+  frame whenever the interpreter instance is strict or the process-global latch is
+  set. The `garnet` binary sets that latch at startup and `Interpreter::new()` is
+  strict, so the CLI is deny-by-default on every lane; the explicit
+  `Interpreter::new_permissive()` opt-out remains for trusted Rust harnesses
+  (`GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md`).
 - **Both** the interpreter (S90/S91/S92) and the **VM** (S100) now enforce `@caps`
   with the identical trap — the VM `@caps`-laundering seam is closed. Net is gated
   at the bridge call, not the connection layer (S91 scope, unchanged); no claim of
   total backend equivalence.
-- Mac-authored + Mac-tested; the Windows trap re-proves via the cross-OS `cargo
-  test` matrix (recorded Windows-proof-pending in `WINDOWS_AUDIT_S1_S80.md`).
+- Mac-authored + Mac-tested; the Windows and Linux `@caps` traps are recorded in
+  the S109 cross-OS trap-parity matrix (a passing `caps` row per OS), not pending.

@@ -85,7 +85,7 @@ The registry (`garnet-stdlib/src/registry.rs`) tags every primitive with its
 | `std::env::*` | 1 `std` | `env` | reads/writes process environment — OS authority |
 | `std::process::*` | 1 `std` | `proc` | spawns processes — OS authority |
 | `std::uuid::*` | 1 `std` | `time` (v4/v7), none (v5) | v4/v7 read the clock; v5 is a pure name hash |
-| `std::log::*` | 1 `std` | none (format), `fs` (file sinks, deferred) | formatting is pure; file sinks need `fs` |
+| `std::log::*` | 1 `std` | none (format), `fs` (`std::log::to_file`) | formatting is pure; the file sink ships and is entry-gated on `fs` (`registry.rs`) |
 
 Note the registry preserves the existing bare module names (`str`, `array`,
 `time`, `fs`, `net`, `crypto`) for backward compatibility — renaming them to
@@ -124,8 +124,9 @@ Functionality leaves the stdlib on a fixed, announced schedule:
 3. **Remove** only at the **next major** version. No deprecated item is removed
    within a major series.
 
-This guarantees any program that compiles today keeps compiling — with warnings
-— until a major bump it can see coming.
+By default this guarantees any program that compiles today keeps compiling — with
+warnings — until a major bump it can see coming. The guarantee is default-only: the
+opt-in error mode below makes those call sites fatal.
 
 ---
 
@@ -153,9 +154,11 @@ diagnostics at call sites (`garnet-check-v0.3`):
 | `deprecated` | "calls deprecated primitive `X`" + migration hint if present | **warning** | No |
 | `frozen` | "calls frozen primitive `X`; it is supported but will not grow" | **info** | No |
 
-All four are **non-fatal** (exit code 0). `@stability` is a warning-level
-contract in v0.7 by design, for backward compatibility; **error-level
-enforcement is v0.8 work.** A missing tier defaults to "unannotated" — the
+All four are **non-fatal** (exit code 0) by default. `@stability` is a
+warning-level contract in v0.7 by design, for backward compatibility;
+**error-level enforcement is v0.8 work**, and it shipped as an opt-in — setting
+`GARNET_STABILITY_ERRORS=1` makes experimental/deprecated call sites fatal
+(S29, `garnet-check-v0.3/src/stability.rs` `stability_error_mode`). A missing tier defaults to "unannotated" — the
 v0.7 stdlib annotates ≥ 95% of primitives explicitly, and the
 `garnet_stdlib_layer_gate.py` lane tracks that percentage.
 

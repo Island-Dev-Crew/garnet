@@ -9,6 +9,24 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ## [Unreleased]
 
+### Specification documents — claims match the shipped code (2026-09-12)
+
+- **Fixed:** statements across `C_Language_Specification/` and the RFC index
+  that said more than the code does (audit spec-docs §5): FFI authority
+  described as containment rather than declaration, the bounded-enforcement
+  union-of-frames model, "no managed frame means allowed" (the interpreter
+  denies by default), append-only tamper-evidence without its forged-tail
+  caveat, an autonomous-merge claim now marked unverified, the bytecode magic
+  (`GARNVM03`), the conformance matrix section mapping and totals (53), the
+  manifest's unimplemented `[caps]` and `[build]` tables, the EBNF's missing
+  annotation productions, `garnet mcp-serve` described as not an MCP host,
+  "does not compile to wasm", a wildcard-rejecting CI job that does not exist,
+  stdlib promotion counts (80 rows, 54 stable), the 15th entry-gated primitive
+  `net::tcp_connect`, and the Windows trap rows now recorded from the parity
+  matrix. Three design documents gain a banner separating proposal from
+  as-built: the migration guide's illustrative numbers, the async model, and
+  the compiler architecture.
+
 ### Site — pages say what the code does (2026-09-11)
 
 - **Fixed:** 45 statements on the site pages that said more than the code

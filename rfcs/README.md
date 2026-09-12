@@ -40,4 +40,5 @@ implementation, and acceptance is not a readiness or production-claim.
 - `0002-integer-overflow-policy.md` — *Accepted.* Integer arithmetic is
   checked-by-default (runtime diagnostic, not silent wrap or abort), with
   explicit wrapping operations where wanted. Design ruling (W-REBUILD J5);
-  implementation is a separate slice.
+  implemented for `+`/`-`/`*`/unary-`-`, with the explicit wrapping escape hatch
+  still deferred.

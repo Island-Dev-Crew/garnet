@@ -21,7 +21,10 @@ in spirit, tamper-evident in mechanism.
 `garnet caps-log --verify <path>` recomputes the chain: each entry's
 `prev_blake3` must equal the hash of the prior line. Flipping a single byte in
 any earlier entry breaks the chain at the next entry (exit 1) — append-only
-tamper-evidence.
+tamper-evidence for every entry that has a successor. **The tail is not covered:**
+`--verify` checks the forward `prev_blake3` link only and never re-derives
+`caps_blake3` from `caps`, so rewriting the most-recent entry together with a
+matching bogus `caps_blake3` still verifies (recorded in `GARNET_RED_TEAM.md`).
 
 The entry schema is deliberately **language-agnostic** — `program`, `caps`,
 `caps_blake3`, `prev_blake3`, `index`. Any toolchain that can emit a capability
