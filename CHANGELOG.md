@@ -9,6 +9,32 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ## [Unreleased]
 
+### Root docs — claims match the scope table; origin records move to `origin/` (2026-09-11)
+
+- **Fixed:** FAQ and README claims wider than the capability enforcement
+  scope: "the compiler enforces this transitively", "runtime cost is zero",
+  "no ambient authority", `@sandbox` as a checker gate, `--sign` verifying
+  downloaded binaries, "closes the compiler impersonation threat",
+  zero-cost/fast performance claims, FFI-call migration, "surfaces every
+  boundary call site", and "evidence the author cannot fake". Each now
+  states the named, acyclic call-chain bound, the 15 entry-gated runtime
+  primitives, and that `garnet run` does not run the checker. The
+  capability list gains `env`; `net_internal` and `ffi` are marked checker
+  vocabulary. A mis-slotted FAQ answer about v0.4.2 releases is gone.
+- **Fixed:** CONTRIBUTING no longer claims Rust-level performance, compiler-
+  enforced protocols, a learning compiler cache, or a required reviewer
+  count (GOVERNANCE sets it to zero); it links the README, Mini-Spec and
+  scope table instead.
+- **Moved:** `ORIGIN-STORY.md`, `EPILOGUE-CREDITS.md` and
+  `MIT-ORIGIN-SUMMARY.md` to `origin/` with an index and a dated banner each;
+  they are kept as written. `FOUNDER-STORY.md` stays at the root and drops
+  the "136 security tests" figure, which `docs/truth.json` records as
+  having no derivation. The MIT summary's availability section names the
+  live site, installer and releases.
+- **Vocabulary:** the retired words (the vocabulary-purge inventory's three)
+  leave the root docs, the VS Code and tree-sitter READMEs, the RFC template, the Studio UI
+  strings and the legacy site copy (PR-1 of the purge inventory).
+
 ### Site — the social card shows the current front door (2026-09-11)
 
 - **Fixed:** link previews on X and elsewhere showed the June card

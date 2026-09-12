@@ -9,7 +9,7 @@ This is the *syntax* grammar. It is intentionally separate from the Garnet LSP
 frontend. The canonical grammar is the hand-written parser in `garnet-parser`;
 `grammar.js` here mirrors its core surface for editor tooling.
 
-## Status (honest)
+## Status
 
 - `grammar.js` covers the **core** constructs — functions + `@`-annotations,
   struct/enum/impl, actors + `memory` kinds, control flow, `match`,

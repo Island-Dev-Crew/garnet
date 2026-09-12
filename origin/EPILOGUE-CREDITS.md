@@ -1,5 +1,7 @@
 # Epilogue: After the Wave
 
+> An April 2026 account, kept as written. Its test and line counts are the counts of that week and are not derived today; Garnet is a research-grade prototype, not a finished product. Current status: [README.md](../README.md).
+
 *"He who has ears to hear, let him hear."* — Matthew 11:15 (KJV)
 
 ---

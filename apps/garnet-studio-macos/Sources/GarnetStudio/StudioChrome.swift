@@ -187,7 +187,7 @@ struct StudioStatusBar: View {
                 .help("Simple mode shows the core workbench; Power mode reveals the full cockpit. Toggle in the header or Settings.")
             Divider().frame(height: 12)
             Text(truthBadge)
-                .help("Whether docs/truth.json was readable at launch. Unavailable is reported honestly, never papered over.")
+                .help("Whether docs/truth.json was readable at launch. Unavailable is reported explicitly, never papered over.")
             Divider().frame(height: 12)
             Text(cliLocated ? "garnet CLI: located" : "garnet CLI: not found")
                 .help("Whether a garnet binary was found on the standard lookup paths at launch.")

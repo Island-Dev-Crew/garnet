@@ -68,7 +68,7 @@ Six days. That's how long it took from the moment the build started to the momen
 
 - Sunday, Apr 12: build begins after Sabbath
 - Monday–Friday: built through the nights. Zero sleep. Then straight to work the next day. Repeat. Sabbath evenings became build windows — after sundown, after rest, I'd sit down and push. Opus 4.7 dropped mid-sprint. Full plan review, gap-filling, enhancement.
-- Friday, Apr 17: Claude Max expires. Garnet is at v4.2 — a working, tested, cross-platform installable language system with 1,244 tests committed, 136 security tests, 22K lines of Rust source, seven research papers, and a 1,670-line specification.
+- Friday, Apr 17: Claude Max expires. Garnet is at v4.2 — a working, tested, cross-platform installable language system with 1,244 tests committed, 22K lines of Rust source, seven research papers, and a 1,670-line specification.
 
 That was day six.
 
@@ -94,7 +94,7 @@ The logo is half Rust, half Ruby, with a memory core at the center. The name Gar
 
 As of April 17:
 
-- **1,244 tests** across 7 crates + **136 security tests**
+- **1,244 tests** across 7 crates
 - Linux installer verified (.deb + .rpm in Docker)
 - Windows binary verified (MSVC native)
 - macOS binary compiled (pending Apple notarization credentials)

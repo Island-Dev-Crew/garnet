@@ -6,7 +6,7 @@ Thank you for your interest in contributing to the Garnet programming language. 
 
 ## Code of Conduct
 
-Garnet's community is built on mutual respect, intellectual honesty, and a shared commitment to making a serious programming language. We expect all contributors to:
+Garnet's community is built on mutual respect, intellectual rigor, and a shared commitment to making a serious programming language. We expect all contributors to:
 
 - Treat others with respect, even in heated technical debates
 - Lead with evidence and reasoning, not appeals to authority
@@ -20,14 +20,7 @@ Harassment, gatekeeping, or dismissive behavior will not be tolerated.
 
 ### Architecture Overview
 
-Garnet is a **dual-mode, agent-native programming language** that reconciles Rust's compile-time safety with Ruby's expressive ergonomics, designed for long-horizon agentic systems. Key concepts:
-
-- **Managed mode** (default) — ARC memory, dynamic-ish types, Ruby-like surface syntax
-- **Safe mode** (`@safe`) — ownership + borrowing, static types, Rust-level performance
-- **First-class memory abstractions** — working, episodic, semantic, and procedural memory units
-- **Typed actors** — compiler-enforced message protocols for concurrent systems
-- **Recursive execution guardrails** — `@max_depth`, `@fan_out` annotations for agent spawn safety
-- **Compiler-as-agent cache** — learns from compilation history to optimize future builds
+Language overview: [README.md](README.md) and the [Mini-Spec](C_Language_Specification/GARNET_v1_0_Mini_Spec.md); what is enforced versus declared: the [capability enforcement scope table](C_Language_Specification/GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md).
 
 ### Workspace Structure
 
@@ -51,7 +44,7 @@ Total: ~22K LOC Rust, 857+ passing tests, zero clippy warnings with `-D warnings
 
 ### Versioning policy
 
-Garnet uses **one public release version, plus honest independent crate semver**:
+Garnet uses **one public release version, plus independent crate semver**:
 
 - The **public release version** is `garnet-cli`, which inherits
   `[workspace.package].version` (currently **0.8.2**) via `version.workspace = true`.
@@ -64,9 +57,9 @@ Garnet uses **one public release version, plus honest independent crate semver**
   `version = "x.y.z"` pin matching that crate's real version: this is **required**,
   because the workspace's `cargo deny` config bans wildcard (`*`) dependencies, and a
   path dep with no version resolves to a wildcard. So the pins are intentional, not
-  redundant — they encode the honest per-crate version.
+  redundant — they encode the actual per-crate version.
 
-This keeps the user-facing version coherent while keeping per-crate versions honest.
+This keeps the user-facing version coherent while keeping per-crate versions accurate.
 If a future decision treats the workspace as a single-version monorepo, that is a
 deliberate policy change (set every crate to `version.workspace = true` and pin
 inter-crate deps to the shared version), not drift.
@@ -129,7 +122,7 @@ cargo test --workspace -- --ignored  # 6 stress tests at 100K+ scale
 4. **Write tests** — all new code must have tests. No exceptions.
 5. **Pass CI** — your PR must pass `cargo test --workspace`, `cargo clippy --workspace -- -D warnings`, and the 7× determinism harness.
 6. **Submit a PR** — link the issue, describe what changed, note any breaking changes.
-7. **Review** — at least one maintainer review is required before merge.
+7. **Review** — the maintainer reviews and merges ([GOVERNANCE.md](GOVERNANCE.md)).
 
 ### Testing Expectations
 

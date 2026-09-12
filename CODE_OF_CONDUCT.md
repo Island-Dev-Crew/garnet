@@ -26,7 +26,7 @@ Examples of unacceptable behavior:
 
 Beyond the general Contributor Covenant, Garnet holds contributors to the same rigor discipline the project has followed from v3.3 onward:
 
-- **Pre-registered claims are non-negotiable.** If measurement disagrees with a pre-registered Phase 1C / Paper VI threshold, the right move is to honestly downgrade — not to argue the threshold should have been different. PR comments that push for post-hoc threshold adjustments will be closed.
+- **Pre-registered claims are non-negotiable.** If measurement disagrees with a pre-registered Phase 1C / Paper VI threshold, the right move is to downgrade — not to argue the threshold should have been different. PR comments that push for post-hoc threshold adjustments will be closed.
 - **Trust your tests.** If a test is failing, fix the underlying issue rather than silencing the test. `--no-verify` is not a merge strategy.
 - **Attribute the work.** Derivative contributions (e.g., ports of other tools' ideas) cite the prior art in the PR description. Paper V's proof sketches cite RustBelt; if you're adding similar formalism, cite your sources too.
 

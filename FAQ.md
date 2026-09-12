@@ -16,29 +16,27 @@ Every team that builds ambitious software eventually makes the same bargain: Rus
 
 A managed function calling a safe function sees raised exceptions where the safe code returned `Err(...)`. A safe function calling a managed function sees `Result<T, RaisedException>` where the managed code raised. ARC values flowing into safe scope auto-decay to affine references; affine values flowing back into managed scope re-promote to `Rc`. The compiler inserts the bridging adapters at the call sites; you write each function in the register that fits its job, and the boundary takes care of itself.
 
-Every boundary crossing is logged in the `ModeAuditLog` (v3.5 Security Layer 3) — reviewers read one file to enumerate every trust boundary in the program.
-
 ## What's the capability model?
 
-Every function declares its OS-authority budget via `@caps(...)`. A function with `@caps()` can do pure computation only — no filesystem, no network, no clock. A function with `@caps(fs)` can call `fs::read_file`, `fs::write_file`, etc. The compiler enforces this transitively: if `main()` calls `helper()` which calls `fs::read_file(...)`, then `main()` must declare `@caps(fs)` — or `helper()` must.
+Every function declares its OS-authority budget via `@caps(...)`: `@caps()` declares none, and `@caps(fs)` covers `fs::read_file`, `fs::write_file`, etc. `garnet check` follows named, acyclic calls from each annotated function and reports a declaration that leaves out a capability the chain needs: if `main()` declares `@caps()` and calls a `helper()` that calls `fs::read_file(...)`, the check reports that `main()` does not declare `fs`. Calls through function values, closures or call-graph cycles are not traced, an unannotated function's own body is not checked, and `garnet run` does not run the checker. At run time, the 15 entry-gated host primitives (file system, outbound network, process, environment, log-to-file) trap unless the program's entry function declares the capability; the `time` and UUID primitives are checked by `garnet check` only. See the [capability enforcement scope table](C_Language_Specification/GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md).
 
-Known capabilities: `fs`, `net`, `net_internal` (lifts NetDefaults' RFC1918/loopback denial), `time`, `proc`, `ffi`, `*` (wildcard — managed mode only; safe-mode wildcard is a hard error).
+Known capabilities: `fs`, `net`, `net_internal` (checker vocabulary; it does not change what `net::tcp_connect` may reach at run time), `env`, `time`, `proc`, `ffi` (checker vocabulary; there is no runtime FFI path), and `*` (wildcard — managed mode only; a safe-mode wildcard is a hard error).
 
-The propagator runs at compile time; runtime cost is zero.
+The propagator runs at check time. The 15 gated primitives check the caps frames on each call; that cost is unmeasured.
 
 ## Why Ed25519 signed manifests?
 
-`garnet build --deterministic` produces a byte-identical manifest across machines (same source → same hash → same manifest, regardless of when or where you build). Adding `--sign <keyfile>` attaches an Ed25519 signature over the manifest. Anyone with the public key can run `garnet verify --signature` and confirm the binary they downloaded came from an authorized signer AND has not been tampered with.
+`garnet build --deterministic` writes a manifest of the source and AST hashes that is byte-identical across machines. `--sign <keyfile>` adds an Ed25519 signature over it, and `garnet verify <file> <manifest> --signature` confirms that the key holder produced the manifest and that the source still matches it. Release binaries are verified separately, per [docs/release-signing.md](docs/release-signing.md).
 
-This closes the "compiler impersonation" threat in v3.4 Security V2 §4. Hot-reload uses the same signing primitive (v3.5 ReloadKey).
+This addresses the compiler-impersonation threat (v3.4 Security V2 §4). The separate Rust actor runtime uses the same signing primitive for hot-reload (v3.5 ReloadKey).
 
 ## How does Garnet compare to Rust?
 
-Garnet's safe mode IS Rust's mental model — ownership, borrow checking, `Result<T, E>`, `?` propagation, zero-cost abstractions. The distinction: Garnet doesn't force you to write the whole program in safe mode. The orchestration / scripting / glue layer can be `def`-managed mode; the hot path opts into `@safe fn`. You get Rust where you need it, not where you don't.
+Garnet's safe mode follows Rust's mental model — ownership, borrow checking, `Result<T, E>`, `?` propagation. Garnet doesn't force you to write the whole program in safe mode: the orchestration layer can be `def`-managed mode, and the hot path opts into `@safe fn`. There is no native backend yet, so performance is unmeasured.
 
 ## How does Garnet compare to Ruby?
 
-Garnet's managed mode IS Ruby's mental model — `def` + blocks + iterators + exceptions + ARC. The distinction: every function declares `@caps(...)` so there's no ambient authority, and the boundary to `@safe` modules gives you a place to put the code that absolutely must not have surprises. You get Ruby's velocity where it makes sense, with a typed, capability-checked safety net underneath when you need it.
+Garnet's managed mode follows Ruby's model — `def`, blocks, iterators, exceptions, ARC. Functions declare `@caps(...)`, and `@safe` modules give hot paths static checks.
 
 ## What about other dual-mode languages — Swift, Kotlin?
 
@@ -54,7 +52,7 @@ Memory: Paper VI Experiment 4 measured 21% peak RSS reduction on the multi-agent
 
 **<!-- truth:latest_tag -->v0.8.2<!-- /truth --> is research-grade and not production-complete.** Specifically:
 
-- **Ready**: scaffolding (`garnet new`), the four-language converter (`garnet convert`), deterministic + signed builds (`garnet build --deterministic --sign`), CapCaps enforcement, scaffolded `garnet test`, the <!-- truth:primitive_count -->80<!-- /truth --> bridged stdlib registry primitives, parser fuzz harness, rules-based compiler advisory mode, the S16 LSP surface (diagnostics, hover, go-to-definition, document/workspace symbols, CST-precise rename), release-backed VSIX assets, signed Linux, macOS and Windows CLI release assets, and deterministic cross-machine CI.
+- **Ready**: scaffolding (`garnet new`), the four-language converter (`garnet convert`), deterministic + signed builds (`garnet build --deterministic --sign`), CapCaps checking plus the runtime entry gate on 15 primitives, scaffolded `garnet test`, the <!-- truth:primitive_count -->80<!-- /truth --> bridged stdlib registry primitives, parser fuzz harness, rules-based compiler advisory mode, the S16 LSP surface (diagnostics, hover, go-to-definition, document/workspace symbols, CST-precise rename), release-backed VSIX assets, signed Linux, macOS and Windows CLI release assets, and deterministic cross-machine CI.
 - **Active-partial**: macOS Studio packaging without Developer ID notarization, Windows/Linux Studio target proof, bytecode VM performance path, LSP hover/go-to-def screenshot hardening, promo video human/aesthetic acceptance, proof/benchmark measurements, and provider-neutral advisory handoffs.
 - **Pending**: Apple Developer ID notarization, signed `.pkg`, Windows `.msi`, Linux desktop package/runtime proof, Marketplace/OpenVSX publication, provider-backed LLM assist, mechanized proof, external empirical study data, and native backend lowering.
 
@@ -62,15 +60,15 @@ For prototype agents, research demos, and source-checkout dogfood, Garnet is use
 
 ## How do I migrate from Ruby / Rust / Python / Go?
 
-`garnet convert <lang> <file>` reads source in any of the four languages and emits Garnet. Every output file starts `@sandbox` + `@caps()` (v4.0 SandboxMode default — the converter never grants caps automatically; a human audits each file before lifting the sandbox via `@sandbox(unquarantine)` and adding the explicit `@caps(...)` based on what the code actually does).
+`garnet convert <lang> <file>` reads source in any of the four languages and emits Garnet. Every output file starts with `@sandbox` and `@caps()`. Both are reviewer notes: the parser does not accept the `@sandbox` line, so the emitted file does not pass `garnet check` until a reviewer removes it and adds the `@caps(...)` the code needs.
 
-The converter ships a lineage JSON for each output mapping every emitted Garnet AST node back to its source span. Cargo-style migration: convert one file at a time, FFI-call the rest, repeat until done. See [v4_1_Converter_Architecture.md](C_Language_Specification/v4_1_Converter_Architecture.md) for the full pipeline.
+The converter ships a lineage JSON for each output mapping every emitted Garnet AST node back to its source span. Migrate one file at a time; unconverted files stay in their source language. See [v4_1_Converter_Architecture.md](C_Language_Specification/v4_1_Converter_Architecture.md) for the full pipeline.
 
-Input-dialect honesty: each frontend targets a **stylized subset** of its source language, not the full grammar (untranslatable constructs become explicit `MigrateTodo` placeholders). The Ruby frontend targets a ≈3.3-era subset; newer syntax — Ruby 3.4 `it` block parameters, Ruby 4.0 leading-line logical-operator continuation — is not yet targeted.
+Input-dialect scope: each frontend targets a **stylized subset** of its source language, not the full grammar (untranslatable constructs become explicit `MigrateTodo` placeholders). The Ruby frontend targets a ≈3.3-era subset; newer syntax — Ruby 3.4 `it` block parameters, Ruby 4.0 leading-line logical-operator continuation — is not yet targeted.
 
 ## What's `@sandbox` for?
 
-A `@sandbox` annotation is the converter's "I produced this from another language; please don't trust me yet" header. While `@sandbox` is in effect, the function cannot be called from production code (the checker rejects the call site). A human reviewer reads the converted code, satisfies themselves it's safe, then changes `@sandbox` to `@sandbox(unquarantine)` and adds the appropriate `@caps(...)`. This is the audit gate that prevents converter output from silently entering a trusted code path.
+A `@sandbox` line is the converter's note that it produced the file from another language and granted no capabilities. Nothing enforces it: the parser rejects the line, so the file fails `garnet check` until a reviewer reads it, removes the line and adds the `@caps(...)` the code needs. The review is a human step, not a checker gate.
 
 ## Where do I report bugs / request features?
 
@@ -92,11 +90,9 @@ Yes — the dual MIT / Apache-2.0 license explicitly permits commercial use, mod
 
 Not on platforms with a matching published release asset. The installers (`install.sh`, and `install.ps1` on Windows) prefer the signed release asset for your platform, verifies it against `SHA256SUMS` (GPG-signed — see [`docs/release-signing.md`](docs/release-signing.md)), and uses source fallback only when no matching package exists or when you force `GARNET_INSTALL_MODE=source`. Source fallback requires Rust 1.95+ (the same floor as building from source below; Garnet CI tracks current stable).
 
-## How do deterministic signed builds work?
+## Do I need Rust to build Garnet from source?
 
-Not after release assets are published. The intended user install is `curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh` (or a native `.deb` / `.rpm` / `.pkg` / `.msi` from [Releases](https://github.com/Island-Dev-Crew/garnet/releases)). Until the first `v0.4.2` GitHub Release is cut, use the source install from the README, which does require Rust.
-
-To **build** Garnet from source you need Rust 1.95+ (declared in Cargo metadata and managed via `rustup`); CI also tracks current stable. On Windows, MSVC toolchain is required (MinGW triggers a known miette ABI issue — see Boot doc Known Issue 1).
+Yes. To **build** Garnet from source you need Rust 1.95+ (declared in Cargo metadata and managed via `rustup`); CI also tracks current stable. On Windows, MSVC toolchain is required (MinGW triggers a known miette ABI issue — see Boot doc Known Issue 1).
 
 ## How do I scaffold a new project?
 
@@ -144,7 +140,7 @@ See [F_Project_Management/GARNET_S129_S200_ECC_DOGFOOD_COMMAND_CENTER.md](F_Proj
 
 ## Who built this?
 
-**Jon — Island Development Crew** (Huntsville AL). Doctoral research project; v3.3 → v4.2 development happened in collaboration with Claude (Opus 4.7). Every stage shipped under the discipline that pre-registered claims could only be downgraded honestly when measurement disagreed, never re-rationalized post-hoc.
+**Jon — Island Development Crew** (Huntsville AL). Doctoral research project; v3.3 → v4.2 development happened in collaboration with Claude (Opus 4.7). Every stage shipped under the discipline that pre-registered claims could only be downgraded to match proof when measurement disagreed, never re-rationalized post-hoc.
 
 ## I have a question that isn't answered here.
 

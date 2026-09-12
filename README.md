@@ -7,7 +7,7 @@
 <p align="center"><strong>Rust rigor. Ruby velocity. One coherent language —<br>
 built for the code agents write and humans accept.</strong></p>
 
-<p align="center"><em>No authority without evidence. Acceptance is a decision made on evidence the author cannot fake.</em></p>
+<p align="center"><em>No authority without evidence. Acceptance is a decision made on evidence your own toolchain recomputes.</em></p>
 
 <p align="center">
   <a href="https://github.com/Island-Dev-Crew/garnet/releases/latest">Release <!-- truth:latest_tag -->v0.8.2<!-- /truth --> · signed binaries</a> ·
@@ -28,7 +28,7 @@ Every ambitious team makes the same bargain: **Rust for the hot path, Ruby for t
 orchestration, and a painful FFI between them** — or one language and its weakness swallowed
 whole. Garnet refuses the bargain. Managed mode (`def` + ARC + exceptions) feels like Ruby.
 Safe mode (`@safe fn` + ownership + `Result`) feels like Rust. The mode boundary auto-bridges
-errors and ownership, and `garnet check` surfaces every boundary call site. One grammar, two
+errors and ownership, and `garnet check` reports mode-boundary call sites. One grammar, two
 registers, no FFI between them.
 
 And in 2026 there's a second bargain nobody should accept. AI agents now write the code;
@@ -38,9 +38,7 @@ ask you to trust that the model understood. **It makes acceptance a decision on 
 evidence your own toolchain recomputes — not the model's claims**: functions declare their
 authority budget, the checker verifies declared budgets transitively across the named, acyclic call
 edges it can build from annotated functions, and `diff-caps` answers
-*"what new authority am I granting?"* in one screen.
-
-Safe by default. Fast when needed. Joyful always.
+*"what new authority does this change declare?"* in one screen.
 
 ## Origin
 
@@ -164,7 +162,7 @@ production-complete** — and this README will never tell you otherwise.
 | Capability-bounded acceptance demo: agent code accepted *and refused* on evidence, sealed | **Under construction:** `garnet build --evidence` (W-SHIP; no shipping CLI flag); independent verification of the self-found red-team fix |
 | <!-- truth:primitive_count -->80<!-- /truth --> capability- and stability-tagged stdlib primitives | Production VM performance (unbenchmarked, unclaimed) |
 | LSP + VS Code extension (local VSIX), trivia-preserving CST, formatter baseline | Marketplace/OpenVSX publication; incremental parsing |
-| Rust / Ruby / Python / Go migration assistant with lineage + `@sandbox` audit gate | Browser playground; package registry beyond stub |
+| Rust / Ruby / Python / Go migration assistant with lineage; output starts `@sandbox` + `@caps()` as reviewer notes | Browser playground; package registry beyond stub |
 
 The full ledger lives in [CURRENT_STATE.md](CURRENT_STATE.md); the readiness detail lives on
 [the status page](https://garnet-lang.org/status.html). The evidence scorecard for the research

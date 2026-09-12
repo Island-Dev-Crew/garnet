@@ -12,7 +12,7 @@ One paragraph: what this proposes and why.
 ## Motivation
 
 What problem does this solve? Who is affected? What is the cost of doing nothing?
-Cite prior art and precedent honestly.
+Cite prior art and precedent explicitly.
 
 ## Guide-level explanation
 
@@ -32,7 +32,7 @@ what is in scope and what is explicitly out of scope.
 Is this backwards-incompatible? If so, which edition introduces it, and how do
 older editions keep working? Confirm capability semantics stay edition-invariant.
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 
 What this RFC does **not** do. No faked runtime enforcement, cross-platform proof,
 release readiness, or 1.0 claims. Acceptance authorizes implementation; it is not

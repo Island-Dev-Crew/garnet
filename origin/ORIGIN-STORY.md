@@ -1,5 +1,7 @@
 # Garnet: How It Started
 
+> An April 2026 account, kept as written; the numbers are that week's. The canonical narrative is [FOUNDER-STORY.md](../FOUNDER-STORY.md); current status is in [README.md](../README.md).
+
 > "For I know the thoughts that I think toward you, saith the LORD, thoughts of peace, and not of evil, to give you an expected end." — Jeremiah 29:11 (KJV)
 
 ---

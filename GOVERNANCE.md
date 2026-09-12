@@ -2,10 +2,10 @@
 
 This is the canonical governance model for Garnet. It formalizes **how changes
 land** through an **RFC + edition process** rather than ad-hoc maintainer fiat —
-while being honest that Garnet is, today, a single-maintainer research-grade
+while being explicit that Garnet is, today, a single-maintainer research-grade
 project.
 
-## Who decides (honest)
+## Who decides
 
 Garnet is maintained by **Island Development Crew (Jon Isaac, maintainer)**. Final
 decisions on language design, releases, and merges are the maintainer's,
@@ -110,7 +110,7 @@ body has adopted it.
 See `CONTRIBUTING.md` (Code of Conduct) and `SECURITY.md` (if present) for the
 conduct and vulnerability-disclosure expectations.
 
-## Honest status (do not soften)
+## Status (do not soften)
 
 This is **single-maintainer governance for a research-grade prototype**. It is
 enough to evaluate the project's decision path; it is **not** a claim of

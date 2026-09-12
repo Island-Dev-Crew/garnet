@@ -22,7 +22,7 @@ Draft  →  Discussion  →  Accepted | Rejected | Withdrawn
 
 - **Draft** — authored from `0000-template.md`, numbered with the next free
   integer (`NNNN-short-title.md`).
-- **Discussion** — opened as a PR; reviewed against the calibrated-honesty
+- **Discussion** — opened as a PR; reviewed against the calibrated-claim
   doctrine (no faked runtime enforcement / cross-platform proof / release
   readiness / 1.0 claims).
 - **Accepted / Rejected / Withdrawn** — the maintainer records the decision and

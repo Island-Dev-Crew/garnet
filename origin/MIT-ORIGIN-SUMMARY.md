@@ -1,5 +1,7 @@
 # Garnet: Project Origin Summary (MIT Submission Format)
 
+> The summary as written on 2026-04-17 for a formal submission, kept for the record. Claims of enforcement in it are bounded today by the [capability enforcement scope table](../C_Language_Specification/GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md); availability is in [README.md](../README.md).
+
 **Title:** Garnet: A Dual-Mode, Agent-Native Programming Language Reconciling Rust's Safety with Ruby's Expressiveness
 
 **Author:** Jon Isaac, Island Development Crew LLC, Huntsville, AL
@@ -70,10 +72,10 @@ Garnet is dual-licensed under Apache License 2.0 and MIT License, matching Rust'
 
 ## 7. Availability
 
-- **Source code**: Pending public GitHub release (v0.1.0)
-- **Website**: garnet-lang.org (registered, awaiting deployment)
-- **Universal installer**: sh.garnet-lang.org (shellchecked, pending deployment)
-- **Domain**: garnet-lang.org (registered by author)
+- **Source code**: https://github.com/Island-Dev-Crew/garnet (public since 2026)
+- **Website**: https://garnet-lang.org
+- **Installer**: https://garnet-lang.org/install.sh (Windows: install.ps1)
+- **Releases**: signed binaries at https://github.com/Island-Dev-Crew/garnet/releases (v0.8.2 as of 2026-09-11)
 
 ## 8. Acknowledgments
 

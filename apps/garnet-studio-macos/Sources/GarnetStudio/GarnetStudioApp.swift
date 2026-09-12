@@ -2686,7 +2686,7 @@ struct GarnetStudioRootView: View {
         case "Advisory Handoff": return "Package reviewed, no-source context into the provider-neutral packet; calls no provider."
         case "Converter Fit Matrix": return "Report active vs advisory vs native-boundary language lanes from repo truth."
         case "Provider Options": return "Write the provider-option registry evidence; provider-backed conversion is not active."
-        default: return "Runs through the disciplined process path with timeout and evidence-honest output."
+        default: return "Runs through the disciplined process path with timeout and evidence-backed output."
         }
     }
 
@@ -2919,7 +2919,7 @@ struct ConsoleView: View {
                     .textSelection(.enabled)
                     .padding(14)
             }
-            .help("Command output, capped for display with an honest marker; full output lands in the evidence bundle when one exists.")
+            .help("Command output, capped for display with an explicit marker; full output lands in the evidence bundle when one exists.")
             .background(Color(nsColor: .textBackgroundColor))
             .clipShape(RoundedRectangle(cornerRadius: 8))
         }
