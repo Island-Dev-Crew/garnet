@@ -46,7 +46,7 @@ The beta gate is **OPEN** only when both are true.
 
 - "research-grade prototype (v0.x.x) — not production-complete"
 - "tracked-slice ledger is complete, but that is not full MIT/productization completion"
-- "Paper VI scorecard: 4 supported, 2 partial (downgraded honestly), 0 refuted, 1 pending-infra"
+- "Paper VI scorecard: 4 supported, 2 partial (downgraded to match proof), 0 refuted, 1 pending-infra"
 - "production allocator path tracked in MEMORY_CORE_ROADMAP.md"
 - "human/aesthetic acceptance remains open"
 
