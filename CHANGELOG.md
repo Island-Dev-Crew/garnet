@@ -9,6 +9,26 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ## [Unreleased]
 
+### Trust surfaces — why.html, CLI output and templates say what the code does (2026-09-11)
+
+- **Fixed:** `why.html` claimed provable authority, compile-time
+  properties, `brew info` manifests, sealed runs and supervised agent
+  trees as shipped; each is now bounded or marked as a design, and its
+  social card is the current one. `garnet convert` no longer prints
+  "(sandboxed)" or asks for `@sandbox(unquarantine)` (the parser rejects
+  the line); `agent-loop` reports its seal as unsigned; `verify` no longer
+  names an external reviewer nothing wires in; `caps-log --verify` says it
+  checks the prev-hash links only; `ceilings` and `bounds` no longer claim a
+  ceiling applies or probe for wasmtime; `concurrency` drops
+  "Result-returning"; `test --help` says any runtime error fails a test.
+  The templates document the `[caps] allowed` list as unread, stop
+  promising a seeded test socket, and print ASCII on first run.
+- **Vocabulary:** the retired words leave every Rust source file outside
+  the integration tests (which a separate PR covers), the Studio Tauri
+  source, the ultrapunch fixture README and the playground inputs;
+  the playground package provenance and browser proof are refreshed (the
+  wasm bytes are unchanged).
+
 ### Gate files — vocabulary and one scope-table narrowing (2026-09-11)
 
 - The retired words leave the CI workflow comments, the capability-manifest
