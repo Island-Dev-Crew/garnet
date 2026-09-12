@@ -10,7 +10,7 @@
 //   Row 5  Process discipline   — per-category timeout, thread-drained pipes
 //                                 (no pipe deadlocks), best-effort process-tree
 //                                 SIGKILL, timed_out + duration surfaced, UI
-//                                 payload caps with honest markers.
+//                                 payload caps with explicit markers.
 //   Row 6  Truth surface        — live stats from docs/truth.json with an
 //                                 explicit "unavailable" state; zero
 //                                 hand-written release numbers.
@@ -159,7 +159,7 @@ public struct StudioSettingsStore {
 // MARK: - Row 5 · Process discipline
 
 /// Result of a disciplined process run. `output` is capped for UI display with
-/// an honest marker; `fullOutput` carries the complete streams for evidence
+/// an explicit marker; `fullOutput` carries the complete streams for evidence
 /// bundles. `timedOut` and `durationSeconds` are always surfaced.
 public struct StudioProcessResult: Sendable {
     public let command: String
@@ -273,7 +273,7 @@ public enum StudioProcessRunner {
     }
 
     /// Best-effort process-tree kill: walk descendants via `pgrep -P`, then
-    /// SIGKILL children-first, root last. "Best-effort" is the honest claim —
+    /// SIGKILL children-first, root last. "Best-effort" is the explicit claim —
     /// a child that re-parents between the walk and the kill can escape; the
     /// timeout result is still reported either way.
     public static func killProcessTree(rootPid: Int32) {
@@ -431,7 +431,7 @@ public struct StudioEvidenceReader {
                 return .success(canonical)
             }
         }
-        // Honest, greppable refusal — same message family as the Windows shell.
+        // Explicit, greppable refusal — same message family as the Windows shell.
         return .failure(.outsideRoots) // outside the Studio evidence roots
     }
 
@@ -527,7 +527,7 @@ public enum StudioProcessCategory: Sendable {
 public extension StudioProcessRunner {
     /// Bridge for the app's existing call sites: same disciplined path
     /// (timeout, tree-kill, drained pipes, capped UI payload), returning the
-    /// legacy command/exitCode/output triple with honest `timed_out` and
+    /// legacy command/exitCode/output triple with explicit `timed_out` and
     /// truncation markers folded into the output text.
     static func runBridged(
         executable: String,

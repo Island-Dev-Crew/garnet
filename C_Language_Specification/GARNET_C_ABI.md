@@ -21,7 +21,7 @@ symbol. Across the boundary, only C-ABI-stable shapes pass:
 
 No Rust/Garnet-specific layout crosses the boundary; ownership is caller-retains
 unless a paired free symbol is bound. (This is the *design*; the marshalling
-layer is deferred — see honest scope.)
+layer is deferred — see scope.)
 
 ## Compound native authority (the proof)
 
@@ -43,7 +43,7 @@ def c_file_size(path) { ... }   # native (ffi) + touches the filesystem (fs)
 So compound native authority is declared, diff-gated (S37), sandbox-surfaced
 (S46), and sealed (S38) — no native call can smuggle in an undeclared authority.
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 
 Garnet has **no FFI runtime**: the interpreter does not call the C symbol, the
 value↔C-ABI marshalling layer is **not** implemented, and no `.so`/`.dylib` is

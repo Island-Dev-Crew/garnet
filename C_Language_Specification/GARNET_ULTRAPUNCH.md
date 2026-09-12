@@ -9,7 +9,7 @@ code**. This document is the reproducible evidence record for that claim; the
 reviewer-facing positioning (the #1 claim + ranked runners-up, every line resolving
 to a proof) lives in `F_Project_Management/GARNET_ULTRAPUNCH_DOSSIER.md` (S115).
 
-> **Honest framing (load-bearing).** Acceptance rests ONLY on the two **enforced**
+> **Framing (load-bearing).** Acceptance rests ONLY on the two **enforced**
 > ceilings — `@caps` host-authority and `@max_depth` recursion (Stage V closed VM
 > parity for both). The verdict is **"accepted on capability + depth evidence"** —
 > never "fully bounded", "sandboxed", or "safe". `@bounded` (Wasmtime fuel), memory,

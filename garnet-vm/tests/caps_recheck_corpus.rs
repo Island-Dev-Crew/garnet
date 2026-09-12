@@ -4,7 +4,7 @@
 //! unreachable) on every workspace example the VM can compile: faithful
 //! lowering never widens authority. Together with the planted-laundering
 //! trap (unit test in `caps_recheck.rs`), this shows the check is a real,
-//! deterministic guard — green on honest programs, red on laundering.
+//! deterministic guard — green on non-laundering programs, red on laundering.
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -33,7 +33,7 @@ fn every_compilable_example_passes_the_caps_recheck() {
         // Only re-check what the VM actually compiles (mismatch/expected-fail
         // examples may not). compile_source_rechecked returns Err on EITHER a
         // compile failure OR a laundering — distinguish: a laundering message
-        // is the one we must never see on the honest corpus.
+        // is the one we must never see on the clean corpus.
         match garnet_vm::compile_source_rechecked(&src) {
             Ok(_) => compiled += 1,
             Err(e) => {

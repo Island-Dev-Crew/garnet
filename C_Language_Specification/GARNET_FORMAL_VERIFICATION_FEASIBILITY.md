@@ -47,7 +47,7 @@ annotations alone.**
 scope.** A mechanized soundness proof of the safe subset's type system is the
 gold standard but is a multi-month research effort with no tooling in tree today.
 
-## Decidability boundary (honest)
+## Decidability boundary
 
 The halting problem forbids verifying *arbitrary* Garnet. Any provable story must
 restrict to a checkable safe subset and **reject safe-but-uncheckable programs** —
@@ -62,9 +62,9 @@ provable story is scoped to a subset.
 2. **`@caps` soundness is feasible only via the S74 linear-capability mode** —
    sequence it after that mode lands.
 3. **Full formal verification of the whole language is not feasible and is not the
-   goal.** The honest target is a *provable safe subset*, not a proved language.
+   goal.** The explicit target is a *provable safe subset*, not a proved language.
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 
 A **feasibility study only.** No verifier, no termination proof, no SMT or
 proof-assistant integration, and no `@caps`-soundness theorem ship in this slice.

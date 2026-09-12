@@ -536,7 +536,7 @@ Error handling is the most architecturally significant consequence of the dual-m
 
 **This is a novel contribution.** No existing production language provides automatic bidirectional error-model bridging across a type-system mode boundary. TypeScript has no mode boundary. Rust has no exceptions. Swift has exceptions but no mode boundary. Garnet is the first to formalize this.
 
-> **Implementation note [v1.0].** The "automatic" bridging described in this section is the v4.0 target. v3.2/v3.3 implements the bridging contract via user-authored try/rescue + ? at boundaries — see Paper VI §C5 for the honest distinction between v3.2's shipped behavior and v4.0's automatic compiler-inserted wrappers. The grammar and semantics here describe the v4.0 surface; conforming v0.x implementations MAY require explicit bridging wrappers as long as the diagnostics direct programmers to write the correct manual form.
+> **Implementation note [v1.0].** The "automatic" bridging described in this section is the v4.0 target. v3.2/v3.3 implements the bridging contract via user-authored try/rescue + ? at boundaries — see Paper VI §C5 for the explicit distinction between v3.2's shipped behavior and v4.0's automatic compiler-inserted wrappers. The grammar and semantics here describe the v4.0 surface; conforming v0.x implementations MAY require explicit bridging wrappers as long as the diagnostics direct programmers to write the correct manual form.
 
 ### 7.2 Managed-mode error handling
 

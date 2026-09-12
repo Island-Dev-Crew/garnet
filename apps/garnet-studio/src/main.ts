@@ -306,7 +306,7 @@ function setupVelocityEditor(): void {
         const report = await invoke<VelocityCheckReport>("studio_velocity_check", { source });
         return velocityDiagnosticsHtml(report, source);
       } catch (error) {
-        // Render the rejection through the same honest "did not run" path.
+        // Render the rejection through the same explicit "did not run" path.
         return velocityDiagnosticsHtml(
           {
             ran: false,

@@ -27,7 +27,7 @@ fn reports_aggregate_authority_and_flags_high_authority() {
     // shell declares both ffi and proc -> both flagged high-authority.
     assert!(s.contains("high-authority: `shell` declares `ffi`"), "{s}");
     assert!(s.contains("high-authority: `shell` declares `proc`"), "{s}");
-    // honest scope surfaced
+    // scope surfaced
     assert!(s.contains("NOT MCP-host enforced"), "{s}");
 }
 

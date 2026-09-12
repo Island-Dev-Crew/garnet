@@ -65,7 +65,7 @@ and tied to the artifact currently being sealed. It does not prove that a model
 actually executed that prompt, that the named agent produced the file, or that
 the declared tool list is complete.
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 
 Every field is **self-declared**, **not verified** — the same posture as `@caps`
 and `--authored-by`. Garnet does not introspect the model, hash the live prompt,

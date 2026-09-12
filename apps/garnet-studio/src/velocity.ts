@@ -84,7 +84,7 @@ export function velocityDiagnosticsHtml(report: VelocityCheckReport, buffer: str
     .map((d) => {
       const sev = ["error", "warning", "info"].includes(d.severity) ? d.severity : "error";
       // Parse diagnostics carry a byte span → a precise line. Check diagnostics
-      // are message-only today → honestly "whole buffer", never a faked line.
+      // are message-only today → explicitly "whole buffer", never a faked line.
       const loc = d.span
         ? `<span class="diagnostic-loc">line ${lineForByteOffset(buffer, d.span.start)} · bytes ${d.span.start}–${d.span.start + d.span.len}</span>`
         : `<span class="diagnostic-loc">whole buffer (check diagnostics are not yet span-located)</span>`;

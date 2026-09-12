@@ -47,7 +47,7 @@ const STATUS_LABEL: Record<FenceStatus, string> = {
 
 /**
  * The static-gate line for an enforced fence: a CONFIRMED badge only when the
- * live probe reproduced the expected diagnostic this run; otherwise an honest
+ * live probe reproduced the expected diagnostic this run; otherwise an explicit
  * "not confirmed" / "not probed" — never a faked green.
  */
 function staticGateLine(probe: EnforcementProbe | undefined): string {

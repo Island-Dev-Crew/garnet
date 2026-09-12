@@ -38,7 +38,7 @@ garnet caps --standard-profile <file-or-package>
 That profile is still a seed over the declared capability surface. It is not an
 accepted standard and it does not prove absence of undeclared authority.
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 
 This is a **local, hash-chained STUB**, **not** a distributed or witnessed
 transparency log. There is **no** public log server, **no** signed tree head,

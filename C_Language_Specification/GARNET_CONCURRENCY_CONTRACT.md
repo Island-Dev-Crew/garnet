@@ -62,7 +62,7 @@ declares a governing fan-out bound (else the default fan-out ceiling applies).
 ## 5. Resource bounds
 
 - `@bounded(N)` (S39) declares a CPU/fuel budget for a function — the
-  Wasmtime-fuel lowering target (enforcement deferred; see S39/S40 honest scope).
+  Wasmtime-fuel lowering target (enforcement deferred; see S39/S40 scope).
 - `@mailbox(N)` (§2) bounds an actor's mailbox.
 - `@fan_out(K)` bounds spawn fan-out.
 
@@ -80,7 +80,7 @@ An actor's behaviour can be replaced at runtime, draining pending mailbox
 traffic; reloads can be Ed25519-signed (`garnet-actor-runtime/src/reloadkey.rs`).
 This is a runtime capability of the actor runtime, surfaced for completeness.
 
-## Honest scope (what this contract does NOT yet claim)
+## Scope (what this contract does NOT yet claim)
 
 - **No async/await.** Concurrency is actor-based; `async` is reserved for a
   future edition only.

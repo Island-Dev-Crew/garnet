@@ -70,7 +70,7 @@ test.describe("agentLoopConsoleHtml (pure renderer)", () => {
     expect(html).toContain("garnet-capability-manifest-v1");
     expect(html).toContain("scripted-agent-v1");
     expect(html).toContain("accept_proposal");
-    // decision.md rendered verbatim — the honest scope disclaimer survives.
+    // decision.md rendered verbatim — the scope disclaimer survives.
     expect(html).toContain("NOT a claim of full boundedness or safety");
   });
 
@@ -78,7 +78,7 @@ test.describe("agentLoopConsoleHtml (pure renderer)", () => {
     const html = agentLoopConsoleHtml(dossier());
     expect(html).toContain("al-card seal");
     expect(html).toContain("not a human approval");
-    expect(html).toContain("simulated"); // the model is honest about being scripted
+    expect(html).toContain("simulated"); // the model is explicit about being scripted
   });
 
   test("a rejected-at-diff-caps dossier stops the pipeline and writes no seal", () => {
@@ -126,7 +126,7 @@ test.describe("agentLoopConsoleHtml (pure renderer)", () => {
   });
 
   test("an accepted dossier whose seal could not be read says so, not 'not accepted'", () => {
-    // The degraded-accept honesty fix: outcome accepted but seal absent must NOT
+    // The degraded-accept accuracy fix: outcome accepted but seal absent must NOT
     // render the rejection's "not accepted" copy.
     const html = agentLoopConsoleHtml(
       dossier({ outcome: "accepted", seal_attestation: null, seal_authorship: "" }),

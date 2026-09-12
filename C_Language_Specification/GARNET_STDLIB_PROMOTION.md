@@ -38,7 +38,7 @@ The `std::*` families are **not** promoted:
 Promoting these to silence example warnings would **game the `@stability`
 contract**. The warnings they emit are *correct*.
 
-## Effect on the corpus (honest)
+## Effect on the corpus
 
 - `examples/novel_07_functional_core_pipeline.garnet` (core-only) now checks with
   **0 diagnostics**.
@@ -46,7 +46,7 @@ contract**. The warnings they emit are *correct*.
   use `std::*` experimental utilities (e.g. `std::base64::encode`, `std::json`,
   `std::regex`, `std::uuid`, `std::log`), and those warnings remain accurate.
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 
 This is a **stability judgement**, not warning-suppression. Only the genuinely
 foundational `core::*` layer was promoted; every `std::*` utility stays

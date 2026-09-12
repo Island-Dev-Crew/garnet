@@ -37,7 +37,7 @@ When the infra lands, Exp 1 measures the LLM tier against the rules-tier control
 `scripts/garnet_llm_suggest_readiness.py` reports this live and gates that the
 rules tier stays present; the LLM tier is intentionally **not** gated.
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 
 The LLM tier is **pending-infra** — no model is called, no provider is bundled,
 and no new firing advisory ships in S69. The rules tier is the active baseline;

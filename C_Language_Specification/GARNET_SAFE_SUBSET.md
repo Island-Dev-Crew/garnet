@@ -66,7 +66,7 @@ This mode is **opt-in and high-assurance**: ordinary code keeps the legible
 `@caps` annotations (legibility matters most for agent-authored code humans
 *accept*); high-assurance components can pay for linear/effect rigor.
 
-## 3. Honest scope (do not soften)
+## 3. Scope (do not soften)
 
 - §1 (the safe subset today) describes **implemented** behavior: `FnMode::Safe`
   exists in `garnet-parser-v0.3/src/ast.rs`; the boundary audit exists in

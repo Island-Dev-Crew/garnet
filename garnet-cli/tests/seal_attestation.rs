@@ -1,7 +1,7 @@
 //! S38 — `garnet seal` integration test (runs the built binary).
 //!
 //! Confirms the in-toto seal predicate is emitted with the expected shape and
-//! that the cosign-availability note is present (honest either way).
+//! that the cosign-availability note is present (explicit either way).
 
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -76,7 +76,7 @@ fn seal_out_writes_the_predicate_to_a_file() {
 
 #[test]
 fn seal_reports_cosign_availability_on_stderr() {
-    // The seal wrapper always notes cosign's presence/absence (honest either way).
+    // The seal wrapper always notes cosign's presence/absence (explicit either way).
     let dir = fresh("seal_cosign");
     let p = write(dir.as_path(), "app.garnet", "@caps()\ndef main() { 1 }\n");
     let out = garnet().arg("seal").arg(&p).output().unwrap();

@@ -6,7 +6,7 @@ Owns migration frontends and conversion helpers for lifting Rust, Ruby, Python, 
 
 ## Stable Contracts
 
-- Conversion output must be honest: uncertain mappings should become explicit TODOs, not fake confidence.
+- Conversion output must not overclaim: uncertain mappings should become explicit TODOs, not fake confidence.
 - Keep sandboxing assumptions visible; do not execute source language code as part of conversion.
 - Preserve provenance from source constructs to generated Garnet where possible.
 

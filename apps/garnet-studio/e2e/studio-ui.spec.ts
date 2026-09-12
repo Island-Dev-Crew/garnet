@@ -41,7 +41,7 @@ test.describe("Garnet Studio UI (built dist in a browser)", () => {
     await expect(panel.locator("#diff-caps-old")).toHaveCount(1);
     await expect(panel.locator("#diff-caps-new")).toHaveCount(1);
     await expect(panel.locator("#btn-diff-caps")).toHaveText("Review capability diff");
-    // The honesty rail is in the panel copy: the CLI owns the verdict/band.
+    // The claim rail is in the panel copy: the CLI owns the verdict/band.
     await expect(panel).toContainText("renders that decision");
   });
 
@@ -53,7 +53,7 @@ test.describe("Garnet Studio UI (built dist in a browser)", () => {
     await expect(panel.locator("h2")).toHaveText("Enforced / Declared Legend");
     await expect(panel.locator("#btn-legend")).toHaveText("Generate from CLI truth");
     await expect(panel.locator("#legend-result")).toHaveCount(1);
-    // The honesty rail: status is generated from a live probe, and the runtime
+    // The claim rail: status is generated from a live probe, and the runtime
     // trap is attested (not re-run here) — never hand-written.
     await expect(panel).toContainText("never hand-written");
     await expect(panel).toContainText("attested");
@@ -68,7 +68,7 @@ test.describe("Garnet Studio UI (built dist in a browser)", () => {
     await expect(panel.locator("#agent-loop-dir")).toHaveCount(1);
     await expect(panel.locator("#btn-agent-loop")).toHaveText("Load dossier");
     await expect(panel.locator("#agent-loop-result")).toHaveCount(1);
-    // The four gates are named in the panel copy, and the honesty rail is explicit:
+    // The four gates are named in the panel copy, and the claim rail is explicit:
     // it reads a record dir, does not re-run the loop, and does not overclaim safety.
     await expect(panel).toContainText("check → diff-caps → run → seal");
     await expect(panel).toContainText("does not re-run");
@@ -160,7 +160,7 @@ test.describe("Garnet Studio UI (built dist in a browser)", () => {
     await page.goto("/");
     await expect(page.locator("#sb-mode")).toContainText("mode:");
     // Outside Tauri get_app_info rejects, so the version line degrades to the
-    // browser-preview notice — assert one of the two honest states renders.
+    // browser-preview notice — assert one of the two explicit states renders.
     await expect(page.locator("#sb-app")).toContainText(/Studio/);
   });
 });

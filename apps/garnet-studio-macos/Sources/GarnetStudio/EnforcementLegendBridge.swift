@@ -4,11 +4,11 @@
 // which are only *declared*, and which are platform-*deferred*. Ported verbatim
 // from the Windows shell's catalog (apps/garnet-studio/src-tauri/src/commands.rs
 // `enforcement_catalog`) so the two Studios make the SAME claim. The
-// enforced-vs-declared boundary is a load-bearing honesty surface: it is never
+// enforced-vs-declared boundary is a load-bearing claim surface: it is never
 // widened here, and an "enforced" row reads as *confirmed live* ONLY when the
 // live static-gate probe reproduced this run (see `EnforcementLegendCard`).
 //
-// Honesty anchors (CLAUDE.md): enforced = @caps + @max_depth (both backends;
+// Claim anchors (CLAUDE.md): enforced = @caps + @max_depth (both backends;
 // seccomp Linux-only); @bounded / @mailbox / memory / time are declared-not-
 // enforced; OS sandbox off Linux is deferred. Garnet is research-grade (v0.x).
 
@@ -186,7 +186,7 @@ public enum EnforcementCatalog {
 }
 
 /// The view-ready projection of an `EnforcementLegend`. `render` is the pure
-/// function M4's SwiftUI view lays out; the honesty rules (confirmed-only-when-
+/// function M4's SwiftUI view lays out; the claim rules (confirmed-only-when-
 /// reproduced; rows ordered enforced→declared→deferred) live here and are tested.
 public struct EnforcementLegendCard: Equatable, Sendable {
     public enum GateState: String, Sendable { case confirmed, unconfirmed, notProbed, notApplicable }
@@ -222,7 +222,7 @@ public struct EnforcementLegendCard: Equatable, Sendable {
     }
 
     /// The static-gate line for a fence. CONFIRMED only when the live probe
-    /// reproduced the expected diagnostic this run; otherwise an honest
+    /// reproduced the expected diagnostic this run; otherwise an explicit
     /// not-confirmed / not-probed — never a faked green. Non-enforced fences
     /// carry no gate line.
     private static func gate(

@@ -42,7 +42,7 @@ fn reports_explosive_ops_with_governance_and_defaults() {
     );
     assert!(
         s.contains("no ceiling is faked"),
-        "the honest deferral note must be present: {s}"
+        "the explicit deferral note must be present: {s}"
     );
 }
 

@@ -15,7 +15,7 @@ Owns the `garnet` binary, subcommand routing, template embedding, deterministic 
   fuel or runtime loop enforcement.
 - `garnet parse` defaults to AST mode. `garnet parse --mode cst <file>` routes
   to the canonical rowan `garnet-cst` parser and must report round-trip truth
-  and recorded CST errors honestly.
+  and recorded CST errors explicitly.
 - `garnet repl` (RB-7) hosts the `reedline` line editor and the REPL ergonomics
   (`?doc`, `:caps`, completion, multiline). **`reedline` stays a `garnet-cli`
   dependency ONLY** — never add a terminal line editor to `garnet-interp`, which

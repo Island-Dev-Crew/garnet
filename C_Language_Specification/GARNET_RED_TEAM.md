@@ -10,7 +10,7 @@ invalid-`@max_depth` seal — and the Opus final review found the first remediat
 bypass open** on `eval`/`test`/`doctest`/`repl`/dependency-preload (a fail-open
 `require_capability` at `active_frames==0`). All are now fixed: `4994867` for the
 wired lanes, and **S114-FIX-2** closes the residual via deny-by-default mediation.
-Finding and fixing real holes is the honest outcome the academic bar
+Finding and fixing real holes is the expected outcome the academic bar
 (CMU/MIT/Rice/Berkeley) rewards; this is not a "nothing broke" claim. S114 is
 **independently-re-verified-with-fixes**; Jon's separate scoped governance
 acceptance is recorded as `accepted-scoped` (2026-07-12). That decision is not
@@ -50,13 +50,13 @@ stage diff-caps, never sealing it**. Regression tests:
 (The static `check` caps-coverage already recursed into `Item::Impl`, so it was not
 blind — the defect was solely in the surface derivation.)
 
-## HOLES recorded (LOW — within honest "stub"/mitigated scope; follow-up)
+## HOLES recorded (LOW — within explicit "stub"/mitigated scope; follow-up)
 
 - **caps-log `--verify` accepts a forged TAIL entry.** `verify_log` only checks the
   `prev_blake3` forward link and never re-derives `caps_blake3` from `caps`; the tail
   has no successor committing to its hash, so rewriting the most-recent entry's caps
   (+ a bogus `caps_blake3`) still prints *"chain intact … (append-only)"* (exit 0).
-  Non-tail tampering **is** caught (CHAIN BROKEN). The module honestly self-declares a
+  Non-tail tampering **is** caught (CHAIN BROKEN). The module explicitly self-declares a
   *local hash-chained stub — no signed tree head, no witness* (not Rekor), and verify
   executes no host effect. Follow-up: bind `caps_blake3` to `caps` in verify and/or
   anchor the tip; soften the "append-only verified" wording.
@@ -91,7 +91,7 @@ blind — the defect was solely in the surface derivation.)
 - An interp **stack-overflow** on extreme unannotated recursion where the VM
   succeeds is a real backend robustness divergence — a hardening target, not a
   ceiling hole.
-- `time`/`@bounded` fuel/memory/`@mailbox` under-declaration: `time` is honestly
+- `time`/`@bounded` fuel/memory/`@mailbox` under-declaration: `time` is explicitly
   named-deferred at runtime; `check` flags top-level under-declaration; diff-caps's
   *widening* contract is not violated when the declared surface is unchanged.
 - The `@caps(*)` wildcard baseline is documented and out of scope.
@@ -102,7 +102,7 @@ blind — the defect was solely in the surface derivation.)
   `active_frames==0` (complete mediation / fail-safe default); only library/embedder
   direct calls (no Garnet program context) keep the permissive default.
 
-## Honest scope
+## Scope
 
 The enforced ceilings in scope are: the diff-caps widening gate, the agent-loop
 acceptance gate, the runtime `@caps` host-authority trap (fs/net/env/proc), the

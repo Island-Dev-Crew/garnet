@@ -6,7 +6,7 @@
  * service (S44), which runs on the compiler frontend. The canonical grammar is
  * the hand-written parser in `garnet-parser`; this mirrors its core surface.
  *
- * Honest scope: this is a CORE grammar covering the headline constructs (enough
+ * Scope: this is a CORE grammar covering the headline constructs (enough
  * for editor highlighting), not an exhaustive reproduction of every form. It is
  * structurally validated in CI (`scripts/garnet_tree_sitter_check.py`); running
  * `tree-sitter generate` + corpus tests requires the tree-sitter CLI.

@@ -21,7 +21,7 @@ def rust_blake3(data) {
   (pointers + lengths, no Rust-specific layout across the boundary).
 - The Garnet side declares `@caps(ffi)` — **mandatory**; without it the call is
   not reachable (S61). The marshalling layer (Garnet value ↔ C ABI) is the part
-  that needs a runtime and is **deferred** (see honest scope).
+  that needs a runtime and is **deferred** (see scope).
 
 ## The proof: attestation, not execution
 
@@ -38,7 +38,7 @@ authority**:
 
 `garnet-cli/tests/rust_ffi_proof.rs` proves this cross-OS via the matrix.
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 
 Garnet has **no FFI runtime**: the interpreter does not call the Rust symbol, and
 this slice does **not** add the value↔C-ABI marshalling layer or link a real Rust

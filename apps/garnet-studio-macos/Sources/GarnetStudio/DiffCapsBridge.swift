@@ -104,7 +104,7 @@ public struct DiffCapsReport: Equatable, Sendable {
 }
 
 /// The view-ready projection of a `DiffCapsReport`. `DiffCapsCard.render` is the
-/// pure function M2's SwiftUI view lays out; all honesty rules live here so they
+/// pure function M2's SwiftUI view lays out; all claim rules live here so they
 /// are unit-testable (`swift test`), not buried in a `View`.
 public struct DiffCapsCard: Equatable, Sendable {
     public enum Tone: String, Sendable { case ok, fail }

@@ -8,7 +8,7 @@ import Foundation
 
 public enum AgentLoopCommand {
     /// Read the record-dir artifacts and parse them. A missing directory / missing
-    /// `decision.md` yields a non-`ran` dossier with an honest error, never a
+    /// `decision.md` yields a non-`ran` dossier with an explicit error, never a
     /// fabricated verdict.
     public static func load(recordDir: String) -> AgentLoopDossier {
         let dir = URL(fileURLWithPath: recordDir, isDirectory: true)

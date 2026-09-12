@@ -17,7 +17,7 @@ interesting question for an agent-native language is what happens when you
 S21/S22 then extend the same harness to prove newly-dispatched stdlib and
 Mnemos-handle surfaces through the CLI.
 
-> **Calibrated-honesty scope.** Like the canonical corpus, these compositions
+> **Calibrated-claim scope.** Like the canonical corpus, these compositions
 > **model the patterns deterministically** in managed mode (the proven runnable
 > subset — `def`/`match`/`let mut`/`crypto::blake3`/arithmetic). They prove the
 > *composition shape* executes and is reproducible; they do **not** stand up the

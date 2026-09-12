@@ -10,7 +10,7 @@
 //   garnet trust-report examples/agent_orchestrator_3thread.garnet \
 //     | grep -q "actors: 3 / threads: 3"
 //
-// Honest scope (v0.5.1):
+// Scope (v0.5.1):
 // - The `trust-report` count is STRUCTURAL — it counts `actor` declarations
 //   in the parsed source. It does NOT instrument the runtime to record a
 //   live thread spawn count. The 3:3 ratio follows from the runtime's

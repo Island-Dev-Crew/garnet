@@ -4,7 +4,7 @@
 // json` (schema: a `diagnostics` array + a `summary` of counts, see
 // garnet-cli/src/diagnostics.rs) and projects it to a view-ready card WITHOUT
 // recomputing severities or the ok/clean verdict. The View (M3
-// `VelocityEditorSection`) only lays out the pure `VelocityCard`; all honesty
+// `VelocityEditorSection`) only lays out the pure `VelocityCard`; all claim
 // rules live here so they are unit-testable (`swift test`), the CI-safe pattern
 // established by M0b's `DiffCapsCard`.
 
@@ -120,7 +120,7 @@ public struct VelocityReport: Equatable, Sendable {
 }
 
 /// The view-ready projection of a `VelocityReport`. `VelocityCard.render` is the
-/// pure function M3's SwiftUI view lays out; all honesty rules live here.
+/// pure function M3's SwiftUI view lays out; all claim rules live here.
 public struct VelocityCard: Equatable, Sendable {
     public enum Tone: String, Sendable { case ok, warn, fail }
 

@@ -30,7 +30,7 @@ garnet sandbox --format json prog.garnet \
 # or: bash tools/seccomp-apply/prove.sh  (full Linux host with garnet built)
 ```
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 
 - **Linux seccomp only.** macOS `sandbox-exec` and Windows AppContainer are separate
   and remain **named-deferred**.

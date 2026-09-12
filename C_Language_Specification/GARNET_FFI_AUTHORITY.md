@@ -20,7 +20,7 @@ opposite of an implicit escape hatch.
    - embedded in the `garnet seal` in-toto predicate (S38),
    - and **flagged by `garnet sandbox` (S46)** as an escape hatch the
      seccomp/WASI policy cannot constrain.
-3. **FFI is honestly uncontainable.** The sandbox policy says so verbatim:
+3. **FFI is uncontainable.** The sandbox policy says so verbatim:
    *"`ffi` capability: native calls cannot be constrained by seccomp or WASI —
    this policy flags but does not contain FFI."* The authority model's value is
    **transparency + review**, not containment: an `@caps(ffi)` gain is loud and
@@ -37,11 +37,11 @@ baseline. Proven by `garnet-cli/tests/ffi_authority.rs`:
 - `garnet diff-caps no_native native_boundary` → `caps GAINED: ffi` /
   `AUTHORITY EXPANDED`, exit non-zero.
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 
 Garnet has **no FFI runtime**: the tree-walking interpreter does not execute
 `extern "C"` calls, and this slice does **not** add one. S61 ships the
 *authority model* — how FFI is declared, surfaced, diffed, sealed, and flagged —
 not native-call execution. Rust/C ABI execution proofs (S62/S63) and WASI interop
-(S64) build on this model; they remain honest-partial where the native toolchain
+(S64) build on this model; they remain partial where the native toolchain
 or wasm runtime is absent.

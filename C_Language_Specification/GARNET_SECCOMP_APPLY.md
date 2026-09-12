@@ -1,7 +1,7 @@
 # Garnet OS-sandbox application — S46 *generated* → *applied + trapped* on real Linux
 
 S46 (`garnet sandbox`) **generates** a seccomp policy from a program's `@caps`
-surface but, honestly, **does not enforce it** — `garnet sandbox` prints
+surface but explicitly **does not enforce it** — `garnet sandbox` prints
 `enforced: false (policy generation only)`. This slice closes that gap on **Linux
 seccomp**: the generated policy is **applied as a real seccomp filter** and a
 policy-violating syscall is **deterministically trapped** on a real kernel.
@@ -27,7 +27,7 @@ a seccomp filter that allows exactly those syscalls, and probes the boundary.
 This moves S46 from **"generated, not enforced"** to **"generated + a reference apply
 path proven to deterministically trap on a real Linux kernel."**
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 
 - **Linux seccomp only.** macOS `sandbox-exec` and Windows AppContainer are separate
   and remain **named-deferred** (not proven here).
@@ -42,7 +42,7 @@ path proven to deterministically trap on a real Linux kernel."**
 - Proven on **aarch64 / Debian 6.1**; re-run `prove.sh` to record a proof on any
   other kernel/arch.
 - `garnet sandbox` still correctly prints `enforced: false` for its *generation*
-  step — that flag is honest; enforcement happens in the (separate) apply step here.
+  step — that flag is explicit; enforcement happens in the (separate) apply step here.
   v0.8.1 remains a research-grade prototype; no production/1.0 claim.
 
 See also: `C_Language_Specification/GARNET_SANDBOX_POLICY.md` (S46 generation),

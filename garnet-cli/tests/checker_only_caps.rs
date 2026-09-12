@@ -6,7 +6,7 @@
 //! (see `garnet-stdlib/src/registry.rs` and the in-crate parity test
 //! `guard_column_matches_runtime_backstop_behavior`). This CLI-level test pins
 //! that `garnet run` never raises a capability trap for that class, so the
-//! public capability enforcement scope table stays honest:
+//! public capability enforcement scope table stays explicit:
 //! `C_Language_Specification/GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md`.
 
 use std::process::Command;

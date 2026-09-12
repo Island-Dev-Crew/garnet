@@ -73,7 +73,7 @@ final class StudioShellTests: XCTestCase {
         let elapsed = Date().timeIntervalSince(start)
         XCTAssertTrue(result.timedOut, "a 30s sleep under a 1s ceiling must report timed_out")
         XCTAssertLessThan(elapsed, 10, "the tree kill must end the wait well before the child's natural exit")
-        XCTAssertTrue(result.output.contains("timed_out"), "the honest timeout marker must be in the output")
+        XCTAssertTrue(result.output.contains("timed_out"), "the explicit timeout marker must be in the output")
         XCTAssertNotEqual(result.exitCode, 0)
     }
 

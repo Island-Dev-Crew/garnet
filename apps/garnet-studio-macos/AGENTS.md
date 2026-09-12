@@ -20,7 +20,7 @@ the PR #391 shell *standard*, not the Tauri code
 - **Process discipline (row 5):** every spawned command goes through
   `StudioProcessRunner` (thread-drained pipes, per-category timeout from
   settings, best-effort process-tree SIGKILL, `timedOut`/duration surfaced,
-  UI payload caps with honest markers). New call sites must use
+  UI payload caps with explicit markers). New call sites must use
   `StudioProcessRunner.runBridged`/`run`, never raw
   `Process()` + `waitUntilExit()`. The agentic matrix uses the larger
   `.matrix` timeout category.
@@ -45,7 +45,7 @@ the PR #391 shell *standard*, not the Tauri code
   any network-touching surface (including a local-model Co-typist panel)
   requires a Jon-approved amendment to this file plus contract tests and
   security review in the same change.
-- Honest claim boundaries stay in the UI copy: research-grade prototype, not
+- Claim boundaries stay in the UI copy: research-grade prototype, not
   production/1.0; provider-backed conversion is not active; deferred lanes
   named. Evidence for Mac Studio actions belongs under `~/Desktop/dogfood`.
 

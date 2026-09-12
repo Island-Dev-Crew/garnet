@@ -65,7 +65,7 @@ checker, parser, or macOS SwiftUI Studio implementation.
   must degrade to an explicit "not found" rather than inventing values. The
   frontend must not reintroduce hand-written release statistics.
 - The simple/power interface modes hide power-only panels with CSS only; the
-  panels (and their honest-copy strings) stay in the DOM so the shell
+  panels (and their explicit-copy strings) stay in the DOM so the shell
   contract test keeps asserting them.
 
 ## Required Checks

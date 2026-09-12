@@ -4,7 +4,7 @@
 (`@caps(...)`, S35) into three concrete sandbox policy artifacts. It is the
 bridge from *declared* capability to *enforceable* configuration.
 
-## Honest scope — generation, not enforcement
+## Scope — generation, not enforcement
 
 **This slice generates policy; it does not enforce it.** Nothing in `garnet
 sandbox` runs a guest under `wasmtime`, applies a seccomp profile to a live
@@ -24,7 +24,7 @@ actionable, reviewable, and diff-able alongside the capability manifest (S36)
 and capability-surface diff gate (S37).
 
 > **Update — the seccomp profile is now proven enforceable on a real kernel.**
-> `garnet sandbox`'s `enforced: false` (generation) flag stays honest, but the
+> `garnet sandbox`'s `enforced: false` (generation) flag stays explicit, but the
 > *generated* seccomp profile has been **applied and deterministically trapped** on
 > a real Linux kernel (the Mac's UTM Debian-12 ARM64 guest): under `@caps(fs)`,
 > `socket()` is denied with `EPERM`; under `@caps(fs, net)` it is allowed
@@ -61,7 +61,7 @@ allowed syscalls carry `SCMP_ACT_ALLOW`.
 
 ## Warnings
 
-The generator flags cases where the sandbox cannot honestly contain the program:
+The generator flags cases where the sandbox cannot actually contain the program:
 
 - **`ffi`** — native calls bypass both seccomp syscall filtering (the FFI shim
   issues syscalls the static caps don't predict) and WASI. The policy *flags*

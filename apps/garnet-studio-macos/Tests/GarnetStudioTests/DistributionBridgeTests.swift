@@ -2,7 +2,7 @@ import XCTest
 
 @testable import GarnetStudio
 
-/// M7 — tests for the Distribution Reporter. The load-bearing honesty: the macOS
+/// M7 — tests for the Distribution Reporter. The load-bearing claim: the macOS
 /// .app is unsigned + un-notarized, so signing and notarization are always
 /// `deferred` and the headline never claims distribution-readiness. Probe items
 /// read `unverified` without a repo root — never a fabricated "ready".

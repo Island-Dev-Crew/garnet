@@ -5,7 +5,7 @@
 # embedded source string, counting arity and detecting the `@caps(...)`
 # annotation that marks a managed function.
 #
-# Honest scope: this is a SEED toward self-hosting, NOT the production parser
+# Scope: this is a SEED toward self-hosting, NOT the production parser
 # (garnet-parser-v0.3). It recognizes def headers + @caps lines using only the
 # Stable, no-caps `str::` primitives (split / trim / replace / contains /
 # starts_with). It does NOT build a full AST, handle nested braces, expressions,

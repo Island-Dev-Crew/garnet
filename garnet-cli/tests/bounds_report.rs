@@ -35,7 +35,7 @@ fn reports_declared_fuel_budgets_with_honest_deferral() {
     assert!(s.contains("Wasmtime-fuel"), "{s}");
     assert!(
         s.contains("not yet runtime fuel-enforced"),
-        "the honest deferral note must be present: {s}"
+        "the explicit deferral note must be present: {s}"
     );
 }
 

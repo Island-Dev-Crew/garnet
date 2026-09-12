@@ -10,7 +10,7 @@ and `garnet-cli/tests/conformance_skeleton.rs`.
 
 ## Purpose
 
-This document is a single, honest table answering the question every
+This document is a single, accurate table answering the question every
 serious reader eventually asks: **"What in the Mini-Spec actually
 runs today?"**
 
@@ -202,7 +202,7 @@ allocator integration is sequenced in
   Empirical Validation Protocol is where pre-registered conformance
   tests will live once they exist.
 
-## How to keep this honest
+## How to keep this accurate
 
 When you change implementation status — landing `yield`, adding `do...end`,
 hooking up `@dynamic`, finishing the borrow checker — flip the row in this

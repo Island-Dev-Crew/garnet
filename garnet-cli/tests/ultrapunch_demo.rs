@@ -3,7 +3,7 @@
 //!
 //! Drives `garnet agent-loop --record-dir` over the committed demo scenario
 //! (`tests/fixtures/ultrapunch/`): an ACCEPT proposal yields the **4 trust
-//! artifacts** + an honest `decision.md`; a capability-WIDENING proposal is refused
+//! artifacts** + an explicit `decision.md`; a capability-WIDENING proposal is refused
 //! at diff-caps and **never sealed** (the punch); an over-ceiling proposal passes
 //! diff-caps but the enforced kernel traps it and it is **never sealed**.
 
@@ -59,7 +59,7 @@ fn accept_records_the_four_trust_artifacts() {
         "the safe proposal must be ACCEPTED: {}",
         String::from_utf8_lossy(&out.stdout)
     );
-    // The 4 trust artifacts + the honest decision record.
+    // The 4 trust artifacts + the explicit decision record.
     for f in [
         "capability_manifest.json",
         "diff_caps.txt",
@@ -84,7 +84,7 @@ fn accept_records_the_four_trust_artifacts() {
         .status()
         .unwrap();
     assert!(verify.success(), "the transparency-log chain must verify");
-    // The decision is honest about scope.
+    // The decision is explicit about scope.
     let decision = read(rec.path(), "decision.md");
     assert!(decision.contains("ACCEPTED"), "{decision}");
     assert!(decision.contains("capability+depth evidence"), "{decision}");

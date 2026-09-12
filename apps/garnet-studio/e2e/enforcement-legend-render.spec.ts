@@ -80,7 +80,7 @@ test.describe("enforcementLegendHtml (pure renderer)", () => {
     expect(html).not.toContain("confirmed live this run");
     expect(html).not.toContain("legend-probe confirmed");
     expect(html).toContain("Static gate not probed");
-    // No CLI → an honest banner, not a silent pass.
+    // No CLI → an explicit banner, not a silent pass.
     expect(html).toContain("No Garnet CLI found");
   });
 

@@ -46,7 +46,7 @@ final class DiffCapsBridgeTests: XCTestCase {
 
     func testFunctionOnlyChangeNeverReadsAsCleanEmptyState() {
         // band 5/5, no aggregate change, but a function gained authority: must NOT
-        // claim "no changes" (the load-bearing honesty rule from the TS renderer).
+        // claim "no changes" (the load-bearing claim rule from the TS renderer).
         let card = DiffCapsCard.render(
             report(
                 #"{"schema":"garnet.diff-caps.machine/1","verdict":"REVIEW","authority_expanded":false,"capability_band":"5/5","exit_code":0,"aggregate_gained":[],"aggregate_removed":[],"wildcard_introduced":false,"functions_added":[],"functions_removed":[],"functions_caps_expanded":[{"name":"helper","gained":["net"]}],"scope":"s"}"#

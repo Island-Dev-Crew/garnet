@@ -9,6 +9,16 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ## [Unreleased]
 
+### Vocabulary — retired words leave the docs and comments (2026-09-11)
+
+- The words honest, honestly and honesty are retired from the specification
+  documents, the crate `AGENTS.md` files outside the playground inputs, code
+  comments, test assertion messages and Studio comments (PR-2 of the purge
+  inventory: 69 files, word-level edits). Section headings keep their
+  "(do not soften)" markers; only the heading word changes. Records under
+  `proofs/`, `F_Project_Management/`, dated plans and this file's history
+  are unchanged.
+
 ### Root docs — claims match the scope table; origin records move to `origin/` (2026-09-11)
 
 - **Fixed:** FAQ and README claims wider than the capability enforcement

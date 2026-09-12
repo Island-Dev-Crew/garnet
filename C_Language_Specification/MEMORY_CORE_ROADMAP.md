@@ -197,6 +197,6 @@ The above is not a strict serial order. The principle:
 - **Vendor-specific allocator bindings.** Garnet ships pure-Rust by default; integrating tcmalloc / jemalloc / mimalloc is a downstream choice.
 - **GC-style replacements.** Garnet's safe-mode story is ARC + cycle detection (Mini-Spec §4.5), not tracing GC. Switching collectors is out of scope.
 
-## How to keep this document honest
+## How to keep this document accurate
 
 When a Tier item lands, do the same thing the conformance matrix policy says to do: flip the row in the *same commit* that lands the work, and update the §4.x rows of the conformance matrix to match. Stale roadmaps are worse than no roadmap because they pretend to inform.

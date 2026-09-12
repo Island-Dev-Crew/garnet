@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Aggregate S95 5K-LOC Exp 3 rows with an honest h3a boundary."""
+"""Aggregate S95 5K-LOC Exp 3 rows with an explicit h3a boundary."""
 from __future__ import annotations
 
 import argparse

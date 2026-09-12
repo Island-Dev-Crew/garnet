@@ -3,7 +3,7 @@ import XCTest
 @testable import GarnetStudio
 
 /// M4 — tests for the Enforced / Declared Legend catalog + pure projection. The
-/// enforced-vs-declared boundary is a load-bearing honesty surface: these pin
+/// enforced-vs-declared boundary is a load-bearing claim surface: these pin
 /// that EXACTLY @caps + @max_depth are enforced, the named-deferred fences stay
 /// declared, the OS sandbox stays deferred, and an enforced row reads "confirmed
 /// live" ONLY when the live static-gate probe reproduced the expected code.

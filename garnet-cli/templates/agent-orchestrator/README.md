@@ -43,7 +43,7 @@ The generated `main` declares `@caps()` because the starter program is pure. If
 you extend it to read/write persistent fact files, annotate the I/O function
 with `@caps(fs)` — the CapCaps propagator (v3.4.1) will then propagate the
 requirement up to `main` at compile time, forcing the `Garnet.toml` `[caps]`
-budget to stay honest.
+budget to stay accurate.
 
 ## Run
 

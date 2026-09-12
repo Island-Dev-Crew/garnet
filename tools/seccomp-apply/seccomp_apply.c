@@ -7,7 +7,7 @@
  * the @caps(fs) policy) is deterministically refused with EPERM.
  *
  * This turns S46 from "policy generation only" into "applied + trapped on a real
- * Linux kernel". Honest scope: Linux seccomp only; it proves the GENERATED policy
+ * Linux kernel". Scope: Linux seccomp only; it proves the GENERATED policy
  * is enforceable, not that the program is "safe". Build: cc -O2 -o seccomp_apply
  * seccomp_apply.c -lseccomp. Usage: seccomp_apply <allowlist-file> (one syscall
  * name per line).

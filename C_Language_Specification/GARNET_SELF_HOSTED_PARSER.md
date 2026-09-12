@@ -36,7 +36,7 @@ parsed defs: 3 managed: 1
 - The **agent-contracts** job (python-only, no compiler) runs the reporter's
   static well-formedness gate (`--gate --no-run`) and 5 unit tests.
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 
 This is a **SEED toward self-hosting, NOT the production parser**
 (`garnet-parser-v0.3`). It recognizes def headers + `@caps` lines from a source

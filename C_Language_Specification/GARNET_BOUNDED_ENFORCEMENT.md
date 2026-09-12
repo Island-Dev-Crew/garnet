@@ -3,7 +3,7 @@
 The v0.8.0 trust kernel *declared and checked* bounds but did not **enforce** them
 at runtime (S40 identifies explosive operations + a default-ceiling *policy*; S46
 *generates* sandbox policy without enforcing). S89 is the first slice that makes
-the kernel actually enforce — one ceiling, honestly.
+the kernel actually enforce — one ceiling, stated exactly.
 
 ## What is enforced (S89)
 
@@ -45,13 +45,13 @@ $ echo $?
 BOTH backends and asserts the same exit code and the same depth-5 message — the
 S73/S85 result-parity campaign extended to **trap-parity**. The fallback path is
 unchanged (a function that falls back to the tree-walk interpreter already inherits
-the interpreter's trap). Honest scope: this is `@max_depth` recursion only; VM
+the interpreter's trap). Scope: this is `@max_depth` recursion only; VM
 `@caps` trap-parity landed in S100 (see below) and `@bounded`/Wasmtime fuel stays
 deferred.
 
-## What is NOT enforced (honest)
+## What is NOT enforced
 
-The kernel is honest about the boundary; only `@max_depth` recursion is enforced
+The kernel is explicit about the boundary; only `@max_depth` recursion is enforced
 today. Still **declared-not-enforced**:
 
 - **`@bounded(N)`** — a CPU/**Wasmtime-fuel** budget; enforcement lowers to fuel

@@ -325,7 +325,7 @@ Garnet is not appropriate when:
 - You rely on a Ruby gem or Python library with no equivalent in Garnet and no realistic path to one.
 - Your primary bottleneck is the database, not the application language. Fix the database first.
 
-Honest acknowledgment of these cases strengthens credibility when discussing migration with MIT reviewers or enterprise architects.
+Explicit acknowledgment of these cases strengthens credibility when discussing migration with MIT reviewers or enterprise architects.
 
 ---
 

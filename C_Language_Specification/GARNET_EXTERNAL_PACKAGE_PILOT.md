@@ -21,7 +21,7 @@ proof is `garnet-registry-stub/tests/external_package_pilot.rs` (runs in the
    the trajectory research's #1 supply-chain threat (19.7% of LLM-suggested
    packages don't exist; attackers pre-register the near-miss).
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 
 - A **LOCAL filesystem registry-stub pilot, NOT a live public ecosystem.** No
   HTTP(S) transport, no publish/auth flow, no SemVer version ranges, no signature

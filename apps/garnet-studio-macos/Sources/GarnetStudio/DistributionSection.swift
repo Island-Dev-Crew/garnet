@@ -1,6 +1,6 @@
 // M7 — Distribution Reporter (power-only section).
 //
-// An honest macOS packaging/notarization status surface. Lays out the pure
+// An explicit macOS packaging/notarization status surface. Lays out the pure
 // `DistributionReport` projection (catalog + live filesystem probe; logic
 // unit-tested in DistributionBridgeTests). The headline never claims the app is
 // distribution-ready while it is unsigned + un-notarized.

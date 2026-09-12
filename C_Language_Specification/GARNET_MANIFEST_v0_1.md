@@ -11,7 +11,7 @@ writes today plus the minimum surface that the existing CLI templates
 already expect.
 
 The spec is `v0.1` because the resolution semantics are not finalized
-yet (see § Honest Partials). A `v1.0` of this document will lock in the
+yet (see § Known partials). A `v1.0` of this document will lock in the
 resolver contract once `garnet run` consumes `[dependencies]` at
 runtime.
 
@@ -134,7 +134,7 @@ lockfile.
 
 ---
 
-## 4. Honest partials (v0.5.1)
+## 4. Known partials (v0.5.1)
 
 The spec is `v0.1` because these are **explicitly deferred** to a
 later slice:

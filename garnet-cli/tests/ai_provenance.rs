@@ -23,7 +23,7 @@ fn default_seal_has_no_authorship_field() {
     let out = garnet().arg("seal").arg(hello()).output().unwrap();
     let s = String::from_utf8(out.stdout).unwrap();
     assert!(out.status.success());
-    // Silence is honest: no `--authored-by` => no authorship claim.
+    // Silence is not a claim: no `--authored-by` => no authorship claim.
     assert!(!s.contains("\"authorship\""), "{s}");
 }
 

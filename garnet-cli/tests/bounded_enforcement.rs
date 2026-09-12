@@ -3,7 +3,7 @@
 //! The interpreter now *enforces* the `@max_depth(N)` recursion ceiling: a
 //! function declaring `@max_depth` traps deterministically when its recursion
 //! depth exceeds N — real enforcement (the interpreter refuses to recurse
-//! further), distinct from the S85 host-stack raise. Honest scope: this is the
+//! further), distinct from the S85 host-stack raise. Scope: this is the
 //! ONE enforced ceiling; `@bounded` (Wasmtime fuel), memory, time, and mailbox
 //! remain declared-not-enforced. Runs on every OS in the matrix.
 

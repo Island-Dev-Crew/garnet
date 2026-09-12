@@ -1,6 +1,6 @@
 // M7 — Distribution Reporter (pure catalog + projection).
 //
-// An honest macOS packaging/notarization status surface. The load-bearing truth:
+// An explicit macOS packaging/notarization status surface. The load-bearing truth:
 // the Garnet Studio .app is NOT code-signed and NOT notarized — it is a
 // research-grade prototype for local run, not a Gatekeeper-distributable build.
 // Packaging artifacts that DO exist (the packager, the DMG smoke) are probed live
@@ -90,7 +90,7 @@ public struct DistributionReport: Equatable, Sendable {
     public var deferredCount: Int { items.filter { $0.status == .deferred }.count }
     public var absentCount: Int { items.filter { $0.status == .absent }.count }
 
-    /// The honest one-line posture. The macOS app is never described as
+    /// The explicit one-line posture. The macOS app is never described as
     /// distribution-ready while it is unsigned + un-notarized.
     public var headline: String {
         "macOS Studio .app is unsigned and un-notarized — research-grade, local run only. "

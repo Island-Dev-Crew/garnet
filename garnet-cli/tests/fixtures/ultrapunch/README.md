@@ -25,9 +25,9 @@ garnet agent-loop --baseline baseline.garnet --proposal accept_proposal.garnet \
 
 The accept `--record-dir` holds the **4 trust artifacts**: `capability_manifest.json`
 (S36), `diff_caps.txt` (S37), `seal.json` (S38), and `transparency_log.jsonl` (S68,
-chain-verifiable with `garnet caps-log --verify`), plus an honest `decision.md`.
+chain-verifiable with `garnet caps-log --verify`), plus an explicit `decision.md`.
 
-**Honest scope:** accepted on capability + depth evidence ONLY — `@caps` and
+**Scope:** accepted on capability + depth evidence ONLY — `@caps` and
 `@max_depth` are enforced. `@bounded`/memory/time/`@mailbox`/OS-sandbox remain
 declared-not-enforced; this is **not** a claim of full boundedness or safety. The
 agent is simulated/scripted, not a live LLM (S94). The seal is unsigned unless

@@ -127,7 +127,7 @@ function manifestHtml(manifest: CapabilityManifest | null): string {
 
 function sealHtml(authorship: string, seal: SealAttestation | null, accepted: boolean): string {
   if (!seal) {
-    // Distinguish the two no-seal states honestly: a genuine rejection (the
+    // Distinguish the two no-seal states explicitly: a genuine rejection (the
     // negative proof) vs. an accepted dossier whose seal.json could not be read.
     const copy = accepted
       ? "seal.json missing or unparseable — the acceptance provenance could not be read from this directory."

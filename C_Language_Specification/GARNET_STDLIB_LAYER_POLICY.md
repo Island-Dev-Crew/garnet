@@ -16,7 +16,7 @@ graduates between layers. It is deliberately small and defensible: the goal is
 a rule a sharp reviewer can apply mechanically, not a taxonomy that needs a
 committee.
 
-> **Calibrated-honesty note (v0.7).** Primitive stability is enforced today as
+> **Calibrated-claim note (v0.7).** Primitive stability is enforced today as
 > **registry metadata** read by the compiler (`garnet-check-v0.3` warns at call
 > sites into non-`stable` primitives). Source-level `@stability(...)`/`@uses(...)`/
 > `@migration(...)` annotations on **user-defined** functions are **pending a
@@ -192,7 +192,7 @@ Worked examples:
 - **`map`/`fold`** — zero caps, the contract is mathematics. No blast radius, no
   volatility → `core::iter` (**Layer 0**), always in scope.
 
-The principle is what keeps the boundary honest: a thing does **not** belong in
+The principle is what keeps the boundary explicit: a thing does **not** belong in
 `std::` just because it is useful or pure (JSON is both, but it earns Layer 1
 because it is a *library* tracking an external spec); and a thing does **not**
 get bundled just because it is popular (an LLM client is popular, but its

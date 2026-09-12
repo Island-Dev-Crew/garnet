@@ -4,7 +4,7 @@
 //! boundary: a managed function may only invoke `std::env`/`std::process`/`fs::`/
 //! `std::log::to_file` primitives whose required capability some frame in the
 //! call chain declared (`garnet run` does not run the static checker, so this is
-//! the runtime backstop). Honest scope: host-authority surfaces only; pure
+//! the runtime backstop). Scope: host-authority surfaces only; pure
 //! computation is unaffected. Runs on every OS in the matrix.
 
 use std::process::Command;

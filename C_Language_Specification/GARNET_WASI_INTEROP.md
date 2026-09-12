@@ -31,7 +31,7 @@ clean and that `garnet sandbox`'s WASI policy reflects the caps: `clocks: true`
 (time), `preopens: true` (fs), `sockets: false` (no net declared). The WASI
 authority surface is derived directly from the declared capabilities.
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 
 This is the WASI **authority mapping**, not a WASI **runtime**. Garnet does not
 compile to wasm here and does not run under a WASI host — `wasm32`/`wasm-pack`/

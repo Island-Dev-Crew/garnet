@@ -48,7 +48,7 @@ fn audit_fixture_runs_on_interpreter() {
 /// stack. So this test would *fail without the fix* on this machine, and passes
 /// with it.
 ///
-/// Honest scope: this raises the recursion ceiling by ~hundreds×; it is not an
+/// Scope: this raises the recursion ceiling by ~hundreds×; it is not an
 /// unbounded guarantee — recursion past the large stack still overflows, which is
 /// the `@bounded` *enforcement* story (S89), not a stack-size question.
 #[test]

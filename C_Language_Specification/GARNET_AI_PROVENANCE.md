@@ -25,13 +25,13 @@ Because it lives in the seal predicate, AI-authorship is **diffable, reviewable,
 and signable** (`cosign attest`, S51) exactly like the capability surface — it
 travels with the artifact, not in a side channel.
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 
 This is a **self-declared** provenance fact, **not AI-detection**. Garnet does
 not (and cannot reliably) infer whether code was AI-written; `--authored-by`
 records what the author/toolchain *declares*, the same posture as `@caps`
 (declared authority, not inferred). An absent `--authored-by` records **no**
-authorship claim — silence is honest, not an implicit "human". The value is a
+authorship claim — silence records no claim, not an implicit "human". The value is a
 truthful, attestable channel for the declaration; verifying the declaration's
 accuracy is out of scope (and a social/process question, not a tool guarantee).
 

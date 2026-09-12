@@ -37,7 +37,7 @@ toward typed `Result` / typed rescues without breaking existing code.
 
 `garnet_check::overcatch_sites(module)` is the reusable analyzer behind it.
 
-## Honest scope (what this policy does NOT do)
+## Scope (what this policy does NOT do)
 
 - It does **not** ban exceptions or catch-all rescues — the over-catch check is an
   **advisory only** (no exit-code change, no auto-rewrite).
