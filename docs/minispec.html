@@ -959,6 +959,8 @@ MUST reject these constructs in <code>@safe</code> modules.</p>
 and returned as the bare value - <code>Err(error)</code> is
 automatically raised as an exception of type
 <code>SafeModeError(error)</code></p>
+<p><strong>Status:</strong> specified, not yet wired. Today, code bridges by
+hand with <code>try</code>/<code>rescue</code> and <code>?</code>.</p>
 <p>When safe code calls a managed function: - The call is implicitly
 wrapped in a <code>try</code>/<code>rescue</code> - Normal returns
 become <code>Ok(value)</code> - Exceptions become
@@ -990,9 +992,10 @@ v1.0)</em></h2>
 <h3 id="formal-grounding-unchanged-from-v0.3-8.1">8.1 Formal grounding
 <em>(unchanged from v0.3 §8.1)</em></h3>
 <p>Garnet’s <code>@safe</code> mode is grounded in <strong>affine type
-theory</strong> (resources used at most once), formally verified by
-<strong>RustBelt (Jung et al., POPL 2018, MPI-SWS)</strong> using the
-<strong>Iris framework</strong> in Coq. See Paper V §2-§6 for the full
+theory</strong> (resources used at most once), following the
+<strong>RustBelt</strong> argument (Jung et al., POPL 2018, MPI-SWS; the
+<strong>Iris framework</strong> in Coq). RustBelt verified Rust’s type
+system, not Garnet’s; a mechanized proof for Garnet is planned. See Paper V §2-§6 for the full
 formal treatment.</p>
 <p><strong>Security Theorem (safe-mode soundness) [v0.3]:</strong></p>
 <blockquote>
@@ -1584,7 +1587,11 @@ boundaries</td>
 </table>
 <p>A program at Level 0 is valid at Level 3 — the compiler infers the
 tightest constraints. A program at Level 3 works at Level 0 — ownership
-annotations become documentation, ARC handles memory.</p>
+annotations become documentation, ARC handles memory. Measured (Paper VI
+v4.0): 96.5% of a 200-program corpus passed both directions, with two
+carve-outs that refuse by design — <code>@dynamic</code> types refuse
+relaxation to Level 0, and closures capturing <code>var</code> refuse
+strengthening to Level 3.</p>
 <p><strong>This is a novel contribution (MIT-defensible).</strong> No
 existing production language provides a formally continuous
 type-discipline spectrum from fully dynamic to affine-typed within one
@@ -2445,11 +2452,11 @@ continuous integration.</p>
 </tr>
 <tr>
 <td><code>garnet init</code></td>
-<td>Initialize a Garnet project in the current directory</td>
+<td>Initialize a Garnet project in the current directory (planned; not in the CLI yet)</td>
 </tr>
 <tr>
 <td><code>garnet build</code></td>
-<td>Compile the project (produces release binary by default)</td>
+<td>Emit a provenance manifest beside the source (no binary is produced)</td>
 </tr>
 <tr>
 <td><code>garnet build --deterministic</code></td>
@@ -2486,7 +2493,7 @@ continuous integration.</p>
 <tr>
 <td><code>garnet audit</code></td>
 <td>Run <code>cargo-geiger</code>-equivalent dependency safety scan
-(v3.5 FFIGeiger)</td>
+(v3.5 FFIGeiger; planned, not in the CLI yet)</td>
 </tr>
 <tr>
 <td><code>garnet verify &lt;manifest&gt;</code></td>

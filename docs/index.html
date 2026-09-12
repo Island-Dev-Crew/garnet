@@ -991,7 +991,7 @@ def main() {
   <div class="container reveal">
     <h3>The Three Pillars</h3>
     <h2>Two languages, <span class="accent">one grammar</span>.</h2>
-    <p class="lead">Rust gives you mathematical rigor at the cost of cognitive load. Ruby gives you conversational beauty at the cost of runtime surprise. Garnet gives you both — within a single coherent language whose <em>mode boundary is the reconciliation</em>.</p>
+    <p class="lead">Rust gives you mathematical rigor at the cost of cognitive load. Ruby gives you conversational beauty at the cost of runtime surprise. Garnet's bet is one grammar with a mode for each — a single coherent language whose <em>mode boundary is the reconciliation</em>; the automatic bridge across that boundary is specified and still deferred.</p>
     <div class="pillars">
       <div class="pillar rust">
         <h3>Rust</h3>
@@ -1026,7 +1026,7 @@ def main() {
       Every team eventually picks: <span class="accent">Rust for the hot path</span>, <span class="accent">Ruby for the orchestration</span>, and writes a painful FFI between them. Or picks one language and swallows its weakness.<br><br>
       <strong>Garnet's dual-mode design makes the same source file velocity-first at the top level and rigor-first in the safe modules — with no FFI in between.</strong>
     </blockquote>
-    <cite>— The Reconciliation, Paper III §1</cite>
+    <cite>— The Reconciliation, Paper III §1 (design intent; the mode bridge is specified, not yet wired)</cite>
   </div>
 </section>
 
@@ -1044,7 +1044,7 @@ def main() {
       agent-authored code and shipping the evidence with it.<br><br>
       The headline is <strong>diff-caps</strong>: when a dependency or an
       agent's PR changes the authority the code declares, Garnet answers
-      <em>"what new authority am I granting?"</em> in one screen — turning the
+      <em>"what new authority does this change declare?"</em> in one screen — turning the
       review bottleneck (the binding constraint on accepting AI-written code)
       into a machine-checkable diff of the declared surface.
     </blockquote>
@@ -1104,13 +1104,13 @@ def main() {
   -&gt; <span class="a">Result</span>&lt;Config, io::Error&gt; {
   <span class="k">let</span> content =
     fs::read_to_string(path)?;
-  toml::from_str(<span class="k">&amp;</span>content)
+  serde_json::from_str(<span class="k">&amp;</span>content)
     .map_err(convert_err)
 }</pre></div>
           <div class="code-col ruby"><div class="head"><div class="swatch"></div>RUBY</div>
 <pre><span class="k">def</span> read_config(path)
   content = File.read(path)
-  TOML.parse(content)
+  JSON.parse(content)
 <span class="k">rescue</span> Errno::ENOENT
   <span class="k">nil</span>
 <span class="k">end</span></pre></div>
@@ -1118,7 +1118,7 @@ def main() {
 <pre><span class="a">@caps(fs)</span>
 <span class="k">def</span> read_config(path) {
   <span class="k">try</span> {
-    TOML.parse(
+    std::json::parse(
       fs::read_file(path))
   } <span class="k">rescue</span> e: FileNotFound {
     <span class="k">nil</span>
@@ -1145,10 +1145,8 @@ def main() {
   |&gt; filter(|u| u.active)
   |&gt; map(|u| u.name)
 
-<span class="c"># Ruby block style</span>
-<span class="k">let</span> names = users
-  .filter <span class="k">do</span> |u| u.active <span class="k">end</span>
-  .map    <span class="k">do</span> |u| u.name  <span class="k">end</span></pre></div>
+<span class="c"># Method style</span>
+<span class="k">let</span> names = users.filter(|u| u.active).map(|u| u.name)</pre></div>
         </div>
       </div>
       <!-- Agent -->
@@ -1181,15 +1179,11 @@ def main() {
 <span class="k">end</span></pre></div>
           <div class="code-col garnet"><div class="head"><div class="swatch"></div>GARNET</div>
 <pre><span class="k">actor</span> Agent {
-  <span class="a">memory episodic</span>
-    events : EpisodeStore&lt;Event&gt;
-  <span class="a">memory semantic</span>
-    facts  : VectorIndex&lt;Fact&gt;
+  <span class="a">memory episodic</span> events : EpisodeStore&lt;Event&gt;
+  <span class="a">memory semantic</span> facts : VectorIndex&lt;Fact&gt;
 
-  <span class="k">protocol</span> remember(e: Event)
-    -&gt; Bool
-  <span class="k">protocol</span> recall(q: <span class="a">String</span>)
-    -&gt; Array&lt;Fact&gt;
+  <span class="k">protocol</span> remember(e: Event) -&gt; Bool
+  <span class="k">protocol</span> recall(q: <span class="a">String</span>) -&gt; Array&lt;Fact&gt;
 
   <span class="k">on</span> remember(e) {
     events.append(e); <span class="k">true</span>
@@ -1257,8 +1251,8 @@ def main() {
           <th style="text-align:left;padding:10px 14px;border-bottom:1px solid var(--rule);">Ruby</th>
           <th style="text-align:left;padding:10px 14px;border-bottom:1px solid var(--rule);color:var(--gold);">Garnet</th>
         </tr>
-        <tr><td style="padding:8px 14px;">Memory safety</td><td style="padding:8px 14px;">Compile-time ownership</td><td style="padding:8px 14px;">Runtime GC</td><td style="padding:8px 14px;color:var(--ink);">Safe mode: ownership · Managed mode: ARC-managed</td></tr>
-        <tr><td style="padding:8px 14px;">Cognitive load</td><td style="padding:8px 14px;">High (lifetimes)</td><td style="padding:8px 14px;">Low</td><td style="padding:8px 14px;color:var(--ink);">Progressive — low in managed, Rust-like in safe</td></tr>
+        <tr><td style="padding:8px 14px;">Memory safety</td><td style="padding:8px 14px;">Compile-time ownership</td><td style="padding:8px 14px;">Runtime GC</td><td style="padding:8px 14px;color:var(--ink);">Safe mode: ownership · Managed mode: ARC (the interpreter uses reference counting today; allocator-integrated ARC is not shipped)</td></tr>
+        <tr><td style="padding:8px 14px;">Cognitive load</td><td style="padding:8px 14px;">High (lifetimes)</td><td style="padding:8px 14px;">Low</td><td style="padding:8px 14px;color:var(--ink);">Progressive — low in managed, Rust-like in safe (argued, not measured)</td></tr>
         <tr><td style="padding:8px 14px;">Error model</td><td style="padding:8px 14px;"><code>Result&lt;T,E&gt;</code></td><td style="padding:8px 14px;">Exceptions</td><td style="padding:8px 14px;color:var(--ink);">Both; automatic bridging at the mode boundary is specified, not yet wired</td></tr>
         <tr><td style="padding:8px 14px;">Concurrency</td><td style="padding:8px 14px;">Threads/async, Send+Sync</td><td style="padding:8px 14px;">GVL-limited</td><td style="padding:8px 14px;color:var(--ink);">Actors + <code>Sendable</code> checking</td></tr>
         <tr><td style="padding:8px 14px;">Agent/memory primitives</td><td style="padding:8px 14px;">Library</td><td style="padding:8px 14px;">Library</td><td style="padding:8px 14px;color:var(--ink);">Language-level (working/episodic/semantic/procedural)</td></tr>
@@ -1281,7 +1275,7 @@ def main() {
       <div class="code-col garnet"><div class="head"><div class="swatch"></div>GARNET</div>
 <pre><span class="a">@caps(fs)</span>
 <span class="k">def</span> get_user_summary(path, id) {
-  <span class="k">let</span> data = JSON.parse(
+  <span class="k">let</span> data = std::json::parse(
     fs::read_file(path))
   <span class="k">let</span> user = data[<span class="s">"users"</span>][id]
   <span class="s">"#{user.name}: #{user.email}"</span>
@@ -1313,6 +1307,10 @@ def main() {
           <div class="desc">Subprocess spawn and wait, gated at run time.</div>
         </div>
         <div class="row">
+          <div class="tag">@caps(env)</div>
+          <div class="desc">Environment variables (<code>std::env::get</code>/<code>set</code>/<code>vars</code>), gated at run time.</div>
+        </div>
+        <div class="row">
           <div class="tag">@caps(ffi)</div>
           <div class="desc">C FFI. Declared in the checker and the manifest; there is no runtime FFI path yet.</div>
         </div>
@@ -1334,8 +1332,8 @@ def main() {
     <table style="border-collapse:collapse;width:100%;margin:6px 0 14px;font-size:14px;color:var(--ink-soft);">
       <tr style="color:var(--ink);"><th style="text-align:left;padding:8px 12px;border-bottom:1px solid var(--rule);">Tier</th><th style="text-align:left;padding:8px 12px;border-bottom:1px solid var(--rule);">What it means</th></tr>
       <tr><td style="padding:8px 12px;"><strong style="color:var(--gold);">Active conversion</strong><br><span style="color:var(--ink-muted);">Rust · Ruby · Python · Go</span></td><td style="padding:8px 12px;">Deterministic frontends — carries ownership-like shape, module boundaries, and migration evidence with deterministic behavior.</td></tr>
-      <tr><td style="padding:8px 12px;"><strong style="color:var(--gold);">Advisory planning</strong><br><span style="color:var(--ink-muted);">JS · TS · Swift · Java · Perl · Kotlin · Shell · SQL · …</span></td><td style="padding:8px 12px;">Risk-first migration planning + inventory until deterministic parser/lineage support lands; explicit and human-gated.</td></tr>
-      <tr><td style="padding:8px 12px;"><strong style="color:var(--gold);">Native boundary</strong><br><span style="color:var(--ink-muted);">C · C++ · Obj-C · Asm · CUDA · platform</span></td><td style="padding:8px 12px;">Explicit modules or FFI with CapCaps and a generated (not self-enforced) sandbox policy where ABI and hardware behavior are source-of-truth.</td></tr>
+      <tr><td style="padding:8px 12px;"><strong style="color:var(--gold);">Advisory planning</strong><br><span style="color:var(--ink-muted);">JS · TS · Swift · Java · C · C++ · C# · Perl · Kotlin · Shell · SQL · Other</span></td><td style="padding:8px 12px;">Risk-first migration planning + inventory until deterministic parser/lineage support lands; explicit and human-gated.</td></tr>
+      <tr><td style="padding:8px 12px;"><strong style="color:var(--gold);">Native boundary</strong><br><span style="color:var(--ink-muted);">C · C++ · Obj-C · Asm · CUDA · platform</span></td><td style="padding:8px 12px;">Stays native behind an FFI boundary (recommended for C, C++ and the rest of this row), with declared capabilities and a generated (not self-enforced) sandbox policy where ABI and hardware behavior are source-of-truth. Garnet has no runtime FFI path yet.</td></tr>
     </table>
     <p class="lead" style="font-size:15px;">Backend Wasm/LLVM-style lowering is planned (pending backend evidence). The fit rule, LLM-advisory review path, and machine-readable adoption surface are detailed in the <a href="conversion-policy.html">full conversion policy →</a></p>
 
@@ -1577,7 +1575,7 @@ garnet run src/main.garnet</pre>
       <li>source-free <strong>Advisory Handoff</strong> packets</li>
       <li><strong>Provider Options</strong> registry evidence</li>
       <li>the <strong>Objective Pulse</strong> readiness %</li>
-      <li>a manifested <strong>Demo Route</strong> for MIT rehearsal</li>
+      <li>a manifested <strong>Demo Route</strong> for demo rehearsal</li>
       <li>manifested <strong>Deck Outline</strong> + smokeable <strong>Deck Preview</strong></li>
       <li>the <strong>Continuation Pulse</strong> for Mac-side next steps</li>
       <li>release status &amp; the agentic dogfood matrix</li>
@@ -1597,9 +1595,9 @@ garnet run src/main.garnet</pre>
         <p>Studio exposes <code>Assist Plan</code>, <code>Advisory Bundle</code>, <code>Advisory Review</code>, and <code>Advisory Handoff</code> for TypeScript, JavaScript, Swift, Java, C, C++, C#, Perl, Kotlin, Shell, SQL, and Other as local planning, review, and source-free handoff evidence under <code>~/Desktop/dogfood/</code>, not active conversion.</p>
       </div>
       <div class="feature">
-        <div class="icon">DMG</div>
+        <div class="icon">Pulse</div>
         <h4>Objective Pulse</h4>
-        <p>The Release panel can run the repo-native MIT/productization reporter and generate manifested demo-route, deck-outline, and browser-smokeable deck-preview bundles, keeping presentation rehearsal separate from the completed tracked-slice ledger and final acceptance. Detailed signing, notarization, clean-machine Gatekeeper evidence, and the machine-readable preflight status reporter stay on the readiness status page.</p>
+        <p>The Release panel can run the repo-native readiness reporter and generate manifested demo-route, deck-outline, and browser-smokeable deck-preview bundles, keeping presentation rehearsal separate from the completed tracked-slice ledger and final acceptance. Detailed signing, notarization, clean-machine Gatekeeper evidence, and the machine-readable preflight status reporter stay on the readiness status page.</p>
       </div>
       <div class="feature">
         <div class="icon">Next</div>
@@ -1683,7 +1681,7 @@ dist/Garnet Studio.app</pre>
       <a href="stdlib.html" class="doc-card">
         <div class="label">Reference</div>
         <h4>Stdlib Primitive Registry</h4>
-        <p>The current capability-tagged primitive table: pure string/array/crypto helpers plus explicit time, file, and network authority.</p>
+        <p>The current capability-tagged primitive table: pure string/array/crypto helpers plus explicit time, file, network, environment and process authority.</p>
       </a>
       <a href="synthesis.html" class="doc-card">
         <div class="label">The Reconciliation</div>

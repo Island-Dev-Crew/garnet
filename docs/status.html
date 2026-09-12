@@ -112,7 +112,7 @@
         <tr>
           <td>Active conversion</td>
           <td>Rust, Ruby, Python, Go</td>
-          <td>Deterministic migration assistant with sandbox, lineage, metrics, and migrate_todo evidence.</td>
+          <td>Deterministic migration assistant with lineage, metrics, and migrate_todo evidence; its emitted <code>@sandbox</code> line is a reviewer note, not enforced.</td>
         </tr>
         <tr>
           <td>Advisory planning</td>
@@ -122,7 +122,7 @@
         <tr>
           <td>Native boundary</td>
           <td>C, C++, Objective-C, Assembly, CUDA, platform-specific code</td>
-          <td>Prefer native modules or FFI wrapped by Garnet CapCaps, memory declarations, lineage, and sandbox policy.</td>
+          <td>Prefer native modules or FFI declared to the checker (no runtime FFI path yet), with lineage and a generated, not self-enforced, sandbox policy.</td>
         </tr>
         <tr>
           <td>Backend lowering</td>
@@ -186,7 +186,7 @@
         <tr>
           <td>Semantic formatting</td>
           <td>deferred</td>
-          <td>Spacing, alignment, import sorting, comment preservation, malformed-source recovery, and workspace-wide formatting wait for a trivia-preserving CST.</td>
+          <td>Spacing, alignment, import sorting, comment preservation, malformed-source recovery, and workspace-wide formatting remain future formatter work: the parser's trivia-preserving CST exists, but <code>garnet fmt</code> does not consume it yet and stays a byte-level normalizer.</td>
         </tr>
       </tbody>
     </table>

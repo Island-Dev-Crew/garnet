@@ -42,49 +42,105 @@
   <div class="top"><a href="/index.html">← garnet-lang.org</a> &nbsp;·&nbsp; <a href="getting-started.html">Getting Started</a> &nbsp;·&nbsp; <a href="minispec.html">Mini-Spec</a> &nbsp;·&nbsp; <a href="https://github.com/Island-Dev-Crew/garnet/blob/main/garnet-stdlib/src/registry.rs" target="_blank" rel="noopener noreferrer">Source ↗</a></div>
 
   <h1>Stdlib Primitive Registry</h1>
-  <p class="sub">The current v0.5 registry exposes 24 primitive entries. Pure helpers require <code>@caps()</code>; time, filesystem, and network primitives require explicit authority.</p>
-  <p class="note">This is a registry reference, not a promise of a mature standard library. Higher-level HTTP, JSON, package, async, and data APIs remain future library work.</p>
+  <p class="sub">The current registry exposes 80 primitive entries. Pure helpers need no capability; time, filesystem, network, environment and process primitives declare one. Only the 15 entry-gated rows are refused at run time when the program entry does not declare their capability; checker-only rows are checked by <code>garnet check</code> and not gated at run time; unbridged rows have no interpreter binding.</p>
+  <p class="note">This is a registry reference, not a promise of a mature standard library. Higher-level HTTP, package, async, and data APIs remain future library work.</p>
 
   <div class="grid">
-    <div class="metric"><strong>24</strong><span>registry entries</span></div>
-    <div class="metric"><strong>13</strong><span>pure helper entries</span></div>
-    <div class="metric"><strong>11</strong><span>authority-gated entries</span></div>
-    <div class="metric"><strong>3</strong><span>authority classes used here</span></div>
+    <div class="metric"><strong>80</strong><span>registry entries</span></div>
+    <div class="metric"><strong>58</strong><span>entries with no capability</span></div>
+    <div class="metric"><strong>15</strong><span>entry-gated entries</span></div>
+    <div class="metric"><strong>7</strong><span>checker-only (5) or unbridged (2) entries</span></div>
   </div>
 
   <h2>Primitive Table</h2>
   <table>
-    <thead><tr><th>Name</th><th>Arity</th><th>Caps</th><th>Description</th></tr></thead>
+    <thead><tr><th>Name</th><th>Capability</th><th>Guard class</th><th>Stability</th></tr></thead>
     <tbody>
-      <tr><td><code>time::now_ms</code></td><td>0</td><td><span class="cap">time</span></td><td>Monotonic clock in milliseconds since process start.</td></tr>
-      <tr><td><code>time::wall_clock_ms</code></td><td>0</td><td><span class="cap">time</span></td><td>Wall clock in milliseconds since UNIX epoch.</td></tr>
-      <tr><td><code>time::sleep</code></td><td>1</td><td><span class="cap">time</span></td><td>Sleep the current thread for N milliseconds.</td></tr>
-      <tr><td><code>str::split</code></td><td>2</td><td><span class="pure">@caps()</span></td><td>Split a string on a delimiter; returns an Array&lt;String&gt;.</td></tr>
-      <tr><td><code>str::replace</code></td><td>3</td><td><span class="pure">@caps()</span></td><td>Replace all occurrences of <code>old</code> with <code>new</code>.</td></tr>
-      <tr><td><code>str::to_lower</code></td><td>1</td><td><span class="pure">@caps()</span></td><td>Lowercase a string.</td></tr>
-      <tr><td><code>str::to_upper</code></td><td>1</td><td><span class="pure">@caps()</span></td><td>Uppercase a string.</td></tr>
-      <tr><td><code>str::trim</code></td><td>1</td><td><span class="pure">@caps()</span></td><td>Trim whitespace from both ends.</td></tr>
-      <tr><td><code>str::starts_with</code></td><td>2</td><td><span class="pure">@caps()</span></td><td>Return true if the string starts with the prefix.</td></tr>
-      <tr><td><code>str::contains</code></td><td>2</td><td><span class="pure">@caps()</span></td><td>Return true if the string contains the substring.</td></tr>
-      <tr><td><code>array::insert</code></td><td>3</td><td><span class="pure">@caps()</span></td><td>Insert <code>value</code> at index; shifts following elements right.</td></tr>
-      <tr><td><code>array::remove</code></td><td>2</td><td><span class="pure">@caps()</span></td><td>Remove and return the element at index.</td></tr>
-      <tr><td><code>array::sort</code></td><td>1</td><td><span class="pure">@caps()</span></td><td>Sort the array in-place.</td></tr>
-      <tr><td><code>crypto::blake3</code></td><td>1</td><td><span class="pure">@caps()</span></td><td>BLAKE3 hash of a byte sequence.</td></tr>
-      <tr><td><code>crypto::sha256</code></td><td>1</td><td><span class="pure">@caps()</span></td><td>SHA-256 hash of a byte sequence.</td></tr>
-      <tr><td><code>crypto::hmac_sha256</code></td><td>2</td><td><span class="pure">@caps()</span></td><td>HMAC-SHA-256 of a byte sequence with a given key.</td></tr>
-      <tr><td><code>fs::read_file</code></td><td>1</td><td><span class="cap">fs</span></td><td>Read a UTF-8 file as String.</td></tr>
-      <tr><td><code>fs::write_file</code></td><td>2</td><td><span class="cap">fs</span></td><td>Write a String to a file, creating or truncating.</td></tr>
-      <tr><td><code>fs::read_bytes</code></td><td>1</td><td><span class="cap">fs</span></td><td>Read a file as Bytes.</td></tr>
-      <tr><td><code>fs::write_bytes</code></td><td>2</td><td><span class="cap">fs</span></td><td>Write Bytes to a file, creating or truncating.</td></tr>
-      <tr><td><code>fs::list_dir</code></td><td>1</td><td><span class="cap">fs</span></td><td>List entries in a directory.</td></tr>
-      <tr><td><code>net::tcp_connect</code></td><td>2</td><td><span class="cap">net</span></td><td>Open an outbound TCP connection.</td></tr>
-      <tr><td><code>net::tcp_listen</code></td><td>1</td><td><span class="cap">net</span></td><td>Open a TCP listener on a local port.</td></tr>
-      <tr><td><code>net::udp_bind</code></td><td>1</td><td><span class="cap">net</span></td><td>Bind a UDP socket on a local port.</td></tr>
+      <tr><td><code>time::now_ms</code></td><td><span class="cap">time</span></td><td>checker-only</td><td>stable</td></tr>
+      <tr><td><code>time::wall_clock_ms</code></td><td><span class="cap">time</span></td><td>checker-only</td><td>stable</td></tr>
+      <tr><td><code>time::sleep</code></td><td><span class="cap">time</span></td><td>checker-only</td><td>stable</td></tr>
+      <tr><td><code>str::split</code></td><td><span class="pure">none</span></td><td>none</td><td>stable</td></tr>
+      <tr><td><code>str::replace</code></td><td><span class="pure">none</span></td><td>none</td><td>stable</td></tr>
+      <tr><td><code>str::to_lower</code></td><td><span class="pure">none</span></td><td>none</td><td>stable</td></tr>
+      <tr><td><code>str::to_upper</code></td><td><span class="pure">none</span></td><td>none</td><td>stable</td></tr>
+      <tr><td><code>str::trim</code></td><td><span class="pure">none</span></td><td>none</td><td>stable</td></tr>
+      <tr><td><code>str::starts_with</code></td><td><span class="pure">none</span></td><td>none</td><td>stable</td></tr>
+      <tr><td><code>str::contains</code></td><td><span class="pure">none</span></td><td>none</td><td>stable</td></tr>
+      <tr><td><code>array::insert</code></td><td><span class="pure">none</span></td><td>none</td><td>stable</td></tr>
+      <tr><td><code>array::remove</code></td><td><span class="pure">none</span></td><td>none</td><td>stable</td></tr>
+      <tr><td><code>array::sort</code></td><td><span class="pure">none</span></td><td>none</td><td>stable</td></tr>
+      <tr><td><code>crypto::blake3</code></td><td><span class="pure">none</span></td><td>none</td><td>stable</td></tr>
+      <tr><td><code>crypto::sha256</code></td><td><span class="pure">none</span></td><td>none</td><td>stable</td></tr>
+      <tr><td><code>crypto::hmac_sha256</code></td><td><span class="pure">none</span></td><td>none</td><td>stable</td></tr>
+      <tr><td><code>fs::read_file</code></td><td><span class="cap">fs</span></td><td>entry-gated</td><td>stable</td></tr>
+      <tr><td><code>fs::write_file</code></td><td><span class="cap">fs</span></td><td>entry-gated</td><td>stable</td></tr>
+      <tr><td><code>fs::read_bytes</code></td><td><span class="cap">fs</span></td><td>entry-gated</td><td>stable</td></tr>
+      <tr><td><code>fs::write_bytes</code></td><td><span class="cap">fs</span></td><td>entry-gated</td><td>stable</td></tr>
+      <tr><td><code>fs::list_dir</code></td><td><span class="cap">fs</span></td><td>entry-gated</td><td>stable</td></tr>
+      <tr><td><code>net::tcp_connect</code></td><td><span class="cap">net</span></td><td>entry-gated</td><td>stable</td></tr>
+      <tr><td><code>net::tcp_listen</code></td><td><span class="cap">net</span></td><td>unbridged</td><td>stable</td></tr>
+      <tr><td><code>net::udp_bind</code></td><td><span class="cap">net</span></td><td>unbridged</td><td>stable</td></tr>
+      <tr><td><code>core::iter::map</code></td><td><span class="pure">none</span></td><td>none</td><td>stable</td></tr>
+      <tr><td><code>core::iter::filter</code></td><td><span class="pure">none</span></td><td>none</td><td>stable</td></tr>
+      <tr><td><code>core::iter::fold</code></td><td><span class="pure">none</span></td><td>none</td><td>stable</td></tr>
+      <tr><td><code>core::iter::zip</code></td><td><span class="pure">none</span></td><td>none</td><td>stable</td></tr>
+      <tr><td><code>core::iter::take</code></td><td><span class="pure">none</span></td><td>none</td><td>stable</td></tr>
+      <tr><td><code>core::iter::drop</code></td><td><span class="pure">none</span></td><td>none</td><td>stable</td></tr>
+      <tr><td><code>core::iter::collect</code></td><td><span class="pure">none</span></td><td>none</td><td>stable</td></tr>
+      <tr><td><code>core::iter::chain</code></td><td><span class="pure">none</span></td><td>none</td><td>stable</td></tr>
+      <tr><td><code>core::iter::enumerate</code></td><td><span class="pure">none</span></td><td>none</td><td>stable</td></tr>
+      <tr><td><code>core::result::ok</code></td><td><span class="pure">none</span></td><td>none</td><td>stable</td></tr>
+      <tr><td><code>core::result::err</code></td><td><span class="pure">none</span></td><td>none</td><td>stable</td></tr>
+      <tr><td><code>core::result::map</code></td><td><span class="pure">none</span></td><td>none</td><td>stable</td></tr>
+      <tr><td><code>core::result::and_then</code></td><td><span class="pure">none</span></td><td>none</td><td>stable</td></tr>
+      <tr><td><code>core::result::or_else</code></td><td><span class="pure">none</span></td><td>none</td><td>stable</td></tr>
+      <tr><td><code>core::result::unwrap_or</code></td><td><span class="pure">none</span></td><td>none</td><td>stable</td></tr>
+      <tr><td><code>core::option::some</code></td><td><span class="pure">none</span></td><td>none</td><td>stable</td></tr>
+      <tr><td><code>core::option::none</code></td><td><span class="pure">none</span></td><td>none</td><td>stable</td></tr>
+      <tr><td><code>core::option::map</code></td><td><span class="pure">none</span></td><td>none</td><td>stable</td></tr>
+      <tr><td><code>core::option::and_then</code></td><td><span class="pure">none</span></td><td>none</td><td>stable</td></tr>
+      <tr><td><code>core::option::unwrap_or</code></td><td><span class="pure">none</span></td><td>none</td><td>stable</td></tr>
+      <tr><td><code>core::cmp::min</code></td><td><span class="pure">none</span></td><td>none</td><td>stable</td></tr>
+      <tr><td><code>core::cmp::max</code></td><td><span class="pure">none</span></td><td>none</td><td>stable</td></tr>
+      <tr><td><code>core::cmp::ordering</code></td><td><span class="pure">none</span></td><td>none</td><td>stable</td></tr>
+      <tr><td><code>core::cmp::clamp</code></td><td><span class="pure">none</span></td><td>none</td><td>stable</td></tr>
+      <tr><td><code>core::math::abs</code></td><td><span class="pure">none</span></td><td>none</td><td>stable</td></tr>
+      <tr><td><code>core::math::sqrt</code></td><td><span class="pure">none</span></td><td>none</td><td>stable</td></tr>
+      <tr><td><code>core::math::pow</code></td><td><span class="pure">none</span></td><td>none</td><td>stable</td></tr>
+      <tr><td><code>core::math::floor</code></td><td><span class="pure">none</span></td><td>none</td><td>stable</td></tr>
+      <tr><td><code>core::math::ceil</code></td><td><span class="pure">none</span></td><td>none</td><td>stable</td></tr>
+      <tr><td><code>core::math::round</code></td><td><span class="pure">none</span></td><td>none</td><td>stable</td></tr>
+      <tr><td><code>std::env::get</code></td><td><span class="cap">env</span></td><td>entry-gated</td><td>experimental</td></tr>
+      <tr><td><code>std::env::set</code></td><td><span class="cap">env</span></td><td>entry-gated</td><td>experimental</td></tr>
+      <tr><td><code>std::env::vars</code></td><td><span class="cap">env</span></td><td>entry-gated</td><td>experimental</td></tr>
+      <tr><td><code>std::process::spawn</code></td><td><span class="cap">proc</span></td><td>entry-gated</td><td>experimental</td></tr>
+      <tr><td><code>std::process::wait</code></td><td><span class="cap">proc</span></td><td>entry-gated</td><td>experimental</td></tr>
+      <tr><td><code>std::process::exit_code</code></td><td><span class="cap">proc</span></td><td>entry-gated</td><td>experimental</td></tr>
+      <tr><td><code>std::process::spawn_args</code></td><td><span class="cap">proc</span></td><td>entry-gated</td><td>experimental</td></tr>
+      <tr><td><code>std::process::output</code></td><td><span class="cap">proc</span></td><td>entry-gated</td><td>experimental</td></tr>
+      <tr><td><code>std::json::parse</code></td><td><span class="pure">none</span></td><td>none</td><td>experimental</td></tr>
+      <tr><td><code>std::json::stringify</code></td><td><span class="pure">none</span></td><td>none</td><td>experimental</td></tr>
+      <tr><td><code>std::json::get</code></td><td><span class="pure">none</span></td><td>none</td><td>experimental</td></tr>
+      <tr><td><code>std::json::set</code></td><td><span class="pure">none</span></td><td>none</td><td>experimental</td></tr>
+      <tr><td><code>std::regex::compile</code></td><td><span class="pure">none</span></td><td>none</td><td>experimental</td></tr>
+      <tr><td><code>std::regex::match</code></td><td><span class="pure">none</span></td><td>none</td><td>experimental</td></tr>
+      <tr><td><code>std::regex::find_all</code></td><td><span class="pure">none</span></td><td>none</td><td>experimental</td></tr>
+      <tr><td><code>std::regex::replace</code></td><td><span class="pure">none</span></td><td>none</td><td>experimental</td></tr>
+      <tr><td><code>std::uuid::new_v4</code></td><td><span class="cap">time</span></td><td>checker-only</td><td>experimental</td></tr>
+      <tr><td><code>std::uuid::new_v5</code></td><td><span class="pure">none</span></td><td>none</td><td>experimental</td></tr>
+      <tr><td><code>std::uuid::new_v7</code></td><td><span class="cap">time</span></td><td>checker-only</td><td>experimental</td></tr>
+      <tr><td><code>std::base64::encode</code></td><td><span class="pure">none</span></td><td>none</td><td>experimental</td></tr>
+      <tr><td><code>std::base64::decode</code></td><td><span class="pure">none</span></td><td>none</td><td>experimental</td></tr>
+      <tr><td><code>std::log::info</code></td><td><span class="pure">none</span></td><td>none</td><td>experimental</td></tr>
+      <tr><td><code>std::log::warn</code></td><td><span class="pure">none</span></td><td>none</td><td>experimental</td></tr>
+      <tr><td><code>std::log::error</code></td><td><span class="pure">none</span></td><td>none</td><td>experimental</td></tr>
+      <tr><td><code>std::log::debug</code></td><td><span class="pure">none</span></td><td>none</td><td>experimental</td></tr>
+      <tr><td><code>std::log::to_file</code></td><td><span class="cap">fs</span></td><td>entry-gated</td><td>experimental</td></tr>
     </tbody>
   </table>
 
   <h2>What Is Still Missing</h2>
-  <p class="sub">A production-feeling language needs more than this registry. The next useful layers are JSON, HTTP client/server helpers, regex, UUID, datetime, structured logging, configuration, package manifests, and richer test helpers. Those should land behind the same capability discipline, with examples and dogfood evidence beside the implementation.</p>
+  <p class="sub">A production-feeling language needs more than this registry. The next useful layers are HTTP client/server helpers, datetime, configuration, package manifests, and richer test helpers; JSON, regex, UUID, base64 and logging already have registry rows above. Those should land behind the same capability discipline, with examples and dogfood evidence beside the implementation.</p>
 
   <footer>© 2026 Island Development Crew · Garnet is dual-licensed MIT OR Apache-2.0 · <a href="https://garnet-lang.org">garnet-lang.org</a></footer>
 </div>

@@ -152,7 +152,7 @@ set and the memory-engineering addendum.</p>
 <td>Near C/C++</td>
 <td>Modest, improving with JIT</td>
 <td>High, with managed defaults</td>
-<td>Managed mode near Go/Swift class; safe mode near Rust target</td>
+<td>Target, unmeasured: managed mode near Go/Swift class; safe mode near Rust (no native backend yet)</td>
 </tr>
 <tr>
 <td>Concurrency posture</td>
@@ -232,22 +232,24 @@ companion section in the Mini-Spec:</p>
 <tr>
 <td>ARC predictable + serious</td>
 <td>§4.5 (cycle-detection algorithm)</td>
-<td>Bacon–Rajan with kind-aware root partitioning — closes the
-cycle-leak gap that Swift’s mainline ARC leaves to programmer-inserted
-<code>weak</code>/<code>unowned</code></td>
+<td>Bacon–Rajan with kind-aware root partitioning — specifies a cycle
+collector that would close the cycle-leak gap that Swift’s mainline ARC
+leaves to programmer-inserted <code>weak</code>/<code>unowned</code>
+(spec’d; not yet in the interpreter)</td>
 </tr>
 <tr>
 <td>Actors + <code>Sendable</code> mainstream</td>
 <td>§9.4 (Sendable-equivalent)</td>
-<td>Declaration-site enforcement (one diagnostic per protocol
-vs. Swift’s one-per-send-site) — same soundness, better diagnostic
-locality</td>
+<td>Declaration-site checking (one diagnostic per protocol
+vs. Swift’s one-per-send-site) — designed for the same soundness with
+better diagnostic locality; the runtime isolation check is pending</td>
 </tr>
 <tr>
 <td>Tooling + language coherence</td>
 <td>§16 (single-CLI summary) + Paper VII (full spec)</td>
 <td>One <code>garnet</code> binary with consistent UX across
-new/init/build/run/test/check/fmt/repl/doc/audit/verify/convert</td>
+new/add/build/run/eval/test/check/fmt/repl/doc/doctest/caps/diff-caps/seal/verify/convert
+shipped; init and audit planned</td>
 </tr>
 </tbody>
 </table>
@@ -319,7 +321,7 @@ updated</h3>
 <p>In managed mode, Garnet uses ARC with cycle-awareness and keeps
 syntax close to Ruby-like fluency. In safe mode (<code>@safe</code>),
 ownership and borrowing apply directly to memory units, buffers, and
-typed messages. The compiler/runtime boundary provides the bridges,
+typed messages. The compiler/runtime boundary is specified to provide the bridges,
 diagnostics, and metadata hooks needed to move between those two worlds
 without pretending they are identical.</p>
 <h2 id="what-belongs-in-the-language-core-vs.-the-runtime">5. What

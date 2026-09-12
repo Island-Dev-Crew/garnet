@@ -57,7 +57,7 @@
 
   <section>
     <h2>Garnet's position</h2>
-    <p>Garnet treats authority as reviewable program data. <code>garnet check</code> verifies declared capability budgets across the registered surface. <code>garnet diff-caps</code> reduces a large source change to its declared-capability delta. Neither command makes a product compliant; they make the acceptance record smaller and harder for the author to fake.</p>
+    <p>Garnet treats authority as reviewable program data. <code>garnet check</code> rejects an undeclared call reached along a named, acyclic call chain from an annotated function. <code>garnet diff-caps</code> reduces a large source change to its declared-capability delta. Neither command makes a product compliant; they make the acceptance record smaller and harder for the author to fake.</p>
     <p>The proposed <code>garnet build --evidence</code> path is <strong>under construction</strong>. No such build flag exists in the shipping CLI. Today's runnable pieces are <code>garnet caps</code>, <code>garnet diff-caps</code>, and <code>garnet seal</code>; the seal records the declared surface, but it does not rerun the checker.</p>
   </section>
 
@@ -67,7 +67,7 @@
       <article class="card verified">
         <h3>Verified today</h3>
         <ul>
-          <li><code>@caps</code> and <code>@max_depth</code> have deterministic traps on the interpreter and VM, with cross-OS trap parity recorded.</li>
+          <li><code>@caps</code> and <code>@max_depth</code> trap identically on the interpreter and VM for the gated surface, with cross-OS trap parity recorded.</li>
           <li>The <code>garnet</code> CLI runtime-gates the bounded host-authority set named in the capability scope table.</li>
           <li>Linux seccomp application is proven through the external reference tests.</li>
         </ul>

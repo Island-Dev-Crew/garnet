@@ -9,6 +9,24 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ## [Unreleased]
 
+### Site — pages say what the code does (2026-09-11)
+
+- **Fixed:** 45 statements on the site pages that said more than the code
+  does (audit site-subpages §4 and landing §5): "every primitive call site
+  is checked at compile time", "formally verified by RustBelt", an invented
+  `garnetc` build transcript, a 24-row stdlib table calling checker-only
+  rows "authority-gated" and listing JSON, regex, UUID and logging as
+  missing, `garnet convert` "emits sandboxed Garnet", the mode bridge and
+  cycle collector in present tense, `init`/`audit` subcommands that do not
+  exist, and the landing code samples calling `TOML.parse`, `JSON.parse`
+  and `FileNotFound`. Each is bounded to the scope table or replaced with
+  what ships; every rewritten landing sample now parses with `garnet parse`
+  and `garnet check` (the caps showcase reproduces its diagnostic exactly).
+  The stdlib table is regenerated from `registry.rs` (80 rows: 15
+  entry-gated, 5 checker-only, 2 unbridged, 58 ungated). `novel.html` shows
+  the v4.0 scorecard under its abstract. `why.html` is handled in a
+  separate, trust-reviewed change.
+
 ### Vocabulary — retired words leave the docs and comments (2026-09-11)
 
 - The words honest, honestly and honesty are retired from the specification

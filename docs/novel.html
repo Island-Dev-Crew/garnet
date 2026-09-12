@@ -86,6 +86,27 @@ deterministic reproducible builds as a language-level guarantee with
 provenance manifests. Each contribution is positioned against existing
 literature, its novelty claim is precisely bounded, and its
 falsifiability conditions are stated.</p>
+<h3 id="v4-0-outcomes">Evidence scorecard (Paper VI v4.0)</h3>
+<p>Seven novel contributions, pre-registered Phase 1C, executed Phase 4A.
+Evidence scorecard: 4 supported, 2 partial, 0 refuted, 1 pending-infra.</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Contribution</th>
+<th>v4.0 outcome</th>
+</tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>LLM-native syntax</td><td>pending-infrastructure</td></tr>
+<tr><td>2</td><td>Progressive type-disclosure</td><td>supported (96.5% / 200-program corpus)</td></tr>
+<tr><td>3</td><td>Compiler-as-agent</td><td>partial-support (6.5% measured vs 10% target)</td></tr>
+<tr><td>4</td><td>Kind-aware allocation</td><td>partial-support (RSS supported, latency deferred)</td></tr>
+<tr><td>5</td><td>Error-model bridging</td><td>supported, Path 1 (Path 2 deferred to v4.0.1)</td></tr>
+<tr><td>6</td><td>Hot-reload latency</td><td>supported (3.8× ratio, zero loss, stable fingerprints)</td></tr>
+<tr><td>7</td><td>Deterministic builds</td><td>supported (cross-machine, same triple)</td></tr>
+</tbody>
+</table>
 <hr />
 <h2 id="introduction">1. Introduction</h2>
 <p>The four-model consensus that grounds the Garnet project (Claude Opus
@@ -94,7 +115,8 @@ eight architectural points that define Garnet’s design. Papers I–V built
 the research foundation on those eight points. This paper asks a
 different question: <strong>what does Garnet make possible that no
 existing language offers?</strong></p>
-<p>The seven contributions below are not speculative features. Each one
+<p>The seven contributions below carry the v4.0 outcomes in the scorecard
+above. Each one
 emerges directly from design decisions already present in the Garnet
 specification (Mini-Spec v0.3) and compiler architecture (Compiler
 Architecture Spec v1.0). They are, however, novel in that no existing
@@ -110,7 +132,7 @@ code at significantly lower rates than correct Python or TypeScript code
 — primarily because Rust’s lifetime annotations and borrow-checker
 interactions require tracking complex state across distant code blocks,
 a task that exceeds transformer attention patterns.</p>
-<p>No programming language has been designed with LLM comprehension and
+<p>As of April 2026, no programming language had been designed with LLM comprehension and
 generation as a first-class constraint. Languages are designed for human
 readability, machine parseability, or both — but “AI parseability” is a
 novel axis.</p>
@@ -164,7 +186,7 @@ generation benchmarks (HumanEval, MBPP, SWE-bench) and on evaluating
 LLMs across languages. There is limited work on designing languages FOR
 LLM generation — Mojo’s documentation mentions “AI-first” but does not
 formalize it.</p>
-<p><strong>Novelty claim:</strong> Garnet is the first language to treat
+<p><strong>Novelty claim:</strong> As of April 2026, Garnet is the first language we know of to treat
 LLM-native syntax as a measurable, testable design constraint with a
 falsifiable correctness hypothesis.</p>
 <hr />
@@ -230,7 +252,10 @@ the previous:</p>
 valid at Level N+1 with zero modifications (the compiler infers tighter
 constraints). A program at Level N+1 is valid at Level N (extra
 annotations become documentation). This bidirectional compatibility is
-the progressive disclosure guarantee.</p>
+the progressive disclosure claim. Measured (v4.0): 96.5% of a
+200-program corpus passed both directions; two carve-outs refuse by
+design — <code>@dynamic</code> types refuse relaxation to Level 0, and
+closures capturing <code>var</code> refuse strengthening to Level 3.</p>
 <h3 id="formal-basis">3.3 Formal basis</h3>
 <p>Paper V defines λ_managed (Levels 0–2) and λ_safe (Level 3) as
 distinct sub-calculi with a bridging judgment. The progressive
@@ -245,10 +270,11 @@ typed.</li>
 at the module boundary (<code>@safe</code>), not at the expression
 level.</li>
 </ul>
-<p>The formal guarantee: for any program P at Level N, if P type-checks
-at Level N, then P also type-checks at Level N-1 (relaxation is always
-safe) AND at Level N+1 (strengthening is always sound, because inference
-adds constraints, never removes them).</p>
+<p>The formal claim: for any program P at Level N, if P type-checks
+at Level N, then P also type-checks at Level N-1 (relaxation) AND at
+Level N+1 (strengthening, because inference adds constraints, never
+removes them) — outside the two carve-outs above, and measured at 96.5%
+rather than proven.</p>
 <h3 id="falsifiable-claim-1">3.4 Falsifiable claim</h3>
 <p><strong>Hypothesis:</strong> The progressive type spectrum reduces
 the barrier to adopting memory-safe programming practices. Measured by:
@@ -331,9 +357,10 @@ AutoFDO (automatic feedback-directed optimization).</p>
 compiler’s own compilation trace as a memory source. PGO uses runtime
 profiles. JITs use runtime execution counts. ML-based approaches train
 offline models. Garnet’s compiler-as-agent uses its own episodic,
-semantic, and procedural memory — making it the first compiler that
-genuinely learns from its own past, using the same memory model it
-compiles for user programs. The self-referential nature (compiler uses
+semantic, and procedural memory — a compiler that uses its own
+compilation history through the same memory model it compiles for user
+programs (v4.0 measured a 6.5% speedup against a 10% target: partial
+support). The self-referential nature (compiler uses
 the language’s own memory primitives) is the novelty.</p>
 <hr />
 <h2 id="contribution-4-kind-aware-memory-allocation">5. Contribution 4:
@@ -391,8 +418,9 @@ chain</td>
 </table>
 <p>The programmer writes
 <code>memory episodic log : EpisodeStore&lt;Event&gt;</code> and the
-compiler automatically selects the append-only allocator. No allocator
-API is exposed in the language surface.</p>
+compiler is designed to select the append-only allocator (allocator
+integration is sequenced on the Memory Core roadmap, not shipped). No
+allocator API is exposed in the language surface.</p>
 <h3 id="falsifiable-claim-3">5.3 Falsifiable claim</h3>
 <p><strong>Hypothesis:</strong> Kind-aware allocation reduces peak
 memory usage and allocation overhead compared to a general-purpose
@@ -407,8 +435,9 @@ al., 1999). Rust’s allocator API (nightly).</p>
 <p><strong>Novelty claim:</strong> No language automatically selects
 allocation strategy from type-level kind annotations. Existing
 approaches require the programmer to explicitly choose the allocator.
-Garnet is the first to derive allocator selection from the language’s
-type system.</p>
+Garnet is designed to derive allocator selection from the language’s
+type system; v4.0 rated this partial support (RSS supported, latency
+deferred).</p>
 <hr />
 <h2 id="contribution-5-bidirectional-error-model-bridging">6.
 Contribution 5: Bidirectional Error-Model Bridging</h2>
@@ -479,8 +508,8 @@ performance-critical code continues running.</p>
 <h3 id="garnets-approach-4">7.2 Garnet’s approach</h3>
 <p>The mode boundary IS the reload boundary:</p>
 <ol type="1">
-<li>Safe-mode modules are compiled to native code and loaded as shared
-libraries</li>
+<li>Safe-mode modules would be compiled to native code and loaded as
+shared libraries (no native backend exists yet; lowering is planned)</li>
 <li>Managed-mode modules run on the bytecode VM</li>
 <li>When managed code is updated, the VM loads the new bytecode</li>
 <li>Safe-mode code continues executing — it sees the new managed module
@@ -525,24 +554,27 @@ codegen) means builds are not reproducible. For agent systems, this is a
 security risk: you cannot verify that a deployed binary matches its
 source.</p>
 <h3 id="garnets-approach-5">8.2 Garnet’s approach</h3>
-<p>Garnet’s compiler guarantees: 1. <strong>Deterministic
-codegen:</strong> No timestamps, no randomized choices, no
-platform-dependent paths (all platform differences are explicit in
-target triples) 2. <strong>Provenance manifest:</strong> Every build
-produces a <code>.garnet-manifest</code> file containing the SHA-256
-hash of every input (source files, dependencies, compiler version,
-target triple, optimization flags) 3. <strong>Embedded
-manifest:</strong> The manifest hash is embedded in the output binary’s
-metadata section, so any binary can prove its own provenance</p>
-<pre><code>$ garnet build --release
-  → my-agent (binary)
-  → my-agent.garnet-manifest (JSON: hashes of all inputs + output)
+<p>What ships today: <code>garnet build</code> emits a provenance
+manifest beside the source and produces no binary. The design targets
+three properties: 1. <strong>Deterministic codegen:</strong> No
+timestamps, no randomized choices, no platform-dependent paths (all
+platform differences are explicit in target triples) — planned with the
+native backend 2. <strong>Provenance manifest:</strong> Every build
+produces a manifest containing the hashes of the source and its AST
+(shipped; <code>--deterministic</code> and <code>--sign</code> are
+flags) 3. <strong>Embedded manifest:</strong> The manifest hash embedded
+in an output binary’s metadata section — planned, since there is no
+output binary yet</p>
+<pre><code>$ garnet build --deterministic my_agent.garnet
+built my_agent.garnet (1 items)
+  source_hash = 8d8741aaf1730f38f197d50444704eab1e371accb7a5916ab7a7a95e3f043fe1
+  ast_hash    = bc1a8400fffe64ce26e9514559862939880c9d453e06642d58a298d4c54671da
+  manifest    = my_agent.garnet.manifest.json
 
-$ garnet verify my-agent
-  ✓ Binary hash matches manifest
-  ✓ All source hashes match
-  ✓ Compiler version: garnetc 0.3.0 (2026-04-16)
-  ✓ Build is deterministically reproducible</code></pre>
+$ garnet verify my_agent.garnet my_agent.garnet.manifest.json
+OK my_agent.garnet matches manifest (unsigned)
+  source_hash = 8d8741aaf1730f38f197d50444704eab1e371accb7a5916ab7a7a95e3f043fe1
+  ast_hash    = bc1a8400fffe64ce26e9514559862939880c9d453e06642d58a298d4c54671da</code></pre>
 <h3 id="falsifiable-claim-5">8.3 Falsifiable claim</h3>
 <p><strong>Hypothesis:</strong> Given identical source, dependencies,
 compiler version, and target triple, two independent Garnet compilations
@@ -561,7 +593,8 @@ mechanism. The manifest is not an external tool — it is part of the
 compiler’s output contract.</p>
 <hr />
 <h2 id="conclusion">9. Conclusion</h2>
-<p>These seven contributions are not theoretical wishes. Each one: 1.
+<p>These seven contributions carry the v4.0 outcomes in the scorecard
+under the abstract. Each one: 1.
 Emerges from design decisions already present in Mini-Spec v0.3 2. Has a
 falsifiable hypothesis that can be tested against existing languages 3.
 Is bounded against prior art with precise novelty claims 4. Can be

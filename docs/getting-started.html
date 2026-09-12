@@ -69,7 +69,7 @@ def main() {
   println("Run `garnet run src/main.garnet` to execute.")
   0
 }</pre>
-  <p>The <code>@caps()</code> annotation declares the OS authority this program may exercise. Empty means <em>pure computation</em>. Need files, time, network, or subprocesses? You write <code>@caps(fs)</code>, <code>@caps(time)</code>, <code>@caps(net)</code>, <code>@caps(proc)</code> — and every primitive call site is checked at compile time against that declaration. Authority is explicit, not ambient.</p>
+  <p>The <code>@caps()</code> annotation declares the OS authority a function may use; empty declares none. Files, time, network and subprocesses need <code>@caps(fs)</code>, <code>@caps(time)</code>, <code>@caps(net)</code> and <code>@caps(proc)</code>. <code>garnet check</code> rejects an undeclared call when it is reached through a named, acyclic call chain from an annotated function. The fifteen gated host primitives (file I/O, outbound TCP, environment, processes, file logging) also need the program entry's declared budget at run time. <code>garnet run</code> does not run the checker, so run <code>garnet check</code> first.</p>
 
   <h2><span class="step">5</span>Test it</h2>
 <pre><span class="p">$</span> garnet test

@@ -29,14 +29,14 @@
   <div class="top"><a href="/index.html">← garnet-lang.org</a> &nbsp;·&nbsp; <a href="/index.html#install">Install</a> &nbsp;·&nbsp; <a href="https://github.com/Island-Dev-Crew/garnet" target="_blank" rel="noopener noreferrer">GitHub ↗</a></div>
 
   <h1>Conversion Policy</h1>
-  <p class="sub">The full policy behind "Migrate at Your Pace". The homepage shows the three tiers as a table; this page is the unabridged reasoning. No claims differ between the two — this is the same policy with room to breathe.</p>
+  <p class="sub">The full policy behind "Migrate at Your Pace". The homepage shows the three tiers as a table; this page is the unabridged reasoning.</p>
 
   <h2>What <code>garnet convert</code> is</h2>
-  <p>The <code>garnet convert</code> tool is a migration assistant, not a full transpiler: it reads four deterministic source lanes and emits sandboxed Garnet with lineage, metrics, and a human migration checklist.</p>
+  <p>The <code>garnet convert</code> tool is a migration assistant, not a full transpiler: it reads four deterministic source lanes and emits Garnet tagged <code>@sandbox</code> and <code>@caps()</code>, with lineage, metrics, and a human migration checklist. Those two lines are notes for the reviewer, and neither is enforced. As emitted today the file does not pass <code>garnet check</code> (the parser rejects the <code>@sandbox</code> line), so converted code is held to a capability budget only after a reviewer annotates its functions.</p>
 
   <h2>Why the surface is split</h2>
   <p>The broader converter surface is explicit by design: active conversion for the languages with deterministic frontends, advisory planning for broader source, native boundaries where low-level fidelity matters, and future Garnet-to-Wasm/LLVM-style lowering when backend evidence exists.</p>
-  <p>Active languages are low-friction migration lanes with stable frontends. Advisory languages get risk-first planning until deterministic support lands. Native-boundary languages are best represented as explicit modules or FFI with CapCaps and sandbox policy.</p>
+  <p>Active languages are low-friction migration lanes with stable frontends. Advisory languages get risk-first planning until deterministic support lands. Native-boundary languages are best represented as explicit modules or FFI declared to the checker (no runtime FFI path yet), with a generated (not self-enforced) sandbox policy.</p>
 
   <h2>The direct-conversion fit rule</h2>
   <p>Do not convert before a deterministic frontend and checker contract exists for source, parser edges, and capability-preserving lowering. Advisory planning is acceptable only when migration risk is explicit and gated by a human review handoff.</p>

@@ -139,7 +139,7 @@ the agentic and dual-mode aspects.</p>
 <th>Rung</th>
 <th>Capability</th>
 <th>Spec reference</th>
-<th>Status (April 2026)</th>
+<th>Status (September 2026)</th>
 </tr>
 </thead>
 <tbody>
@@ -159,7 +159,7 @@ the agentic and dual-mode aspects.</p>
 <td>3</td>
 <td>Managed-mode interpreter + REPL</td>
 <td>Mini-Spec §§5–7, §15</td>
-<td>⏳ Interpreter ✅; REPL stub</td>
+<td>✅ Interpreter; <code>garnet repl</code> shipped</td>
 </tr>
 <tr>
 <td>4</td>
@@ -183,11 +183,12 @@ the agentic and dual-mode aspects.</p>
 <td>7</td>
 <td>Cross-platform installer + signing</td>
 <td>Mini-Spec §16; ManifestSig (v3.4)</td>
-<td>⏳ Planned for v3.4–v4.2</td>
+<td>⏳ Signed CLI binaries (.deb/.rpm/darwin tarballs) ship with v0.8.1; MSI/.pkg installers pending</td>
 </tr>
 </tbody>
 </table>
-<p>(The status column is a snapshot of v3.3 end-of-Phase-1B. Progress
+<p>(The status column was a snapshot of v3.3 end-of-Phase-1B, refreshed
+September 2026 for rungs 3 and 7. Progress
 through the rungs is the subject of Stages 2–6 of the master plan.)</p>
 <h3 id="why-seven-rungs-and-not-five">2.1 Why seven rungs and not
 five</h3>
@@ -229,10 +230,11 @@ through the <code>garnet</code> binary.</p>
 <p>The complete v1.0 sub-command catalog is documented in Mini-Spec
 §16.1. Highlights:</p>
 <ul>
-<li><code>garnet new</code> / <code>garnet init</code> — project
-creation</li>
+<li><code>garnet new</code> — project creation (<code>garnet init</code>
+is planned)</li>
 <li><code>garnet build</code> /
-<code>garnet build --deterministic</code> — compilation</li>
+<code>garnet build --deterministic</code> — provenance manifest (no
+binary is produced)</li>
 <li><code>garnet run</code> / <code>garnet test</code> — execution</li>
 <li><code>garnet check</code> / <code>garnet fmt</code> — static
 analysis + formatting</li>
@@ -240,7 +242,7 @@ analysis + formatting</li>
 §15)</li>
 <li><code>garnet doc</code> — API doc generation</li>
 <li><code>garnet audit</code> — <code>cargo-geiger</code>-equivalent dep
-scan (v3.5 FFIGeiger)</li>
+scan (v3.5 FFIGeiger; planned, not in the CLI)</li>
 <li><code>garnet verify</code> — manifest signature verification (v3.4
 ManifestSig)</li>
 <li><code>garnet convert</code> — code converter from Rust/Ruby/Python/Go
@@ -252,16 +254,19 @@ executable named <code>garnet-foo</code> on PATH MAY be invoked as
 <code>garnet foo</code>. This permits ecosystem extension without
 overcrowding the core CLI.</p>
 <h3 id="output-discipline">3.4 Output discipline</h3>
-<p>All <code>garnet</code> sub-commands MUST produce machine-parseable
-JSON output when given <code>--format=json</code>. Default output is
+<p>Today <code>garnet check</code>, <code>doctest</code>,
+<code>mcp-caps</code> and <code>sandbox</code> produce machine-parseable
+JSON output when given <code>--format json</code>, and
+<code>diff-caps</code> takes <code>--machine</code>; the other
+sub-commands do not yet. Default output is
 human-readable. This dual output is essential for IDE integration (LSP
 server in v4.x) and CI integration.</p>
 <h3 id="what-we-deliberately-do-not-include">3.5 What we deliberately do
 NOT include</h3>
 <p>The flat-CLI design means we do NOT have <code>garnet pkg add</code>,
 <code>garnet pkg remove</code>, <code>garnet pkg list</code> — package
-operations live as <code>garnet add</code>, <code>garnet remove</code>,
-<code>garnet list</code> directly. The maximum nesting depth is two
+operations live as <code>garnet add</code> (shipped), <code>garnet remove</code>
+and <code>garnet list</code> (planned) directly. The maximum nesting depth is two
 (<code>garnet build --deterministic</code> is one sub-command with
 flags, not nested sub-commands).</p>
 <hr />
@@ -334,9 +339,10 @@ from another developer) are silently skipped, not honored.</p>
 writes to <code>.garnet-cache/</code>. 32 random bytes from
 <code>getrandom</code>, file mode <code>0600</code> on Unix. Path
 overridable via <code>GARNET_MACHINE_KEY_PATH</code>.</p>
-<h3 id="lsp-server-planned-v4.x">5.3 LSP server (planned, v4.x)</h3>
-<p>A language server protocol implementation is planned for v4.1 or
-v4.2. The REPL’s tree-walk interpreter shares the type-inference engine,
+<h3 id="lsp-server-planned-v4.x">5.3 LSP server (shipped: <code>garnet-lsp</code>)</h3>
+<p>A language server protocol implementation ships as
+<code>garnet-lsp</code> (diagnostics, hover, go-to-definition, symbols,
+rename, quick fixes, semantic tokens; see the status page). The REPL’s tree-walk interpreter shares the type-inference engine,
 so LSP <code>hover</code> and <code>goto-definition</code> reuse the
 existing infrastructure. Full design deferred to that release.</p>
 <h3 id="formatter-garnet-fmt">5.4 Formatter
@@ -390,7 +396,8 @@ clean VMs of all three OSes.</p>
 <ul>
 <li>Public package registry (analogous to crates.io / RubyGems / npm) —
 design only in v4.x; implementation is post-MIT</li>
-<li>IDE integration beyond LSP — VS Code extension is post-MIT</li>
+<li>IDE integration beyond LSP — a VS Code extension ships under
+<code>editors/vscode/</code>; other editors are not scheduled</li>
 <li>Hosted execution / sandbox — out of scope for the language
 paper</li>
 </ul>
@@ -448,7 +455,7 @@ Threat-model-before-hardening</h3>
 hot-reload channel) is paired with its hardening before it ships. v3.3
 Security Layer 1 demonstrated this for the v3.2 → v3.3 cleanup; v3.4
 Security Layer 2 will demonstrate it for the new networking stdlib.</p>
-<p>The discipline: - No feature ships before its paired defense. -
+<p>The discipline: -
 Threat models are written explicitly with named attack vectors, not just
 “we considered security.” - Novel-threat-class identification is part of
 the threat model — Garnet’s <em>strategy-miner adversarial training</em>
