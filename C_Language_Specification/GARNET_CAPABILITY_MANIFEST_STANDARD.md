@@ -28,7 +28,7 @@ Required fields:
 - `surface.entries[].source_span`: `null` until a stable CST/span source map is
   available.
 - `surface.wildcard`: true when `@caps(*)` is present in the declared surface.
-- `limitations`: machine-readable honesty notes.
+- `limitations`: machine-readable limitation notes.
 
 The Garnet reference implementation is:
 
@@ -49,7 +49,7 @@ The default `garnet caps <path>` output remains the S36 Garnet-native
   the absence of undeclared authority, and it does not close the VM enforcement
   gap.
 
-## Honest Scope
+## Scope
 
 This is a draft/reference seed, not an accepted standard. No OWASP, Linux
 Foundation, W3C, IETF, or other external body has reviewed, adopted, or endorsed

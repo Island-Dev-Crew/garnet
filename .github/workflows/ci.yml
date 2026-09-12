@@ -129,7 +129,7 @@ jobs:
       # S55 / W-PLAY: validates the committed WV-5 build/Node proof separately
       # from the reproducible package and strict browser success/denial proof.
       - run: python3 scripts/garnet_wasm_readiness.py --gate
-      # S56: guards the committed static preset fallback and honesty markers;
+      # S56: guards the committed static preset fallback and claim markers;
       # browser promotion belongs only to the W-PLAY reporter above.
       - run: python3 scripts/garnet_playground_readiness.py --gate
       # S58: benchmark campaign — fails if a declared Criterion bench file or its
@@ -209,11 +209,11 @@ jobs:
       # truths coexist (doc + CHANGELOG + ledger cut_record); closes WIN-S80-002.
       - run: python3 scripts/garnet_release_truth_status.py --gate
       # ── A2: trust-kernel anti-rot gates (S114). These statically assert the
-      # red-team report's HIGH-fix + regression tests + honesty anchors, the
+      # red-team report's HIGH-fix + regression tests + claim anchors, the
       # evidence-integrity manifest, the ultrapunch dossier, the domain-proof
       # artifacts, and the academic-evidence package. They were previously run by
       # hand only (per CLAUDE.md "anti-rot gates when touching the trust spine");
-      # wiring them here so the S114 trust spine + its honesty anchors cannot
+      # wiring them here so the S114 trust spine + its claim anchors cannot
       # silently rot on a future PR.
       - run: python3 scripts/garnet_red_team_status.py --gate
       - run: python3 scripts/garnet_evidence_integrity_status.py --gate

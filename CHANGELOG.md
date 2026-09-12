@@ -9,6 +9,15 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ## [Unreleased]
 
+### Gate files — vocabulary and one scope-table narrowing (2026-09-11)
+
+- The retired words leave the CI workflow comments, the capability-manifest
+  standard and its RFC, and the standard's status reporter (purge PR-4).
+  `GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md` now says the claim that "the runtime
+  refuses any capability-bearing primitive nothing declares" is false of the 5
+  checker-only `Declared` rows, not of all 65 (58 need no capability and 2 are
+  unbridged).
+
 ### CI — the fuzz lane installs cargo-fuzz from its lockfile again (2026-09-13)
 
 - **Fixed:** the required `cargo fuzz run parse_input` check failed on every
