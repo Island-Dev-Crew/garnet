@@ -19,7 +19,7 @@
 //! A fence passes if it evaluates without error. If it carries a `# => value`
 //! marker, the displayed tail value must also equal the expected text.
 //!
-//! ## Honest scope
+//! ## Scope
 //!
 //! - Examples run on the tree-walking interpreter, not the VM backend.
 //! - Fences see only the file's own definitions plus the stdlib; there is no

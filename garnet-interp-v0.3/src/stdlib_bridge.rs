@@ -10,7 +10,7 @@
 //! for host-authority trampolines. `garnet run` can execute without first running
 //! `garnet check`, so env/process/fs/net/log-to-file bridges reject undeclared
 //! authority from the active call chain; S92 additionally requires process launch
-//! bridges to see `@caps(proc)` on the program entry point. Honest scope: this
+//! bridges to see `@caps(proc)` on the program entry point. Scope: this
 //! is interpreter-scoped and does not imply VM `@caps` enforcement.
 //!
 //! ## Sequencing

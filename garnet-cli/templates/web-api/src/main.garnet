@@ -17,8 +17,7 @@ def main() {
 
 @caps(time)
 def timestamp() {
-  # wall_clock_ms() requires @caps(time); this function declares it
-  # so main can call it without escalating its own cap set.
+  # wall_clock_ms() requires @caps(time); main declares time as well.
   let ms = wall_clock_ms()
   "[#{ms}ms]"
 }
@@ -28,6 +27,6 @@ def serve_forever(port) {
   # Placeholder listener loop: wire your handlers here. Handle each
   # request in a @caps(net) function; avoid promoting a handler to
   # @caps(fs) without explicit need.
-  println("(listener loop placeholder — wire your handlers here)")
+  println("(listener loop placeholder - wire your handlers here)")
   0
 }

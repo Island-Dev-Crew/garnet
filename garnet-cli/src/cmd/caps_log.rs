@@ -11,7 +11,7 @@
 //! agnostic — any toolchain that emits a capability surface can append to the
 //! same log shape.
 //!
-//! ## Honest scope (do not soften)
+//! ## Scope (do not soften)
 //! This is a **local, hash-chained STUB**, not a distributed/witnessed
 //! transparency log: there is no public log server, no signed tree head, no
 //! gossip/witness, and no inclusion proof against an external root. It gives
@@ -191,7 +191,7 @@ fn verify_log(path: &Path) -> ExitCode {
         prev = blake3_hex(line.as_bytes());
     }
     println!(
-        "garnet caps-log: chain intact — {} entr{} verified (append-only)",
+        "garnet caps-log: chain intact — {} entr{} verified (prev-hash links only)",
         lines.len(),
         if lines.len() == 1 { "y" } else { "ies" }
     );
@@ -203,6 +203,6 @@ fn print_help() {
     println!("  garnet caps-log <file.garnet> [--log <path>]   append a capability entry");
     println!("  garnet caps-log --verify <log path>            verify the hash chain");
     println!();
-    println!("  An append-only, BLAKE3-chained capability transparency log STUB");
-    println!("  (local + tamper-evident; not a distributed/witnessed log).");
+    println!("  A BLAKE3-chained local capability log STUB. --verify checks the prev-hash");
+    println!("  links only (a truncated tail is not detected); not a distributed/witnessed log.");
 }

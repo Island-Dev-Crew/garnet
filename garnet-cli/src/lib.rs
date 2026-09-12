@@ -179,7 +179,7 @@ pub fn print_help() {
         "    convert <lang> <file>            Migration assistant — lift Rust/Ruby/Python/Go source"
     );
     println!(
-        "                                     into Garnet (sandbox-on; emits MigrateTodo checklist)"
+        "                                     into Garnet (output starts with reviewer notes; emits a MigrateTodo checklist)"
     );
     println!("    fmt    [--check|--stdout] <file> Whitespace-normalize a Garnet source file");
     println!("    doc    [--stdout|--out P] <file> Extract /// doc comments to a markdown summary");

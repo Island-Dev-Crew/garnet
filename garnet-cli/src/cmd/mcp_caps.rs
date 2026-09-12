@@ -12,7 +12,7 @@
 //! Format (trivial, no serde — the repo's hand-rolled stance): one
 //! `tool: cap1, cap2` per line; `#` comments and blank lines ignored.
 //!
-//! ## Honest scope (do not soften)
+//! ## Scope (do not soften)
 //! These are **self-declared** tool capabilities, **not** runtime-enforced —
 //! Garnet is not an MCP host and does not intercept tool calls. The value is a
 //! reviewable, diffable declaration of a tool-set's authority surface (the

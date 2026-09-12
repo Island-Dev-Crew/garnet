@@ -242,7 +242,7 @@ mod tests {
         );
     }
 
-    /// Element-6 honesty pin: top-level `let`/`const` initializers declare no
+    /// Element-6 claim pin: top-level `let`/`const` initializers declare no
     /// `@caps`, so they are NOT in the static surface. Their host authority is gated
     /// at runtime by the load-time entry frame + deny-by-default mediation
     /// (S114-FIX-2), verified per-process in `garnet-cli/tests/s114_residual_lanes.rs`

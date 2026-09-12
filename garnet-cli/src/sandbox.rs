@@ -8,7 +8,7 @@
 //! - a **WASI** capability set (which host facilities a guest may preopen/use),
 //! - an **egress** rule (deny-all / loopback-only / allow).
 //!
-//! ## Honest scope (do not soften)
+//! ## Scope (do not soften)
 //!
 //! This module **generates policy; it does not enforce it**. Nothing here runs a
 //! guest under `wasmtime`, applies the seccomp profile to a live process, or

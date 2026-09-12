@@ -11,7 +11,7 @@
 //! The AST visitor is **compiler-exhaustive** (every `Stmt`/`Expr` variant is
 //! matched and recursed) so no nested site is silently missed.
 //!
-//! Honest scope: this is static IDENTIFICATION + a default-ceiling POLICY.
+//! Scope: this is static IDENTIFICATION + a default-ceiling POLICY.
 //! Runtime ENFORCEMENT lowers to the S39 `@bounded` / Wasmtime-fuel path and is
 //! deferred (wasmtime absent); no ceiling is faked here.
 

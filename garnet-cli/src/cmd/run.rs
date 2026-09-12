@@ -10,7 +10,7 @@
 //! `Item::Use(_)` handling stays a no-op; the vendored symbols are
 //! already in scope by the time `use <dep>::*` is reached.
 //!
-//! Honest partials (S12):
+//! Partials (S12):
 //! - Pre-load is `--interp` only. The `--vm` path uses
 //!   `run_source_with_options` from `garnet-vm` and has no shared env;
 //!   S14 will harmonize this when the VM grows its own load_source.

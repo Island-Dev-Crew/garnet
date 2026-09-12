@@ -23,7 +23,7 @@
 //! [`std::panic::catch_unwind`] recovers an unwinding panic **in place**, which
 //! is the only option that fits a `!Send`, main-thread interpreter.
 //!
-//! ## Scope (honest boundary)
+//! ## Scope (boundary)
 //!
 //! This catches **unwinding** panics: `panic!`, `unwrap`/`expect` on `None`, an
 //! out-of-contract `unreachable!`, the `i64::MIN.abs()` overflow, and the like.

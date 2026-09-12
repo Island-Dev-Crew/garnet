@@ -36,14 +36,15 @@ reference semantics.
 
 ```toml
 [caps]
-allowed = ["time", "fs"]
+allowed = []
 ```
 
 The generated `main` declares `@caps()` because the starter program is pure. If
-you extend it to read/write persistent fact files, annotate the I/O function
-with `@caps(fs)` — the CapCaps propagator (v3.4.1) will then propagate the
-requirement up to `main` at compile time, forcing the `Garnet.toml` `[caps]`
-budget to stay accurate.
+you extend it to read or write fact files, annotate the I/O function with
+`@caps(fs)` and declare `fs` on `main` too: `garnet check` reports a `main`
+whose named, acyclic calls reach `fs` without declaring it, and at run time the
+file primitives trap unless `main` declares it. Nothing reads the `[caps]` list
+yet; update it by hand so it documents the budget.
 
 ## Run
 

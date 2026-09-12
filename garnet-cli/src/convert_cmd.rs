@@ -110,7 +110,10 @@ pub fn run(args: ConvertArgs) -> Result<ConvertOutcome, String> {
 }
 
 fn render_summary(o: &ConvertOutcome) {
-    println!("converted: {} (sandboxed)", o.target_path.display());
+    println!(
+        "converted: {} (starts with @sandbox + @caps() reviewer notes)",
+        o.target_path.display()
+    );
     println!("  - {} CIR nodes emitted", o.total_nodes);
     println!("  - {} @migrate_todo annotations", o.migrate_todo_count);
     println!("  - {} @untranslatable constructs", o.untranslatable_count);
@@ -119,8 +122,8 @@ fn render_summary(o: &ConvertOutcome) {
     println!("  - checklist: {}", o.migrate_todo_path.display());
     println!("  - metrics: {}", o.metrics_path.display());
     println!();
-    println!("  review the file then change @sandbox to @sandbox(unquarantine)");
-    println!("  and add @caps(...) based on your audit.");
+    println!("  review the file, remove the @sandbox line (the parser does not accept it),");
+    println!("  then add the @caps(...) the code needs and run garnet check.");
 }
 
 #[cfg(test)]

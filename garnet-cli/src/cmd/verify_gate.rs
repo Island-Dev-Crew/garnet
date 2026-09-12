@@ -15,7 +15,7 @@ use std::process::ExitCode;
 /// Parsed arguments for the acceptance gate.
 pub struct GateArgs {
     pub path: PathBuf,
-    /// Optional external-reviewer band (1..=5); in CI/PR this is Greptile.
+    /// Optional external-reviewer band (1..=5), supplied by the caller.
     pub external_band: Option<u8>,
     /// Optional baseline path (an older revision of the same tree) for the S37
     /// capability signal: `diff-caps(baseline, current)` feeds the fuse.
@@ -48,7 +48,9 @@ pub fn run(args: GateArgs) -> ExitCode {
     );
     match external {
         Some(b) => println!("  external reviewer: {}/5", b.get()),
-        None => println!("  external reviewer: not supplied (Greptile wires in at PR time)"),
+        None => {
+            println!("  external reviewer: not supplied (pass --external-band <1-5> to fuse one)")
+        }
     }
     match capability {
         CapabilitySignal::Surface(b) => {

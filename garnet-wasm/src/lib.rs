@@ -4,7 +4,7 @@
 //! output. `check_source` returns the parser/checker's authoritative diagnostics;
 //! `diff_caps_source` returns its declared-capability surfaces and diff.
 //!
-//! Honest scope: the diff is declared-surface-only, and this adapter alone does
+//! Scope: the diff is declared-surface-only, and this adapter alone does
 //! not prove browser-page execution. Anything deferred stays deferred.
 
 #![deny(clippy::unwrap_used, clippy::expect_used)]

@@ -30,8 +30,8 @@ chain-verifiable with `garnet caps-log --verify`), plus an explicit `decision.md
 **Scope:** accepted on capability + depth evidence ONLY — `@caps` and
 `@max_depth` are enforced. `@bounded`/memory/time/`@mailbox`/OS-sandbox remain
 declared-not-enforced; this is **not** a claim of full boundedness or safety. The
-agent is simulated/scripted, not a live LLM (S94). The seal is unsigned unless
-cosign is present.
+agent is simulated/scripted, not a live LLM (S94). The seal is unsigned; `garnet seal` does not invoke
+cosign.
 
 **Two-level symmetry:** this INNER loop (accepting/refusing a simulated agent's
 code on diff-caps + the enforced kernel) is the SAME discipline as the OUTER loop by

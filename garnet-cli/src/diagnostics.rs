@@ -68,7 +68,7 @@ pub struct Diagnostic {
     pub code: &'static str,
     pub message: String,
     /// `(start, len)` byte span when known. Parse diagnostics carry one; check
-    /// diagnostics are message-only today (an honest partial — the `CheckError`
+    /// diagnostics are message-only today (a partial — the `CheckError`
     /// variants do not yet carry spans).
     pub span: Option<(usize, usize)>,
 }

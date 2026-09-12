@@ -57,7 +57,7 @@ pub fn run(path: PathBuf) -> ExitCode {
                     }
                     ExplosiveKind::UnconditionalLoop => {
                         println!(
-                            "    - unconditional loop @ {at}: DEFAULT ceiling {DEFAULT_LOOP_CEILING} iterations applies (declare @bounded(N))"
+                            "    - unconditional loop @ {at}: no @bounded(N); the default ceiling of {DEFAULT_LOOP_CEILING} iterations is reported policy, not enforced"
                         );
                     }
                     ExplosiveKind::Spawn if r.has_fan_out => {
@@ -65,7 +65,7 @@ pub fn run(path: PathBuf) -> ExitCode {
                     }
                     ExplosiveKind::Spawn => {
                         println!(
-                            "    - spawn @ {at}: DEFAULT fan-out ceiling {DEFAULT_SPAWN_FANOUT} applies (declare @fan_out(K))"
+                            "    - spawn @ {at}: no @fan_out(K); the DEFAULT fan-out ceiling of {DEFAULT_SPAWN_FANOUT} is reported policy, not enforced"
                         );
                     }
                 }
@@ -73,8 +73,8 @@ pub fn run(path: PathBuf) -> ExitCode {
         }
     }
     println!(
-        "\nnote: STATIC identification + a default-ceiling policy. Runtime ceiling enforcement \
-         lowers to the @bounded / Wasmtime-fuel path (S39) and is deferred (wasmtime absent) — \
+        "\nnote: STATIC identification + a default-ceiling policy. Nothing enforces these ceilings \
+         at run time; the @bounded / Wasmtime-fuel path (S39) is deferred — \
          no ceiling is faked."
     );
     ExitCode::SUCCESS

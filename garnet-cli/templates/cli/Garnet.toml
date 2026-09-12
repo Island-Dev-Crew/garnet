@@ -15,9 +15,9 @@ mode = "managed"
 # dep line needed for those.
 
 [caps]
-# Declare the capability budget this project is permitted to use.
-# The compiler rejects any @caps(...) annotation outside this set.
-# See Paper III §6 for the full capability inventory.
+# The capability budget this project intends to use. Nothing reads this
+# list yet; `garnet check` verifies the @caps(...) annotations in the source.
+# See C_Language_Specification/GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md.
 allowed = ["fs", "time"]
 
 [[bin]]
