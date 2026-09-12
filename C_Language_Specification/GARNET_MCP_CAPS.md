@@ -35,8 +35,11 @@ is as visible as a program gaining a capability (`diff-caps`, S37).
 
 ## Scope (do not soften)
 
-These are **self-declared** tool capabilities, **not** runtime-enforced — Garnet
-is **not** an MCP host and does **not** intercept tool calls. The value is a
+These are **self-declared** tool capabilities, **not** runtime-enforced: `garnet
+mcp-caps` reads a manifest and does **not** intercept tool calls. Garnet does ship
+one MCP host — `garnet mcp-serve --package <dir>`, a sealed local Tier 1 host
+(`garnet-cli/src/cmd/mcp_serve.rs`) — but it neither reads `.mcpcaps` nor enforces
+these declarations. The value is a
 reviewable, diffable, attestable declaration of a tool-set's authority surface
 (the `@caps` posture: declared, not inferred). Enforcing the declaration at the
 MCP boundary — and verifying a tool actually honors it — is out of scope (the

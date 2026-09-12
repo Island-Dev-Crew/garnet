@@ -9,8 +9,12 @@ opposite of an implicit escape hatch.
 ## The model
 
 1. **No implicit FFI.** A function that performs (or transitively wraps) a native
-   call must declare `@caps(ffi)`. There is no way to reach `extern "C"` without
-   it appearing in the capability surface.
+   call must declare `@caps(ffi)`. That declaration is surfaced wherever the
+   checker can build a named, acyclic call edge from an annotated function; it
+   builds no edge through a function value, a closure body, or the body of an
+   unannotated function, and `ffi` has no runtime gate at all — it is
+   declared-only, no bridge (`GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md`). The
+   declaration is a review surface, not a reachability proof.
 2. **FFI flows through the whole trust kernel.** `@caps(ffi)` is a first-class
    capability (`Capability::Ffi`), so it is:
    - surfaced by `garnet check` / the capability surface (S35),

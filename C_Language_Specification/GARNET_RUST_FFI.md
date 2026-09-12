@@ -19,9 +19,10 @@ def rust_blake3(data) {
 
 - The Rust side exposes a `#[no_mangle] pub extern "C"` symbol with a C ABI
   (pointers + lengths, no Rust-specific layout across the boundary).
-- The Garnet side declares `@caps(ffi)` — **mandatory**; without it the call is
-  not reachable (S61). The marshalling layer (Garnet value ↔ C ABI) is the part
-  that needs a runtime and is **deferred** (see scope).
+- The Garnet side declares `@caps(ffi)` — **mandatory** by the S61 model. No
+  runtime gate enforces it: `ffi` is declared-only with no bridge, and there is no
+  FFI runtime for the call to reach (see scope). The marshalling layer
+  (Garnet value ↔ C ABI) is the part that needs a runtime and is **deferred**.
 
 ## The proof: attestation, not execution
 

@@ -33,10 +33,12 @@ authority surface is derived directly from the declared capabilities.
 
 ## Scope (do not soften)
 
-This is the WASI **authority mapping**, not a WASI **runtime**. Garnet does not
-compile to wasm here and does not run under a WASI host — `wasm32`/`wasm-pack`/
-`wasmtime` are absent (S55), and the interpreter executes nothing under WASI. S64
-ships the `@caps` → WASI capability mapping + its proof; the actual wasm build and
-WASI host execution are **deferred** (the path is in `GARNET_WASM_TARGET.md`).
+This is the WASI **authority mapping**, not a WASI **runtime**. Garnet does not run
+under a WASI host: `wasmtime` was absent when S64 shipped (S55) and the interpreter
+executes nothing under WASI. A wasm build does now exist — the `garnet-wasm/` crate,
+and WV-5 proves an interpreter compiled to real Wasm and executed through Node
+(`F_Project_Management/GARNET_WASM_TARGET.md`), which does not prove a live browser
+page or an OS sandbox. S64 ships the `@caps` → WASI capability mapping + its proof;
+WASI host execution remains **deferred**.
 This closes the native-interop *authority* band (Rust S62, C ABI S63, WASI S64);
 each ships the authority/attestation half, none ship a native/wasm runtime.

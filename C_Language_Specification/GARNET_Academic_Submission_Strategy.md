@@ -5,6 +5,10 @@
 **Companion to:** Papers I–VI, Benchmarking & Evaluation Plan
 **Anchor:** *"Where there is no vision, the people perish." — Proverbs 29:18*
 
+> **Timeline as of April 2026; not re-planned since.** The venues, deadlines and
+> month-by-month schedule in §4 were written on that date and have not been
+> revisited. Read them as a historical plan, not as the current submission state.
+
 ---
 
 ## 1. Purpose

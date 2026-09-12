@@ -17,8 +17,9 @@ process, or installs an egress firewall. Every emitted policy is marked
 
 These are **out of scope for S46** (and `wasmtime`/`wasm-tools` are absent from
 the current build environment; seccomp is Linux-only). The seccomp profile
-mirrors the OCI/Docker default-deny shape but is **not** validated against a live
-kernel here; the egress allowlist is a **structural placeholder**, not a live
+mirrors the OCI/Docker default-deny shape; S46 itself validated it against no live
+kernel, and the later Linux-only application proof is recorded in the update box
+below. The egress allowlist is a **structural placeholder**, not a live
 filter. The deliverable is the *mapping*: it makes `@caps` annotations
 actionable, reviewable, and diff-able alongside the capability manifest (S36)
 and capability-surface diff gate (S37).
@@ -68,8 +69,9 @@ The generator flags cases where the sandbox cannot actually contain the program:
   FFI; it does not contain it.
 - **`proc`** — process spawn/exec is allowed, but the sandbox cannot bound what
   the child does.
-- **`*` (wildcard)** — fully permissive; debug-only (CI rejects wildcards
-  upstream).
+- **`*` (wildcard)** — fully permissive; debug-only. No CI job rejects a wildcard;
+  what gates it is `garnet diff-caps`, which exits 1 when a revision *introduces*
+  `@caps(*)` (`garnet-cli/src/cmd/diff_caps.rs`).
 - **unknown capability** — a cap name the model does not map is a no-op in the
   policy and is reported.
 

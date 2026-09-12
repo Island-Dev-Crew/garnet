@@ -12,11 +12,13 @@ Garnet must be as easy to install and adopt as Python or C++. A developer on any
 
 The design mirrors Rust's `rustup` — proven across 10M+ users and considered best-in-class for language toolchain management — while adding Garnet-specific concerns (dual-backend selection, `.garnet-manifest` provenance, kind-aware allocator libraries).
 
-> **Current v0.4.2 implementation note.** Garnet does not yet ship the future
+> **Implementation note (current as of v0.8.2).** Garnet does not yet ship the future
 > `garnetup` toolchain manager described in Section 3. The current installer is
 > a native-package bootstrapper served from `https://garnet-lang.org/install.sh`.
 > It downloads release assets from GitHub Releases, verifies `SHA256SUMS`, runs
-> the platform installer, and then runs `garnet --version`. Treat the `garnetup`
+> the platform installer, and then runs `garnet --version`. Since the `v0.8.1`
+> re-cut, releases also carry a GPG-signed `SHA256SUMS.asc` (`docs/release-signing.md`).
+> Treat the `garnetup`
 > sections below as the post-v0.4.2 roadmap. The concrete v0.4.2 contract lives
 > in `GARNET_v0_4_2_Installer_Release_Contract.md`.
 

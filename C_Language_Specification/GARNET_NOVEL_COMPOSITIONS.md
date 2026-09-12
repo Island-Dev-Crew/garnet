@@ -4,7 +4,7 @@
 |---|---|
 | **Document** | Novel-composition dogfood (descriptive) |
 | **Slice** | S20 plus S21/S22 runtime-dispatch extensions |
-| **Programs** | `examples/novel_01..05_*.garnet` |
+| **Programs** | `examples/novel_01..07_*.garnet` |
 | **Harness** | `scripts/smoke_garnet_novel_compositions.py` (+ `test_*.py`) |
 | **Companion** | `scripts/smoke_garnet_studio_domain_matrix.py` (the existing single-concern corpus) |
 
@@ -21,8 +21,10 @@ Mnemos-handle surfaces through the CLI.
 > **model the patterns deterministically** in managed mode (the proven runnable
 > subset — `def`/`match`/`let mut`/`crypto::blake3`/arithmetic). They prove the
 > *composition shape* executes and is reproducible; they do **not** stand up the
-> live runtimes (actor mailboxes, Mnemos stores, Ed25519 signing) — those remain
-> tracked separately (Memory Core roadmap, actor runtime, manifest-sig). The
+> actor mailbox runtime or Ed25519 signing — those remain tracked separately
+> (actor runtime, manifest-sig). Mnemos memory is the exception: novel_05 and
+> novel_06 drive live `memory::` handles through the S22 runtime bridge, while the
+> production store backends stay on the Memory Core roadmap. The
 > value here is demonstrating that the contributions **compose** into coherent
 > agentic behaviour, not a claim of production runtime integration.
 
@@ -169,7 +171,7 @@ together they show the runtime composes both *inward* (functional core) and
 
 Single-feature demos answer "does the feature work?" Compositions answer the
 harder, more valuable question: **"do these features combine into something an
-agent can be trusted to run?"** The recurring shape across all three —
+agent can be trusted to run?"** The recurring shape across all seven —
 *independent, deterministic, auditable evidence gates fused into one program* —
 is the foundation Garnet offers the agentic and standard coding industries:
 capability discipline, content-addressed provenance, typed memory, and

@@ -3,7 +3,9 @@
 **Date:** April 16, 2026
 **Notation:** Extended Backus-Naur Form per ISO/IEC 14977
 
-> Every production below corresponds to a normative section in the v0.3 Mini-Spec. Section references are given in comments. This grammar is the canonical reference for parser implementors.
+> Every production below corresponds to a normative section in the v0.3 Mini-Spec. Section references are given in comments.
+>
+> **Coverage.** This is the v0.3 surface. It is not a complete grammar for the shipped parser: the Mini-Spec v1.0 additions (§5.4 blocks/`yield`, §9.4 `Sendable`, §§11.7–11.8 `@dynamic` dispatch and structural protocols) have no productions here. The annotation production in §4 was extended to match `garnet-parser-v0.3/src/grammar/functions.rs`.
 
 ---
 
@@ -74,9 +76,14 @@ closure        = "|" , [ param-list ] , "|" , [ "->" , type ] , ( block | expr )
 (* Annotations *)
 annotation     = "@max_depth" , "(" , INTEGER , ")"
                | "@fan_out" , "(" , INTEGER , ")"
+               | "@caps" , "(" , [ capability , { "," , capability } ] , ")"
+               | "@bounded" , "(" , INTEGER , ")"
+               | "@mailbox" , "(" , INTEGER , ")"
+               | "@nonsendable"
                | "@require_metadata"
                | "@safe"
                | "@dynamic" ;
+capability     = IDENT | "*" ;                             (* fs, net, net_internal, time, proc, env, ffi, or the wildcard *)
 ```
 
 ## 5. Type Syntax (Mini-Spec §11)

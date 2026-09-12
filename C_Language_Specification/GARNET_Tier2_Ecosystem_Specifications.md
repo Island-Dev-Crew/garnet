@@ -4,6 +4,14 @@
 **Companion to:** Mini-Spec v0.3, Compiler Architecture Spec v1.0
 **Anchor:** *"Where there is no vision, the people perish." — Proverbs 29:18*
 
+> **Status — proposal; Part D contradicts the as-built contract.** The Part D
+> async model below (green threads, implicit suspension, `await_all`, "every
+> function CAN be suspended") is a design proposal that was not implemented.
+> Garnet's shipped concurrency model is **actors only**, and there is no
+> `async`/`await` surface in v0.8 — see `GARNET_CONCURRENCY_CONTRACT.md`, which is
+> descriptive of the runtime as built. Read Part D as an unimplemented proposal,
+> and the other parts as design targets with newer canonical homes.
+
 ---
 
 # Part A: Package Manager and Module System

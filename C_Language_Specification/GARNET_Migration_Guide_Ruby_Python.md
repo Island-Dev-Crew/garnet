@@ -5,6 +5,14 @@
 **Companion to:** Tier 2 Ecosystem Specifications §C (interop), Distribution & Installation Spec
 **Anchor:** *"Where there is no vision, the people perish." — Proverbs 29:18*
 
+> **Status — illustrative; no benchmark was run and no interop runtime exists.**
+> Every outcome number in this guide, including the §9 "Acme Corp" figures and the
+> per-phase throughput and latency expectations, is invented for illustration. No
+> migration benchmark has been executed; the protocol in
+> `GARNET_Benchmarking_and_Evaluation_Plan.md` is unrun. The interop mechanics are
+> design sketches: Garnet has **no FFI runtime**, so the embedded-VM and C-ABI
+> examples in §7 describe an intended future bridge, not shipped behaviour.
+
 ---
 
 ## 1. Why this guide exists
@@ -232,6 +240,14 @@ Based on typical production pain points and Garnet's strengths:
 
 ## 7. Concrete Interop Examples
 
+> **Design sketches, not shipped surfaces.** Garnet has **no FFI runtime**
+> (`GARNET_FFI_AUTHORITY.md`, `GARNET_C_ABI.md`): the interpreter does not call a
+> native symbol and the value↔C-ABI marshalling layer is not implemented. `use
+> ruby::VM`, `use python::Interpreter` and `garnet build --crate-type cdylib` name
+> surfaces that do not exist in the shipped CLI — `--crate-type` appears nowhere in
+> `garnet-cli/src`, and no `.so`/`.dylib` is produced or linked. The four examples
+> below show the intended shape of a future bridge.
+
 ### 7.1 Calling Ruby from Garnet (embedded VM)
 
 ```garnet
@@ -313,7 +329,7 @@ This is what a well-executed migration looks like in practice:
 > - Deploy safety: 2 memory-related incidents/quarter → 0 in the last 3 quarters
 > - New-feature velocity: 10% faster (measured by commits/week on user-facing features)
 
-These numbers match what Phase-2 extraction benchmarks predict and are consistent with Discord's Go→Rust experience (cited in Paper I).
+These numbers are invented for the template. No Phase-2 extraction benchmark has been run, so nothing here is measured, and no executed benchmark predicts them.
 
 ---
 

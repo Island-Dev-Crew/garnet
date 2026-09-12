@@ -11,9 +11,9 @@ writes today plus the minimum surface that the existing CLI templates
 already expect.
 
 The spec is `v0.1` because the resolution semantics are not finalized
-yet (see § Known partials). A `v1.0` of this document will lock in the
-resolver contract once `garnet run` consumes `[dependencies]` at
-runtime.
+yet (see § Known partials). `garnet run` has since preloaded vendored
+`[dependencies]` (S12); a `v1.0` of this document will lock in the full
+resolver contract.
 
 ---
 
@@ -141,8 +141,10 @@ later slice:
 
 - **Resolver contract.** v0.5.1 does NOT define how `use <dep>::<sym>`
   resolves at parse/check/run time. The vendored bytes sit on disk and
-  `Garnet.lock` records their hashes, but the interpreter does not yet
-  load them into the symbol table.
+  `Garnet.lock` records their hashes. Since S12, `garnet run` preloads every
+  vendored `.garnet` source into the interpreter's global environment before
+  user `main` (`garnet-cli/src/cmd/run.rs` `preload_dependencies`); the `--vm`
+  path does not, and named-symbol resolution remains undefined.
 - **Remote sources.** v0.5.1 supports local paths only.
 - **Transitive deps.** If a vendored dependency itself has a
   `Garnet.toml`, its deps are NOT pulled in.

@@ -1,11 +1,11 @@
 # Garnet v1.0 Mini-Spec
 **Supersedes:** v0.3 Mini-Spec (April 16, 2026)
-**Status:** Normative draft — canonical specification for Rungs 2–4 of the engineering ladder
+**Status:** Normative draft — canonical specification for Rungs 2–4 of the engineering ladder. It specifies ahead of the implementation: the released toolchain is v0.8.2, a research-grade prototype, and `GARNET_v0_4_2_Conformance_Matrix.md` records which sections are implemented.
 **Date:** April 16, 2026 (Phase 1B promotion)
 **Author:** Claude Code (Opus 4.7) at the direction of Jon — Island Development Crew
 **Anchor:** *"Where there is no vision, the people perish." — Proverbs 29:18*
 
-> v1.0 promotion. This revision preserves all v0.3 normative content unchanged and fills the eleven Phase 1B blend-verification gaps identified in `~/.claude/plans/i-ll-follow-plan-mode-proud-lollipop.md`:
+> v1.0 promotion. This revision preserves all v0.3 normative content unchanged and fills the eleven Phase 1B blend-verification gaps identified in the Phase 1B blend-verification review (an author-local plan file, not part of this repository):
 >
 > | # | Gap | Inheritance | Section added/extended |
 > |---|-----|-------------|------------------------|
@@ -21,7 +21,7 @@
 > | 10 | Duck-typing rules at protocol level | Ruby | §11.8 (new) |
 > | 11 | REPL design | Ruby | §15 (new) |
 >
-> Where v1.0 refines or extends v0.3 wording, a `[v1.0]` marker appears. Where v0.3 deferred a question to v0.4 that v1.0 now answers, the open question is updated in §17.
+> Where v1.0 refines or extends v0.3 wording, a `[v1.0]` marker appears. Where v0.3 deferred a question to v0.4 that v1.0 now answers, the open question is updated in §12.
 
 ---
 
@@ -923,6 +923,14 @@ Swift's `Sendable` evolved over multiple releases; v1.0 takes the SE-0302 mature
 
 ## 10. Recursive Execution Guardrails *(unchanged from v0.3 §10)*
 
+> **Implementation note (v0.8.2).** The MUSTs in this section are not implemented
+> as written. What ships is a per-function **runtime** recursion trap for
+> `@max_depth(N)`, identical on the interpreter and the VM
+> (`GARNET_BOUNDED_ENFORCEMENT.md`). There is no static rejection of spawn chains,
+> an unannotated function is **not** capped at depth 1 (it recurses to the host
+> stack), and `@fan_out(K)` is parsed and reported but not enforced at runtime
+> (`GARNET_CONCURRENCY_CONTRACT.md`).
+
 ### 10.1 Recursion depth limits [v0.3 — concrete annotation syntax]
 
 ```
@@ -1400,7 +1408,7 @@ When in doubt, prefer `trait` for stable APIs (gives the trait author control) a
 - **OQ-6.** What does the language surface expose about KV-cache compression hints? *(resolved: nothing — confirmed by consensus point 8)*
 - **OQ-7.** How is the Memory Manager's controlled-decay formula expressed? *(resolved by Memory Manager Architecture §3.2)*
 - **OQ-8.** Multi-agent access to shared Memory Core consistency. *(resolved by Memory Manager Architecture §4)*
-- **OQ-9.** [v0.3] What is the async model? *(resolved by Tier-2 Ecosystem Specifications §D — green threads, no colored functions, structured concurrency)*
+- **OQ-9.** [v0.3] What is the async model? *(Tier-2 Ecosystem Specifications §D proposed green threads with no colored functions; that proposal is not what shipped. The as-built model is actors only, with no `async`/`await` surface in v0.8 — see `GARNET_CONCURRENCY_CONTRACT.md`.)*
 - **OQ-10.** [v0.3] What is the trait coherence model? *(resolved as Rust RFC 1023 orphan rule with formal algorithm — see §11.5 v1.0)*
 - **OQ-11.** [~~v0.3 deferred~~ → **v1.0 RESOLVED**] What is the lifetime elision story for safe mode? *(resolved with the four elision rules of §8.5.2 plus the NLL inference algorithm of §8.5.1)*
 - **OQ-12.** [v1.0] How do procs and lambdas differ from blocks? *(deferred to v1.1 — see §5.4.4. v1.0 specifies blocks; closure-return semantics available via the explicit §5.3 closure form which behaves like a Ruby lambda.)*
@@ -1606,6 +1614,11 @@ required = ["fs", "net"]
 deterministic = true     # default-on for v3.4+
 sign = true              # v3.4 ManifestSig
 ```
+
+> **Implemented format differs.** `garnet add` writes `[package]` (not
+> `[project]`), `edition = "garnet-0.3"`, and inline-table path dependencies
+> (`{ path, vendor }`); there is no `[caps]` or `[build]` table. The shape above is
+> the v1.0 target — see `GARNET_MANIFEST_v0_1.md` for what is on disk today.
 
 ### 16.4 Documentation comment syntax
 
