@@ -9,6 +9,21 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ## [Unreleased]
 
+### CI — the fuzz lane installs cargo-fuzz from its lockfile again (2026-09-13)
+
+- **Fixed:** the required `cargo fuzz run parse_input` check failed on every
+  pull request from nightly rustc `809936eac` (channel `nightly-2026-09-13`)
+  on, before any fuzzing ran. Cargo resolved `cargo-fuzz 0.13.1` to
+  `rustix 0.36.5`, which that nightly no longer compiles. The workflow now runs
+  `cargo install cargo-fuzz --version 0.13.2 --locked`, whose lockfile carries
+  `rustix 1.1.4`. Verified on the breaking nightly in native Linux containers:
+  the tool installs, the `parse_input` target builds, and a 30-second fuzz run
+  completes.
+- Because the job's behavior changed, its semantic fingerprint in
+  `.github/rulesets/required-context-producers.json` and the pinned semantic
+  and binding aggregates in the required-context contract and the governance
+  gate are updated to match.
+
 ### Specification documents — claims match the shipped code (2026-09-12)
 
 - **Fixed:** statements across `C_Language_Specification/` and the RFC index

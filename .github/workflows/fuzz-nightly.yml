@@ -54,9 +54,10 @@ jobs:
             garnet-parser-v0.3/fuzz/target
           key: fuzz-nightly-${{ hashFiles('**/Cargo.lock', 'garnet-parser-v0.3/fuzz/Cargo.toml') }}
       - name: Install cargo-fuzz
-        # cargo-fuzz's published lockfile can lag current nightly toolchains; pin
-        # the cargo-fuzz release while allowing compatible transitive fixes.
-        run: cargo install cargo-fuzz --version 0.13.1
+        # Install from cargo-fuzz's published lockfile. From nightly-2026-09-13
+        # on, cargo resolves cargo-fuzz 0.13.1 to rustix 0.36.5, which no longer
+        # compiles; the 0.13.2 lockfile carries rustix 1.1.4.
+        run: cargo install cargo-fuzz --version 0.13.2 --locked
       - name: Sub-workspace structural sanity
         working-directory: garnet-parser-v0.3/fuzz
         run: cargo metadata --no-deps > /dev/null
