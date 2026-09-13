@@ -44,7 +44,7 @@ unclaimed standards territory worth seeding and donating.
 The standard is additive and out-of-band (a manifest artifact), so it introduces
 no language edition change. Capability semantics remain edition-invariant.
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 
 - This RFC **proposes** standardization and **records the intent** to donate. It
   is **not** an accepted standard and **no** external body (OWASP/LF) has reviewed

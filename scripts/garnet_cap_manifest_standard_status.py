@@ -119,7 +119,7 @@ def render_markdown(status: CapManifestStandardStatus) -> str:
         f"- Test vectors present: {'yes' if status.test_vectors_present else 'NO'}",
         f"- CLI proof present: {'yes' if status.cli_gate_present else 'NO'}",
         "",
-        "Honest scope: draft/reference seed over the declared capability surface. "
+        "Scope: draft/reference seed over the declared capability surface. "
         "No OWASP/LF adoption is claimed, and the profile does not prove absence "
         "of undeclared authority.",
         "",

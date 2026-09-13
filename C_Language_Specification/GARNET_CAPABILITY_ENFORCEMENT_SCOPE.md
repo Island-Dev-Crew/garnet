@@ -147,8 +147,9 @@ scope-parity tests.
   running a
   program is protected by the checker — `garnet run` does not invoke it; that
   the runtime refuses any capability-bearing primitive nothing declares — that
-  is true of the 15 gated rows and false of the 65 `Declared` rows, which have
-  no runtime gate; "universal `@caps` runtime enforcement"; "no
+  is true of the 15 gated rows and false of the 5 checker-only `Declared` rows,
+  which run undeclared (the other 60 `Declared` rows need no capability or are
+  unbridged); "universal `@caps` runtime enforcement"; "no
   ambient authority, ever" as a runtime-universal claim; that every third-party
   embedder is forced to use the strict constructor, that the explicit
   `new_permissive()` opt-out does not exist, or that raw public Env/Value/eval
