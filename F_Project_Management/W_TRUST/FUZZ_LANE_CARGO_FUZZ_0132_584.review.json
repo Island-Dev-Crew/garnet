@@ -1,0 +1,32 @@
+{
+  "author_emails": [
+    "email:jon-isaac@islanddevcrew.com"
+  ],
+  "author_ids": [
+    275140286
+  ],
+  "base_commit": "47f121194bbe5c5c3a5ace1cd4043de2fba94793",
+  "blocking_findings": [],
+  "content_digest": "sha256:10b33ccebd846c0a3fef76bf505b076ce095019b8f7422c60c814751654df3f9",
+  "head_repository": "Island-Dev-Crew/garnet",
+  "head_repository_id": 1218183013,
+  "pull_request_id": 4519785897,
+  "pull_request_number": 584,
+  "repository": "Island-Dev-Crew/garnet",
+  "repository_id": 1218183013,
+  "review_scope": "Content proof binds exactly reviewed_head 99f5e70b7ea8b942c02f8cda76542232662ec316 and does not extend or backdate reviewed_head coverage. OpenAI Codex cross-family seat: review v1 at 99f5e70b7ea8b942c02f8cda76542232662ec316 on 2026-09-13, verdict CONFIRM with no medium-or-higher finding. WHAT IT CARRIES: the required context cargo fuzz run parse_input failed on every pull request from nightly rustc 809936eac (channel nightly-2026-09-13) on, at the Install cargo-fuzz step and before any fuzzing ran, because cargo resolved cargo-fuzz 0.13.1 to tempfile 3.3.0 and rustix 0.36.5, whose reserved rustc attributes that nightly rejects. .github/workflows/fuzz-nightly.yml now runs cargo install cargo-fuzz --version 0.13.2 --locked. The reviewer read both published crates' Cargo.lock files from crates.io and confirmed 0.13.1 pins rustix 0.36.5 with tempfile 3.3.0 while 0.13.2 pins rustix 1.1.4 with tempfile 3.27.0; confirmed from GitHub logs that run 34753374009 failed compiling rustix 0.36.5 under rustc 809936eac and run 34701380702 passed under rustc 0fc141305; and confirmed that the lane's later cargo-fuzz invocations, metadata command and artifact and corpus paths remain compatible with 0.13.2. Because the job's behavior changed, seven pinned digests move with it: the fuzz producer semantic_sha256 in .github/rulesets/required-context-producers.json; PREACTIVATION_PRODUCER_SEMANTIC_SHA256 and ACTIVATED_PRODUCER_SEMANTIC_SHA256 in scripts/garnet_required_context_contract.py; and EXPECTED_POLICY_SEMANTIC_SHA256, EXPECTED_POLICY_BINDING_SHA256, EXPECTED_ACTIVATED_POLICY_SEMANTIC_SHA256 and EXPECTED_ACTIVATED_POLICY_BINDING_SHA256 in scripts/garnet_github_governance_gate.py. Identity and ruleset-document digests are unchanged. The reviewer independently recomputed all seven new values with the repository's own projection and contract functions, reproduced all seven previous values with the same computation at base 47f121194bbe5c5c3a5ace1cd4043de2fba94793, confirmed all 32 declared and observed producer fingerprints agree at the reviewed head, and found no remaining occurrence of any previous value. Nine workflow-policy, required-context and governance suites pass in isolated mode (107 tests), agent contracts pass, the cross-OS policy manifest reports parity_exact true, and git diff --check and the vocabulary scan are clean. RUNTIME EVIDENCE LIMITS: the implementer reproduced the failure and verified the fix in native linux/arm64 containers on the breaking compiler (install, parse_input build and a 30-second fuzz run); the reviewer did not rerun those containers, and x86_64 runtime confirmation comes from this pull request's own CI. The exact base..reviewed_head Git author set is email:jon-isaac@islanddevcrew.com; the authenticated GitHub author and committer principal is IslandDevCrew ID 275140286. IDC-Trust-Review ID 306739987 is the approval-event carrier and the planned re-run carrier, a practice Jon accepted on 2026-09-13 for this sequence of pull requests because the only other write account is the commit principal; r2_role_separation_v1 cannot pass and no gate checks it. MERGE AUTHORITY: this PR modifies .github/workflows/fuzz-nightly.yml, the required-context producer ledger, the required-context contract and the governance gate, all gate files under integrity rule 1, so it is human-merge-only: this record plus an authenticated approval from a principal disjoint from the author set, then Jon merges. Touched paths .github/rulesets/required-context-producers.json, .github/workflows/fuzz-nightly.yml, scripts/garnet_github_governance_gate.py, scripts/garnet_required_context_contract.py; content digest sha256:10b33ccebd846c0a3fef76bf505b076ce095019b8f7422c60c814751654df3f9; sole pre-record problem structured review record is missing. Standards axis: none. Spec axis: none. This premerge record is reviewer evidence only; it is not carrier approval, a GitHub approval, re-evaluation, merge, commit, push, tag, or release.",
+  "review_state": "APPROVED",
+  "reviewed_head": "99f5e70b7ea8b942c02f8cda76542232662ec316",
+  "reviewed_tree": "3cd565c759d6f1a744b6354fe0db958250b6a268",
+  "reviewer_id": 306739987,
+  "reviewer_login": "IDC-Trust-Review",
+  "schema": "garnet.trust_kernel_review_record/v2",
+  "state": "premerge",
+  "touched_paths": [
+    ".github/rulesets/required-context-producers.json",
+    ".github/workflows/fuzz-nightly.yml",
+    "scripts/garnet_github_governance_gate.py",
+    "scripts/garnet_required_context_contract.py"
+  ],
+  "verdict": "pass"
+}

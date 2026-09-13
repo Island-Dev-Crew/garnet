@@ -134,7 +134,7 @@
       "workflow": ".github/workflows/fuzz-nightly.yml",
       "event": "pull_request",
       "job": "fuzz",
-      "semantic_sha256": "9542b13f91f74a205aaa70dbace12748743167d572bfa5a6f7ff7a9433b8e0bc"
+      "semantic_sha256": "368623c34e8b59e7a257a887ea8297c21ef1dd7053b12f1419e92a9482f6a283"
     },
     {
       "context": "cargo doc",
