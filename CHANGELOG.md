@@ -14,20 +14,26 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 - **Fixed:** `why.html` claimed provable authority, compile-time
   properties, `brew info` manifests, sealed runs and supervised agent
   trees as shipped; each is now bounded or marked as a design, and its
-  social card is the current one. `garnet convert` no longer prints
-  "(sandboxed)" or asks for `@sandbox(unquarantine)` (the parser rejects
-  the line); `agent-loop` reports its seal as unsigned; `verify` no longer
+  social card is the current one. The printed summary of `garnet convert`
+  no longer says "(sandboxed)" or asks for `@sandbox(unquarantine)` (the
+  parser rejects the line), though the header of the converted file and its
+  migration checklist still carry that advice; `agent-loop` reports its
+  seal as unsigned; `verify` no longer
   names an external reviewer nothing wires in; `caps-log --verify` says it
-  checks the prev-hash links only; `ceilings` and `bounds` no longer claim a
-  ceiling applies or probe for wasmtime; `concurrency` drops
+  checks the prev-hash links only; `ceilings` no longer prints that a
+  default ceiling applies, and `ceilings` and `bounds` no longer print a
+  hard-coded claim that wasmtime is absent; `concurrency` drops
   "Result-returning"; `test --help` says any runtime error fails a test.
   The templates document the `[caps] allowed` list as unread, stop
   promising a seeded test socket, and print ASCII on first run.
-- **Vocabulary:** the retired words leave every Rust source file outside
-  the integration tests (which a separate PR covers), the Studio Tauri
-  source, the ultrapunch fixture README and the playground inputs;
-  the playground package provenance and browser proof are refreshed (the
-  wasm bytes are unchanged).
+- **Vocabulary:** the retired words leave the ultrapunch fixture README
+  and every Rust source file outside the integration tests, except two
+  unit-test function names in the Studio's `commands.rs` and one JSON
+  payload key in its `lib.rs` that committed Studio proofs also carry.
+  Purge PR-2 (#578) covered the integration tests' messages; one
+  integration-test function name in `garnet-cli/tests/bounds_report.rs`
+  still carries a retired word. The playground package provenance and
+  browser proof are refreshed (the wasm bytes are unchanged).
 
 ### Gate files — vocabulary and one scope-table narrowing (2026-09-11)
 
