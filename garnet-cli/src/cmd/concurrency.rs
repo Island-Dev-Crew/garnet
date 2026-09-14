@@ -51,7 +51,7 @@ pub fn run(path: PathBuf) -> ExitCode {
             );
             for p in &a.protocols {
                 let kind = if p.reply {
-                    "ask  (request-reply, Result-returning)"
+                    "ask  (request-reply)"
                 } else {
                     "tell (fire-and-forget)"
                 };

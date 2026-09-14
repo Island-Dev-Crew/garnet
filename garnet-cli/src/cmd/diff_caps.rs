@@ -15,7 +15,7 @@
 //! stdout stays empty and the human-format error goes to stderr in both
 //! modes — an agent consumer must treat exit 2 + empty stdout as fatal.
 //!
-//! Honest scope (both modes): diff-caps reads the DECLARED surface; it does
+//! Scope (both modes): diff-caps reads the DECLARED surface; it does
 //! not prove the absence of undeclared authority (that is the sandbox-policy
 //! job, S46). Bound annotations (`@bounded`, `@max_depth`, `@mailbox`) are
 //! not part of the declared-caps surface, so no bounds delta is claimed.

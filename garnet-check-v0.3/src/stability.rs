@@ -20,7 +20,7 @@
 //! than `caps_graph` (which unions caps across bare-name collisions): an
 //! advisory must never fire on a program that did nothing experimental.
 //!
-//! ## Scope (calibrated honesty)
+//! ## Scope (calibrated claims)
 //!
 //! This pass enforces stability for **primitives**, whose tier is registry
 //! metadata. Source-level `@stability(...)`/`@uses(experimental)`/

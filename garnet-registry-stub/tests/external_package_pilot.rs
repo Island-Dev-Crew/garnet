@@ -6,7 +6,7 @@
 //! refused, and the slopsquatting guard flags a hallucinated near-miss of the
 //! package's name. Runs in the `cargo test --workspace` matrix on every OS.
 //!
-//! Honest scope: a LOCAL filesystem registry-stub pilot, NOT a live public
+//! Scope: a LOCAL filesystem registry-stub pilot, NOT a live public
 //! ecosystem. No HTTP, no publish/auth, no SemVer ranges, no signatures. The
 //! slopguard is a deterministic heuristic ("prompt to verify"), not a security
 //! guarantee — "known names" are the local index, not a global feed.

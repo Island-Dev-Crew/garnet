@@ -248,7 +248,7 @@ pub(crate) fn doc_text(interp: &Interpreter, name: &str) -> String {
 
 // ── :caps ───────────────────────────────────────────────────────────
 
-/// The session's authority overview. Two honest sections:
+/// The session's authority overview. Two sections:
 ///   1. what the loaded user functions *declare* they need (`@caps`), and
 ///   2. the *available* primitives grouped by the capability each requires.
 ///
@@ -790,7 +790,7 @@ mod tests {
         let c = caps_overview(&i);
         assert!(
             c.contains("NOT an enforced budget"),
-            "honesty label required: {c}"
+            "budget label required: {c}"
         );
         assert!(
             c.contains("fs:"),

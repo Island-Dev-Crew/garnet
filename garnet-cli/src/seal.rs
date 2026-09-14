@@ -8,7 +8,7 @@
 //! signs it. The capability manifest is Garnet's native SBOM-equivalent
 //! extension.
 //!
-//! `cosign` / `syft` / `cyclonedx` may be absent; `seal` detects-and-honestly-
+//! `cosign` / `syft` / `cyclonedx` may be absent; `seal` detects-and-explicitly-
 //! skips the optional signing/SBOM-tool step. The predicate is produced either
 //! way.
 

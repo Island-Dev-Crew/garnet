@@ -6,7 +6,7 @@
 //! gets you most of the way through a port and explicitly hands the rest
 //! to a human via two first-class CIR outputs.
 //!
-//! ## Honest scope
+//! ## Scope
 //!
 //! - **Stylized parsers.** Each frontend parses a recognizable, common
 //!   slice of its source language (e.g. `def name(args):` for Python,

@@ -6,7 +6,7 @@
 //! for normal eviction, and unrooted cycles are collected by a bounded
 //! trial-deletion pass with kind-aware scan scheduling. Safe-mode allocations
 //! can be modeled as affine nodes that are retained but excluded from ARC
-//! cycle detection. [`CycleAllocatorFixture`] keeps this honest while moving
+//! cycle detection. [`CycleAllocatorFixture`] keeps this accurate while moving
 //! one step closer to the production shape: it owns the graph and root buffer
 //! together, and routes root/edge decrements through the buffered collector.
 

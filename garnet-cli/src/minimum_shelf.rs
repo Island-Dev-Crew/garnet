@@ -197,7 +197,7 @@ fn verify_seal(
         .and_then(Value::as_str)
         .is_some_and(|note| note.contains("UNSIGNED"))
     {
-        return Err(reject("seal must state its unsigned status honestly"));
+        return Err(reject("seal must state its unsigned status explicitly"));
     }
     Ok(())
 }

@@ -1,7 +1,7 @@
 //! `garnet test [<dir>]` — discover + run every function whose name starts
 //! with `test_` in the project's `tests/*.garnet` files (and, optionally,
 //! `src/main.garnet`). Mirrors the Cargo `cargo test` convention: a test
-//! fails iff it raises a `RuntimeError::Raised(...)` exception, otherwise
+//! fails on any runtime error (a raised exception included), otherwise
 //! passes. Reports a per-test pass/fail line + a summary; exits non-zero
 //! if any test fails. Phase 6E (v4.2).
 
@@ -35,7 +35,7 @@ pub fn run(args: &[String]) -> ExitCode {
                 println!("usage: garnet test [<project-dir>] [--filter <substr>] [--no-main]");
                 println!("  Discovers test_* functions in <dir>/tests/*.garnet (and");
                 println!("  src/main.garnet unless --no-main) and runs each. A test");
-                println!("  fails iff its body raises an exception.");
+                println!("  fails on any runtime error, including a raised exception.");
                 return ExitCode::SUCCESS;
             }
             other if !other.starts_with("--") => {

@@ -2,7 +2,7 @@
 //!
 //! Derives the file's capability surface (S35) and prints the seccomp / WASI /
 //! egress policy it implies. **Generation only** — see `crate::sandbox` and
-//! `C_Language_Specification/GARNET_SANDBOX_POLICY.md` for the honest scope
+//! `C_Language_Specification/GARNET_SANDBOX_POLICY.md` for the scope
 //! (nothing is enforced at runtime here).
 
 use crate::cap_manifest::surface_for_path;

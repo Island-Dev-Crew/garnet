@@ -8,10 +8,9 @@ description = "A Garnet HTTP/1.1 API service"
 mode = "managed"
 
 [caps]
-# `net` is required to bind the listener + accept connections.
-# `time` is used for request deadlines.
-# Broad `fs` is NOT granted — if this service needs to read config
-# files, add "fs" here and annotate the specific reader function.
+# The budget the service is meant to use; nothing reads this list yet.
+# `net` for the listener you write, `time` for deadlines. If the service
+# reads config files, add "fs" here and annotate the reader with @caps(fs).
 allowed = ["net", "time"]
 
 [[bin]]

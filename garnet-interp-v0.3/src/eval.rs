@@ -890,7 +890,7 @@ fn call_fn(f: &FnValue, mut args: Vec<Value>) -> Result<Value, RuntimeError> {
     // `@max_depth(N)` runtime enforcement (S89): a function that declares
     // `@max_depth` traps deterministically when its recursion depth exceeds N —
     // real enforcement (the interpreter refuses to recurse further), distinct
-    // from the S85 host-stack raise. Honest scope: this is the ONE enforced
+    // from the S85 host-stack raise. Scope: this is the ONE enforced
     // ceiling; `@bounded` (Wasmtime fuel), memory, time, and mailbox remain
     // declared-not-enforced. The guard lives for the body's execution and
     // unwinds the counter on drop.

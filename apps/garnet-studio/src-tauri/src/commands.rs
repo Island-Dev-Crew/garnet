@@ -29,7 +29,7 @@ const ADVISORY_LANGUAGES: &[&str] = &[
 /// Hard cap on stdout/stderr returned to the webview. When an evidence bundle
 /// exists, the full untruncated streams are written there before the cap is
 /// applied; the cap only protects the UI payload and DOM from multi-megabyte
-/// reporter output. The truncation marker is honest about whether a bundle
+/// reporter output. The truncation marker states whether a bundle
 /// holds the full streams.
 const PAYLOAD_STREAM_CAP: usize = 256 * 1024;
 const PAYLOAD_TRUNCATION_MARKER_WITH_BUNDLE: &str =
@@ -523,7 +523,7 @@ fn bootstrap_repo_gate(
 /// PowerShell 5.1); `pwsh` (PowerShell 7+) is the fallback. The generated
 /// scripts use Windows idioms (winget, User-scope env, LOCALAPPDATA), so this
 /// is a Windows-shaped feature — on a host with no PowerShell it refuses
-/// honestly rather than claiming a run happened.
+/// explicitly rather than claiming a run happened.
 fn bootstrap_powershell() -> Option<PathBuf> {
     paths::find_executable("powershell").or_else(|| paths::find_executable("pwsh"))
 }
@@ -555,7 +555,7 @@ fn studio_bootstrap_run_step_resolved(
 
     // Windows-only: the generated scripts use winget, User-scope environment
     // variables, and LOCALAPPDATA, and `[Environment]::SetEnvironmentVariable(
-    // ..., 'User')` is a silent no-op off Windows. Refuse honestly rather than
+    // ..., 'User')` is a silent no-op off Windows. Refuse explicitly rather than
     // run a Windows-shaped script under pwsh and report a hollow "Passed".
     if !cfg!(windows) {
         return contract_error(
@@ -919,7 +919,7 @@ pub async fn studio_velocity_check(source: String) -> Result<VelocityCheckReport
 
 // ── Phase 4: Enforced / Declared Legend ─────────────────────────────────────
 //
-// Calibrated honesty made visible: which fences are runtime-ENFORCED, which are
+// Calibrated claims made visible: which fences are runtime-ENFORCED, which are
 // merely DECLARED, and which are platform-DEFERRED. The catalog below is the
 // single source of truth (it mirrors the parser's `Annotation` set + the
 // named-deferred fence list in CLAUDE.md / GARNET_RED_TEAM.md); the renderer
@@ -968,7 +968,7 @@ pub struct EnforcementProbe {
     /// The check diagnostic code the fixture is expected to provoke.
     pub expected_code: String,
     /// True iff the live `garnet check` emitted `expected_code`. False is an
-    /// honest "not confirmed here" — never silently treated as a pass.
+    /// an explicit "not confirmed here" — never silently treated as a pass.
     pub confirmed: bool,
     /// True iff the check actually ran (CLI present, JSON parsed). When false the
     /// probe is INCONCLUSIVE, not a confirmation.
@@ -984,7 +984,7 @@ pub struct EnforcementLegend {
     pub fences: Vec<EnforcementFence>,
     pub probes: Vec<EnforcementProbe>,
     /// True iff a Garnet CLI was found to run the probes. When false the enforced
-    /// rows still render, but as claimed-not-confirmed-here (honest).
+    /// rows still render, but as claimed-not-confirmed-here (explicit).
     pub cli_available: bool,
 }
 
@@ -1253,7 +1253,7 @@ pub struct AgentLoopDossier {
     /// Which gate rejected, when `outcome == Rejected`.
     pub rejected_at: Option<AgentLoopGate>,
     pub gates: Vec<AgentLoopGateRow>,
-    /// `decision.md`, verbatim — carries the CLI's honest scope disclaimer.
+    /// `decision.md`, verbatim — carries the CLI's scope disclaimer.
     pub decision_md: String,
     /// `diff_caps.txt`, verbatim.
     pub diff_caps_text: String,
@@ -3083,7 +3083,7 @@ mod tests {
 
     #[test]
     fn enforcement_legend_without_a_cli_renders_but_marks_probes_inconclusive() {
-        // No CLI: the legend still lists every fence (honesty must render even
+        // No CLI: the legend still lists every fence (the fences must render even
         // offline), but the enforced rows are NOT confirmed here.
         let legend = studio_enforcement_legend_with_cli(None);
         assert!(!legend.cli_available);
@@ -3173,7 +3173,7 @@ mod tests {
 
     // ── Phase 5: Agent-Loop Console ──────────────────────────────────────
 
-    const ACCEPT_DECISION: &str = "# Agent-loop decision: ACCEPTED\n\nProposal was ACCEPTED on capability+depth evidence.\n\nHonest scope: accepted on capability + depth evidence ONLY — `@caps` and `@max_depth` are enforced. `@bounded`/memory/time/`@mailbox`/OS-sandbox remain declared-not-enforced; this is NOT a claim of full boundedness or safety.\n";
+    const ACCEPT_DECISION: &str = "# Agent-loop decision: ACCEPTED\n\nProposal was ACCEPTED on capability+depth evidence.\n\nScope: accepted on capability + depth evidence ONLY — `@caps` and `@max_depth` are enforced. `@bounded`/memory/time/`@mailbox`/OS-sandbox remain declared-not-enforced; this is NOT a claim of full boundedness or safety.\n";
     const ACCEPT_DIFF_CAPS: &str = "garnet diff-caps: baseline -> proposal\n  no capability changes.\n\ndiff-caps: no authority expansion (capability band 5/5)\n";
     const ACCEPT_MANIFEST: &str = r#"{"schema":"garnet-capability-manifest-v1","aggregate":["fs"],"functions":[{"name":"digest","caps":["fs"]},{"name":"main","caps":["fs"]}],"wildcard":false}"#;
     const ACCEPT_SEAL: &str = r#"{"_type":"https://in-toto.io/Statement/v1","predicateType":"https://garnet-lang.org/attestation/seal/v1","predicate":{"authorship":"sim:scripted-agent","attestation":{"agent":"scripted-agent-v1","autonomous":"true","decision":"accepted-on-capability+depth-evidence","gate_version":"dogfood-gate-v1","model":"simulated","tool":"garnet-agent-loop"}}}"#;
@@ -3248,7 +3248,7 @@ mod tests {
         assert_eq!(d.seal_authorship, "sim:scripted-agent");
         assert_eq!(d.transparency_log.len(), 1);
         assert_eq!(d.transparency_log[0].program, "accept_proposal");
-        // decision.md rendered verbatim — the honest scope disclaimer survives.
+        // decision.md rendered verbatim — the scope disclaimer survives.
         assert!(d
             .decision_md
             .contains("NOT a claim of full boundedness or safety"));

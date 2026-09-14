@@ -12,7 +12,7 @@
 //!   4. **seal** (S38) — an accepted proposal is attested, recording the autonomous
 //!      acceptance + agent/model/gate-version provenance (S65/S66).
 //!
-//! Honest scope: acceptance rests ONLY on the two ENFORCED ceilings — `@caps`
+//! Scope: acceptance rests ONLY on the two ENFORCED ceilings — `@caps`
 //! host-authority + `@max_depth` recursion. `@bounded` (Wasmtime fuel), memory,
 //! time, `@mailbox`, and OS-level sandbox remain **declared-not-enforced**. The
 //! verdict is **"ACCEPTED on capability+depth evidence"** — never "fully bounded",
@@ -38,7 +38,7 @@ struct Args {
     /// `key=value` attestation entries threaded into the seal predicate (S66).
     attest: Vec<String>,
     /// S103: if set, write the full trust dossier (the 4 trust artifacts on accept,
-    /// or the refusal record on reject) + an honest `decision.md` into this dir.
+    /// or the refusal record on reject) + a `decision.md` that states its scope into this dir.
     record_dir: Option<PathBuf>,
 }
 
@@ -130,7 +130,7 @@ fn parse(args: &[String]) -> Result<Args, ExitCode> {
         p.set_extension("seal.json");
         p
     });
-    // S102: the agent is simulated unless the caller declares otherwise (honest —
+    // S102: the agent is simulated unless the caller declares otherwise (stated —
     // a real model name here would be a false provenance claim; live LLM is S94).
     let authored_by = authored_by.unwrap_or_else(|| "sim:scripted-agent".to_string());
 
@@ -193,7 +193,7 @@ enum Outcome<'a> {
 
 /// S103: write the trust dossier into `--record-dir`. On ACCEPT this is the **4
 /// trust artifacts** — capability_manifest.json (S36), diff_caps.txt (S37),
-/// seal.json (S38), transparency_log.jsonl (S68) — plus an honest `decision.md`.
+/// seal.json (S38), transparency_log.jsonl (S68) — plus a `decision.md` that states its scope.
 /// On REJECT it records the refusal (the negative proof): no seal is ever written.
 fn write_record(a: &Args, exe: &std::path::Path, diff_stdout: &[u8], outcome: &Outcome) {
     let Some(dir) = a.record_dir.as_deref() else {
@@ -218,7 +218,7 @@ fn write_record(a: &Args, exe: &std::path::Path, diff_stdout: &[u8], outcome: &O
              - sealed: attested in `seal.json` with autonomous-acceptance provenance.\n\n\
              The 4 trust artifacts: `capability_manifest.json` (S36), `diff_caps.txt` (S37), \
              `seal.json` (S38), `transparency_log.jsonl` (S68).\n\n\
-             Honest scope: accepted on capability + depth evidence ONLY — `@caps` and \
+             Scope: accepted on capability + depth evidence ONLY — `@caps` and \
              `@max_depth` are enforced. `@bounded`/memory/time/`@mailbox`/OS-sandbox remain \
              declared-not-enforced; this is NOT a claim of full boundedness or safety.\n",
             a.proposal.display(),
@@ -431,7 +431,7 @@ pub fn run(args: &[String]) -> ExitCode {
         return ExitCode::from(2);
     }
     println!(
-        "agent-loop: stage seal -> SEALED ({}) (unsigned unless cosign present)",
+        "agent-loop: stage seal -> SEALED ({}) (unsigned)",
         a.seal_out.display()
     );
     write_record(

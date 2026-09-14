@@ -2,7 +2,7 @@
 //! `<file>.garnet` + `.lineage.json` + `.migrate_todo.md` + `.metrics.json`
 //! beside the source, or under `--out <dir>` if supplied. Output is a
 //! scaffolded port (sandbox-on, with `MigrateTodo`/`Untranslatable`
-//! placeholders) — see `garnet-convert` crate docs for honest-scope
+//! placeholders) — see `garnet-convert` crate docs for the scope
 //! caveats.
 
 use crate::convert_cmd::{self, ConvertArgs, ConvertOutcome};

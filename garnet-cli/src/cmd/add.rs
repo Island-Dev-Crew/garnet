@@ -1,6 +1,6 @@
 //! `garnet add <path>` — vendor a local Garnet directory as a dependency.
 //!
-//! ## v0.5.1 scope (honest)
+//! ## v0.5.1 scope
 //!
 //! This is **not** a package manager. There is no central registry,
 //! no version resolution, no dependency graph, and no upgrade path.
@@ -16,7 +16,7 @@
 //!    file so a second `garnet add` (or `garnet verify-deps`, later) can
 //!    detect tampering or drift.
 //!
-//! What it does NOT do (honest partial):
+//! What it does NOT do (partial):
 //!
 //! - Resolve `use <dep>::<symbol>` at parse/check/run time. The
 //!   interpreter does not yet load vendored deps into the symbol table;

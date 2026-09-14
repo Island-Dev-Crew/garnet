@@ -13,7 +13,7 @@
 //! surprise. "The seal attests what the core proves" stays mechanically
 //! true across this lowering.
 //!
-//! ## Honest scope (no overclaim)
+//! ## Scope (no overclaim)
 //!
 //! - This is a **static cross-IR caps-containment check (lowered ⊆ declared)
 //!   with a deterministic trap** ([`recheck_caps`] rejects a planted

@@ -226,7 +226,7 @@ pub enum Cir {
     },
     PatWildcard(Lineage),
 
-    // Migration-escape nodes — the honest-middle position per prior art
+    // Migration-escape nodes — the middle position per prior art
     Untranslatable {
         reason: String,
         lineage: Lineage,

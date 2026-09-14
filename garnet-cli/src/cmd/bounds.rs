@@ -49,9 +49,8 @@ pub fn run(path: PathBuf) -> ExitCode {
         }
     }
     println!(
-        "\nnote: enforcement lowers to Wasmtime fuel metering (the lowering target). \
-         wasmtime is not present in this environment, so budgets are DECLARED + reported, \
-         not yet runtime fuel-enforced (wrap-don't-rebuild)."
+        "\nnote: enforcement lowers to Wasmtime fuel metering (the lowering target, not built). \
+         Budgets are DECLARED and reported, not yet runtime fuel-enforced."
     );
     ExitCode::SUCCESS
 }
