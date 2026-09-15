@@ -9,6 +9,29 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ## [Unreleased]
 
+### Trust gate — the rolling-review gate reads Git objects through one batched reader (2026-09-15)
+
+- The rolling trust-kernel review gate (`scripts/garnet_trust_kernel_review_status.py`)
+  now reads commits, trees and blobs through one long-lived `git cat-file --batch`
+  child per repository instead of one `git cat-file` process per object (U-75).
+  On the range from main `a6cfeaad` to the first rebuild of this change, main's gate
+  started 5,162 git processes and took about 60 s; the batched gate started 38 and
+  took 0.62 s, with byte-identical JSON and `--print-trust-surface` output. CI's
+  gate step already ran in 6 to 17 s, so the saving is mostly for local runs while
+  preparing trust-kernel changes.
+- Reads fail closed in more cases: a tag or commit id requested as the wrong type is
+  rejected instead of peeled, blob reads reject a malformed object id before calling
+  Git, and a timeout, protocol violation, request write failure or a failed read of
+  the child's error stream poisons the reader for the rest of the run. A lost error
+  stream is reported, because it could hide graft advice.
+- Every entry point that reads objects (`read_status`, the landed-marker verifiers
+  and `main`, including `--print-trust-surface`) closes its reader and reports its
+  close findings; when an exception escapes, the reader is still closed and its
+  child process reaped.
+- The spawn-count test counts only `cat-file` invocations; other per-commit Git
+  calls in range and era-stone enumeration are outside this change. Windows is not
+  verified.
+
 ### Scripts — retired words leave the reporters' comments and docstrings (2026-09-12)
 
 - Purge PR-3b edits 84 files under `scripts/`: retired words leave their

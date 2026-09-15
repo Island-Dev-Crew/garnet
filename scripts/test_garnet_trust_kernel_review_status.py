@@ -12,6 +12,8 @@ import re
 import subprocess
 import sys
 import tempfile
+import threading
+import time
 import types
 import unittest
 from pathlib import Path
@@ -74,6 +76,9 @@ class GitRepoFixture(unittest.TestCase):
     def setUp(self) -> None:
         self.temp = tempfile.TemporaryDirectory()
         self.root = Path(self.temp.name).resolve()
+        self._init_repository()
+
+    def _init_repository(self) -> None:
         self._git("init")
         self._git("config", "core.autocrlf", "false")
         self._git("config", "user.email", "author@example.invalid")
@@ -100,6 +105,7 @@ class GitRepoFixture(unittest.TestCase):
         self._git("update-ref", "refs/remotes/origin/main", self.base)
 
     def tearDown(self) -> None:
+        mod._close_object_readers()
         self.temp.cleanup()
 
     def _write_stone(self, version: str, pull: int = 559) -> str:
@@ -2678,6 +2684,572 @@ class TrustSurfaceWideningTests(LandedMarkerTests):
         self._git("update-ref", "refs/remotes/origin/main", self._git("rev-parse", "HEAD"))
         findings = mod.verify_repository_landed_markers(self.root)
         self.assertTrue(any("registered by more than one landed marker" in item for item in findings), findings)
+
+
+class _ScriptedPipe:
+    """Bytes pipe stand-in: serves scripted output, then blocks until ``kill``."""
+
+    def __init__(self, data: bytes, *, hang_at: int | None, killed: threading.Event) -> None:
+        self._data = data
+        self._position = 0
+        self._hang_at = len(data) if hang_at is None else hang_at
+        self._killed = killed
+
+    def _serve(self, end: int) -> bytes:
+        if end > self._hang_at:
+            self._killed.wait()
+            return b""
+        chunk = self._data[self._position : end]
+        self._position = end
+        return chunk
+
+    def readline(self, limit: int = -1) -> bytes:
+        newline = self._data.find(b"\n", self._position)
+        end = len(self._data) if newline < 0 else newline + 1
+        if limit >= 0:
+            end = min(end, self._position + limit)
+        return self._serve(end)
+
+    def read(self, size: int = -1) -> bytes:
+        end = len(self._data) if size < 0 else min(len(self._data), self._position + size)
+        return self._serve(end)
+
+    def close(self) -> None:
+        return None
+
+
+class FakeGitProcess:
+    """Scripted ``git cat-file --batch`` child; records argv and Popen kwargs."""
+
+    instances: list["FakeGitProcess"] = []
+
+    def __init__(self, argv: list[str], **kwargs: object) -> None:
+        self.argv = list(argv)
+        self.kwargs = kwargs
+        script = self.__class__.script
+        self.killed = threading.Event()
+        self.stdin = io.BytesIO()
+        self.stdout = _ScriptedPipe(script.stdout, hang_at=script.hang_at, killed=self.killed)
+        self.stderr = io.BytesIO(script.stderr)
+        self.returncode: int | None = None
+        self.__class__.instances.append(self)
+
+    script = types.SimpleNamespace(stdout=b"", stderr=b"", hang_at=None)
+
+    def kill(self) -> None:
+        self.killed.set()
+        self.returncode = -9
+
+    def wait(self, timeout: float | None = None) -> int:
+        if self.returncode is None:
+            self.returncode = 0
+        return self.returncode
+
+
+class ObjectReaderTests(unittest.TestCase):
+    """The batched object reader fails closed on every protocol deviation."""
+
+    OID = "a" * 40
+    OTHER = "b" * 40
+
+    def setUp(self) -> None:
+        FakeGitProcess.instances = []
+        self.addCleanup(mod._close_object_readers)
+
+    def _reader(
+        self,
+        stdout: bytes,
+        *,
+        stderr: bytes = b"",
+        hang_at: int | None = None,
+    ) -> mod._ObjectReader:
+        FakeGitProcess.script = types.SimpleNamespace(
+            stdout=stdout, stderr=stderr, hang_at=hang_at
+        )
+        with mock.patch.object(mod.subprocess, "Popen", FakeGitProcess):
+            return mod._object_reader(Path("/"))
+
+    def test_reader_uses_the_scrubbed_environment_in_bytes_mode(self) -> None:
+        secrets = {
+            "GITHUB_TOKEN": "github-secret",
+            "REVIEW_TOKEN": "review-secret",
+            "UNRELATED_VALUE": "safe",
+        }
+        control_plane = {
+            "GIT_DIR": "/alternate/repository",
+            "GIT_GRAFT_FILE": "/alternate/grafts",
+            "GIT_NO_REPLACE_OBJECTS": "0",
+            "GIT_OBJECT_DIRECTORY": "/alternate/objects",
+            "GIT_REPLACE_REF_BASE": "refs/alternate/replace/",
+        }
+        with mock.patch.dict(os.environ, {**secrets, **control_plane}, clear=True):
+            self._reader(b"")
+            expected = mod._scrubbed_git_environment()
+        process = FakeGitProcess.instances[-1]
+        env = process.kwargs["env"]
+        self.assertEqual(expected, env)
+        for name in secrets:
+            self.assertNotIn(name, env)
+        for name, value in control_plane.items():
+            self.assertNotEqual(value, env.get(name), name)
+        self.assertEqual("1", env["GIT_NO_REPLACE_OBJECTS"])
+        self.assertEqual(os.devnull, env["GIT_GRAFT_FILE"])
+        self.assertEqual("git", process.argv[0])
+        self.assertIn("--no-replace-objects", process.argv)
+        self.assertEqual(["cat-file", "--batch"], process.argv[-2:])
+        self.assertEqual(Path("/"), process.kwargs["cwd"])
+        for stream in ("stdin", "stdout", "stderr"):
+            self.assertEqual(subprocess.PIPE, process.kwargs[stream], stream)
+        for text_mode in ("text", "universal_newlines"):
+            self.assertFalse(process.kwargs.get(text_mode, False), text_mode)
+        for decoder in ("encoding", "errors"):
+            self.assertIsNone(process.kwargs.get(decoder), decoder)
+
+    def test_raw_object_reports_missing_and_wrong_kind_as_unreadable(self) -> None:
+        missing = self._reader(f"{self.OID} missing\n".encode())
+        with mock.patch.object(mod, "_object_reader", return_value=missing):
+            payload, problems = mod._raw_object(Path("/"), "commit", self.OID, "commit X")
+        self.assertIsNone(payload)
+        self.assertEqual(["commit X is not a readable commit object"], problems)
+        self.assertFalse(missing.poisoned)
+
+        mod._close_object_readers()
+        tree = self._reader(f"{self.OID} tree 5\nhello\n".encode())
+        with mock.patch.object(mod, "_object_reader", return_value=tree):
+            payload, problems = mod._raw_object(Path("/"), "commit", self.OID, "commit X")
+        self.assertIsNone(payload)
+        self.assertEqual(["commit X is not a readable commit object"], problems)
+
+    def test_raw_object_rejects_invalid_requests_without_touching_the_reader(self) -> None:
+        reader = self._reader(b"")
+        with mock.patch.object(mod, "_object_reader", return_value=reader):
+            _, problems = mod._raw_object(Path("/"), "commit", "HEAD", "commit X")
+            self.assertEqual(["commit X has an invalid object request"], problems)
+            _, problems = mod._raw_object(Path("/"), "blob", self.OID, "blob X")
+            self.assertEqual(["blob X has an invalid object request"], problems)
+        self.assertEqual(b"", FakeGitProcess.instances[-1].stdin.getvalue())
+
+    def test_malformed_header_poisons_every_later_read(self) -> None:
+        reader = self._reader(b"garbage\n" + f"{self.OTHER} commit 3\nabc\n".encode())
+        with mock.patch.object(mod, "_object_reader", return_value=reader):
+            _, first = mod._raw_object(Path("/"), "commit", self.OID, "commit X")
+            self.assertEqual(["commit X is not a readable commit object"], first)
+            self.assertTrue(reader.poisoned)
+            _, second = mod._raw_object(Path("/"), "commit", self.OTHER, "commit Y")
+            self.assertEqual(["commit Y is not a readable commit object"], second)
+            _, blob = mod._read_blob_oid(Path("/"), self.OTHER, "blob Y")
+            self.assertEqual(["object is not a regular blob: blob Y"], blob)
+        self.assertEqual(f"{self.OID}\n".encode(), FakeGitProcess.instances[-1].stdin.getvalue())
+
+    def test_header_for_another_object_is_a_protocol_violation(self) -> None:
+        reader = self._reader(f"{self.OTHER} commit 3\nabc\n".encode())
+        with mock.patch.object(mod, "_object_reader", return_value=reader):
+            _, problems = mod._raw_object(Path("/"), "commit", self.OID, "commit X")
+        self.assertEqual(["commit X is not a readable commit object"], problems)
+        self.assertTrue(reader.poisoned)
+
+    def test_header_stage_timeout_is_reported_and_poisons(self) -> None:
+        reader = self._reader(f"{self.OID} commit 3\nabc\n".encode(), hang_at=0)
+        with mock.patch.object(mod, "_object_reader", return_value=reader), mock.patch.object(
+            mod, "GIT_TIMEOUT_SECONDS", 0.2
+        ):
+            _, problems = mod._raw_object(Path("/"), "commit", self.OID, "commit X")
+            self.assertEqual(["commit X object read timed out"], problems)
+            self.assertTrue(reader.poisoned)
+            self.assertTrue(FakeGitProcess.instances[-1].killed.is_set())
+            _, later = mod._raw_object(Path("/"), "commit", self.OTHER, "commit Y")
+        self.assertEqual(["commit Y is not a readable commit object"], later)
+
+    def test_blob_read_distinguishes_header_and_body_stage_failures(self) -> None:
+        cases = [
+            (f"{self.OID} missing\n".encode(), None, "object is not a regular blob: blob X"),
+            (f"{self.OID} tree 5\nhello\n".encode(), None, "object is not a regular blob: blob X"),
+            (f"{self.OID} blob 5\nhello\n".encode(), 0, "blob type lookup timed out for blob X"),
+            (f"{self.OID} blob 5\nhello\n".encode(), 50, "blob read timed out for blob X"),
+            (f"{self.OID} blob 5\nhel".encode(), None, "blob read failed for blob X"),
+            (f"{self.OID} blob 5\nhello".encode(), None, "blob read failed for blob X"),
+        ]
+        for stdout, hang_at, expected in cases:
+            with self.subTest(expected=expected, stdout=stdout):
+                mod._close_object_readers()
+                reader = self._reader(stdout, hang_at=hang_at)
+                with mock.patch.object(
+                    mod, "_object_reader", return_value=reader
+                ), mock.patch.object(mod, "GIT_TIMEOUT_SECONDS", 0.2):
+                    payload, problems = mod._read_blob_oid(Path("/"), self.OID, "blob X")
+                self.assertIsNone(payload)
+                self.assertEqual([expected], problems)
+
+    def test_blob_read_gates_on_the_object_id_shape(self) -> None:
+        reader = self._reader(b"")
+        with mock.patch.object(mod, "_object_reader", return_value=reader):
+            for bad in ("HEAD", "A" * 40, "a" * 39, "a" * 40 + "\n"):
+                payload, problems = mod._read_blob_oid(Path("/"), bad, "blob X")
+                self.assertIsNone(payload, bad)
+                self.assertEqual(["object is not a regular blob: blob X"], problems, bad)
+        self.assertEqual(b"", FakeGitProcess.instances[-1].stdin.getvalue())
+
+    def test_successful_reads_are_memoized_per_object_id(self) -> None:
+        reader = self._reader(f"{self.OID} blob 5\nhello\n".encode())
+        with mock.patch.object(mod, "_object_reader", return_value=reader):
+            first, _ = mod._read_blob_oid(Path("/"), self.OID, "blob X")
+            second, _ = mod._read_blob_oid(Path("/"), self.OID, "blob X")
+        self.assertEqual(b"hello", first)
+        self.assertEqual(b"hello", second)
+        self.assertEqual(f"{self.OID}\n".encode(), FakeGitProcess.instances[-1].stdin.getvalue())
+
+    def test_graft_advice_on_stderr_surfaces_at_close(self) -> None:
+        self._reader(b"", stderr=b"hint: support for .git/info/grafts is deprecated\n")
+        problems = mod._close_object_readers()
+        self.assertEqual(1, len(problems), problems)
+        self.assertIn("graft", problems[0])
+        self.assertEqual([], mod._close_object_readers())
+
+    def test_clean_close_reports_nothing_and_ends_the_child(self) -> None:
+        self._reader(b"")
+        self.assertEqual([], mod._close_object_readers())
+        process = FakeGitProcess.instances[-1]
+        self.assertEqual(0, process.returncode)
+        self.assertTrue(process.stdin.closed)
+
+    def test_spawn_failure_poisons_instead_of_raising(self) -> None:
+        with mock.patch.object(mod.subprocess, "Popen", side_effect=FileNotFoundError("git")):
+            reader = mod._object_reader(Path("/"))
+        self.assertTrue(reader.poisoned)
+        with mock.patch.object(mod, "_object_reader", return_value=reader):
+            _, problems = mod._raw_object(Path("/"), "tree", self.OID, "tree X")
+        self.assertEqual(["tree X is not a readable tree object"], problems)
+        self.assertEqual([], mod._close_object_readers())
+
+    def test_error_stream_read_failure_poisons_and_is_reported_at_close(self) -> None:
+        for error in (OSError("injected stderr failure"), ValueError("injected stderr failure")):
+            with self.subTest(error=type(error).__name__):
+
+                class BrokenStderr(io.BytesIO):
+                    def read(self, *args: object) -> bytes:
+                        raise error
+
+                class BrokenStderrProcess(FakeGitProcess):
+                    def __init__(self, argv: list[str], **kwargs: object) -> None:
+                        super().__init__(argv, **kwargs)
+                        self.stderr = BrokenStderr()
+
+                BrokenStderrProcess.script = types.SimpleNamespace(
+                    stdout=f"{self.OID} blob 5\nhello\n".encode(), stderr=b"", hang_at=None
+                )
+                with mock.patch.object(mod.subprocess, "Popen", BrokenStderrProcess):
+                    reader = mod._object_reader(Path("/"))
+                self.assertIsNotNone(reader._drain)
+                reader._drain.join(timeout=5)
+                self.assertTrue(reader.poisoned)
+                with mock.patch.object(mod, "_object_reader", return_value=reader):
+                    payload, problems = mod._read_blob_oid(Path("/"), self.OID, "blob X")
+                self.assertIsNone(payload)
+                self.assertTrue(problems)
+                self.assertEqual(
+                    ["git object reader error stream could not be read"],
+                    mod._close_object_readers(),
+                )
+
+    def test_request_write_or_flush_failure_poisons_every_later_read(self) -> None:
+        for failing in ("write", "flush"):
+            with self.subTest(failing=failing):
+
+                class BrokenStdin(io.BytesIO):
+                    pass
+
+                def fail(*args: object, **kwargs: object) -> None:
+                    raise BrokenPipeError("injected request failure")
+
+                setattr(BrokenStdin, failing, fail)
+
+                class BrokenStdinProcess(FakeGitProcess):
+                    def __init__(self, argv: list[str], **kwargs: object) -> None:
+                        super().__init__(argv, **kwargs)
+                        self.stdin = BrokenStdin()
+
+                BrokenStdinProcess.script = types.SimpleNamespace(
+                    stdout=f"{self.OID} commit 5\nhello\n".encode(), stderr=b"", hang_at=None
+                )
+                with mock.patch.object(mod.subprocess, "Popen", BrokenStdinProcess):
+                    reader = mod._object_reader(Path("/"))
+                with mock.patch.object(mod, "_object_reader", return_value=reader):
+                    self.assertEqual(
+                        (None, ["commit X is not a readable commit object"]),
+                        mod._raw_object(Path("/"), "commit", self.OID, "commit X"),
+                    )
+                    self.assertEqual(
+                        (None, ["commit Y is not a readable commit object"]),
+                        mod._raw_object(Path("/"), "commit", self.OTHER, "commit Y"),
+                    )
+                self.assertTrue(reader.poisoned)
+                self.assertEqual([], mod._close_object_readers())
+
+
+class ObjectReaderSpawnTests(GitRepoFixture):
+    """Object-read spawns must not scale with history length or tree depth.
+
+    U-75 routes every object read through one ``git cat-file --batch`` child,
+    so only ``cat-file`` invocations are counted.  Other per-commit git calls,
+    such as the range and era-stone enumeration that walks ``rev-list`` and
+    ``diff-tree`` once per commit, are outside U-75's scope and are not counted.
+    """
+
+    @staticmethod
+    def _is_object_read(args: tuple[object, ...], kwargs: dict[str, object]) -> bool:
+        argv = args[0] if args else kwargs.get("args")
+        return isinstance(argv, (list, tuple)) and "cat-file" in argv
+
+    def _spawns_for(self, commits: int) -> tuple[int, int]:
+        with tempfile.TemporaryDirectory() as temp:
+            self.root = Path(temp).resolve()
+            self._init_repository()
+            for index in range(commits):
+                nested = "/".join(f"level{depth}" for depth in range(index + 1))
+                self._commit_file(
+                    f"{nested}/file{index}.txt", f"{index}\n".encode(), f"commit {index}"
+                )
+            real_run = subprocess.run
+            real_popen = subprocess.Popen
+            runs = 0
+            spawns = 0
+
+            def counting_run(*args: object, **kwargs: object) -> object:
+                nonlocal runs
+                if self._is_object_read(args, kwargs):
+                    runs += 1
+                return real_run(*args, **kwargs)
+
+            def counting_popen(*args: object, **kwargs: object) -> object:
+                nonlocal spawns
+                if self._is_object_read(args, kwargs):
+                    spawns += 1
+                return real_popen(*args, **kwargs)
+
+            with mock.patch.object(mod.subprocess, "run", counting_run), mock.patch.object(
+                mod.subprocess, "Popen", counting_popen
+            ):
+                status = mod.read_status(root=self.root)
+            self.assertTrue(status.ok, status.problems)
+            self.assertEqual(commits, status.changed_count)
+        return runs, spawns
+
+    def test_object_read_spawns_are_independent_of_history_and_tree_size(self) -> None:
+        small = self._spawns_for(3)
+        large = self._spawns_for(40)
+        self.assertEqual(
+            small,
+            large,
+            f"(cat-file run calls, cat-file process spawns) small={small} large={large}: "
+            "object reads must ride one batched reader",
+        )
+
+
+class ObjectReaderLifecycleTests(GitRepoFixture):
+    """Every entry point closes its batched readers and reports their findings.
+
+    Real ``git`` supplies the objects; a real child process stands in for
+    ``cat-file`` only where a stalled response is needed.
+    """
+
+    # Each stand-in child writes a ready file before it reads a request, so the
+    # per-request deadline measures only the response, never child start-up.
+    # The 5 s deadline leaves room for a loaded CI runner.  A runner slow enough
+    # to miss it can only fail a test; it cannot make one stage's test pass on
+    # the other stage's timeout message.
+    HEADER_STALL = (
+        "import pathlib, sys, time\n"
+        "pathlib.Path(sys.argv[1]).write_text('ready')\n"
+        "sys.stdin.buffer.readline()\n"
+        "time.sleep(60)\n"
+    )
+    BODY_STALL = (
+        "import pathlib, sys, time\n"
+        "pathlib.Path(sys.argv[1]).write_text('ready')\n"
+        "request = sys.stdin.buffer.readline().strip()\n"
+        "sys.stdout.buffer.write(request + b' blob 1000\\n' + b'x' * 10)\n"
+        "sys.stdout.buffer.flush()\n"
+        "time.sleep(60)\n"
+    )
+
+    def _landed_fixture(self) -> "LandedMarkerTests":
+        fixture = LandedMarkerTests()
+        fixture.setUp()
+        self.addCleanup(fixture.tearDown)
+        return fixture
+
+    @staticmethod
+    def _graft_drain() -> object:
+        original = mod._ObjectReader._drain_stderr
+
+        def drain(reader: object) -> None:
+            original(reader)
+            reader._stderr += b"hint: graft advice\n"
+
+        return drain
+
+    @staticmethod
+    def _recording_popen(spawned: list[object]) -> object:
+        real_popen = subprocess.Popen
+
+        def popen(argv: object, **kwargs: object) -> object:
+            process = real_popen(argv, **kwargs)
+            if isinstance(argv, (list, tuple)) and "cat-file" in argv:
+                spawned.append(process)
+            return process
+
+        return popen
+
+    @staticmethod
+    def _stalling_popen(script: str, spawned: list[object], ready: Path) -> object:
+        real_popen = subprocess.Popen
+
+        def popen(argv: object, **kwargs: object) -> object:
+            if isinstance(argv, (list, tuple)) and "cat-file" in argv:
+                process = real_popen([sys.executable, "-c", script, os.fspath(ready)], **kwargs)
+                spawned.append(process)
+                return process
+            return real_popen(argv, **kwargs)
+
+        return popen
+
+    def _ready_path(self) -> Path:
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        return Path(directory.name) / "child-ready"
+
+    def _stalled_reader(self, script: str, spawned: list[object], ready: Path) -> None:
+        """Start the stand-in child and wait until it is reading requests."""
+        mod._object_reader(self.root)
+        deadline = time.monotonic() + 30
+        while not ready.exists():
+            if time.monotonic() > deadline:
+                self.fail("stand-in cat-file child never started")
+            time.sleep(0.01)
+
+    def test_exported_marker_verifier_closes_its_reader_and_reports_close_findings(self) -> None:
+        fixture = self._landed_fixture()
+        spawned: list[object] = []
+        with mock.patch.object(mod.subprocess, "Popen", self._recording_popen(spawned)):
+            self.assertEqual([], fixture._findings())
+        self.assertEqual({}, mod._OBJECT_READERS)
+        self.assertTrue(spawned, "the verifier reads objects through the batched reader")
+        self.assertTrue(all(process.poll() is not None for process in spawned))
+        with mock.patch.object(mod._ObjectReader, "_drain_stderr", self._graft_drain()):
+            self.assertEqual(["git object reader reported graft advice"], fixture._findings())
+        self.assertEqual({}, mod._OBJECT_READERS)
+
+    def test_print_trust_surface_reports_reader_close_findings(self) -> None:
+        fixture = self._landed_fixture()
+
+        def run() -> tuple[int, dict[str, object]]:
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                code = mod.main(["--print-trust-surface"], root=fixture.root)
+            return code, json.loads(out.getvalue())
+
+        _, clean = run()
+        with mock.patch.object(mod._ObjectReader, "_drain_stderr", self._graft_drain()):
+            code, injected = run()
+        self.assertEqual(
+            list(clean["problems"]) + ["git object reader reported graft advice"],
+            injected["problems"],
+        )
+        self.assertEqual(1, code)
+        self.assertEqual({}, mod._OBJECT_READERS)
+
+    def test_real_git_type_mismatches_fail_instead_of_peeling(self) -> None:
+        self._git("tag", "-a", "annotated", "-m", "annotated tag")
+        tag = self._git("rev-parse", "annotated")
+        self.assertNotEqual(tag, self.base)
+        payload, problems = mod._raw_object(self.root, "commit", self.base, "base commit")
+        self.assertIsNotNone(payload)
+        self.assertEqual([], problems)
+        self.assertEqual(
+            (None, ["tag as commit is not a readable commit object"]),
+            mod._raw_object(self.root, "commit", tag, "tag as commit"),
+        )
+        self.assertEqual(
+            (None, ["commit as tree is not a readable tree object"]),
+            mod._raw_object(self.root, "tree", self.base, "commit as tree"),
+        )
+        self.assertEqual((self.base, []), mod._resolve_commit("annotated", "tag ref", self.root))
+        self.assertEqual([], mod._close_object_readers())
+
+    def test_real_child_header_stage_timeout_poisons_and_is_reaped(self) -> None:
+        blob = self._git("rev-parse", "HEAD:README.md")
+        spawned: list[object] = []
+        ready = self._ready_path()
+        with mock.patch.object(mod, "GIT_TIMEOUT_SECONDS", 5.0), mock.patch.object(
+            mod.subprocess, "Popen", self._stalling_popen(self.HEADER_STALL, spawned, ready)
+        ):
+            self._stalled_reader(self.HEADER_STALL, spawned, ready)
+            self.assertEqual(
+                (None, ["blob type lookup timed out for README blob"]),
+                mod._read_blob_oid(self.root, blob, "README blob"),
+            )
+            self.assertEqual(
+                (None, ["object is not a regular blob: later blob"]),
+                mod._read_blob_oid(self.root, blob, "later blob"),
+            )
+            self.assertEqual([], mod._close_object_readers())
+        self.assertEqual(1, len(spawned))
+        self.assertIsNotNone(spawned[0].poll())
+
+    def test_real_child_body_stage_timeout_poisons_and_is_reaped(self) -> None:
+        blob = self._git("rev-parse", "HEAD:README.md")
+        spawned: list[object] = []
+        ready = self._ready_path()
+        with mock.patch.object(mod, "GIT_TIMEOUT_SECONDS", 5.0), mock.patch.object(
+            mod.subprocess, "Popen", self._stalling_popen(self.BODY_STALL, spawned, ready)
+        ):
+            self._stalled_reader(self.BODY_STALL, spawned, ready)
+            # The header-stage message would mean the child never answered; only
+            # the body-stage message proves the header was consumed first.
+            self.assertEqual(
+                (None, ["blob read timed out for README blob"]),
+                mod._read_blob_oid(self.root, blob, "README blob"),
+            )
+            self.assertEqual(
+                (None, ["object is not a regular blob: later blob"]),
+                mod._read_blob_oid(self.root, blob, "later blob"),
+            )
+            self.assertEqual([], mod._close_object_readers())
+        self.assertEqual(1, len(spawned))
+        self.assertIsNotNone(spawned[0].poll())
+
+    def test_exception_paths_close_readers_and_reap_children(self) -> None:
+        cases = (
+            ("read_status", "discover_changes", lambda: mod.read_status(root=self.root)),
+            (
+                "verify_repository_landed_markers",
+                "_repository_landed_marker_findings",
+                lambda: mod.verify_repository_landed_markers(self.root),
+            ),
+            ("main", "read_status", lambda: mod.main(["--format", "json"], root=self.root)),
+            (
+                "verify_landed_review_marker",
+                "_landed_review_marker_findings",
+                lambda: mod.verify_landed_review_marker({}, root=self.root),
+            ),
+        )
+        for entry, target, call in cases:
+            with self.subTest(entry=entry):
+                spawned: list[object] = []
+
+                def open_reader_then_raise(*args: object, **kwargs: object) -> object:
+                    reader = mod._object_reader(self.root)
+                    self.assertIsNotNone(reader.read(self.base).payload)
+                    spawned.append(reader._process)
+                    raise RuntimeError("injected failure")
+
+                with mock.patch.object(mod, target, side_effect=open_reader_then_raise):
+                    with self.assertRaises(RuntimeError):
+                        call()
+                self.assertEqual({}, mod._OBJECT_READERS)
+                self.assertEqual(1, len(spawned))
+                self.assertIsNotNone(spawned[0].poll())
+
 
 if __name__ == "__main__":
     unittest.main()
