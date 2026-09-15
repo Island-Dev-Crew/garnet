@@ -6,12 +6,12 @@ hardening band (S41-S49) is merged and that the band's anti-rot sub-gates still
 hold, then reports what the band shipped and what is explicitly deferred for the
 v0.8 beta.
 
-## CRITICAL honesty scope (do not soften)
+## CRITICAL scope (do not soften)
 
 This gate does **not** cut a tag and does **not** claim production readiness.
 Garnet remains a *research-grade prototype (v0.x.x) — not production-complete*;
 cutting `v0.8.0-beta` (or any tag) is a release-truth decision for Jon, not made
-here. The verbatim honesty anchors below are surfaced, not changed.
+here. The verbatim claim anchors below are surfaced, not changed.
 """
 from __future__ import annotations
 
@@ -38,17 +38,17 @@ SUB_GATES = [
     ("proof-matrix (S48 evidence anchors)", ["scripts/garnet_proof_matrix.py", "--gate"]),
 ]
 
-# Verbatim honesty anchors (GARNET_v0_5_SLICE_DOGFOOD.md § Honesty Anchors).
+# Verbatim claim anchors (GARNET_v0_5_SLICE_DOGFOOD.md anchors section).
 # Surfaced by the gate; never softened.
 HONESTY_ANCHORS = [
     "research-grade prototype (v0.x.x) — not production-complete",
     "tracked-slice ledger is complete, but that is not full MIT/productization completion",
-    "Paper VI scorecard: 4 supported, 2 partial (downgraded honestly), 0 refuted, 1 pending-infra",
+    "Paper VI scorecard: 4 supported, 2 partial (downgraded to match proof), 0 refuted, 1 pending-infra",
     "production allocator path tracked in MEMORY_CORE_ROADMAP.md",
     "human/aesthetic acceptance remains open",
 ]
 
-# What the band deliberately does NOT deliver in beta (honest deferrals).
+# What the band deliberately does NOT deliver in beta (explicit deferrals).
 DEFERRED_FOR_BETA = [
     "Runtime sandbox enforcement (S46 generates seccomp/WASI/egress policy; it does not enforce — needs wasmtime / a Linux seccomp host).",
     "Windows CLI distribution (S47): only the separate Studio installer exists.",
@@ -165,10 +165,10 @@ def render_markdown(g: BetaGate) -> str:
     lines += ["", "## Band sub-gates", "", "| gate | result |", "|---|---|"]
     for sg in g.sub_gates:
         lines.append(f"| {sg.name} | {'✅ pass' if sg.passed else f'❌ exit {sg.exit_code}'} |")
-    lines += ["", "## Deferred for v0.8 beta (honest)"]
+    lines += ["", "## Deferred for v0.8 beta"]
     for d in g.deferred_for_beta:
         lines.append(f"- {d}")
-    lines += ["", "## Honesty anchors (verbatim — not softened)"]
+    lines += ["", "## Claim anchors (verbatim — not softened)"]
     for a in g.honesty_anchors:
         lines.append(f"- \"{a}\"")
     lines += ["", f"> {g.tag_note}", ""]

@@ -60,7 +60,7 @@ def evaluate() -> Status:
     static_trap_ok = cv.get("exit") == 1 and cv.get("code") == "check.caps_coverage"
     rv = smokes.get("run_violate", {})
     runtime_trap_ok = rv.get("exit") == 1 and "requires @caps(fs)" in rv.get("trap", "")
-    # Honesty anchors: native/non-WSL, enforced in-process, NOT signed, NOT a
+    # Claim anchors: native/non-WSL, enforced in-process, NOT signed, NOT a
     # seccomp OS-sandbox proof, research-grade.
     honesty_ok = (
         "non-WSL" in honesty

@@ -4,14 +4,14 @@
 Garnet's compiler-as-agent advisory has two tiers: a **rules tier** (S10,
 ACTIVE — deterministic, in `garnet check --suggest`) and an **LLM tier**
 (provider-backed suggestions, **pending-infra**). This reporter inventories the
-rules tier (verifying the shipped rule IDs exist), states the LLM tier's honest
+rules tier (verifying the shipped rule IDs exist), states the LLM tier's explicit
 status, and records the Paper VI Experiment 1 prep — without calling any model.
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 The LLM tier is **pending-infra**: there is no LLM provider wired in this
 environment, and this slice does **not** call one or add a firing advisory. It
 ships the readiness/experiment-prep layer; the rules tier is the active baseline.
-The Paper VI scorecard is quoted **verbatim** as an honesty anchor.
+The Paper VI scorecard is quoted **verbatim** as a claim anchor.
 """
 from __future__ import annotations
 
@@ -32,7 +32,7 @@ RULES_TIER_IDS = [
 ]
 
 PAPER_VI_SCORECARD = (
-    "4 supported, 2 partial (downgraded honestly), 0 refuted, 1 pending-infra"
+    "4 supported, 2 partial (downgraded to match proof), 0 refuted, 1 pending-infra"
 )
 
 
@@ -65,7 +65,7 @@ def read_readiness() -> SuggestReadiness:
             "Wire a provider-backed suggester behind the same Suggestion shape.",
             "Measure suggestion precision/recall vs. a curated corpus (the idiomatic "
             "corpus S57 + the 12 domains S48) — no measurement is claimed here.",
-            "Report results honestly; downgrade the contribution if unsupported.",
+            "Report results as measured; downgrade the contribution if unsupported.",
         ],
         paper_vi_scorecard=PAPER_VI_SCORECARD,
         rules_tier_ready=not missing and bool(src),
@@ -94,7 +94,7 @@ def render_markdown(r: SuggestReadiness) -> str:
         "",
         f'**Paper VI scorecard (verbatim): "{r.paper_vi_scorecard}"**',
         "",
-        "Honest scope: the LLM tier is pending-infra — no model is called and no "
+        "Scope: the LLM tier is pending-infra — no model is called and no "
         "firing advisory is added here; the rules tier is the active baseline.",
         "",
     ]

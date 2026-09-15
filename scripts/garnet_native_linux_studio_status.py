@@ -59,7 +59,7 @@ def evaluate() -> Status:
     # A successful headless launch: the app ran until the timeout (exit 124), i.e.
     # it did NOT crash on GTK/WebKit init.
     launch_ok = launch.get("exit") == 124
-    # Honesty anchors: native/non-WSL, closes the WSL gap, software-render caveat,
+    # Claim anchors: native/non-WSL, closes the WSL gap, software-render caveat,
     # not signed, research-grade.
     hl = honesty.lower()
     honesty_ok = (

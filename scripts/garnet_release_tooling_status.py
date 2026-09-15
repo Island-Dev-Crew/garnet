@@ -3,16 +3,16 @@
 
 S88 inventories the external release tools that were absent during the Windows
 audit: `cosign`, `syft`, `cyclonedx`, and `wasmtime`. The reporter is deliberately
-honest:
+explicit:
 
 - absent tools are reported as **pending-infra**, not as failures and never as
   evidence;
 - present tools must run a concrete probe command successfully before they are
   marked verified;
 - a present-but-failing tool blocks the gate because the local machine cannot
-  honestly claim that lane is runnable.
+  explicitly claim that lane is runnable.
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 This reporter proves local tool availability/runnability only. It does not sign a
 Garnet release artifact, publish an SBOM, or integrate Wasmtime fuel/epoch
 metering into Garnet runtime. It never stamps signed/SBOM/fuel without the tool.
@@ -373,7 +373,7 @@ def render_markdown(status: ReleaseToolingStatus) -> str:
         )
     lines += [
         "",
-        "Honest scope: this reporter proves local tool availability/runnability only; "
+        "Scope: this reporter proves local tool availability/runnability only; "
         "it does not sign a Garnet release artifact, publish an SBOM, or integrate "
         "Wasmtime fuel/epoch metering into Garnet runtime. It never stamps "
         "signed/SBOM/fuel without the tool.",
@@ -394,7 +394,7 @@ def main(
     parser.add_argument(
         "--gate",
         action="store_true",
-        help="exit non-zero only when a present tool's probe fails; absent tools are honest pending-infra",
+        help="exit non-zero only when a present tool's probe fails; absent tools are reported as pending-infra",
     )
     args = parser.parse_args(list(argv) if argv is not None else None)
 

@@ -34,7 +34,7 @@ class BetaGateTests(unittest.TestCase):
             g.honesty_anchors,
         )
         self.assertIn(
-            "Paper VI scorecard: 4 supported, 2 partial (downgraded honestly), "
+            "Paper VI scorecard: 4 supported, 2 partial (downgraded to match proof), "
             "0 refuted, 1 pending-infra",
             g.honesty_anchors,
         )
@@ -47,7 +47,7 @@ class BetaGateTests(unittest.TestCase):
     def test_deferrals_are_present(self) -> None:
         g = beta.read_beta_gate()
         joined = " ".join(g.deferred_for_beta)
-        self.assertIn("does not enforce", joined)  # S46 honest deferral
+        self.assertIn("does not enforce", joined)  # S46 explicit deferral
         self.assertIn("pending-infra", joined)  # LLM tier
 
     def test_gate_exit_is_zero_when_open(self) -> None:
@@ -63,7 +63,7 @@ class BetaGateTests(unittest.TestCase):
     def test_markdown_renders_open_state(self) -> None:
         md = beta.render_markdown(beta.read_beta_gate())
         self.assertIn("v0.8 beta gate", md)
-        self.assertIn("Honesty anchors (verbatim", md)
+        self.assertIn("Claim anchors (verbatim", md)
 
 
 if __name__ == "__main__":

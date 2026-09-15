@@ -7,7 +7,7 @@ evidence-base validator only; S114 acceptance, the minimum shelf,
 and launch fire are external/manual gates.
 
 - Schema: `garnet.launch_readiness/v1`
-- Evidence-base commit: `c0190a4` (measured)
+- Evidence-base commit: `1011bc4` (unmeasured)
 - Release grade: research-grade v0.x prototype; release_ready=True (binary-strict)
 - Launch ready: **False**
 - Recommendation: **HOLD**
@@ -16,14 +16,16 @@ and launch fire are external/manual gates.
 
 ### `foundation_integrity` — Foundation integrity (release + red-team + evidence + measured base)
 
-State: **pass**
+State: **blocked**
 
 Evidence:
 - v0.8.1 release readiness reporter green (binary-strict)
 - red-team static contract green (report, HIGH fix, regressions)
 - evidence-integrity bundles ok (38/38)
-- workspace tests measured at reachable commit `c0190a4`
 - MIT productization lane active-partial (93.1%)
+
+Blockers:
+- evidence base `1011bc4` is unmeasured; re-measure with `cargo run -p xtask -- truth --with-tests` on a clean tree
 
 ### `native_linux` — Native Linux lane (CLI install + Studio + seccomp)
 
@@ -50,12 +52,12 @@ Evidence:
 - current scope limit (tracked): memory::* natives remain bridge-only and caps-invisible.
 - current scope limit (tracked): WV-5 proves the Wasm build and Node execution, not live browser-page execution.
 
-### `static_playground` — Static playground gallery (honest, recorded outputs)
+### `static_playground` — Static playground gallery (recorded outputs)
 
 State: **partial**
 
 Evidence:
-- 3 recorded examples, honesty markers present
+- 3 recorded examples, claim markers present
 
 Blockers:
 - static gallery only; live execution is the W-PLAY workstream

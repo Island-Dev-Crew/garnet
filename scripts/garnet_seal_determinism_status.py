@@ -11,7 +11,7 @@ that they stay in place:
      of the source (LF-normalized; idempotent on LF — existing seals unchanged);
   3. the canonicalization contract is documented in `GARNET_ATTESTATION.md`.
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 Only line endings are canonicalized; other whitespace still changes the source
 hash by design. Mac-authored + Mac-unit-tested (LF↔CRLF same `source_hash`); the
 end-to-end Windows proof (fresh Windows checkout → matching `source_blake3`) is

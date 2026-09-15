@@ -31,10 +31,10 @@ class ProofMatrixTests(unittest.TestCase):
 
     def test_paper_vi_scorecard_is_verbatim(self) -> None:
         m = proof_matrix.read_proof_matrix()
-        # Honesty anchor — must not soften.
+        # Claim anchors — must not soften.
         self.assertEqual(
             m.paper_vi_scorecard,
-            "4 supported, 2 partial (downgraded honestly), 0 refuted, 1 pending-infra",
+            "4 supported, 2 partial (downgraded to match proof), 0 refuted, 1 pending-infra",
         )
 
     def test_contribution_titles_are_the_canonical_seven(self) -> None:

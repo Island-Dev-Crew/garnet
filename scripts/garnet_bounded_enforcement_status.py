@@ -8,12 +8,12 @@ traps at the **same** recursion depth with the **identical** message
 (`garnet-vm/src/vm.rs`, `VmDepthGuard` / `enter_depth_guard`), so an over-ceiling
 program no longer diverges between `--interp` and `--vm`.
 
-This static anti-regression gate asserts the enforcement and its honest-scope
+This static anti-regression gate asserts the enforcement and its scope
 boundary stay in place: the `@max_depth` ceiling lookup + the trapping path live in
 BOTH the interpreter and the VM, and the trap/within/unannotated + VM trap-parity
 integration tests exist.
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 This is the ONE enforced ceiling. `@bounded` (Wasmtime fuel — S39/S88), memory,
 time, and mailbox ceilings remain **declared-not-enforced**. Functions without
 `@max_depth` are not capped (they recurse up to the host/VM frame stack, S85).

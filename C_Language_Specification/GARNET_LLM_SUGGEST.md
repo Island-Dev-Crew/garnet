@@ -25,7 +25,7 @@ feature-gated provider layer has since landed in `garnet-suggest-llm/` behind th
 status stands. It is
 the open leg of the Paper VI scorecard:
 
-> "4 supported, 2 partial (downgraded honestly), 0 refuted, **1 pending-infra**"
+> "4 supported, 2 partial (downgraded to match proof), 0 refuted, **1 pending-infra**"
 
 ## Paper VI Experiment 1 — prep
 

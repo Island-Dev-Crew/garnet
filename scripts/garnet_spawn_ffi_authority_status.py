@@ -5,7 +5,7 @@ S92 closes the interpreter-visible subprocess laundering gap: a helper function
 declaring `@caps(proc)` is not enough to launch a process unless the program
 entry point also declares `@caps(proc)`.
 
-Honest scope: FFI is declared/diffed/sandbox-flagged/sealed in the source and
+Scope: FFI is declared/diffed/sandbox-flagged/sealed in the source and
 policy surfaces, but there is no executable FFI runtime bridge in this repo yet.
 That means S92 can record FFI as scoped and deferred, not runtime-enforced.
 """

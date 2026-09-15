@@ -3,7 +3,7 @@
 
 The surge lanes (Stage X + R) recorded cross-OS proof bundles under `proofs/`, each
 sealed with a `MANIFEST.sha256`. This gate verifies **every** bundle's manifest
-against the committed bytes and reports the honest pass/fail — it is the integrity
+against the committed bytes and reports the explicit pass/fail — it is the integrity
 floor Stage P (positioning, readiness) rests on, so no cross-OS claim is presented
 as verified unless its bundle's hashes actually check out.
 
@@ -14,7 +14,7 @@ was byte-identical modulo line endings, not tampered). Fixed by re-sealing those
 manifests against the committed bytes and adding `proofs/** -text` to
 `.gitattributes` so proof bundles are never normalized again.
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 This verifies **hash integrity** (the manifest matches the committed bytes) for
 every `proofs/**/MANIFEST.sha256`. It does not, by itself, attest that a bundle is
 *complete* or that its claims are true — that is the per-slice dogfood evidence's

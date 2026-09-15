@@ -15,13 +15,13 @@ It consolidates the two enforcement gates rather than duplicating their checks:
   caps frame, so the S92 entry gate fires on `--vm` too — proven by
   `vm_entry_caps_not_launderable_through_helper` (no authority laundering via --vm).
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 TRAP-parity covers the two enforced ceilings only: `@max_depth` recursion and
 `@caps` host-authority. Still **declared-not-enforced** on BOTH backends (named,
 never faked): `@bounded` (Wasmtime fuel — wasmtime absent), memory, time, mailbox,
 and OS-level sandbox application. This is trap-parity for the enforced ceilings,
 NOT a proof of total backend equivalence (that is the result-parity campaign's
-honest scope, also bounded).
+scope, also bounded).
 """
 from __future__ import annotations
 

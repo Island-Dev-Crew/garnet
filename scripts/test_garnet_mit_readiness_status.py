@@ -1158,7 +1158,7 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
             "determinism.yml",
             lanes["determinism_ci_cross_machine"].evidence,
         )
-        # Honest deferred list (Windows not in matrix yet, etc.) is non-empty
+        # Explicit deferred list (Windows not in matrix yet, etc.) is non-empty
         self.assertTrue(lanes["determinism_ci_cross_machine"].deferred)
         # S5: Parser fuzz harness lane
         self.assertIn("parser_fuzz_harness", lanes)
@@ -1183,7 +1183,7 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertEqual(100.0, lanes["signed_hot_reload_demo"].completion_percent)
         self.assertIn("BLAKE3 fingerprint", lanes["signed_hot_reload_demo"].evidence)
         self.assertIn("reloaded successfully", lanes["signed_hot_reload_demo"].evidence)
-        # Honest deferred: managed-mode reload_signed syntax is NOT in this slice
+        # Explicit deferred: managed-mode reload_signed syntax is NOT in this slice
         s8_deferred = " ".join(lanes["signed_hot_reload_demo"].deferred)
         self.assertIn("actor.reload_signed", s8_deferred)
 

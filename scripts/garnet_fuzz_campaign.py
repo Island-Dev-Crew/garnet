@@ -6,7 +6,7 @@ the campaign — the target, the crate it exercises, the nightly run protocol, a
 the seed corpus — and gates that the harness stays wired (the target, its Cargo
 `[[bin]]`, the nightly workflow reference, and a non-empty seed corpus).
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 This inventories + verifies the fuzz harness **exists and is wired**; it does
 **not** run the fuzzer and makes **no** claim about bugs found (or not found).
 Crashes are surfaced by the nightly `cargo fuzz run` job, not by this gate.

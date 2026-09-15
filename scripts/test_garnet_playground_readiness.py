@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regression tests for the playground readiness + honesty gate (S56)."""
+"""Regression tests for the playground readiness + accuracy gate (S56)."""
 from __future__ import annotations
 
 import importlib.util
@@ -27,7 +27,7 @@ class PlaygroundReadinessTests(unittest.TestCase):
     def test_honesty_markers_preserved(self) -> None:
         # The page must keep its "static / not a fake editor / WebAssembly" stance.
         r = pg.read_readiness()
-        self.assertEqual(r.missing_markers, [], f"lost honesty markers: {r.missing_markers}")
+        self.assertEqual(r.missing_markers, [], f"lost claim markers: {r.missing_markers}")
         self.assertTrue(r.honesty_markers_present)
 
     def test_gate_passes_on_real_repo(self) -> None:

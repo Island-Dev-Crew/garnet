@@ -3,16 +3,16 @@
 
 The capstone package (`F_Project_Management/GARNET_ACADEMIC_EVIDENCE_PACKAGE.md`)
 sources every load-bearing v0.8.1 claim to a slice / file / test / sealed proof, for a
-skeptical academic reader. This gate keeps the package HONEST: it fails if any cited
+skeptical academic reader. This gate keeps the package ACCURATE: it fails if any cited
 source path does not resolve on disk (no aspirational citation survives), if the
-"what we refuse to claim" section is dropped, if an honesty anchor softens, or if the
+"what we refuse to claim" section is dropped, if a claim anchor softens, or if the
 package stops tying the Stage-P artifacts together.
 
 It does not re-run the proofs (the per-pillar gates do that); it asserts the index is
-complete, sourced, and honest. The strongest line of defense for an evidence index is
+complete, sourced, and explicit. The strongest line of defense for an evidence index is
 that it cannot cite something that isn't there.
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 The package claims capability + depth enforcement (both backends) + Linux-only seccomp.
 It must keep the macOS/Windows OS-sandbox + @bounded/memory/time/@mailbox + simulated-
 agent + unsigned/no-SBOM + local-stub-log fences and the no-production/1.0 anchor.
@@ -29,7 +29,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DOC = ROOT / "F_Project_Management" / "GARNET_ACADEMIC_EVIDENCE_PACKAGE.md"
 
-# Honesty anchors that must remain present (normalized substring match).
+# Claim anchors that must remain present (normalized substring match).
 REQUIRED_ANCHORS = (
     "no production / 1.0 claim",
     "named-deferred",
@@ -137,7 +137,7 @@ def render_markdown(r: AcademicStatus) -> str:
             f"- one-sentence contribution: {'yes' if r.has_contribution else 'NO'}",
             f"- 'what we refuse to claim' first-class: "
             f"{'yes' if r.has_refuse_section else 'NO'}",
-            f"- honesty anchors present: {'yes' if r.anchors_present else 'NO'}",
+            f"- claim anchors present: {'yes' if r.anchors_present else 'NO'}",
             f"- Stage-P artifacts tied together: "
             f"{'yes' if r.artifacts_cited else 'NO'}",
             f"- sourced pointers resolved: "
@@ -145,7 +145,7 @@ def render_markdown(r: AcademicStatus) -> str:
             f"/{r.sourced_pointers_total}",
             "",
             "Every load-bearing v0.8.1 claim is sourced to a file / test / sealed proof, "
-            "and every cited source resolves on disk. The honest concessions are "
+            "and every cited source resolves on disk. The explicit concessions are "
             "first-class. Research-grade; no production / 1.0 claim; the cut is Jon's.",
             "",
         ]
@@ -159,7 +159,7 @@ def main(argv: list[str] | None = None) -> int:
         "--gate",
         action="store_true",
         help="exit non-zero unless the package is present, states the contribution, "
-        "keeps the refuse-to-claim section + honesty anchors, ties the Stage-P "
+        "keeps the refuse-to-claim section + claim anchors, ties the Stage-P "
         "artifacts together, and every cited source resolves on disk.",
     )
     args = parser.parse_args(list(argv) if argv is not None else None)

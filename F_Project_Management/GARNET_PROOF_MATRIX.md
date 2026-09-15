@@ -16,7 +16,7 @@ numbering schemes exist across the repo's docs, so the seven contributions are
 listed **by title** and Paper VI's own aggregate scorecard is quoted **verbatim**
 rather than assigning a support verdict per contribution:
 
-> **Paper VI scorecard:** "4 supported, 2 partial (downgraded honestly),
+> **Paper VI scorecard:** "4 supported, 2 partial (downgraded to match proof),
 > 0 refuted, 1 pending-infra"
 
 What the matrix proves is narrower and falsifiable: every contribution is

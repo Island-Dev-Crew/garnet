@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Playground committed-preset readiness + honesty gate (S56).
+"""Playground committed-preset readiness + accuracy gate (S56).
 
 This reporter owns the static preset manifest: real Garnet programs and their
 recorded `garnet run` output. It does not promote or grade browser execution.
@@ -7,7 +7,7 @@ That status belongs only to `scripts/garnet_wasm_readiness.py`, which validates
 the committed package and Playwright proof. This gate keeps the fallback preset
 data well-formed and the page's calibrated-expectations markers present.
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 Passing this gate means the committed static presets are valid. It is neither
 necessary nor sufficient evidence for browser-live status.
 """
@@ -24,7 +24,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PAGE = ROOT / "docs" / "playground.html"
 MANIFEST = ROOT / "docs" / "playground" / "examples.json"
 
-# The page must keep these honesty markers (calibrated-expectations anchor).
+# The page must keep these claim markers (calibrated-expectations anchor).
 HONESTY_MARKERS = ["static", "not shipping a fake editor", "WebAssembly"]
 
 
@@ -92,12 +92,12 @@ def render_markdown(r: PlaygroundReadiness) -> str:
             f"- manifest present: {r.manifest_present} ({r.example_count} examples)",
             f"- examples well-formed: {r.examples_well_formed}",
             f"- page references manifest: {r.page_references_manifest}",
-            f"- honesty markers present: {r.honesty_markers_present} "
+            f"- claim markers present: {r.honesty_markers_present} "
             f"(missing: {r.missing_markers or 'none'})",
             "",
             f"**Playground preset fallback OK: {'yes' if r.ok else 'NO'}.**",
             "",
-            "Honest scope: static presets are recorded-output fallback data. "
+            "Scope: static presets are recorded-output fallback data. "
             "Browser status is owned by the evidence-backed Wasm readiness reporter.",
             "",
         ]
@@ -110,7 +110,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--gate",
         action="store_true",
-        help="exit non-zero if the gallery is malformed or the page loses its honesty markers",
+        help="exit non-zero if the gallery is malformed or the page loses its claim markers",
     )
     args = parser.parse_args(list(argv) if argv is not None else None)
 

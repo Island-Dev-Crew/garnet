@@ -464,7 +464,7 @@ def read_status(root: Path = ROOT) -> MinimumShelfStatus:
             findings.append("seal does not bind the canonical prelude")
         cosign = seal.get("predicate", {}).get("tooling", {}).get("cosign")
         if cosign != "not installed — predicate emitted UNSIGNED; install cosign to attest":
-            findings.append("UNSIGNED predicate honesty language changed")
+            findings.append("UNSIGNED predicate claim language changed")
     except (UnicodeError, ValueError, AttributeError) as exc:
         findings.append(str(exc))
 

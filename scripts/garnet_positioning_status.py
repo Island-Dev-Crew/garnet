@@ -3,7 +3,7 @@
 
 Reframes Garnet's public messaging to lead with the **integration + agent-code
 thesis** (not pillar-by-pillar novelty), make **diff-caps** the headline, and
-**concede precedent honestly** — per the trajectory research. The canonical
+**concede precedent explicitly** — per the trajectory research. The canonical
 messaging is `F_Project_Management/GARNET_POSITIONING.md`; the landing page
 (`docs/index.html`) carries a matching reframed section.
 
@@ -12,7 +12,7 @@ and the landing page carry (a) the integration thesis, (b) the diff-caps headlin
 and (c) the precedent concession — so the messaging can't silently revert to
 pillar-first marketing.
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 A positioning claim about novelty and fit, NOT a production-readiness or 1.0
 claim. Garnet remains a research-grade prototype (v0.x).
 """
@@ -82,8 +82,8 @@ def render_markdown(r: PositioningStatus) -> str:
         + (f" (missing themes: {r.landing_missing_themes})" if r.landing_missing_themes else ""),
         "",
         "Themes enforced on both surfaces: the integration thesis (integration over "
-        "pillars), the diff-caps headline, the honest precedent concession "
-        "(well-precedented), and the agent-authored-code target. Honest scope: a "
+        "pillars), the diff-caps headline, the explicit precedent concession "
+        "(well-precedented), and the agent-authored-code target. Scope: a "
         "positioning claim about novelty and fit, NOT a production/1.0 claim.",
         "",
     ]

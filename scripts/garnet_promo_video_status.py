@@ -480,7 +480,7 @@ def read_status() -> PromoVideoStatus:
             {
                 "id": "close",
                 "duration_seconds": 5,
-                "purpose": "Close with MIT-readiness momentum and honest remaining gates.",
+                "purpose": "Close with MIT-readiness momentum and explicit remaining gates.",
             },
         ],
         production_rules=[

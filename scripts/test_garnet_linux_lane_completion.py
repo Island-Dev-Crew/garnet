@@ -3,7 +3,7 @@
 
 Pins the capstone dossier to reality: it must record every merged lane slice's
 PR number, the three native-ARM64 status gates, the native/non-WSL framing, and
-the load-bearing honesty anchors (seccomp generation + apply-proof; unsigned
+the load-bearing claim anchors (seccomp generation + apply-proof; unsigned
 packages; software-render launch; @caps enforced; research-grade). Also asserts
 the three status-gate scripts the dossier cites actually exist.
 """

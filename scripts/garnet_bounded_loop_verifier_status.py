@@ -6,7 +6,7 @@ runtime enforcement. Passing means the repo has a checker-visible loop report,
 a fatal `garnet check` diagnostic for uncheckable safe/@bounded loops, and
 focused checker/CLI tests for the pass/reject cases.
 
-Honest boundary: S93 is a static verifier only. It does not claim Wasmtime fuel,
+Boundary: S93 is a static verifier only. It does not claim Wasmtime fuel,
 VM loop enforcement, or OS sandbox enforcement.
 """
 from __future__ import annotations

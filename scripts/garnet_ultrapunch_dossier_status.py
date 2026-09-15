@@ -3,13 +3,13 @@
 
 The dossier (`F_Project_Management/GARNET_ULTRAPUNCH_DOSSIER.md`) is the headline
 positioning artifact: the #1 claim + ranked runners-up, each backed by a named proof,
-with the honest concessions kept in-band. This static gate asserts the dossier exists,
-makes the #1 claim, ranks runners-up, keeps the honest concessions (incl. the
+with the explicit concessions kept in-band. This static gate asserts the dossier exists,
+makes the #1 claim, ranks runners-up, keeps the explicit concessions (incl. the
 named-deferred fences and the no-production/1.0 anchor), cites the red-team result,
 and — critically — that **every evidence pointer it names actually resolves on disk**
 (no dangling citation). It does not re-run the proofs; the integrity gate does that.
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 The dossier claims capability + depth enforcement (both backends) + Linux-only
 seccomp; it must keep the macOS/Windows OS-sandbox + @bounded/memory/time/@mailbox +
 simulated-agent + unsigned/no-SBOM + local-stub-log fences. This gate fails if any
@@ -27,7 +27,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DOSSIER = ROOT / "F_Project_Management" / "GARNET_ULTRAPUNCH_DOSSIER.md"
 
-# Fences that must remain present (calibrated honesty — these never soften).
+# Fences that must remain present (calibrated claims — these never soften).
 REQUIRED_FENCES = (
     "named-deferred",
     "simulated",
@@ -141,9 +141,9 @@ def render_markdown(r: DossierStatus) -> str:
             f"- #1 claim (capability-bounded acceptance): "
             f"{'yes' if r.has_number_one_claim else 'NO'}",
             f"- ranked runners-up: {'yes' if r.has_ranked_runners_up else 'NO'}",
-            f"- honest concessions kept: {'yes' if r.has_honest_concessions else 'NO'}",
+            f"- explicit concessions kept: {'yes' if r.has_honest_concessions else 'NO'}",
             f"- cites the red-team result: {'yes' if r.cites_red_team else 'NO'}",
-            f"- honesty fences present: {'yes' if r.fences_present else 'NO'}",
+            f"- claim fences present: {'yes' if r.fences_present else 'NO'}",
             f"- evidence pointers resolved: "
             f"{r.evidence_pointers_total - r.evidence_pointers_missing}"
             f"/{r.evidence_pointers_total}",
@@ -164,7 +164,7 @@ def main(argv: list[str] | None = None) -> int:
         "--gate",
         action="store_true",
         help="exit non-zero unless the dossier is present, makes the #1 claim, ranks "
-        "runners-up, keeps the honest concessions + fences, cites the red-team, and "
+        "runners-up, keeps the explicit concessions + fences, cites the red-team, and "
         "every cited evidence pointer resolves on disk.",
     )
     args = parser.parse_args(list(argv) if argv is not None else None)

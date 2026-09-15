@@ -600,7 +600,7 @@ def render_markdown(data: dict[str, object]) -> str:
     lines.extend(
         [
             "",
-            "## Honest Scope",
+            "## Scope",
             "",
             "- This is the Mac row for S109 consolidation, not full S109 completion.",
             "- WSL remains execution/portability only, not Linux seccomp or OS-sandbox enforcement.",

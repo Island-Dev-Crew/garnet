@@ -121,7 +121,7 @@ def _beats() -> list[DemoBeat]:
         ),
         DemoBeat(
             id="converter-advisory",
-            title="Demonstrate honest migration help",
+            title="Demonstrate bounded migration help",
             duration_seconds=75,
             surface="converter advisory workflow",
             story="Use provider-neutral Assist Plan, Advisory Bundle, Advisory Review, and Advisory Handoff to guide migration without activating provider-backed conversion.",

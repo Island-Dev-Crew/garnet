@@ -5,12 +5,12 @@ S114 red-teamed the enforced trust kernel: six attackers ran real attacks; a
 skeptical referee classified each as HELD / HOLE / DECLARED-NOT-ENFORCED. One
 HIGH-severity hole was found (impl-method capability-surface blindness) and FIXED;
 two LOW stub-scoped holes were recorded for follow-up. This static gate asserts the
-fix is in place (with regression tests) and the honest report stays recorded.
+fix is in place (with regression tests) and the explicit report stays recorded.
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 The HIGH impl-method surface hole is fixed (capability_surface recurses into
 Item::Impl + nested modules). Two LOW holes (caps-log tail forgery; seal subject
-digest is capability-blind) are recorded as open/mitigated within the honest stub
+digest is capability-blind) are recorded as open/mitigated within the explicit stub
 scope. @bounded/memory/time/@mailbox and macOS/Windows OS-sandbox stay named-deferred.
 """
 from __future__ import annotations
@@ -63,7 +63,7 @@ def read_status() -> RedTeamStatus:
         and "capability-blind" in doc
     )
     held_deferred = "HELD" in doc and "DECLARED-NOT-ENFORCED" in doc
-    honesty = (
+    anchors_ok = (
         "named-deferred" in doc
         and "production / 1.0 claim" in doc
         and "not a \"nothing broke\" claim" in doc
@@ -74,7 +74,7 @@ def read_status() -> RedTeamStatus:
         and regression
         and low_recorded
         and held_deferred
-        and honesty
+        and anchors_ok
     )
     return RedTeamStatus(
         schema="garnet.red_team/v1",
@@ -83,7 +83,7 @@ def read_status() -> RedTeamStatus:
         regression_tests_present=regression,
         low_holes_recorded=low_recorded,
         held_and_deferred_recorded=held_deferred,
-        honesty_anchor_present=honesty,
+        honesty_anchor_present=anchors_ok,
         ok=ok,
     )
 
@@ -102,7 +102,7 @@ def render_markdown(r: RedTeamStatus) -> str:
         f"{'yes' if r.low_holes_recorded else 'NO'}",
         f"- HELD + DECLARED-NOT-ENFORCED recorded: "
         f"{'yes' if r.held_and_deferred_recorded else 'NO'}",
-        f"- honesty anchor: {'yes' if r.honesty_anchor_present else 'NO'}",
+        f"- claim anchor: {'yes' if r.honesty_anchor_present else 'NO'}",
         "",
         "One HIGH enforced-ceiling hole found + fixed; two LOW stub-scoped holes "
         "recorded. The enforced kernel withstood laundering/bypass/forgery on the "

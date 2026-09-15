@@ -10,7 +10,7 @@ gates: this script names them but can never grade them.
 States:
   pass             — every reporter-derived input for the gate is green
   blocked          — a reporter-derived input failed; blockers name it
-  partial          — honest middle state (static playground only)
+  partial          — explicit middle state (static playground only)
   remaining        — work not yet built (live WASM playground / W-PLAY)
   manual-deferred  — no reporter exists; explicit manual fence (shelf)
   external-pending — a human decision outside this reporter, not yet recorded (S114)
@@ -397,16 +397,16 @@ def _static_playground_gate(deps: Dependencies) -> LaunchGate:
     if deps.playground.ok:
         return LaunchGate(
             id="static_playground",
-            label="Static playground gallery (honest, recorded outputs)",
+            label="Static playground gallery (recorded outputs)",
             state="partial",
             evidence=[
-                f"{deps.playground.example_count} recorded examples, honesty markers present"
+                f"{deps.playground.example_count} recorded examples, claim markers present"
             ],
             blockers=["static gallery only; live execution is the W-PLAY workstream"],
         )
     return LaunchGate(
         id="static_playground",
-        label="Static playground gallery (honest, recorded outputs)",
+        label="Static playground gallery (recorded outputs)",
         state="blocked",
         evidence=[],
         blockers=["playground readiness reporter failed"]

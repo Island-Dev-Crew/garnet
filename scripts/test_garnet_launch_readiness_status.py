@@ -37,7 +37,7 @@ class CurrentTreeTests(unittest.TestCase):
     def test_current_launch_state_is_hold_with_measured_foundation(self) -> None:
         # Truth Lock Task 5 re-measured machine truth on a pristine tree:
         # the evidence base is a clean reachable short SHA, so foundation
-        # passes — while launch stays honestly HOLD on the remaining gates.
+        # passes — while launch stays explicitly HOLD on the remaining gates.
         status = status_mod.read_status()
         gates = _gates_by_id(status)
         self.assertEqual("pass", gates["foundation_integrity"].state)

@@ -21,7 +21,7 @@ declared `@caps(proc)` trapped under `--interp` but RAN under `--vm`.
 This static anti-regression gate asserts the enforcement + its bridge wiring stay
 in place, on both backends.
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 Host-authority surfaces only (env / process / fs / net / log-to-file); pure
 computation is unaffected, and outside any program-entry/direct function frame
 (direct host/test calls) there is no `@caps` context to enforce, so such calls

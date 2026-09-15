@@ -12,9 +12,9 @@ linear capabilities / Koka effects) for high-assurance components.
 This reporter is a static anti-overclaim gate: it verifies the spec exists, that
 the spec's "implemented today" claims are grounded in real source (`FnMode::Safe`
 in the AST; the boundary audit in the checker), and that the proposed
-linear/effect mode is honestly marked NOT IMPLEMENTED.
+linear/effect mode is explicitly marked NOT IMPLEMENTED.
 
-## Honest scope (do not soften)
+## Scope (do not soften)
 This slice SPECIFIES; it does not implement a linear type system, effect rows, or
 any soundness proof. §2 of the spec is a proposal, not shipped behavior.
 """
@@ -31,7 +31,7 @@ SPEC = ROOT / "C_Language_Specification" / "GARNET_SAFE_SUBSET.md"
 AST = ROOT / "garnet-parser-v0.3" / "src" / "ast.rs"
 AUDIT = ROOT / "garnet-check-v0.3" / "src" / "audit.rs"
 
-# Spec must state both the implemented baseline and the honest "not implemented".
+# Spec must state both the implemented baseline and the explicit "not implemented".
 SPEC_ANCHORS = [
     "safe subset today",
     "hidden safe→managed escalation",
