@@ -149,6 +149,103 @@
     color: var(--ink);
   }
 
+  /* ─── Two-step nav: bead, armed state, cue strip, section link ─
+     Why, Install, Playground and Status take two presses: the first goes to
+     the section, the second opens its page. The script below the page adds
+     every class named here; without it none of these rules apply. */
+  html { scroll-padding-top: var(--nav-h, 68px); }          /* jumps and focus land below the sticky bar */
+  nav.top a, .section-offer { touch-action: manipulation; } /* a quick second tap is a click, not a zoom */
+
+  /* The bead's 12px of room is reserved only once the script has set the nav
+     up, so with JavaScript off the bar keeps today's width and row count. */
+  nav.top.two-step .links a[data-page] { position: relative; padding-right: 12px; }
+  nav.top.two-step .links a[data-page]::after {
+    content: ""; position: absolute; left: 0; right: 12px; bottom: -4px; height: 2px;
+    background: var(--gold); transform: scaleX(0); transform-origin: left;
+    transition: transform .32s cubic-bezier(.16, 1, .3, 1);
+  }
+  nav.top .links a.is-armed { color: var(--gold); }
+  nav.top.two-step .links a.is-armed::after { transform: scaleX(1); }
+
+  .nav-bead {
+    position: absolute; right: 0; top: 50%; width: 10px; height: 10px; margin-top: -5px;
+    pointer-events: none;
+  }
+  .nav-bead::before {
+    content: ""; position: absolute; inset: 2.5px; background: var(--accent-text);
+    transform: rotate(45deg);
+    transition: opacity .2s, transform .32s cubic-bezier(.16, 1, .3, 1);
+  }
+  .nav-bead::after {
+    content: "\2192"; position: absolute; inset: 0; font: 700 11px/10px var(--sans);
+    color: var(--gold); opacity: 0; transform: translateX(-4px);
+    transition: opacity .2s, transform .32s cubic-bezier(.16, 1, .3, 1);
+  }
+  a.is-armed .nav-bead::before { opacity: 0; transform: rotate(45deg) scale(.4); }
+  a.is-armed .nav-bead::after { opacity: 1; transform: none; }
+
+  .nav-cue {
+    position: absolute; top: calc(100% + 6px); left: var(--cue-left, 16px);
+    display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px;
+    padding: 8px 14px; background: var(--bg-soft);
+    border: 1px solid var(--rule); border-top-color: var(--gold); border-radius: 8px;
+    box-shadow: var(--shadow-lift);
+    font: 500 13px/1.35 var(--sans); color: var(--ink-soft); white-space: nowrap;
+    opacity: 0; transform: translateY(-4px); pointer-events: none;
+    transition: opacity .2s, transform .2s cubic-bezier(.16, 1, .3, 1);
+  }
+  .nav-cue.is-on { opacity: 1; transform: none; pointer-events: auto; }
+  .nav-cue::before {
+    content: ""; position: absolute; top: -5px; left: calc(var(--caret, 24px) - 4px);
+    width: 8px; height: 8px; background: var(--bg-soft);
+    border-left: 1px solid var(--gold); border-top: 1px solid var(--gold);
+    transform: rotate(45deg);
+  }
+  .nav-cue b { font: italic 600 14px/1 var(--display); color: var(--gold); }
+  .nav-cue .beats { display: inline-flex; gap: 4px; }
+  .nav-cue .beats i { width: 7px; height: 7px; border-radius: 50%; border: 1px solid var(--gold); }
+  .nav-cue .beats i:first-child { background: var(--gold); }
+  .nav-cue.is-on .beats i:last-child { animation: nav-beat .6s ease-in-out .25s 2; }
+  @keyframes nav-beat { 50% { transform: scale(1.45); background: var(--gold); } }
+  .nav-cue-more { color: var(--ink-muted); }
+  .nav-cue-more .nav-bead {
+    position: relative; display: inline-block; top: auto; right: auto;
+    margin: 0 2px; vertical-align: -1px;
+  }
+
+  .section-head {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+    gap: 10px 20px; margin: 0 0 12px;
+  }
+  .section-head > h3 { margin: 0; }
+  .section-offer {
+    position: relative; isolation: isolate;
+    display: inline-flex; align-items: center; gap: 8px; min-height: 32px; padding: 5px 14px;
+    border: 1px solid var(--rule); border-radius: 999px;
+    font: 600 12px/1.2 var(--sans); letter-spacing: .08em; text-transform: uppercase;
+    color: var(--ink-muted); transition: color .2s, border-color .2s;
+  }
+  .section-offer:hover, .section-offer.is-armed { color: var(--gold); border-color: var(--gold); }
+  .section-offer:focus-visible { border-radius: 999px; }  /* the global ring rule would square the pill */
+  .section-offer::before {
+    content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit;
+    background: var(--gold); opacity: 0; transition: opacity .2s;
+  }
+  .section-offer.is-armed::before { opacity: .1; }
+  .section-offer::after {
+    content: ""; position: absolute; inset: -1px; border: 1px solid var(--gold);
+    border-radius: inherit; opacity: 0; pointer-events: none;
+  }
+  .section-offer.is-offering { animation: offer-rise .4s cubic-bezier(.16, 1, .3, 1) both; }
+  .section-offer.is-offering::after { animation: offer-ring 1.1s ease-out .3s 2 both; }
+  @keyframes offer-rise { from { opacity: .6; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+  @keyframes offer-ring { from { opacity: .8; transform: scale(1); } to { opacity: 0; transform: scale(1.18); } }
+
+  .visually-hidden {
+    position: absolute !important; width: 1px; height: 1px; margin: -1px; padding: 0;
+    overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0;
+  }
+
   /* ─── Hero: the plate, and the wordmark laid over it ───────── */
   .hero {
     position: relative;
@@ -874,6 +971,22 @@
     .features { grid-template-columns: 1fr; }
     .numbers { grid-template-columns: 1fr 1fr; }
   }
+  @media (max-width: 900px) {
+    html { scroll-padding-top: var(--nav-h, 132px); }   /* the bar wraps to two rows below 900px */
+    .nav-cue { left: 16px; right: 16px; justify-content: center; text-align: center; white-space: normal; }
+    .nav-cue-more { display: none; }
+  }
+  @media (max-width: 359px) {
+    /* Keep the bar to two rows once the bead's 12px is reserved — and only
+       then, so a page without JavaScript keeps today's spacing. The words
+       strip goes: at this width it would wrap onto the first heading. */
+    nav.top.two-step .links { gap: 8px 12px; }
+    .nav-cue { display: none; }
+  }
+  @media (pointer: coarse) {
+    nav.top .links a { padding-block: 2px; }            /* 25px targets, WCAG 2.5.8 */
+    .section-offer { min-height: 44px; }
+  }
 
   /* Accessibility: honor reduced-motion — no starfield twinkle, no
      float/pulse, no reveal/scroll animation. Content stays fully visible. */
@@ -897,13 +1010,13 @@
   <div class="container">
     <a class="brand" href="./" aria-label="Garnet home">GARNE<span class="accent">T</span></a>
     <div class="links">
-      <a href="#why">Why</a>
+      <a href="#why" data-section="why" data-page="why.html">Why</a>
       <a href="minispec.html">Spec</a>
       <a href="#code">Code</a>
       <a href="#caps">Capabilities</a>
-      <a href="#install">Install</a>
-      <a href="#try">Playground</a>
-      <a href="status.html">Status</a>
+      <a href="#install" data-section="install" data-page="getting-started.html">Install</a>
+      <a href="#try" data-section="try" data-page="playground.html">Playground</a>
+      <a href="status.html" data-section="readiness" data-page="status.html">Status</a>
       <a href="https://github.com/Island-Dev-Crew/garnet" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
     </div>
     <a href="getting-started.html" class="cta">Get started</a>
@@ -975,7 +1088,7 @@ def main() {
 <!-- ══════════════════════════════ TRY IT — the same checker, in the browser -->
 <section id="try" class="dense">
   <div class="container reveal">
-    <h3>Try it</h3>
+    <div class="section-head"><h3>Try it</h3><a class="section-offer" href="playground.html">Full playground page <span aria-hidden="true">&rarr;</span></a></div>
     <h2>The checker, <span class="accent">in your browser</span>.</h2>
     <p class="lead">The capture above ran on a machine you have to take our word for. This one runs on yours. It is a committed WebAssembly build of Garnet's checker. It runs two of the capture's acts &mdash; check a program, and diff its declared capability surface against a baseline &mdash; plus run; sealing stays on the command line. It loads only when you ask, because the runtime is 2.2&nbsp;MB and a landing page should not spend that uninvited.</p>
 
@@ -991,7 +1104,7 @@ def main() {
 <!-- ═══════════════════════════════════════════════════════ THREE PILLARS -->
 <section id="why" class="dense">
   <div class="container reveal">
-    <h3>The Three Pillars</h3>
+    <div class="section-head"><h3>The Three Pillars</h3><a class="section-offer" href="why.html">Full Why page <span aria-hidden="true">&rarr;</span></a></div>
     <h2>Two languages, <span class="accent">one grammar</span>.</h2>
     <p class="lead">Rust gives you mathematical rigor at the cost of cognitive load. Ruby gives you conversational beauty at the cost of runtime surprise. Garnet's bet is one grammar with a mode for each — a single coherent language whose <em>mode boundary is the reconciliation</em>; the automatic bridge across that boundary is specified and still deferred.</p>
     <div class="pillars">
@@ -1366,7 +1479,7 @@ def main() {
 <!-- ═══════════════════════════════════════════════════════ INSTALL -->
 <section id="install">
   <div class="container reveal">
-    <h3>Get Garnet</h3>
+    <div class="section-head"><h3>Get Garnet</h3><a class="section-offer" href="getting-started.html">Getting Started guide <span aria-hidden="true">&rarr;</span></a></div>
     <h2>Install with one curl command.</h2>
     <p class="lead">The installer targets the <strong>v0.8.2 release</strong>. It installs the release asset for your platform, verifies it against <code>SHA256SUMS</code>, and falls back to a source install through <code>cargo install --locked</code> only when no asset matches. The v0.8.2 GitHub Release ships CLI binaries for macOS, Linux (x86_64 and ARM64) and Windows, plus a CycloneDX SBOM; productization gates are on the <a href="status.html">readiness status page</a>.</p>
 
@@ -1640,9 +1753,9 @@ dist/Garnet Studio.app</pre>
 </section>
 
 <!-- ═══════════════════════════════════════════════════════ READINESS -->
-<section class="dense">
+<section id="readiness" class="dense">
   <div class="container reveal">
-    <h3>Readiness</h3>
+    <div class="section-head"><h3>Readiness</h3><a class="section-offer" href="status.html">Full status page <span aria-hidden="true">&rarr;</span></a></div>
     <h2>The numbers live on <span class="accent">Status</span>.</h2>
     <p class="lead">A landing page is a poor place for a scoreboard: the figures move, the caveats do not fit, and a number without its derivation is decoration. Test counts, tracked slices, the productization percentage, and every platform's own gate are kept on one page, each beside the command that produced it and the limits that still apply.</p>
     <div style="margin-top:26px;display:flex;align-items:center;gap:18px;flex-wrap:wrap">
@@ -1750,7 +1863,7 @@ dist/Garnet Studio.app</pre>
 
 <script>
   // ─── Smooth scroll on nav ─────────────────────────────────────
-  document.querySelectorAll('a[href^="#"]').forEach(a => {
+  document.querySelectorAll('a[href^="#"]:not([data-page])').forEach(a => {
     a.addEventListener('click', e => {
       const id = a.getAttribute('href').slice(1);
       if (!id) return;
@@ -1863,6 +1976,243 @@ dist/Garnet Studio.app</pre>
       navigator.serviceWorker.register('service-worker.js').catch(() => {});
     });
   }
+</script>
+
+<script>
+  // ─── Two-step nav: the first press goes to the section, the next opens its page ──
+  // This is a separate script on purpose. It is an enhancement, and an error in
+  // it must not stop the script above, which reveals the content blocks, mounts
+  // the playground checker, wires the tabs and copy buttons, and registers the
+  // service worker. The whole setup is wrapped in try/catch for the same reason:
+  // if it throws, the four links keep the hrefs they were served with and jump
+  // natively, exactly as they do with JavaScript off.
+  (() => {
+    try {
+      const nav = document.querySelector('nav.top');
+      if (!nav) return;
+      const links = [...nav.querySelectorAll('.links a[data-page][data-section]')];
+      if (!links.length) return;
+
+      const STORE_KEY = 'garnet.nav.twoStep';   // '1' or '2' = cues shown so far; 'learned' = the visitor has used it
+      const CUE_LIMIT = 2;                      // at most twice per visitor
+      const CUE_MS = 8000;
+      const START_WAIT_MS = 3000;               // no scroll ever began: stop waiting for arrival
+      const IDLE_MS = 400;                      // the scroll stopped short of the section: stop waiting
+      const BAND_MIN_PX = 48;                   // the arrival band never collapses on a short viewport
+
+      const calm = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const goTo = el => el.scrollIntoView({ behavior: calm() ? 'auto' : 'smooth', block: 'start' });
+      const plainPress = e => e.button === 0 && !(e.metaKey || e.ctrlKey || e.shiftKey || e.altKey);
+      const store = {
+        get() { try { return localStorage.getItem(STORE_KEY) || ''; } catch (err) { return ''; } },
+        set(value) { try { localStorage.setItem(STORE_KEY, value); } catch (err) { /* storage blocked: the cue falls back to once per page load */ } }
+      };
+      const make = (tag, className, text) => {
+        const node = document.createElement(tag);
+        if (className) node.className = className;
+        if (text) node.textContent = text;
+        return node;
+      };
+
+      // The scroll offset tracks the sticky bar, however many rows it wraps to.
+      const syncNavHeight = () => document.documentElement.style.setProperty('--nav-h', nav.offsetHeight + 'px');
+      syncNavHeight();
+      if ('ResizeObserver' in window) new ResizeObserver(syncNavHeight).observe(nav);
+
+      const live = make('p', 'visually-hidden');
+      live.setAttribute('aria-live', 'polite');
+      document.body.append(live);
+      const cue = make('div', 'nav-cue');
+      cue.setAttribute('aria-hidden', 'true');
+      nav.append(cue);
+
+      let armed = null;
+      let pointer = 'mouse';
+      let cuedThisLoad = false;
+      let cueTimer = 0;
+      nav.addEventListener('pointerdown', e => { pointer = e.pointerType || 'mouse'; }, { passive: true });
+
+      // The markup carries today's href, so with JavaScript off every link opens
+      // what it opens today (Status still opens status.html). The script holds
+      // both targets and sets the idle href to the section only now that it runs.
+      const entries = links.map(link => {
+        const section = document.getElementById(link.dataset.section);
+        if (!section) return null;               // no section: the link keeps the href it was served with
+        const label = link.textContent.trim();
+        const hash = '#' + link.dataset.section;
+        // The idle href stays whatever the markup served, so a modifier-click, a
+        // middle-click and a crawler keep today's target: Status still opens status.html.
+        const served = link.getAttribute('href');
+        const bead = make('span', 'nav-bead');
+        bead.setAttribute('aria-hidden', 'true');
+        link.append(bead);
+        return { link, hash, served, label, section, page: link.dataset.page,
+                 offer: section.querySelector('.section-offer'),
+                 observer: null, startTimer: 0, idleTimer: 0, onScroll: null };
+      }).filter(Boolean);
+      if (!entries.length) return;
+      nav.classList.add('two-step');             // only now is the bead's space reserved
+
+      // The guard keeps the NAV link from leaving a mounted checker: once
+      // #pg-mount has class .loaded, Playground only scrolls and never arms.
+      // It does not cover the two explicit page links beside and below the
+      // checker; those say where they go, and one click still follows them.
+      const playgroundBusy = entry =>
+        entry.section.id === 'try' && document.querySelector('#pg-mount.loaded') !== null;
+
+      function hideCue() {
+        clearTimeout(cueTimer);
+        cue.classList.remove('is-on');
+      }
+
+      function showCue(entry, how) {
+        const seen = store.get();
+        if (cuedThisLoad || seen === 'learned' || Number(seen) >= CUE_LIMIT) return false;
+        cuedThisLoad = true;
+        store.set(String((Number(seen) || 0) + 1));
+
+        const beats = make('span', 'beats');
+        beats.append(make('i'), make('i'));
+        const words = make('span');
+        if (how === 'key') words.append('Press Enter again for the full page');
+        else words.append(how === 'touch' ? 'Tap ' : 'Click ', make('b', '', entry.label), ' again for the full page');
+        const more = make('span', 'nav-cue-more', '· links marked ');
+        more.append(make('span', 'nav-bead'), ' work this way');
+        cue.replaceChildren(beats, words, more);   // text nodes and elements only, no innerHTML
+
+        const navBox = nav.getBoundingClientRect();
+        const linkBox = entry.link.getBoundingClientRect();
+        const centre = linkBox.left + linkBox.width / 2 - navBox.left;
+        if (window.matchMedia('(min-width: 901px)').matches) {
+          const width = cue.offsetWidth;
+          const left = Math.min(Math.max(centre - width / 2, 16), navBox.width - width - 16);
+          cue.style.setProperty('--cue-left', left + 'px');
+          cue.style.setProperty('--caret', (centre - left) + 'px');
+        } else {
+          cue.style.setProperty('--caret', (centre - 16) + 'px');
+        }
+        cue.classList.remove('is-on');
+        void cue.offsetWidth;                   // restart the entrance
+        cue.classList.add('is-on');
+        cueTimer = setTimeout(hideCue, CUE_MS);
+        return true;
+      }
+
+      function clearWaits(entry) {
+        clearTimeout(entry.startTimer);
+        clearTimeout(entry.idleTimer);
+        if (entry.onScroll) window.removeEventListener('scroll', entry.onScroll);
+        entry.onScroll = null;
+      }
+
+      function disarm(entry = armed) {
+        if (!entry || entry !== armed) return;
+        armed = null;
+        clearWaits(entry);
+        if (entry.observer) entry.observer.disconnect();
+        entry.observer = null;
+        entry.link.setAttribute('href', entry.served);
+        entry.link.classList.remove('is-armed');
+        entry.link.removeAttribute('aria-label');
+        if (entry.offer) entry.offer.classList.remove('is-armed', 'is-offering');
+        live.textContent = '';
+        hideCue();
+      }
+
+      function arrive(entry, how) {
+        if (entry.offer) {
+          entry.offer.classList.remove('is-offering');
+          void entry.offer.offsetWidth;          // replay the one-shot ring on every arrival
+          entry.offer.classList.add('is-armed', 'is-offering');
+        }
+        const cued = showCue(entry, how);
+        const seat = (how === 'key' && entry.offer) ? ' The full page link now has focus.' : '';
+        const lesson = !cued ? ''
+          : (how === 'key' && entry.offer) ? ' Activate it to open the full page.'
+          : ' Activate ' + entry.label + ' again to open the full page.';
+        live.textContent = entry.label + ' section.' + seat + lesson;
+      }
+
+      function arm(entry, how) {
+        disarm();
+        armed = entry;
+        entry.link.setAttribute('href', entry.page);          // the next press is an ordinary link to the page
+        entry.link.classList.add('is-armed');
+        entry.link.setAttribute('aria-label', entry.label + ', opens full page');
+        let reached = false;
+
+        // The band runs from the bar's bottom edge down the viewport, and its
+        // bottom margin is measured in pixels so a short viewport (a tall bar,
+        // or 400% zoom) still leaves at least 48px of band for arrival to fire.
+        const navH = nav.offsetHeight;
+        const view = window.innerHeight;
+        const bottom = Math.max(0, Math.round(view - Math.max(navH + BAND_MIN_PX, view * 0.6)));
+        entry.observer = new IntersectionObserver(records => {
+          const record = records[records.length - 1];
+          if (armed !== entry) return;
+          if (record.isIntersecting && !reached) { reached = true; clearWaits(entry); arrive(entry, how); }
+          else if (!record.isIntersecting && reached) disarm(entry);
+        }, { rootMargin: '-' + navH + 'px 0px -' + bottom + 'px 0px' });
+        entry.observer.observe(entry.section);                // a fresh observer reports the current state at once
+
+        // A visitor who overrides the scroll never arrives. Wait while the page
+        // is still moving, then give up; and give up anyway if no scroll starts.
+        entry.onScroll = () => {
+          clearTimeout(entry.idleTimer);
+          entry.idleTimer = setTimeout(() => { if (armed === entry && !reached) disarm(entry); }, IDLE_MS);
+        };
+        window.addEventListener('scroll', entry.onScroll, { passive: true });
+        entry.startTimer = setTimeout(() => { if (armed === entry && !reached) disarm(entry); }, START_WAIT_MS);
+      }
+
+      entries.forEach(entry => {
+        // A double-click would select the label text; keep the second press a clean click.
+        entry.link.addEventListener('mousedown', e => { if (e.detail > 1) e.preventDefault(); });
+        entry.link.addEventListener('click', e => {
+          if (armed === entry) {
+            if (!playgroundBusy(entry)) {        // second press: the browser follows href to the page
+              store.set('learned');
+              hideCue();
+              return;
+            }
+            e.preventDefault();                  // the mounted checker holds typed work: stay on this page
+            disarm(entry);
+            goTo(entry.section);
+            return;
+          }
+          if (!plainPress(e)) return;            // new-tab gestures keep the browser default
+          e.preventDefault();
+          const how = e.detail === 0 ? 'key' : (pointer === 'touch' || pointer === 'pen') ? 'touch' : 'click';
+          goTo(entry.section);
+          if (playgroundBusy(entry)) { disarm(); return; }
+          arm(entry, how);
+          if (how === 'key' && entry.offer) entry.offer.focus({ preventScroll: true });
+        });
+        if (entry.offer) entry.offer.addEventListener('click', () => store.set('learned'));
+      });
+
+      const brand = nav.querySelector('a.brand');
+      if (brand) brand.addEventListener('click', e => { if (plainPress(e)) disarm(); });
+      const loadChecker = document.getElementById('pg-load');
+      if (loadChecker) loadChecker.addEventListener('click', () => { if (armed && armed.section.id === 'try') disarm(); });
+      cue.addEventListener('click', hideCue);
+      document.addEventListener('keydown', e => { if (e.key === 'Escape' && armed) disarm(); });
+      window.addEventListener('pageshow', e => { if (e.persisted) disarm(); });   // Back from the page: start clean
+      // The layout viewport, not window.innerWidth: iOS Safari reports the
+      // visual viewport there, so a pinch-zoom would disarm the link.
+      let lastWidth = document.documentElement.clientWidth;
+      window.addEventListener('resize', () => {
+        const width = document.documentElement.clientWidth;
+        if (width === lastWidth) return;         // a phone's URL bar changes only the height
+        lastWidth = width;
+        disarm();
+      }, { passive: true });
+
+      // iOS Safari is unverified: no iPhone run is recorded for the second tap
+      // during a programmatic smooth scroll. The idle failsafe above covers a
+      // scroll that stops early, and touch-action: manipulation covers the zoom.
+    } catch (err) { /* the enhancement is off; the links jump natively */ }
+  })();
 </script>
 </body>
 </html>
