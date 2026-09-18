@@ -9,6 +9,23 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ## [Unreleased]
 
+### Checker — enum variant construction is checked in safe functions (D-107, 2026-09-18)
+
+- **Behaviour change — safe programs that passed `garnet check` may now fail
+  it.** In `fn` / `@safe` bodies, `Shape::Triangle(1.0)` (no such variant),
+  `Shape::Empty(1.0)` (unit variant given a payload), a bare `Shape::Circle`
+  (payload variant with no payload) and `Shape::Circle(1.0, 2.0)` (wrong field
+  count) are `check.safe_mode_violation` errors. Before, the checker was
+  silent and the interpreter built the malformed value or failed only at run
+  time. The enum resolves the way match arms already do (modules, `use`
+  aliases); an `impl` fn reached through the enum path (`Shape::unit()`) is a
+  call and is not judged; structs, module functions and prelude `Ok`/`Some`
+  are untouched. Managed `def` bodies are outside the safe-mode walk, as
+  before — `garnet-check-v0.3/tests/variant_construction.rs` pins the scope
+  and `garnet-cli/tests/check_variant_construction.rs` runs the four probe
+  shapes through the binary. `garnet check` output over the 184 tracked
+  `.garnet` files is byte-identical to the pre-cure binary.
+
 ### Checker — capabilities reached through a call-graph cycle are now reported (U-117, 2026-09-18)
 
 - **Behaviour change — programs that passed `garnet check` may now fail it.**

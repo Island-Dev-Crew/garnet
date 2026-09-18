@@ -27,6 +27,17 @@ Owns safe-mode validation, CapCaps propagation, borrow/safety checks, and depend
 - `capability_surface`/`caps_diff` keep full string fidelity (including
   unknown and wildcard names): a gained unknown capability must still gate
   as authority expansion in diff-caps.
+- Enum variant construction is checked in safe functions (D-107, cured
+  2026-09-18). `match_coverage::check_variant_construction` runs on every
+  `Enum::Variant(args...)` call and bare `Enum::Variant` path the safe-mode
+  walk reaches, resolving the enum exactly as match arms do (modules, `use`
+  aliases). An unknown variant, a unit variant given a payload, a payload
+  variant used bare, or a payload variant with the wrong field count is a
+  `SafeModeViolation`; a name that is an associated fn of an `impl` on that
+  type is a call, not a variant, and is not judged. Paths that do not resolve
+  to exactly one user enum (structs, module fns, prelude `Ok`/`Some`) are left
+  alone. Managed `def` bodies are outside this walk, like the rest of the
+  safe-mode contract; `tests/variant_construction.rs` pins that scope.
 - Static bounded-loop verification is conservative: in `fn`, `@safe`, or
   `@bounded(...)` functions, uncheckable loops fail closed; only explicitly
   proven literal finite loops, literal counter `while` loops, and

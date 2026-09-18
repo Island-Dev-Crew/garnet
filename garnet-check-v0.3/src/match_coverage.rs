@@ -164,6 +164,12 @@ struct Scope {
 #[derive(Debug, Default)]
 struct Checker {
     enums: BTreeMap<Vec<String>, EnumInfo>,
+    /// D-107: associated function names per `impl <Type>` target, keyed by the
+    /// target's last path segment. `Shape::new(...)` is a call to an impl fn,
+    /// not a variant construction; the key is the bare type name so a
+    /// mis-resolved impl path can only make the check more lenient, never
+    /// produce a false rejection.
+    impl_fns: BTreeMap<String, BTreeSet<String>>,
     const_guard_facts: BTreeMap<Vec<String>, ConstFact>,
     scopes: BTreeMap<Vec<String>, Scope>,
     errors: Vec<CheckError>,
@@ -202,6 +208,14 @@ impl Checker {
                         })
                         .collect();
                     self.enums.insert(path.clone(), EnumInfo { path, variants });
+                }
+                Item::Impl(impl_block) => {
+                    if let TypeExpr::Named { path, .. } = &impl_block.target {
+                        if let Some(type_name) = path.last() {
+                            let names = self.impl_fns.entry(type_name.clone()).or_default();
+                            names.extend(impl_block.methods.iter().map(|m| m.name.clone()));
+                        }
+                    }
                 }
                 Item::Module(module) => {
                     let mut nested = prefix.to_vec();
@@ -679,7 +693,14 @@ impl Checker {
                 self.walk_expr(expr, fn_name, env, closure_effects, guard_facts, scope);
             }
             Expr::Call { callee, args, .. } => {
-                self.walk_expr(callee, fn_name, env, closure_effects, guard_facts, scope);
+                if let Expr::Path(path, _) = callee.as_ref() {
+                    // D-107: `Enum::Variant(args...)` — a Path callee is a
+                    // construction, not a bare variant value, so it is checked
+                    // here with its arity and NOT re-walked as a bare path.
+                    self.check_variant_construction(fn_name, path, Some(args.len()), scope);
+                } else {
+                    self.walk_expr(callee, fn_name, env, closure_effects, guard_facts, scope);
+                }
                 for arg in args {
                     self.walk_expr(arg, fn_name, env, closure_effects, guard_facts, scope);
                 }
@@ -895,14 +916,85 @@ impl Checker {
                     self.walk_expr(value, fn_name, env, closure_effects, guard_facts, scope);
                 }
             }
+            Expr::Path(path, _) => {
+                // D-107: a bare `Enum::Variant` value carries no payload.
+                self.check_variant_construction(fn_name, path, None, scope);
+            }
             Expr::Int(_, _)
             | Expr::Float(_, _)
             | Expr::Bool(_, _)
             | Expr::Nil(_)
             | Expr::Str(_, _)
             | Expr::Symbol(_, _)
-            | Expr::Ident(_, _)
-            | Expr::Path(_, _) => {}
+            | Expr::Ident(_, _) => {}
+        }
+    }
+
+    /// D-107 — check one `Enum::Variant` construction in a safe function.
+    ///
+    /// `payload` is `Some(n)` for `Enum::Variant(a₁..aₙ)` and `None` for the
+    /// bare path value. Paths that do not resolve to exactly one known enum
+    /// are left alone (module functions, structs, stdlib paths), and a name
+    /// that is an associated function of an `impl` on that type is a call,
+    /// not a variant. Everything else must name a real variant with exactly
+    /// its declared field count: safe mode fails closed on the shapes the
+    /// interpreter would otherwise accept unchecked.
+    fn check_variant_construction(
+        &mut self,
+        fn_name: &str,
+        path: &[String],
+        payload: Option<usize>,
+        scope: &Scope,
+    ) {
+        let Some((variant, enum_path)) = path.split_last() else {
+            return;
+        };
+        if enum_path.is_empty() {
+            return;
+        }
+        let Some(domain) = self.resolve_enum(enum_path, scope) else {
+            return;
+        };
+        let Some(enum_name) = domain.info.path.last() else {
+            return;
+        };
+        let display = format!("{}::{variant}", enum_path.join("::"));
+
+        let Some(info) = domain.info.variants.get(variant) else {
+            let is_impl_fn = self
+                .impl_fns
+                .get(enum_name)
+                .is_some_and(|names| names.contains(variant));
+            if !is_impl_fn {
+                self.errors.push(CheckError::SafeModeViolation(format!(
+                    "enum `{enum_name}` has no variant `{variant}` in safe function '{fn_name}': `{display}` does not exist"
+                )));
+            }
+            return;
+        };
+
+        let expected = info.fields.len();
+        let fields = |n: usize| if n == 1 { "field" } else { "fields" };
+        match (expected, payload) {
+            (0, Some(given)) if given > 0 => {
+                self.errors.push(CheckError::SafeModeViolation(format!(
+                    "unit variant `{display}` takes no payload, given {given} in safe function '{fn_name}'"
+                )));
+            }
+            (0, _) => {}
+            (expected, None) => {
+                self.errors.push(CheckError::SafeModeViolation(format!(
+                    "payload variant `{display}` requires {expected} {} but is used without a payload in safe function '{fn_name}'",
+                    fields(expected)
+                )));
+            }
+            (expected, Some(given)) if given != expected => {
+                self.errors.push(CheckError::SafeModeViolation(format!(
+                    "payload variant `{display}` expects {expected} {}, given {given} in safe function '{fn_name}'",
+                    fields(expected)
+                )));
+            }
+            (_, Some(_)) => {}
         }
     }
 
