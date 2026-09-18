@@ -65,7 +65,10 @@ fn u117_register_cycle_reports_b_and_main() {
     // reports today.
     assert_eq!(
         violations(&register_shape("a", "b")),
-        triples(&[("b", "fs", "(via a)"), ("main", "fs", "(via b)")])
+        triples(&[
+            ("b", "fs", "fs::write_file (via a)"),
+            ("main", "fs", "fs::write_file (via b → a)"),
+        ])
     );
 }
 
@@ -129,9 +132,9 @@ fn u117_three_member_cycle_reports_every_annotated_member() {
     assert_eq!(
         violations(src),
         triples(&[
-            ("b", "fs", "(via c)"),
-            ("c", "fs", "(via a)"),
-            ("main", "fs", "(via c)"),
+            ("b", "fs", "fs::write_file (via c → a)"),
+            ("c", "fs", "fs::write_file (via a)"),
+            ("main", "fs", "fs::write_file (via c → a)"),
         ])
     );
 }
@@ -153,7 +156,10 @@ fn u117_unannotated_cycle_still_reports_annotated_caller() {
             b()
         }
     "#;
-    assert_eq!(violations(src), triples(&[("main", "fs", "(via b)")]));
+    assert_eq!(
+        violations(src),
+        triples(&[("main", "fs", "fs::write_file (via b → a)")])
+    );
 }
 
 #[test]
@@ -180,8 +186,8 @@ fn u117_method_call_cycle_reports() {
     assert_eq!(
         violations(src),
         triples(&[
-            ("helper", "fs", "(via .go() → A::go)"),
-            ("main", "fs", "(via helper)"),
+            ("helper", "fs", "fs::write_file (via .go() → A::go)"),
+            ("main", "fs", "fs::write_file (via helper → .go() → A::go)"),
         ])
     );
 }
@@ -427,7 +433,11 @@ fn u117_deep_named_chain_does_not_overflow_the_stack() {
             .iter()
             .map(|v| (v.fn_name.as_str(), v.missing.as_str(), v.via.as_str()))
             .collect::<Vec<_>>(),
-        vec![("main", "fs", "(via f0)")]
+        vec![(
+            "main",
+            "fs",
+            "fs::write_file (via f0 → f1 → f2 → … → f11998 → f11999 → f12000)"
+        )]
     );
 }
 

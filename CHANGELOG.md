@@ -9,6 +9,28 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ## [Unreleased]
 
+### Checker — `caps coverage` names the primitive, not the hop (2026-09-18)
+
+- **Diagnostic change.** The `via` half of ``caps coverage: function `main`
+  does not declare `fs` but transitively calls `…` which requires it`` used to
+  name only the next hop — `(via a)` — so a reader of a U-117 cycle report
+  still had to find the gated call by hand. Raised as a nonblocking follow-up
+  by the independent review of #589. `caps_graph::find_cap_source` now walks
+  the reaching callees (first in `BTreeSet` order at every hop, each function
+  entered once, iterative so a deep chain cannot overflow the stack) to the
+  primitive itself and reports the registry spelling followed by the path:
+  `fs::write_file (via b → a)`, `fs::write_file (via helper → .go() →
+  A::go)`; a direct bare call such as `read_file(..)` is reported as
+  `fs::read_file`. Paths longer than six hops are elided to their first and
+  last three. `docs/why.html` no longer describes the checked chain as
+  "acyclic" — the SCC propagator covers cycles since U-117, so it says "named
+  call chain … cycles included" (README and the non-trust pages get the same
+  wording in a separate PR). Pinned by
+  `via_names_the_primitive_behind_a_cycle`,
+  `via_names_the_primitive_behind_an_acyclic_helper` and
+  `via_qualifies_a_bare_direct_primitive` (`caps_graph_cycle_tests.rs`); the
+  existing U-117 tests now pin the new strings.
+
 ### Capabilities — memory declarations are gated under `mem` (D-04b, 2026-09-18)
 
 - **Behaviour change — a `memory <kind> <name> : <type>` declaration now

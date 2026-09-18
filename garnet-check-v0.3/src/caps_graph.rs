@@ -759,38 +759,126 @@ impl CapsGraph {
         fn_name == "main"
     }
 
-    /// Find a representative callee whose transitive caps include `missing`.
+    /// The `via` text for a violation: the qualified primitive that requires
+    /// `missing`, followed by the named path from `fn_name` to it when the
+    /// primitive is not called directly — `fs::write_file (via b → a)`.
+    /// Deterministic: first callee in `BTreeSet` order whose transitive caps
+    /// contain `missing`, at every hop.
     fn find_cap_source(&mut self, fn_name: &str, missing: &str) -> String {
+        match self.trace_cap_source(fn_name, missing) {
+            Some((prim, path)) if path.is_empty() => prim,
+            Some((prim, path)) => format!("{prim} (via {})", render_hops(&path)),
+            None => "<unknown>".to_string(),
+        }
+    }
+
+    /// Walk from `fn_name` toward a primitive requiring `missing`, returning
+    /// the qualified primitive and the user-fn hops taken to reach it. Every
+    /// hop is a callee whose transitive caps already contain `missing`, so the
+    /// walk descends only into functions that can reach such a primitive, and
+    /// a function is entered at most once so a cycle cannot be re-walked.
+    /// Iterative with an explicit frontier: depth is bounded by the number of
+    /// functions, never by the Rust stack (the deep-chain regression test).
+    fn trace_cap_source(&mut self, fn_name: &str, missing: &str) -> Option<(String, Vec<String>)> {
+        let mut visited: BTreeSet<String> = BTreeSet::new();
+        visited.insert(fn_name.to_string());
+        // Each frame: the function being scanned and its pending callee hops
+        // (already filtered to those that can reach `missing`), in `BTreeSet`
+        // order so the choice is deterministic. `path` holds the hop label of
+        // every frame below the root.
+        let mut frames: Vec<Vec<(String, String)>> = vec![self.reaching_hops(fn_name, missing)];
+        let mut path: Vec<String> = Vec::new();
+        while let Some(frame) = frames.last_mut() {
+            let Some((label, target)) = frame.pop() else {
+                frames.pop();
+                path.pop();
+                continue;
+            };
+            if label.is_empty() {
+                // A direct primitive: the search ends here.
+                return Some((target, path));
+            }
+            if !visited.insert(target.clone()) {
+                continue;
+            }
+            path.push(label);
+            frames.push(self.reaching_hops(&target, missing));
+        }
+        None
+    }
+
+    /// The callees of `fn_name` that carry `missing`, as `(hop label, target)`
+    /// pairs in reverse `BTreeSet` order (so `Vec::pop` yields the first). A
+    /// primitive hop has an empty label and the qualified primitive as target;
+    /// a user-fn hop is labelled with the fn name; a method hop is labelled
+    /// `.method() → Target` and its target is the impl fn.
+    fn reaching_hops(&mut self, fn_name: &str, missing: &str) -> Vec<(String, String)> {
         let callees = self.callees.get(fn_name).cloned().unwrap_or_default();
+        let mut hops = Vec::new();
         for callee in callees {
             match callee {
                 CalleeRef::Primitive(ref key) => {
                     if let Some(&pc) = self.prim_caps.get(key) {
                         if pc.contains(missing) {
-                            return key.clone();
+                            hops.push((String::new(), self.qualified_prim_name(key, missing)));
                         }
                     }
                 }
                 CalleeRef::UserFn(ref name) => {
-                    let child_caps = self.transitive_caps(name);
-                    if child_caps.contains(missing) {
-                        return format!("(via {name})");
+                    if self.transitive_caps(name).contains(missing) {
+                        hops.push((name.clone(), name.clone()));
                     }
                 }
                 CalleeRef::MethodByName(ref method) => {
-                    // Report the first impl method named `method` (in key
-                    // order) whose transitive caps include `missing`.
                     let targets = self.method_index.get(method).cloned().unwrap_or_default();
                     for target in targets {
                         if self.transitive_caps(&target).contains(missing) {
-                            return format!("(via .{method}() → {target})");
+                            hops.push((format!(".{method}() → {target}"), target));
                         }
                     }
                 }
             }
         }
-        "<unknown>".to_string()
+        hops.reverse();
+        hops
     }
+
+    /// The registry (`module::name`) spelling of a primitive key. A bare key
+    /// resolves to the one qualified row with that last segment whose caps
+    /// contain `missing`; if several rows collide on the bare name, the bare
+    /// key is kept rather than guessing.
+    fn qualified_prim_name(&self, key: &str, missing: &str) -> String {
+        if key.contains("::") {
+            return key.to_string();
+        }
+        let suffix = format!("::{key}");
+        let mut matches = self
+            .prim_caps
+            .iter()
+            .filter(|(k, caps)| k.ends_with(&suffix) && caps.contains(missing))
+            .map(|(k, _)| k.as_str());
+        match (matches.next(), matches.next()) {
+            (Some(only), None) => only.to_string(),
+            _ => key.to_string(),
+        }
+    }
+}
+
+/// Hops shown in full before a long path is elided to its first and last
+/// three: `f0 → f1 → f2 → … → f11998 → f11999 → f12000`. Every hop is
+/// still a real function name, so the reader can follow either end.
+const MAX_SHOWN_HOPS: usize = 6;
+
+fn render_hops(path: &[String]) -> String {
+    if path.len() <= MAX_SHOWN_HOPS {
+        return path.join(" → ");
+    }
+    let half = MAX_SHOWN_HOPS / 2;
+    format!(
+        "{} → … → {}",
+        path[..half].join(" → "),
+        path[path.len() - half..].join(" → ")
+    )
 }
 
 #[cfg(test)]
