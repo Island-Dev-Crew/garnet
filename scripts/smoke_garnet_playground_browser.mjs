@@ -343,6 +343,54 @@ async function main() {
       throw new Error(`denial diagnostic does not name proc: ${denial.run.diagnostic}`);
     }
 
+    // The committed "Undeclared memory tier" preset (D-04): choosing it from
+    // the picker fills the editor, `run` traps before the store exists, and
+    // `check` names the missing `mem` capability. Both verdicts come from the
+    // committed package, not from the preset's recorded output.
+    await page.locator("#example-picker").selectOption("undeclared_memory_tier");
+    const memorySource = await page.locator("#source-editor").inputValue();
+    if (!memorySource.includes("memory::working") || !memorySource.includes("@caps()")) {
+      throw new Error("memory-tier preset did not fill the editor from examples.json");
+    }
+    await page.locator("#run-source").click();
+    await page.locator("#check-source").click();
+    const memoryTier = await page.evaluate(() => ({
+      run: window.__garnetPlayground.state.lastRun,
+      check: window.__garnetPlayground.state.lastCheck,
+      run_ui_state: document.getElementById("run-state").textContent,
+      check_ui_state: document.getElementById("check-state").textContent,
+    }));
+    assertEqual(memoryTier.run.schema, "garnet.wasm.run/1", "memory-tier run schema");
+    assertEqual(memoryTier.run.exit_class, "runtime_error", "memory-tier run exit class");
+    assertEqual(memoryTier.run.stdout, "", "memory-tier run stdout");
+    assertEqual(memoryTier.run_ui_state, "Denied", "memory-tier run UI state");
+    if (!memoryTier.run.diagnostic?.includes("memory::working") || !memoryTier.run.diagnostic.includes("mem")) {
+      throw new Error(`memory-tier run diagnostic does not name the tier and mem: ${memoryTier.run.diagnostic}`);
+    }
+    assertEqual(memoryTier.check.schema, "garnet.wasm.check/1", "memory-tier check schema");
+    assertEqual(memoryTier.check.ok, false, "memory-tier check verdict");
+    assertEqual(memoryTier.check_ui_state, "Check failed", "memory-tier check UI state");
+    const coverage = (memoryTier.check.diagnostics || []).find(
+      (diagnostic) => diagnostic.code === "check.caps_coverage",
+    );
+    if (!coverage || !coverage.message.includes("`mem`") || !coverage.message.includes("memory::working")) {
+      throw new Error(
+        `memory-tier check did not report caps coverage for mem: ${JSON.stringify(memoryTier.check.diagnostics)}`,
+      );
+    }
+
+    // The landing page embeds this page in a small iframe; the logo link must
+    // leave the frame (`target="_top"`) and point at the committed home page.
+    const homeLink = await page.evaluate(() => {
+      const link = document.querySelector("a.brand-home");
+      return link
+        ? { href: link.getAttribute("href"), target: link.getAttribute("target") }
+        : null;
+    });
+    if (!homeLink) throw new Error("playground logo home link (a.brand-home) is missing");
+    assertEqual(homeLink.href, "index.html", "logo home link href");
+    assertEqual(homeLink.target, "_top", "logo home link target");
+
     const desktop = await page.evaluate(() => ({
       horizontal_overflow: document.documentElement.scrollWidth > window.innerWidth,
       runtime_state: document.getElementById("runtime-status").dataset.state,
@@ -416,6 +464,8 @@ async function main() {
         check,
         diff,
         denial,
+        memory_tier: memoryTier,
+        home_link: homeLink,
       },
       visual: {
         screenshot: relative(ROOT, args.screenshot).split(sep).join("/"),

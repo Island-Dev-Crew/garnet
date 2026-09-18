@@ -47,6 +47,37 @@ class PlaygroundBrowserProofTests(unittest.TestCase):
         self.assertTrue(denial["run"]["diagnostic"])
         self.assertIn("proc", denial["run"]["diagnostic"].lower())
 
+    def test_undeclared_memory_tier_is_stopped_at_check_and_run(self) -> None:
+        # D-04: the committed preset reaches `memory::working` under `@caps()`.
+        # The browser package must trap it at run time and name the missing
+        # `mem` capability at check time; the preset's recorded output is not
+        # evidence of either.
+        proof = wasm.read_browser_proof()
+        self.assertIsNotNone(proof)
+        assert proof is not None
+        journey = proof["journeys"]["memory_tier"]
+        self.assertEqual("Denied", journey["run_ui_state"])
+        self.assertEqual("runtime_error", journey["run"]["exit_class"])
+        self.assertEqual("", journey["run"]["stdout"])
+        self.assertIn("memory::working", journey["run"]["diagnostic"])
+        self.assertIn("mem", journey["run"]["diagnostic"])
+        self.assertEqual("Check failed", journey["check_ui_state"])
+        self.assertIs(False, journey["check"]["ok"])
+        coverage = [
+            d for d in journey["check"]["diagnostics"] if d["code"] == "check.caps_coverage"
+        ]
+        self.assertEqual(1, len(coverage))
+        self.assertIn("`mem`", coverage[0]["message"])
+        self.assertIn("memory::working", coverage[0]["message"])
+
+    def test_logo_home_link_leaves_the_embedding_frame(self) -> None:
+        proof = wasm.read_browser_proof()
+        self.assertIsNotNone(proof)
+        assert proof is not None
+        self.assertEqual(
+            {"href": "index.html", "target": "_top"}, proof["journeys"]["home_link"]
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

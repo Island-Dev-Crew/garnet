@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import subprocess
 import unittest
 from pathlib import Path
@@ -42,6 +43,31 @@ class PlaygroundBrowserContractTests(unittest.TestCase):
             'src="playground/live.js"',
         ):
             self.assertIn(marker, page)
+
+    def test_logo_home_link_targets_the_top_window(self) -> None:
+        # index.html mounts this page in an iframe; a home link without
+        # target="_top" would open the landing page inside that small frame.
+        page = PAGE.read_text(encoding="utf-8")
+        match = re.search(r'<a class="brand-home"[^>]*>', page)
+        self.assertIsNotNone(match, "a.brand-home link missing from the playground header")
+        assert match is not None
+        self.assertIn('href="index.html"', match.group(0))
+        self.assertIn('target="_top"', match.group(0))
+        self.assertIn('id="example-picker"', page)
+
+    def test_manifest_carries_the_undeclared_memory_tier_preset(self) -> None:
+        manifest = json.loads((ROOT / "docs/playground/examples.json").read_text(encoding="utf-8"))
+        names = {example["name"] for example in manifest["examples"]}
+        self.assertIn("undeclared_memory_tier", names)
+        preset = next(e for e in manifest["examples"] if e["name"] == "undeclared_memory_tier")
+        self.assertIn("@caps()", preset["source"])
+        self.assertIn("memory::working", preset["source"])
+        self.assertIn("requires @caps(mem)", preset["output"])
+        self.assertTrue(preset["output"].endswith("exit 1"))
+        self.assertEqual(
+            preset["source"],
+            (ROOT / "examples/undeclared_memory_tier.garnet").read_text(encoding="utf-8"),
+        )
 
     def test_adapter_imports_only_the_relative_committed_package(self) -> None:
         text = LIVE.read_text(encoding="utf-8")

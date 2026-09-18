@@ -27,7 +27,38 @@ GALLERY = [
     ("hello", "Hello, Garnet", "The canonical hello-world (`@caps()`, pure compute + stdout)."),
     ("documented_math", "Docs-as-tests", "Documented functions whose `///` examples `garnet doctest` runs (S43)."),
     ("mvp_05_web_app", "Web route dispatch", "Route-dispatch scoring — one of the 12 proof-matrix domains (S48)."),
+    (
+        "undeclared_memory_tier",
+        "Undeclared memory tier",
+        "`@caps()` reaches `memory::working`; `check` reports the missing `mem` and `run` traps before the store exists (D-04).",
+    ),
 ]
+
+# `garnet run` prints its own diagnostics to stderr beside cache notes
+# (`note: this source has N prior failure(s) ...`) that depend on the
+# builder's local `.garnet-cache`. Only the diagnostics are part of the
+# recorded output.
+STDERR_NOISE_PREFIX = "note:"
+
+
+def recorded_output(proc: subprocess.CompletedProcess[str]) -> str:
+    """The gallery shows what actually happened, on either exit path.
+
+    A program that completes records its stdout (with the `=> <value>`
+    trailer). A program the runtime stops records its partial stdout, the
+    runtime diagnostic lines, and the exit code, so a preset whose point is
+    the trap shows the trap rather than an empty string.
+    """
+    stdout = proc.stdout.strip()
+    if proc.returncode == 0:
+        return stdout
+    diagnostics = [
+        line
+        for line in proc.stderr.splitlines()
+        if line.strip() and not line.startswith(STDERR_NOISE_PREFIX)
+    ]
+    lines = ([stdout] if stdout else []) + diagnostics + [f"exit {proc.returncode}"]
+    return "\n".join(lines)
 
 
 def resolve_garnet() -> list[str]:
@@ -54,9 +85,7 @@ def main() -> int:
         proc = subprocess.run(
             [*garnet, "run", str(src_path)], cwd=ROOT, capture_output=True, text=True
         )
-        # stdout is the program's output (incl. the `=> <value>` trailer);
-        # stderr carries CLI record/strategy notes we don't want in the gallery.
-        output = proc.stdout.strip()
+        output = recorded_output(proc)
         entries.append(
             {"name": stem, "title": title, "description": desc, "source": source, "output": output}
         )

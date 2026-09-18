@@ -41,6 +41,22 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   gate. Disclosed: the `derived_install_binds_the_full_audited_surface` pin
   stays at 82 bound natives (84 rows less 2 unbridged) — the red commit's 84
   was a miscount of a table that gained a source, not members.
+- **Playground — an "Undeclared memory tier" preset, and the logo goes
+  home.** `examples/undeclared_memory_tier.garnet` (new) reaches
+  `memory::working` under `@caps()`; it is the fourth committed preset in
+  `docs/playground/examples.json`, and the browser proof now selects it from
+  the picker, runs it (trap naming `memory::working` and `mem`, no stdout)
+  and checks it (`check.caps_coverage` naming `mem`) against the committed
+  package. `scripts/garnet_playground_build.py` records a stopped program's
+  diagnostics and exit code instead of an empty string, so the preset's
+  recorded output shows the trap; regenerating the manifest also picked up
+  the `@caps()` line `documented_math.garnet` gained in #409, which the
+  manifest had been missing since. The playground logo is now a link to
+  `index.html` with `target="_top"`: `index.html` embeds the playground in a
+  small iframe, and the link leaves that frame instead of loading the home
+  page inside it. `test_garnet_playground_browser_contract.py` pins the link
+  and the preset; `test_garnet_playground_browser_proof.py` pins both new
+  journeys in `W_PLAY_BROWSER_PROOF.json`.
 
 ### Runtime — the `time` class traps at run time (D-02, 2026-09-18)
 
