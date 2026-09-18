@@ -20,9 +20,9 @@ garnet run src/main.garnet
   bridged into the runtime yet.
 - **time** — timestamps and deadlines (`wall_clock_ms`).
 
-`garnet check` reports an annotated function whose named, acyclic calls reach
+`garnet check` reports an annotated function whose named calls reach
 a primitive needing a capability that function does not declare; calls
-through function values, closures or cycles are not traced. At run time,
+through function values or closures are not traced. At run time,
 the file-system, process, environment and outbound-network primitives also
 trap unless `main` declares their capability; the `time` primitives are
 checked by `garnet check` only. The exact scope is

@@ -8,6 +8,13 @@ Owns safe-mode validation, CapCaps propagation, borrow/safety checks, and depend
 
 - Safe mode must fail closed.
 - CapCaps propagation must remain transitive: callers inherit or declare authority needed by callees.
+- Transitivity holds across call-graph cycles (U-117, cured 2026-09-18).
+  `caps_graph::transitive_caps` is an iterative Tarjan-SCC walk with
+  DeRemer–Pennello propagation: every member of a strongly connected
+  component receives the union of the component's authority plus everything
+  reachable from it, and recursion depth never grows with graph depth. A
+  cycle is not a propagation boundary; `caps_graph_cycle_tests.rs` holds the
+  reachability oracle and deep-chain regression tests that keep it that way.
 - The propagator's capability representation is `capset::CapSet` — a `Copy`
   `u16` bitset over the closed cap set (RB-1). Propagation is bitwise OR,
   subset is `required & !declared == 0`, the diff-caps delta is XOR. Bit
@@ -32,5 +39,10 @@ Owns safe-mode validation, CapCaps propagation, borrow/safety checks, and depend
 
 ```sh
 cargo test -p garnet-check
-cargo test -p garnet-cli check build verify
+cargo test -p garnet-cli
 ```
+
+Cargo accepts one positional test filter, so `cargo test -p garnet-cli check
+build verify` is rejected; run the crate's tests whole (the `check`, `build`
+and `verify` acceptance tests live in `conformance_skeleton.rs` and
+`verify_gate_acceptance.rs`).

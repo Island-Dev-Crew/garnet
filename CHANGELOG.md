@@ -9,6 +9,33 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ## [Unreleased]
 
+### Checker — capabilities reached through a call-graph cycle are now reported (U-117, 2026-09-18)
+
+- **Behaviour change — programs that passed `garnet check` may now fail it.**
+  `garnet check`, `garnet verify`, `garnet agent-loop`, the LSP and the
+  playground share the CapCaps propagator, and it now attributes a capability
+  to every function in a strongly connected component of the call graph. A
+  function that reaches `write_file` only through a cycle (`a` declares
+  `@caps(fs)` and calls `b`, `b` declares `@caps()` and calls `a`, `main`
+  declares `@caps()` and calls `b`) is reported on `b` and on `main` exactly as
+  the acyclic version was. Before, the verdict depended on the functions'
+  names: `a`/`b` passed and `zed`/`yak` failed on the same graph.
+- The recursive walk that produced the wrong answer also aborted with a stack
+  overflow at roughly 8 400 chained functions; the replacement is iterative and
+  has no recursion to overflow (12 000-function chain in the tests).
+- The propagator is an iterative DeRemer–Pennello digraph traversal over
+  Tarjan SCCs (`garnet-check-v0.3/src/caps_graph.rs`); each call edge is
+  visited once. Red-first tests in `caps_graph_cycle_tests.rs` include 3 000
+  random call graphs checked against a brute-force reachability oracle.
+  `garnet check` output over the 184 tracked `.garnet` files is byte-identical
+  before and after the change; only genuinely cyclic programs change verdict.
+- The scope fence (`GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md`), README, FAQ, man
+  page and web-api template drop the "acyclic" qualifier and the cycle
+  boundary; the U-91 boundaries that remain are unannotated bodies and call
+  shapes for which no edge is built. Other public "named, acyclic" wording is
+  corrected in a later public-truth change (ADR 0002). The playground WASM
+  bundle is rebuilt once for the whole T2 train, not in this change.
+
 ### Site — the landing navigation takes two presses to leave the page (2026-09-17)
 
 - Why, Install, Playground and Status now answer the first press by scrolling to

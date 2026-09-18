@@ -1,8 +1,9 @@
 # ADR 0002 — Cure the capability propagator's cycle blind spot with an iterative SCC pass
 
-**Status.** Accepted (2026-09-15), shape refined 2026-09-17. Not implemented:
-no branch carries the cure. The finding is U-117 in
-`F_Project_Management/W_TRUST/LANDING_ARC_5_REGISTER_SWEEP_2026-09-04.md`.
+**Status.** Accepted (2026-09-15), shape refined 2026-09-17, implemented
+2026-09-18 on `train/t2a-checker-u117` (the playground rebuild and browser
+proof ride the T2 train's single rebuild, not this branch). The finding is
+U-117 in `F_Project_Management/W_TRUST/LANDING_ARC_5_REGISTER_SWEEP_2026-09-04.md`.
 
 ## Context
 

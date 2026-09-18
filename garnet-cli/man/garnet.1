@@ -211,9 +211,8 @@ not declare \fBfs\fR.
 The check has limits.
 It builds no edge for a call through a function value (an alias, a
 parameter, an actor handler), inside a closure or a string interpolation, or
-through \fImethod_missing\fR; it does not check the body of an unannotated
-function on its own; and a primitive reached only through a cycle of calls is
-not reported.
+through \fImethod_missing\fR; and it does not check the body of an unannotated
+function on its own.
 \fBgarnet run\fR does not run the checker.
 \fBmain\fR must declare its capabilities; \fI@caps()\fR is correct for a
 program that needs none.
