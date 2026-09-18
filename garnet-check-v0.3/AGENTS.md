@@ -50,6 +50,14 @@ Owns safe-mode validation, CapCaps propagation, borrow/safety checks, and depend
   immediate-exit loop bodies are accepted. Do not describe this as Wasmtime fuel,
   runtime loop metering, VM enforcement, or OS sandbox enforcement.
 - Diagnostics should identify the missing or malformed safety surface directly.
+  A `caps coverage` violation's `via` names the qualified gated primitive
+  that requires the missing capability, then the named path that reaches
+  it when the call is not direct: `fs::write_file (via b → a)`,
+  `fs::write_file (via helper → .go() → A::go)`. The path is the first
+  reaching callee at every hop in `BTreeSet` order, each function entered
+  once (so a cycle is walked, not re-walked), and elided to its first and
+  last three hops past six. `caps_graph_cycle_tests.rs` pins the format;
+  a bare `via` such as `(via a)` that names only a hop is a regression.
 - Do not weaken safety checks to make examples pass; fix the examples or specs.
 
 ## Required Checks

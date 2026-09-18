@@ -14,7 +14,7 @@
 //! point's budget binds regardless of which call edge the checker missed. That is
 //! the semantics `garnet check` already enforces for named chains — it rejects
 //! `@caps() main` → `@caps(fs) helper` with `caps coverage: ... transitively
-//! calls '(via helper)'` — and the semantics the VM's natively-lowered path
+//! calls 'fs::read_file (via helper)'` — and the semantics the VM's natively-lowered path
 //! already had, since VM frames carry no per-callee caps guard.
 //!
 //! Each case asserts BOTH the trap and the ABSENCE of the side effect: a trap

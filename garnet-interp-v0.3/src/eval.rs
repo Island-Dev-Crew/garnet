@@ -804,8 +804,8 @@ pub(crate) fn require_capability(needed: &str, fn_name: &str) -> Result<(), Runt
 /// frames: a helper that declares the capability satisfies it on behalf of an
 /// entry point that did not. The static checker was supposed to be the bound
 /// there — and for a NAMED call chain it is, rejecting `@caps() main` →
-/// `@caps(fs) helper` with `caps coverage: ... transitively calls '(via
-/// helper)'`. But it builds callee edges only from named calls, so a `def`
+/// `@caps(fs) helper` with `caps coverage: ... transitively calls
+/// 'fs::read_file (via helper)'`. But it builds callee edges only from named calls, so a `def`
 /// reached through a function value, a closure, an actor handler, a top-level
 /// initializer, or a map of functions produces no edge at all and the program
 /// passed both layers. Binding every gated primitive to the entry's declared
