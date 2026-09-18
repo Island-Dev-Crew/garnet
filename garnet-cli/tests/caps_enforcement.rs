@@ -292,3 +292,87 @@ fn vm_pure_computation_is_unaffected() {
     );
     assert!(stdout.contains("=> 7"), "got {stdout}");
 }
+
+// ---------------------------------------------------------------------------
+// D-02 (2026-09-18): the `time` class moves from checker-only to gated.
+//
+// `time::now_ms` / `wall_clock_ms` / `sleep` and `std::uuid::new_v4` / `new_v7`
+// required `@caps(time)` at CHECK time but carried `Guard::Declared` — no
+// runtime gate — so `garnet run` (which does not run the checker) executed them
+// under `@caps()`. That was the last host-authority class outside the runtime
+// latch. Each adapter now carries the same two backstops as `fs`/`net`/`env`/
+// `proc`: the calling-chain gate and the program-entry gate. `std::uuid::new_v5`
+// is pure (name-based, no clock) and stays ungated as the control.
+// ---------------------------------------------------------------------------
+
+#[test]
+fn undeclared_time_traps() {
+    traps_with("@caps()\ndef main() {\n  time::now_ms()\n}\n", "time");
+    traps_with("@caps()\ndef main() {\n  time::wall_clock_ms()\n}\n", "time");
+    traps_with("@caps()\ndef main() {\n  time::sleep(0)\n}\n", "time");
+}
+
+#[test]
+fn undeclared_clock_seeded_uuid_traps() {
+    traps_with("@caps()\ndef main() {\n  std::uuid::new_v4()\n}\n", "time");
+    traps_with("@caps()\ndef main() {\n  std::uuid::new_v7()\n}\n", "time");
+}
+
+#[test]
+fn declared_time_runs() {
+    for program in [
+        "@caps(time)\ndef main() {\n  time::now_ms()\n  0\n}\n",
+        "@caps(time)\ndef main() {\n  std::uuid::new_v7()\n  0\n}\n",
+    ] {
+        let out = run_interp(program);
+        assert!(
+            out.status.success(),
+            "declared @caps(time) must run: {}",
+            String::from_utf8_lossy(&out.stderr)
+        );
+    }
+}
+
+#[test]
+fn name_based_uuid_v5_stays_ungated() {
+    let out = run_interp(
+        "@caps()\ndef main() {\n  std::uuid::new_v5(\"6ba7b810-9dad-11d1-80b4-00c04fd430c8\", \"garnet\")\n  0\n}\n",
+    );
+    assert!(
+        out.status.success(),
+        "std::uuid::new_v5 is pure and must not trap under @caps(): {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+}
+
+#[test]
+fn vm_undeclared_time_traps_identically() {
+    traps_on_both_with(
+        "@caps()\ndef main() {\n  time::now_ms()\n}\n",
+        "requires @caps(time)",
+    );
+    traps_on_both_with(
+        "@caps()\ndef main() {\n  std::uuid::new_v4()\n}\n",
+        "requires @caps(time)",
+    );
+}
+
+#[test]
+fn vm_entry_time_not_launderable_through_helper() {
+    // The checker sees this named chain and rejects it; `garnet run` does not
+    // run the checker, so the program-entry gate is the only thing that binds.
+    traps_on_both_with(
+        "@caps(time)\ndef helper() {\n  time::now_ms()\n}\n\n@caps()\ndef main() {\n  helper()\n}\n",
+        "requires program entry @caps(time)",
+    );
+}
+
+#[test]
+fn vm_declared_time_runs() {
+    let out = run_vm("@caps(time)\ndef main() {\n  time::now_ms()\n  0\n}\n");
+    assert!(
+        out.status.success(),
+        "declared @caps(time) must run on the VM: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+}

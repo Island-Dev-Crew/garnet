@@ -51,6 +51,8 @@ REQUIRED_GATES = [
     ('require_capability("proc"', "proc"),
     ('require_capability("fs"', "fs"),
     ('require_capability("net"', "net"),
+    # D-02 (2026-09-18): the time class (time::*, clock-seeded uuid) is gated.
+    ('require_capability("time"', "time"),
 ]
 
 
@@ -109,6 +111,9 @@ def read_status() -> CapsEnforcementStatus:
         # S100 VM trap-parity tests (incl. the entry-gate laundering test).
         and "vm_undeclared_env_traps_identically" in test
         and "vm_entry_caps_not_launderable_through_helper" in test
+        # D-02: the former checker-only time class traps on both backends.
+        and "undeclared_time_traps" in test
+        and "vm_undeclared_time_traps_identically" in test
     )
     ok = (
         has_require and entry_frame and vm_entry_frame and not missing and tests_present

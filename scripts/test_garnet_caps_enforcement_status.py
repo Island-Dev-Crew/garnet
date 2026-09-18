@@ -19,10 +19,11 @@ class CapsEnforcementTests(unittest.TestCase):
     def test_interpreter_has_require_capability(self) -> None:
         self.assertTrue(ce.read_status().interp_has_require_capability)
 
-    def test_env_proc_fs_bridges_gated(self) -> None:
+    def test_env_proc_fs_net_time_bridges_gated(self) -> None:
+        # D-02 (2026-09-18) added `time`: no host-authority class is checker-only.
         r = ce.read_status()
         self.assertEqual(r.missing_gates, [], f"missing: {r.missing_gates}")
-        self.assertEqual(sorted(r.bridges_gated), ["env", "fs", "net", "proc"])
+        self.assertEqual(sorted(r.bridges_gated), ["env", "fs", "net", "proc", "time"])
 
     def test_program_entry_frame_present(self) -> None:
         self.assertTrue(ce.read_status().program_entry_frame_present)
