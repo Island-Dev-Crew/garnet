@@ -471,3 +471,49 @@ fn u117_dense_cycle_finishes_in_bounded_time_and_reports_every_member() {
         assert!(report.transitive[&format!("g{i}")].contains("time"));
     }
 }
+
+// ── The `via` field names the primitive, then the path to it ─────────────
+
+/// Follow-up to U-117 (2026-09-18): the cycle diagnostic read
+/// "transitively calls `(via a)` which requires it" — it named the next hop
+/// and never the primitive the function actually needs. `via` must lead with
+/// the qualified primitive and follow with the named path that reaches it.
+#[test]
+fn via_names_the_primitive_behind_a_cycle() {
+    assert_eq!(
+        violations(&register_shape("a", "b")),
+        triples(&[
+            ("b", "fs", "fs::write_file (via a)"),
+            ("main", "fs", "fs::write_file (via b → a)"),
+        ])
+    );
+}
+
+#[test]
+fn via_names_the_primitive_behind_an_acyclic_helper() {
+    let src = r#"
+        @caps(fs)
+        def helper() {
+            read_file("a.txt")
+        }
+        @caps()
+        def main() {
+            helper()
+        }
+    "#;
+    assert_eq!(
+        violations(src),
+        triples(&[("main", "fs", "fs::read_file (via helper)")])
+    );
+}
+
+#[test]
+fn via_qualifies_a_bare_direct_primitive() {
+    let src = r#"
+        @caps()
+        def main() {
+            read_file("a.txt")
+        }
+    "#;
+    assert_eq!(violations(src), triples(&[("main", "fs", "fs::read_file")]));
+}
