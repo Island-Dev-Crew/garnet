@@ -1,12 +1,6 @@
 # Garnet — Support the project
 # Built by Island Development Crew (Jon Isaac) — Huntsville, Alabama
+#
+# One entry only. A channel is listed here after it is live, not before.
 
-github: [Island-Dev-Crew]
-open_collective: garnet-lang
-ko_fi: islanddevcrew
-patreon: islanddevcrew
-
-# Direct links for the sponsor page:
-# Open Collective → opencollective.com/create (create project "garnet-lang")
-# Ko-fi → ko-fi.com/tips (create username "islanddevcrew")
-# GitHub Sponsors → github.com/organizations/Island-Dev-Crew/settings/billing ← pending approval
+custom: ["https://garnet-lang.org/funding.html"]

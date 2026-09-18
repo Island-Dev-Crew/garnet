@@ -1,12 +1,12 @@
 # Garnet — Frequently Asked Questions
 
-Last updated: 2026-09-11 · latest tag <!-- truth:latest_tag -->v0.8.2<!-- /truth --> (research-grade milestone; the Release ships signed CLI binaries for macOS, Linux and Windows, plus an SBOM)
+Last updated: 2026-09-11 · latest tag <!-- truth:latest_tag -->v0.8.2<!-- /truth --> (research-grade milestone; the Release ships CLI binaries for macOS, Linux and Windows, checksum-verified against a GPG-signed `SHA256SUMS`, plus an SBOM)
 
 ---
 
 ## What is Garnet?
 
-A dual-mode, agent-native language platform. **Managed mode** (`def` + ARC + exceptions) feels Ruby-like. **Safe mode** (`@safe` + `fn` + ownership + `Result`) feels Rust-like. The **mode boundary** auto-bridges errors and ARC ↔ affine — so the same source file can host velocity-first orchestration code at the top level and rigor-first hot paths in `@safe` modules without any FFI between them.
+A dual-mode, agent-native language platform. **Managed mode** (`def` + ARC + exceptions) feels Ruby-like. **Safe mode** (`@safe` + `fn` + ownership + `Result`) feels Rust-like. The **mode bridge** — errors and ARC ↔ affine crossing the boundary — is specified, not yet wired; the design goal is one source file hosting velocity-first orchestration at the top level and rigor-first hot paths in `@safe` modules, with no FFI between them.
 
 ## Why dual-mode? Why not just pick one?
 
@@ -52,7 +52,7 @@ Memory: Paper VI Experiment 4 measured 21% peak RSS reduction on the multi-agent
 
 **<!-- truth:latest_tag -->v0.8.2<!-- /truth --> is research-grade and not production-complete.** Specifically:
 
-- **Ready**: scaffolding (`garnet new`), the four-language converter (`garnet convert`), deterministic + signed builds (`garnet build --deterministic --sign`), CapCaps checking plus the runtime entry gate on 15 primitives, scaffolded `garnet test`, the <!-- truth:primitive_count -->80<!-- /truth --> bridged stdlib registry primitives, parser fuzz harness, rules-based compiler advisory mode, the S16 LSP surface (diagnostics, hover, go-to-definition, document/workspace symbols, CST-precise rename), release-backed VSIX assets, signed Linux, macOS and Windows CLI release assets, and deterministic cross-machine CI.
+- **Ready**: scaffolding (`garnet new`), the four-language converter (`garnet convert`), deterministic + signed builds (`garnet build --deterministic --sign`), CapCaps checking plus the runtime entry gate on 15 primitives, scaffolded `garnet test`, the <!-- truth:primitive_count -->80<!-- /truth --> bridged stdlib registry primitives, parser fuzz harness, rules-based compiler advisory mode, the S16 LSP surface (diagnostics, hover, go-to-definition, document/workspace symbols, CST-precise rename), release-backed VSIX assets, Linux, macOS and Windows CLI release assets under a GPG-signed `SHA256SUMS`, and deterministic cross-machine CI.
 - **Active-partial**: macOS Studio packaging without Developer ID notarization, Windows/Linux Studio target proof, bytecode VM performance path, LSP hover/go-to-def screenshot hardening, promo video human/aesthetic acceptance, proof/benchmark measurements, and provider-neutral advisory handoffs.
 - **Pending**: Apple Developer ID notarization, signed `.pkg`, Windows `.msi`, Linux desktop package/runtime proof, Marketplace/OpenVSX publication, provider-backed LLM assist, mechanized proof, external empirical study data, and native backend lowering.
 
@@ -88,7 +88,7 @@ Yes — the dual MIT / Apache-2.0 license explicitly permits commercial use, mod
 
 ## Do I need the Rust toolchain to use Garnet?
 
-Not on platforms with a matching published release asset. The installers (`install.sh`, and `install.ps1` on Windows) prefer the signed release asset for your platform, verifies it against `SHA256SUMS` (GPG-signed — see [`docs/release-signing.md`](docs/release-signing.md)), and uses source fallback only when no matching package exists or when you force `GARNET_INSTALL_MODE=source`. Source fallback requires Rust 1.95+ (the same floor as building from source below; Garnet CI tracks current stable).
+Not on platforms with a matching published release asset. The installers (`install.sh`, and `install.ps1` on Windows) prefer the release asset for your platform, verify it against `SHA256SUMS` (itself GPG-signed — see [`docs/release-signing.md`](docs/release-signing.md)), and use source fallback only when no matching package exists or when you force `GARNET_INSTALL_MODE=source`. Source fallback requires Rust 1.95+ (the same floor as building from source below; Garnet CI tracks current stable).
 
 ## Do I need Rust to build Garnet from source?
 
@@ -134,7 +134,7 @@ The full corpus in this repository: seven research papers plus four addenda, the
 - Foundation rebuild (zero language-semantics change): caps bitset, crash-surface sweep, registry-derived stdlib dispatch, parser-substrate unification, environment rebuild — then a Jon-gated backend-decision memo.
 - Trust hardening (parallel lanes): independent re-verification of the self-found red-team fix, SLSA/Sigstore planning.
 - Product gates: Apple Developer ID notarization, Windows installer/`.msi`, Linux desktop GUI proof, Marketplace/OpenVSX publication, and fuller clean-machine reproduction evidence.
-- Try-it path before any public launch wave: browser playground, package registry beyond stub.
+- Try-it path before any public launch wave: package registry beyond stub. The [browser playground](https://garnet-lang.org/playground.html) shipped.
 
 See [F_Project_Management/GARNET_S129_S200_ECC_DOGFOOD_COMMAND_CENTER.md](F_Project_Management/GARNET_S129_S200_ECC_DOGFOOD_COMMAND_CENTER.md) for the runway, [F_Project_Management/W_REBUILD/W_REBUILD_SPEC.md](F_Project_Management/W_REBUILD/W_REBUILD_SPEC.md) for the rebuild workstream, and [CURRENT_STATE.md](CURRENT_STATE.md) for the source map.
 

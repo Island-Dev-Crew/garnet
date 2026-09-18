@@ -10,7 +10,7 @@ built for the code agents write and humans accept.</strong></p>
 <p align="center"><em>No authority without evidence. Acceptance is a decision made on evidence your own toolchain recomputes.</em></p>
 
 <p align="center">
-  <a href="https://github.com/Island-Dev-Crew/garnet/releases/latest">Release <!-- truth:latest_tag -->v0.8.2<!-- /truth --> · signed binaries</a> ·
+  <a href="https://github.com/Island-Dev-Crew/garnet/releases/latest">Release <!-- truth:latest_tag -->v0.8.2<!-- /truth --> · GPG-signed checksums</a> ·
   <a href="LICENSE">MIT OR Apache-2.0</a> ·
   <a href="https://garnet-lang.org">garnet-lang.org</a> ·
   <a href="https://garnet-lang.org/status.html">Verified today / Still open</a> ·
@@ -18,7 +18,7 @@ built for the code agents write and humans accept.</strong></p>
   <a href="FAQ.md">FAQ</a>
 </p>
 
-<p align="center"><sub>Source on <code>main</code> is <!-- truth:version -->0.8.2<!-- /truth -->; the last signed release is <!-- truth:latest_tag -->v0.8.2<!-- /truth -->.</sub></p>
+<p align="center"><sub>Source on <code>main</code> is <!-- truth:version -->0.8.2<!-- /truth -->; the last release is <!-- truth:latest_tag -->v0.8.2<!-- /truth -->.</sub></p>
 
 ---
 
@@ -27,9 +27,9 @@ built for the code agents write and humans accept.</strong></p>
 Every ambitious team makes the same bargain: **Rust for the hot path, Ruby for the
 orchestration, and a painful FFI between them** — or one language and its weakness swallowed
 whole. Garnet refuses the bargain. Managed mode (`def` + ARC + exceptions) feels like Ruby.
-Safe mode (`@safe fn` + ownership + `Result`) feels like Rust. The mode boundary auto-bridges
-errors and ownership, and `garnet check` reports mode-boundary call sites. One grammar, two
-registers, no FFI between them.
+Safe mode (`@safe fn` + ownership + `Result`) feels like Rust. The mode bridge is specified, not
+yet wired; `garnet check` reports mode-boundary call sites. One grammar, two registers, no FFI
+between them.
 
 And in 2026 there's a second bargain nobody should accept. AI agents now write the code;
 **human review is the bottleneck**, and signatures alone can't tell you what a change is
@@ -123,9 +123,10 @@ and aimed at agent-authored code:
 curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh
 ```
 
-Release-first, source-fallback. <!-- truth:latest_tag -->v0.8.2<!-- /truth --> ships signed
+Release-first, source-fallback. <!-- truth:latest_tag -->v0.8.2<!-- /truth --> ships
 `.deb` / `.rpm` packages and tarballs for Linux (x86_64, ARM64), macOS tarballs and a Windows
 zip, with a GPG-signed `SHA256SUMS`; verify per [docs/release-signing.md](docs/release-signing.md).
+The GPG signature covers `SHA256SUMS`, not the binaries.
 The Linux assets need glibc 2.39+ (Ubuntu 24.04+, Debian 13+, Fedora 40+).
 On Windows, run `irm https://garnet-lang.org/install.ps1 | iex` in PowerShell. No matching
 package for your platform? The installer builds from source (Rust 1.95+; CI also tracks current stable — per
@@ -157,12 +158,12 @@ production-complete** — and this README will never tell you otherwise.
 
 | Verified today | Still open |
 |---|---|
-| Signed <!-- truth:latest_tag -->v0.8.2<!-- /truth --> release: Linux x86_64/ARM64 `.deb`, `.rpm` and tarballs, macOS tarballs, Windows zip, SBOM, GPG-signed sums | macOS `.pkg` notarization, Windows `.msi` (credential-gated) |
+| <!-- truth:latest_tag -->v0.8.2<!-- /truth --> release: Linux x86_64/ARM64 `.deb`, `.rpm` and tarballs, macOS tarballs, Windows zip, SBOM, GPG-signed `SHA256SUMS` | macOS `.pkg` notarization, Windows `.msi` (credential-gated) |
 | `@caps` + `@max_depth` enforced on interpreter **and** VM; cross-OS trap parity recorded | OS-sandbox enforcement beyond Linux seccomp |
 | Capability-bounded acceptance demo: agent code accepted *and refused* on evidence, sealed | **Under construction:** `garnet build --evidence` (W-SHIP; no shipping CLI flag); independent verification of the self-found red-team fix |
 | <!-- truth:primitive_count -->80<!-- /truth --> capability- and stability-tagged stdlib primitives | Production VM performance (unbenchmarked, unclaimed) |
 | LSP + VS Code extension (local VSIX), trivia-preserving CST, formatter baseline | Marketplace/OpenVSX publication; incremental parsing |
-| Rust / Ruby / Python / Go migration assistant with lineage; output starts `@sandbox` + `@caps()` as reviewer notes | Browser playground; package registry beyond stub |
+| Rust / Ruby / Python / Go migration assistant with lineage; output starts `@sandbox` + `@caps()` as reviewer notes | Package registry beyond stub |
 
 The full ledger lives in [CURRENT_STATE.md](CURRENT_STATE.md); the readiness detail lives on
 [the status page](https://garnet-lang.org/status.html). The evidence scorecard for the research
@@ -176,7 +177,7 @@ claims: 4 supported, 2 partial, 0 refuted, 1 pending-infra
 [Conformance matrix](C_Language_Specification/GARNET_v0_4_2_Conformance_Matrix.md) ·
 [Capability model](FAQ.md#whats-the-capability-model) ·
 [CRA Article 14 positioning](https://garnet-lang.org/cra-article-14.html) ·
-[Script walkthroughs](docs/internals/script-walkthroughs.md) ·
+[Script walkthroughs](F_Project_Management/GARNET_SCRIPT_WALKTHROUGHS.md) ·
 [Research papers](A_Research_Papers/) ·
 [Blog](https://garnet-lang.org/blog/)
 

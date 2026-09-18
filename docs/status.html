@@ -52,11 +52,13 @@
   th, td { padding: 14px 16px; border-bottom: 1px solid var(--rule); text-align: left; vertical-align: top; }
   th { color: var(--gold); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; }
   tr:last-child td { border-bottom: 0; }
-  code { color: var(--gold); font-family: var(--mono); }
+  code { color: var(--gold); font-family: var(--mono); overflow-wrap: anywhere; }
   ul { color: var(--soft); }
   @media (max-width: 820px) {
     .grid { grid-template-columns: 1fr; }
     .navlinks { display: none; }
+    /* A table never widens the page; wide rows scroll inside it. */
+    table { display: block; overflow-x: auto; }
   }
 </style>
 </head>
@@ -76,7 +78,7 @@
 <header>
   <div class="container">
     <h1>Readiness Status</h1>
-    <p class="lead">This page keeps the public landing page clean while preserving the exact current truth for reviewers, agents, and release work. Latest tagged release: <!-- truth:latest_tag -->v0.8.2<!-- /truth --> (signed binaries for macOS, Linux and Windows). Source on <code>main</code> is <!-- truth:version -->0.8.2<!-- /truth -->. Garnet can be tried today; distribution, provider-backed assist, and backend claims remain evidence-gated.</p>
+    <p class="lead">This page carries the readiness detail kept off the landing page, for reviewers, agents, and release work. Latest tagged release: <!-- truth:latest_tag -->v0.8.2<!-- /truth --> — macOS, Linux and Windows assets, checksum-verified against a GPG-signed <code>SHA256SUMS</code>. Source on <code>main</code> is <!-- truth:version -->0.8.2<!-- /truth -->. Garnet can be tried today; distribution, provider-backed assist, and backend claims remain evidence-gated.</p>
     <p class="lead" style="font-size:0.85em">Truth wiring (RB-0d): the numeric cards below are stamped from <code>docs/truth.json</code> by <code>cargo run -p xtask -- truth</code> and guarded by <code>truth --check</code>; the repo-native reporters (<code>scripts/garnet_readiness_status.py</code>, <code>scripts/garnet_mit_readiness_status.py</code>) remain the authoritative source the stamps derive from.</p>
   </div>
 </header>
@@ -172,7 +174,7 @@
 <section>
   <div class="container">
     <h2>Formatter Baseline</h2>
-    <p class="lead">S4 is now a merged, verified formatter baseline: deterministic whitespace, line-ending, and terminal-newline normalization enforced by integration tests. It is useful today, but it is not yet a full semantic pretty-printer.</p>
+    <p class="lead">S4 is a merged, verified formatter baseline: deterministic whitespace, line-ending, and terminal-newline normalization enforced by integration tests.</p>
     <table>
       <thead>
         <tr><th>Surface</th><th>Status</th><th>Boundary</th></tr>
@@ -196,12 +198,12 @@
 <section>
   <div class="container">
     <h2>LLM Advisory Pipeline</h2>
-    <p class="lead">Provider-backed conversion is not active. The feasibility reporter now exposes ten provider options as advisory-only evaluation candidates, and Garnet Studio can preserve that registry as a Desktop dogfood evidence bundle with source omitted by default and human approval required. The approved pipeline is:</p>
+    <p class="lead">Provider-backed conversion is not active. The feasibility reporter exposes ten provider options as advisory-only evaluation candidates, and Garnet Studio can preserve that registry as a Desktop dogfood evidence bundle with source omitted by default and human approval required. The documented pipeline is:</p>
     <p><code>source classifier -> risk inventory -> Garnet context -> advisory plan -> review handoff -> human-approved candidate -> garnet check/test/dogfood</code></p>
     <ul>
       <li>Do not execute source during analysis.</li>
       <li>Do not include source text in provider packets by default.</li>
-      <li>Require lineage, sandboxing, migrate_todo, `garnet check`, dogfood evidence, and human audit before trust.</li>
+      <li>Require lineage, sandboxing, <code>migrate_todo</code>, <code>garnet check</code>, dogfood evidence, and human audit before trust.</li>
       <li>Keep deterministic converter output authoritative where deterministic support exists.</li>
     </ul>
   </div>

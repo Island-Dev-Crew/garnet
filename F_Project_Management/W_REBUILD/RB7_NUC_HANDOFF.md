@@ -12,7 +12,7 @@ proof** — that is exactly what this handoff is for.
   dangling-annotation / unterminated-string-and-EOF detection, the plain-loop
   scripted session).
 - `cargo clippy -D warnings` clean; full workspace **2030/0**.
-- A recorded plain-mode session: `docs/demos/repl-session.txt`.
+- A recorded plain-mode session: `F_Project_Management/GARNET_REPL_SESSION.txt`.
 - `garnet-interp` still compiles to `wasm32-wasip1` (reedline is CLI-only, so the
   RB-6 wasm portability is preserved).
 
@@ -24,7 +24,7 @@ proof** — that is exactly what this handoff is for.
    - Tab completion shows the menu over commands / primitives / live bindings;
    - in-editor multiline (`{`/`(`/`[` and a leading `@caps` continue on `...>`);
    - `Ctrl-C` abandons the current line, `Ctrl-D` exits.
-2. **Plain (non-TTY) parity:** piping `docs/demos/repl-session.txt` into
+2. **Plain (non-TTY) parity:** piping `F_Project_Management/GARNET_REPL_SESSION.txt` into
    `garnet repl` on Windows produces the same dispatch output (CRLF aside).
 3. **`?doc` / `:caps`** render correctly (no terminal-encoding breakage on the
    `·` / box-drawing characters; substitute ASCII if a Windows console mangles
@@ -33,7 +33,7 @@ proof** — that is exactly what this handoff is for.
 ## Handoff status
 
 - Owner: NUC lane (Windows × Claude/Codex).
-- Inputs: this note + `docs/internals/repl.md` + `docs/demos/repl-session.txt`.
+- Inputs: this note + `F_Project_Management/GARNET_REPL_INTERNALS.md` + `F_Project_Management/GARNET_REPL_SESSION.txt`.
 - Expected artifact: a fleet-report entry (or a short cross-OS note) recording
   the Windows TTY result. Until that lands, the REPL's cross-OS status is
   **Mac-proven only**.

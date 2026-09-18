@@ -1,0 +1,27 @@
+# ADR 0011 — Memory tiers get their own capability kind
+
+**Status.** Accepted (2026-09-17). Not implemented.
+
+## Context
+
+A Garnet program can declare all four memory tiers, construct them and write to
+them while `garnet caps` reports an empty capability set. The four memory
+natives are bridged directly into the interpreter and carry no row in the
+standard library registry, so the checker, the manifest and `diff-caps` cannot
+see memory at all. Memory Core is therefore a Rust crate with reserved words
+rather than a part of the language's evidence story.
+
+## Decision
+
+Memory gets its own capability kind, `mem`, with a registry row for each of the
+four tier constructors, gated at the runtime entry the way the other fifteen
+gated primitives are. A tier then appears in `garnet caps`, an undeclared tier
+traps identically on the interpreter and the virtual machine, and adding one
+moves a `diff-caps` verdict.
+
+## Alternatives rejected
+
+- **Map memory onto the file capability.** It would let a program that declares
+  file access reach memory, and a reader could not tell the two apart.
+- **Leave memory uncapped.** Memory Core stays a library that happens to have
+  keywords, and the strongest sentence available to Garnet stays unsayable.

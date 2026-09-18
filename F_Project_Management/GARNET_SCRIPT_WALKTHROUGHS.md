@@ -5,6 +5,8 @@ walkthrough text below is preserved verbatim from the pre-RB-0b README — these
 are the operational reporters' usage notes, with their claim boundaries
 intact). For current public numbers, read `docs/truth.json` (RB-0a) — these
 walkthroughs explain *how to run* the reporters, not what today's values are.
+Moved here from `docs/internals/` on 2026-09-17: these are contributor notes,
+not a page of the site.
 
 ## Converter status reporter
 
@@ -19,7 +21,7 @@ For future LLM or agentic converter guidance, run `python3 scripts/garnet_conver
 
 Garnet Studio exposes the same boundary in the macOS workbench: active deterministic converter lanes still use `Convert`, planned-language risk inventory uses `Assist Plan`, the provider-neutral `Advisory Bundle` action writes a manifested local handoff package under `~/Desktop/dogfood/` without embedding source by default, `Advisory Review` creates that bundle plus a manifested local review report before any model/agent handoff, `Advisory Handoff` packages the reviewed no-source context into the final provider-neutral packet, and `Objective Pulse` runs the repo-native MIT/productization readiness reporter so the app can show the overall percentage separately from tracked-slice completion. The website keeps product-facing copy on `docs/index.html` and detailed readiness caveats on `docs/status.html`.
 
-For repo/site adoption truth, run `python3 scripts/garnet_adoption_surface_status.py`. It ties the public hook, active converter lanes, advisory planning lanes, native-boundary labels, LLM-assist boundaries, verified use cases, and productization gates to current evidence before marketing or README copy moves forward. The durable strategy is documented in [`GARNET_CONVERTER_AND_PLATFORM_STRATEGY.md`](F_Project_Management/GARNET_CONVERTER_AND_PLATFORM_STRATEGY.md), with Windows/Linux handoff and Apple distribution walkthrough packets in [`F_Project_Management/`](F_Project_Management/).
+For repo/site adoption truth, run `python3 scripts/garnet_adoption_surface_status.py`. It ties the public hook, active converter lanes, advisory planning lanes, native-boundary labels, LLM-assist boundaries, verified use cases, and productization gates to current evidence before marketing or README copy moves forward. The durable strategy is documented in [`GARNET_CONVERTER_AND_PLATFORM_STRATEGY.md`](GARNET_CONVERTER_AND_PLATFORM_STRATEGY.md), with Windows/Linux handoff and Apple distribution walkthrough packets alongside it in this directory.
 
 For broader public-readiness accounting, run `python3 scripts/garnet_mit_readiness_status.py` or use Garnet Studio's `Objective Pulse`. It intentionally distinguishes the complete tracked implementation-plan ledger from still-open productization gates such as Developer ID notarization, mobile distribution, promo video, broad converter frontends, LLM assist, proof, and empirical validation.
 
