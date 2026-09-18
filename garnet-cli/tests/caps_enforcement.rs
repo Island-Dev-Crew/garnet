@@ -379,3 +379,76 @@ fn vm_declared_time_runs() {
         String::from_utf8_lossy(&out.stderr)
     );
 }
+
+// ---------------------------------------------------------------------------
+// D-04 (2026-09-18, ADR 0011) — the memory tiers are a capability class.
+// Before this cure the four `memory::*` constructors were bridged into the
+// interpreter with no registry row: `garnet check` was silent, `garnet caps`
+// reported an empty set, and `garnet run` built and wrote every tier under
+// `@caps()` on both backends. Each constructor now carries a `mem` row with the
+// same two backstops as the other gated classes.
+// ---------------------------------------------------------------------------
+
+const MEMORY_TIERS: [&str; 4] = [
+    "memory::working",
+    "memory::episodic",
+    "memory::semantic",
+    "memory::procedural",
+];
+
+#[test]
+fn undeclared_memory_tier_traps_on_both_backends() {
+    for tier in MEMORY_TIERS {
+        traps_on_both_with(
+            &format!("@caps()\ndef main() {{\n  let store = {tier}(\"scratch\")\n  0\n}}\n"),
+            "requires @caps(mem)",
+        );
+    }
+}
+
+#[test]
+fn undeclared_memory_tier_traps_before_the_store_is_touched() {
+    // The trap is the first statement of the adapter: no handle exists to write to.
+    let out = run_interp(
+        "@caps()\ndef main() {\n  let store = memory::working(\"scratch\")\n  store.push(\"leak\")\n  store.len()\n}\n",
+    );
+    assert!(!out.status.success(), "undeclared memory must trap");
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        !stdout.contains("=> 1"),
+        "no write may reach a store the entry did not declare: {stdout}"
+    );
+}
+
+#[test]
+fn declared_mem_runs_on_both_backends() {
+    for tier in MEMORY_TIERS {
+        let program =
+            format!("@caps(mem)\ndef main() {{\n  let store = {tier}(\"scratch\")\n  0\n}}\n");
+        for (label, out) in [("interp", run_interp(&program)), ("vm", run_vm(&program))] {
+            assert!(
+                out.status.success(),
+                "declared @caps(mem) must run {tier} on {label}: {}",
+                String::from_utf8_lossy(&out.stderr)
+            );
+        }
+    }
+}
+
+#[test]
+fn memory_helper_laundering_traps_when_entry_lacks_mem() {
+    traps_on_both_with(
+        "@caps(mem)\ndef helper() {\n  memory::episodic(\"trace\")\n}\n\n@caps()\ndef main() {\n  helper()\n  0\n}\n",
+        "requires program entry @caps(mem)",
+    );
+}
+
+#[test]
+fn fs_does_not_grant_memory() {
+    // ADR 0011 rejected mapping memory onto `fs`: a file-capable program may
+    // not reach a memory tier without saying so.
+    traps_on_both_with(
+        "@caps(fs)\ndef main() {\n  let store = memory::semantic(\"facts\")\n  0\n}\n",
+        "requires @caps(mem)",
+    );
+}

@@ -1437,8 +1437,8 @@ mod rb3_registry_join {
         let table = native_table(install);
         assert_eq!(
             table.len(),
-            82,
-            "22 bare + 56 qualified + 4 bridge-only memory natives"
+            84,
+            "22 bare + 62 qualified (D-04 moved the four memory natives into the registry)"
         );
         for (qualified, meta) in all_prims() {
             let bound = match meta.binding {

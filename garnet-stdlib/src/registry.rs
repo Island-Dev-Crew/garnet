@@ -1352,6 +1352,10 @@ mod tests {
                 "fs::read_file",
                 "fs::write_bytes",
                 "fs::write_file",
+                "memory::episodic",
+                "memory::procedural",
+                "memory::semantic",
+                "memory::working",
                 "net::tcp_connect",
                 "std::env::get",
                 "std::env::set",
@@ -1371,12 +1375,33 @@ mod tests {
         );
     }
 
+    /// D-04 (ADR 0011): each memory-tier constructor is a registry row that
+    /// requires exactly `mem` — not `fs`, not nothing — so the checker, the
+    /// manifest and `diff-caps` can see memory.
+    #[test]
+    fn memory_tiers_require_the_mem_capability() {
+        let t = all_prims();
+        for tier in ["working", "episodic", "semantic", "procedural"] {
+            let key = format!("memory::{tier}");
+            let meta = t
+                .get(&key)
+                .unwrap_or_else(|| panic!("{key} has no registry row"));
+            assert_eq!(meta.required_caps.0, vec!["mem"], "{key}");
+            assert_eq!(meta.arity, 1, "{key}");
+            assert_eq!(meta.binding, Binding::Qualified, "{key}");
+            assert_eq!(meta.guard, Guard::GateEntry, "{key}");
+        }
+    }
+
     #[test]
     fn gate_count_matches_the_audited_runtime_backstop() {
         // U-91: 0 call-chain-only Gate + 15 GateEntry, every row bound by the
         // program entry's declared budget. D-02 added the five time-class rows
         // (time::now_ms/wall_clock_ms/sleep, std::uuid::new_v4/new_v7), which
         // were previously `Declared` (checker-only) and ran under `@caps()`.
+        // D-04 (ADR 0011) added the four memory-tier constructors
+        // (memory::working/episodic/semantic/procedural) under the new `mem`
+        // capability; they previously had no registry row at all.
         let gate = static_prims()
             .iter()
             .filter(|m| m.guard == Guard::Gate)
@@ -1385,6 +1410,6 @@ mod tests {
             .iter()
             .filter(|m| m.guard == Guard::GateEntry)
             .count();
-        assert_eq!((gate, entry), (0, 20));
+        assert_eq!((gate, entry), (0, 24));
     }
 }

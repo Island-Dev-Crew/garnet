@@ -53,6 +53,8 @@ REQUIRED_GATES = [
     ('require_capability("net"', "net"),
     # D-02 (2026-09-18): the time class (time::*, clock-seeded uuid) is gated.
     ('require_capability("time"', "time"),
+    # D-04 (2026-09-18, ADR 0011): the memory tiers (memory::*) are gated.
+    ('require_capability("mem"', "mem"),
 ]
 
 
@@ -114,6 +116,8 @@ def read_status() -> CapsEnforcementStatus:
         # D-02: the former checker-only time class traps on both backends.
         and "undeclared_time_traps" in test
         and "vm_undeclared_time_traps_identically" in test
+        # D-04: the memory tiers trap on both backends.
+        and "undeclared_memory_tier_traps_on_both_backends" in test
     )
     ok = (
         has_require and entry_frame and vm_entry_frame and not missing and tests_present

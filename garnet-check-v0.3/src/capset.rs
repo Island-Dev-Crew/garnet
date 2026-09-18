@@ -271,6 +271,19 @@ mod tests {
         assert!(a.delta(a).is_empty());
     }
 
+    /// D-04 (ADR 0011): `mem` is a canonical capability with its own bit,
+    /// placed in lexicographic order between `fs` and `net` so iteration
+    /// still matches `BTreeSet<String>` order.
+    #[test]
+    fn mem_is_a_canonical_capability_between_fs_and_net() {
+        let mem = CapSet::from_name("mem").expect("mem must have a CapSet bit");
+        assert_eq!(
+            (CapSet::FS | mem | CapSet::NET).names(),
+            vec!["fs", "mem", "net"]
+        );
+        assert!(ALL_NAMES.contains(&"mem"));
+    }
+
     /// Registry-drift trap: every capability string any stdlib primitive
     /// requires must map to a canonical `CapSet` bit. If a new capability
     /// name enters the registry without a `CapSet` bit, required caps would
