@@ -127,6 +127,13 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   `scripts/garnet_caps_enforcement_status.py` requires the `time` gate.
   `garnet-cli/tests/checker_only_caps.rs`, which pinned the old behaviour, is
   removed.
+- **Template fix.** The `web-api` starter test `test_timestamp_shape` reached
+  `wall_clock_ms()` through `timestamp()` with no `@caps`, so `garnet test`
+  on a freshly generated project trapped after this change (the agentic
+  dogfood matrix caught it on #589). A test is its own program entry; the
+  starter test now declares `@caps(time)` as `main` does, and
+  `garnet-cli/tests/cli_smoke.rs::new_web_api_template_runs_and_tests` pins
+  new → run → test for that template in the workspace suite.
 
 ### Checker — enum variant construction is checked in safe functions (D-107, 2026-09-18)
 
