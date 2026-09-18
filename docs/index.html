@@ -389,7 +389,7 @@
     font-size: 13px; color: var(--ink-muted);
   }
   @media (max-width: 720px) {
-    .pg-mount iframe { height: 1180px; }
+    .pg-mount iframe { height: 940px; }
   }
 
   .btn {
@@ -1882,7 +1882,7 @@ dist/Garnet Studio.app</pre>
       ev.preventDefault();
       const mount = document.getElementById('pg-mount');
       const frame = document.createElement('iframe');
-      frame.src = 'playground.html';
+      frame.src = 'playground.html?embed=1';
       frame.title = 'Garnet playground — run, check, and diff capabilities in your browser';
       frame.loading = 'lazy';
       mount.classList.add('loaded');

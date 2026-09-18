@@ -28,6 +28,36 @@
       "description": "`@caps()` reaches `memory::working`; `check` reports the missing `mem` and `run` traps before the store exists (D-04).",
       "source": "# undeclared_memory_tier.garnet \u2014 a memory tier is authority, and this\n# program never asked for it.\n#\n# `@caps()` declares no authority at all. The body then reaches for\n# `memory::working`, one of the four memory tiers that require `@caps(mem)`\n# (D-04, ADR 0011). Two independent gates stop it:\n#\n#   garnet check  \u2014 check.caps_coverage: `main` does not declare `mem` but\n#                   transitively calls `memory::working` which requires it\n#   garnet run    \u2014 runtime trap before the store is created, on both the\n#                   interpreter and the VM\n#\n# Add `mem` to the `@caps(...)` list and `garnet diff-caps` reports the\n# expansion. The fix is one word; the point is that it must be written down.\n\n@caps()\ndef main() {\n  let scratch = memory::working(\"scratch\")\n  scratch.push(\"never reached\")\n  0\n}\n",
       "output": "runtime error: capability: `memory::working` requires @caps(mem), not declared in the calling chain\nexit 1"
+    },
+    {
+      "name": "capability_cycle",
+      "title": "Authority hidden in a cycle",
+      "description": "Check follows a named-call cycle to fs::write_file; run refuses undeclared fs.",
+      "source": "# A named-call cycle must not conceal filesystem authority.\n# Check reports the gated primitive and its path. Run traps before the write.\n@caps()\ndef main() { a(false) }\ndef a(recurse) { b(recurse) }\ndef b(recurse) {\n  if recurse { a(false) }\n  fs::write_file(\"never-written.txt\", \"denied\")\n}\n",
+      "output": "runtime error: capability: `fs::write_file` requires @caps(fs), not declared in the calling chain\nexit 1"
+    },
+    {
+      "name": "illegal_enum",
+      "title": "Illegal enum construction",
+      "description": "Safe-mode check refuses a payload on a unit variant; managed bodies are outside this rule.",
+      "source": "# Safe functions reject a payload on a unit enum variant.\n# This check is scoped to safe functions; managed def bodies differ.\nenum Shape { Empty }\nfn make() -> Shape { Shape::Empty(1) }\n@caps()\ndef main() { 0 }\n",
+      "output": "=> 0"
+    },
+    {
+      "name": "undeclared_clock",
+      "title": "Undeclared clock read",
+      "description": "Reading time requires time authority, and the browser host grants none.",
+      "source": "# Reading the clock requires declared time authority.\n# The browser host grants no clock authority even if time is declared.\n@caps()\ndef main() { time::now_ms() }\n",
+      "output": "runtime error: capability: `time::now_ms` requires @caps(time), not declared in the calling chain\nexit 1"
+    },
+    {
+      "name": "wording_vs_write",
+      "title": "Wording versus a file write",
+      "description": "Compare a wording edit, then try a write edit. Declarations do not grant merge approval.",
+      "source": "# A wording edit leaves the declared capability surface unchanged.\n# Select \"Try the write edit\" to compare a filesystem-authority expansion.\n@caps()\ndef main() { println(\"Hello, Garnet reader!\") 0 }\n",
+      "output": "Hello, Garnet reader!\n=> 0",
+      "baseline": "@caps()\ndef main() { println(\"Hello!\") 0 }\n",
+      "alternate_source": "@caps(fs)\ndef main() { fs::write_file(\"README.md\", \"Hello, Garnet reader!\") 0 }\n"
     }
   ]
 }

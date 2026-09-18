@@ -1,4 +1,4 @@
-const CACHE_NAME = "garnet-web-v6";
+const CACHE_NAME = "garnet-web-v7";
 const OFFLINE_ASSETS = [
   "./",
   "getting-started.html",
@@ -9,6 +9,11 @@ const OFFLINE_ASSETS = [
   "minispec.html",
   "novel.html",
   "playground.html",
+  "playground/live.js",
+  "playground/examples.json",
+  "playground/pkg/garnet_wasm.js",
+  "playground/pkg/garnet_wasm_bg.wasm",
+  "playground/pkg/provenance.json",
   "status.html",
   "stdlib.html",
   "synthesis.html",
@@ -33,7 +38,7 @@ self.addEventListener("activate", (event) => {
     caches.keys().then((names) =>
       Promise.all(
         names
-          .filter((name) => name !== CACHE_NAME)
+          .filter((name) => name.startsWith("garnet-web-") && name !== CACHE_NAME)
           .map((name) => caches.delete(name))
       )
     )

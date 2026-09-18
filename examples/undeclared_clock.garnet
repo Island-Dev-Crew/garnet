@@ -1,0 +1,4 @@
+# Reading the clock requires declared time authority.
+# The browser host grants no clock authority even if time is declared.
+@caps()
+def main() { time::now_ms() }
