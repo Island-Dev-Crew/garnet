@@ -1,9 +1,12 @@
 # ADR 0002 — Cure the capability propagator's cycle blind spot with an iterative SCC pass
 
 **Status.** Accepted (2026-09-15), shape refined 2026-09-17, implemented
-2026-09-18 on `train/t2a-checker-u117` (the playground rebuild and browser
-proof ride the T2 train's single rebuild, not this branch). The finding is
-U-117 in `F_Project_Management/W_TRUST/LANDING_ARC_5_REGISTER_SWEEP_2026-09-04.md`.
+2026-09-18 on `train/t2a-checker-u117`. The playground WASM rebuild and the
+re-captured browser proof land on the same branch, because the wasm readiness
+gate re-hashes `garnet-check-v0.3/src/**` at the PR head and would otherwise
+fail (an earlier draft of this note said they would ride a later train; that
+was wrong and is corrected here, 2026-09-18). The finding is U-117 in
+`F_Project_Management/W_TRUST/LANDING_ARC_5_REGISTER_SWEEP_2026-09-04.md`.
 
 ## Context
 
@@ -38,9 +41,16 @@ The cure lands with:
   diagnostics and removes none, rather than a count of before-and-after runs;
 - a rebuilt `docs/playground/pkg` with a re-captured browser proof, because the
   wasm readiness gate hashes `caps_graph.rs` and the checker tests;
-- a CHANGELOG entry and a release note that disclose the behavior change, since
-  programs that passed `check` will now fail it;
-- a correction appended to the register, and a census update in the sweep record.
+- a CHANGELOG entry that discloses the behavior change, since programs that
+  passed `check` will now fail it. That entry, under `[Unreleased]`, *is* the
+  release note: Garnet keeps no separate release-notes file, the CHANGELOG
+  section becomes the GitHub Release body when Jon cuts the next tag, and
+  `docs/releases.xml` records published releases only. An earlier draft of
+  this list named "a release note" as a second deliverable; there is one
+  deliverable, disclosed here (2026-09-18);
+- a correction appended to the register, and a dated census line in the sweep
+  record stating that the cure allocates no new finding (the 2026-09-04 census
+  of 104 is historical and is not rewritten).
 
 Only sentences that the cure makes false move with it. In particular the
 landing page's "named, acyclic" wording is corrected in the later public-truth

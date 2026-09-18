@@ -34,7 +34,10 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   boundary; the U-91 boundaries that remain are unannotated bodies and call
   shapes for which no edge is built. Other public "named, acyclic" wording is
   corrected in a later public-truth change (ADR 0002). The playground WASM
-  bundle is rebuilt once for the whole T2 train, not in this change.
+  bundle (`docs/playground/pkg`) is rebuilt in this change and the browser
+  proof re-captured against it, because the wasm readiness gate hashes the
+  checker sources at the PR head. This entry is the release note for the
+  behaviour change; it becomes the release body when the next tag is cut.
 
 ### Site — the landing navigation takes two presses to leave the page (2026-09-17)
 

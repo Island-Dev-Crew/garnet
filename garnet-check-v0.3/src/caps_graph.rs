@@ -59,9 +59,10 @@
 //! that with the DeRemer–Pennello digraph algorithm: a Tarjan SCC traversal
 //! that accumulates caps up the DFS tree and, when it closes a component,
 //! assigns the accumulated union to every member at once. Each edge is
-//! visited once, so the pass is linear in the size of the call graph and the
-//! verdict does not depend on which member of a cycle the caller asks about
-//! first.
+//! visited once; the per-node bookkeeping lives in `BTreeMap`s, so the pass
+//! is O((V + E) log V) in the size of the call graph rather than strictly
+//! linear. The verdict does not depend on which member of a cycle the caller
+//! asks about first.
 //!
 //! The traversal is iterative — an explicit frame stack rather than
 //! recursion — so a long chain of functions cannot overflow the thread stack

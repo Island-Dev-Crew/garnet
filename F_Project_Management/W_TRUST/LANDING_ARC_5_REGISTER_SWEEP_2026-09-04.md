@@ -25,6 +25,9 @@ touches them; nothing here may be cited as independently reviewed on that basis 
 - result **before**: the distinct token set runs `U-1`, `U-04` … `U-116` — **census 99**.
   **No occurrence at or above U-117 exists in any swept tree.**
 - result **after** this file: `U-1`, `U-04` … `U-121` — **census 104** (99 + 5 allocations).
+- census update 2026-09-18 (Train T2a, U-117 cured): the cure allocates no new finding and
+  retires none; the distinct token set is unchanged and the census stays **104**. The
+  2026-09-04 figures above are historical and are not rewritten.
 
 ## U-117 — CapCaps propagator: a primitive reached only through a call-graph cycle is not reported, annotated or not
 
