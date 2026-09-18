@@ -129,6 +129,8 @@
     font-size: 18px;
   }
   nav.top .brand .accent { color: var(--crimson-lift); }
+  nav.top .brand:hover { color: var(--gold); }
+  nav.top .brand:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; border-radius: 4px; }
   nav.top .links {
     display: flex; gap: 22px; margin-left: auto;
     font-size: 14px;
@@ -893,7 +895,7 @@
 
 <nav class="top">
   <div class="container">
-    <div class="brand">GARNE<span class="accent">T</span></div>
+    <a class="brand" href="./" aria-label="Garnet home">GARNE<span class="accent">T</span></a>
     <div class="links">
       <a href="#why">Why</a>
       <a href="minispec.html">Spec</a>
