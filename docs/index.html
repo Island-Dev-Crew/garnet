@@ -2040,11 +2040,13 @@ dist/Garnet Studio.app</pre>
         if (!section) return null;               // no section: the link keeps the href it was served with
         const label = link.textContent.trim();
         const hash = '#' + link.dataset.section;
-        link.setAttribute('href', hash);
+        // The idle href stays whatever the markup served, so a modifier-click, a
+        // middle-click and a crawler keep today's target: Status still opens status.html.
+        const served = link.getAttribute('href');
         const bead = make('span', 'nav-bead');
         bead.setAttribute('aria-hidden', 'true');
         link.append(bead);
-        return { link, hash, label, section, page: link.dataset.page,
+        return { link, hash, served, label, section, page: link.dataset.page,
                  offer: section.querySelector('.section-offer'),
                  observer: null, startTimer: 0, idleTimer: 0, onScroll: null };
       }).filter(Boolean);
@@ -2109,7 +2111,7 @@ dist/Garnet Studio.app</pre>
         clearWaits(entry);
         if (entry.observer) entry.observer.disconnect();
         entry.observer = null;
-        entry.link.setAttribute('href', entry.hash);
+        entry.link.setAttribute('href', entry.served);
         entry.link.classList.remove('is-armed');
         entry.link.removeAttribute('aria-label');
         if (entry.offer) entry.offer.classList.remove('is-armed', 'is-offering');

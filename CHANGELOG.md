@@ -9,6 +9,24 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ## [Unreleased]
 
+### Site — the landing navigation takes two presses to leave the page (2026-09-17)
+
+- Why, Install, Playground and Status now answer the first press by scrolling to
+  their section on the landing page, and the second press by opening the full
+  page: `why.html`, `getting-started.html`, `playground.html` and `status.html`.
+  A double-click, a second tap and a second Enter each navigate exactly once.
+- A garnet bead marks the links that behave this way, and every target section
+  carries a plain link to its full page beside the heading, so the page is always
+  reachable in one click as well. A one-line cue under the bar explains the
+  gesture at most twice per visitor.
+- The markup keeps the links it served before, so with JavaScript off every link
+  opens exactly what it opened before, Status included, and a modifier-click or a
+  middle-click keeps today's target. The code sits in its own script block, so a
+  failure in it cannot stop the rest of the page.
+- Jumps now land below the sticky bar, which they did not before. The service
+  worker is unchanged. Behaviour on iPhone Safari is unverified.
+
+
 ### Site — the public pages say what the code does; internal plans leave the site (2026-09-17)
 
 - Release wording on `README.md`, `FAQ.md`, `docs/index.html` and `docs/status.html`
