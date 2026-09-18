@@ -14,7 +14,7 @@ body{background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1
 a{color:var(--gold);text-decoration:none}a:hover{color:var(--garnet-2);transition:color .2s}::selection{background:var(--garnet);color:var(--ink)}
 .doc-nav{position:fixed;top:0;left:0;right:0;z-index:100;height:var(--nav-h);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);background:rgba(10,10,15,.92);border-bottom:1px solid var(--rule)}
 .doc-nav .inner{max-width:1080px;margin:0 auto;padding:0 18px;height:100%;display:flex;align-items:center;gap:6px}
-.doc-nav .brand{font-family:var(--serif);font-weight:bold;letter-spacing:.18em;font-size:15px;margin-right:20px;white-space:nowrap}.doc-nav .brand .a{color:var(--garnet)}
+.doc-nav .brand{font-family:var(--serif);font-weight:bold;letter-spacing:.18em;font-size:15px;margin-right:20px;white-space:nowrap;color:var(--ink)}.doc-nav .brand:hover{color:var(--gold)}.doc-nav .brand:focus-visible{outline:2px solid var(--gold);outline-offset:3px;border-radius:4px}.doc-nav .brand .a{color:var(--garnet)}
 .doc-nav .tabs{display:flex;gap:0;overflow-x:auto;-webkit-overflow-scrolling:touch;flex:1}
 .doc-nav .tab{padding:14px 14px;color:var(--ink-muted);font-size:13px;white-space:nowrap;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;text-decoration:none}
 .doc-nav .tab:hover{color:var(--ink)}.doc-nav .tab.active{color:var(--garnet);border-bottom-color:var(--garnet);font-weight:600}
@@ -43,7 +43,7 @@ a{color:var(--gold);text-decoration:none}a:hover{color:var(--garnet-2);transitio
 <body>
 <nav class="doc-nav">
   <div class="inner">
-    <span class="brand">G<span class="a">A</span>RNET</span>
+    <a class="brand" href="index.html" aria-label="Garnet home">G<span class="a">A</span>RNET</a>
     <div class="tabs">
       <a class="tab" href="minispec.html">Mini-Spec</a>
       <a class="tab active" href="synthesis.html">Synthesis</a>

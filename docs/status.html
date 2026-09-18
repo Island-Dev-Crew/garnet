@@ -34,8 +34,10 @@
   .container { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
   nav { border-bottom: 1px solid var(--rule); background: rgba(10,10,15,.86); position: sticky; top: 0; }
   nav .container { display: flex; align-items: center; gap: 24px; padding-top: 14px; padding-bottom: 14px; }
-  .brand { font-family: var(--serif); font-weight: 700; letter-spacing: .18em; }
+  .brand { font-family: var(--serif); font-weight: 700; letter-spacing: .18em; color: var(--ink); }
   .brand span { color: var(--garnet); }
+  .brand:hover { color: var(--gold); }
+  .brand:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; border-radius: 4px; }
   .navlinks { margin-left: auto; display: flex; gap: 18px; font-size: 14px; }
   header { padding: 72px 0 36px; }
   h1, h2 { font-family: var(--serif); line-height: 1.12; }
@@ -65,7 +67,7 @@
 <body>
 <nav>
   <div class="container">
-    <div class="brand">GAR<span>N</span>ET</div>
+    <a class="brand" href="index.html" aria-label="Garnet home">GAR<span>N</span>ET</a>
     <div class="navlinks">
       <a href="index.html">Home</a>
       <a href="index.html#install">Install</a>
