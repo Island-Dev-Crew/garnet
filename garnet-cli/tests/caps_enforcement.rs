@@ -308,7 +308,10 @@ fn vm_pure_computation_is_unaffected() {
 #[test]
 fn undeclared_time_traps() {
     traps_with("@caps()\ndef main() {\n  time::now_ms()\n}\n", "time");
-    traps_with("@caps()\ndef main() {\n  time::wall_clock_ms()\n}\n", "time");
+    traps_with(
+        "@caps()\ndef main() {\n  time::wall_clock_ms()\n}\n",
+        "time",
+    );
     traps_with("@caps()\ndef main() {\n  time::sleep(0)\n}\n", "time");
 }
 

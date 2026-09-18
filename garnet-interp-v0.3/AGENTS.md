@@ -15,7 +15,7 @@ Owns managed-mode tree-walk execution, expression evaluation, stdlib bridging, a
 - The program entry's declared budget bounds every gated primitive reached
   (U-91). `require_capability` unions the capabilities of all active frames,
   so a callee's own `@caps` can satisfy it; that alone is not enough. Each of
-  the fifteen gated adapters therefore also calls `require_entry_capability`,
+  the twenty gated adapters therefore also calls `require_entry_capability`,
   which reads the entry frame only. Without it, an entry declaring `@caps()`
   reaches a `@caps(fs)` helper through a function value, a closure, an actor
   handler, a top-level initializer, string interpolation or `method_missing` —

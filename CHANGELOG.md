@@ -9,6 +9,27 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ## [Unreleased]
 
+### Runtime — the `time` class traps at run time (D-02, 2026-09-18)
+
+- **Behaviour change — `garnet run` and `garnet test` now trap where they
+  used to run.** `time::now_ms`, `time::wall_clock_ms`, `time::sleep`,
+  `std::uuid::new_v4` and `std::uuid::new_v7` were `Guard::Declared`: the
+  checker required `@caps(time)`, but `garnet run` — which does not run the
+  checker — executed them under `@caps()` and returned real values. They are
+  now `Guard::GateEntry` like every other host-authority row: calling one
+  traps with ``capability: `time::now_ms` requires @caps(time), not declared
+  in the calling chain`` unless both an active frame and the program entry's
+  own budget declare `time`, identically under `--interp` and `--vm`. A
+  program whose entry declares `@caps(time)` is unchanged; `std::uuid::new_v5`
+  (name-based) requires nothing and stays ungated. The gated surface is 20
+  rows, the checker-only class is empty, and the scope table
+  (`GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md`), `README.md`, `FAQ.md`,
+  `docs/stdlib.html` and the man page say so. `garnet-cli/tests/caps_enforcement.rs`
+  pins the trap on both backends and the helper-laundering shape;
+  `scripts/garnet_caps_enforcement_status.py` requires the `time` gate.
+  `garnet-cli/tests/checker_only_caps.rs`, which pinned the old behaviour, is
+  removed.
+
 ### Checker — enum variant construction is checked in safe functions (D-107, 2026-09-18)
 
 - **Behaviour change — safe programs that passed `garnet check` may now fail

@@ -151,8 +151,14 @@ STALE_TRUTH_PATTERNS = [
 
 ENFORCED_CLAIM_MARKER = "<b>enforced:</b>"
 EXPECTED_ENFORCED_CLAIMS = 2
+# The first claim (test-runner entry authority) was re-pinned by D-02
+# (2026-09-18): the `time` class moved from checker-only to entry-gated, so
+# the sentence "does not reject a test that calls a checker-only primitive
+# such as time::now_ms" became false and was rewritten to point at the scope
+# table's classes outside the gated surface. Precedent: #564 re-pinned it when
+# U-91 moved the gated surface to (0, 15).
 EXPECTED_ENFORCED_CLAIM_HASHES = [
-    "8fdeb3988acbabb8e5171dc5940809af4321deee7a0a4522586275482a8d70ff",
+    "e124c265ef2004b31f670dd42f7c18d93613591f702e3e211a847af688baea8d",
     "032b790318e1d10a80418f59e6f363e43671193a080c26a4803dd2beffb2a541",
 ]
 

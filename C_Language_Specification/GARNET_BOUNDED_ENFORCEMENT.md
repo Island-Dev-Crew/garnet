@@ -117,7 +117,7 @@ backstop**: a program that the checker would reject (a managed fn using authorit
 it did not declare) is caught at execution. Each managed function pushes its
 declared `@caps` onto a per-run thread-local context (`eval.rs` `CapsGuard`,
 RAII-unwound). Since U-91 every gated primitive is `Guard::GateEntry`
-(`registry.rs` asserts `(Gate, GateEntry) == (0, 15)`), so a call is permitted
+(`registry.rs` asserts `(Gate, GateEntry) == (0, 20)`; D-02 added the `time` class), so a call is permitted
 only when an active frame declares the capability **and** the program-entry
 frame's own budget covers it — a helper's declaration no longer satisfies it for
 an entry point that declared nothing. The static caps-graph propagates caps only

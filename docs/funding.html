@@ -52,7 +52,7 @@
       <span class="est">Estimate $7,733–$35,840</span></li>
     <li><strong>Installers that verify the release signature, and Linux packages for older distributions.</strong> <code>install.sh</code> and <code>install.ps1</code> check SHA-256, but neither fetches or verifies <code>SHA256SUMS.asc</code>. The Linux assets need glibc 2.39 or newer, so they do not install on Debian 12, Ubuntu 22.04 or RHEL 9.
       <span class="est">Estimate $5,155–$26,880</span></li>
-    <li><strong>An outside security review of the capability boundary.</strong> No outside team has tested the fenced claim: that the 15 entry-gated primitives trap unless the program entry declares the capability, and that the <code>garnet</code> CLI and the default <code>Interpreter::new()</code> path are deny-by-default. The review would be scoped to that claim, and its final price set after scoping.
+    <li><strong>An outside security review of the capability boundary.</strong> No outside team has tested the fenced claim: that the 20 entry-gated primitives trap unless the program entry declares the capability, and that the <code>garnet</code> CLI and the default <code>Interpreter::new()</code> path are deny-by-default. The review would be scoped to that claim, and its final price set after scoping.
       <span class="est">Estimate $35,155–$235,840</span></li>
     <li><strong>A runtime execution budget for <code>@bounded</code>.</strong> Only <code>@caps</code> and <code>@max_depth</code> trap today; <code>@bounded</code> is declared, not enforced. A deterministic step-budget trap on both backends would move that one fence. Memory and time ceilings stay declared.
       <span class="est">Estimate $10,310–$53,760</span></li>

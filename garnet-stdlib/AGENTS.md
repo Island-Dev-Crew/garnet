@@ -19,10 +19,10 @@ Owns Garnet stdlib primitives and their capability metadata.
   launders the entry's budget through any call edge the checker cannot see.
   The `Gate` variant remains defined and currently has zero members. The test
   that holds that to zero is `gate_count_matches_the_audited_runtime_backstop`,
-  which asserts the pair `(gate_count, gate_entry_count) == (0, 15)`; adding any
+  which asserts the pair `(gate_count, gate_entry_count) == (0, 20)`; adding any
   `Gate` row turns it red. `entry_gates_are_the_whole_gated_surface` does NOT
   catch that case — it only compares the `GateEntry` names to the expected
-  fifteen, so a new `Gate` row leaves it green.
+  twenty, so a new `Gate` row leaves it green.
   Adding a row with `Gate` requires stating in the same change why the entry
   budget must not bound it.
 - Keep primitives small and predictable; richer behavior belongs in higher-level libraries or examples.

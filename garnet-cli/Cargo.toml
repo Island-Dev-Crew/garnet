@@ -61,7 +61,7 @@ ownership + Result) feels like Rust, and the mode boundary bridges errors and
 ownership. Functions declare their OS authority with @caps(...), and the
 garnet CLI checks those declarations and turns the capability surface into
 manifests, diffs, in-toto seals and acceptance decisions. At run time only
-@caps and @max_depth are enforced, and @caps only for the 15 entry-gated host
+@caps and @max_depth are enforced, and @caps only for the 20 entry-gated host
 primitives. See garnet(1)."""
 depends = "$auto, ca-certificates"
 section = "devel"

@@ -297,11 +297,15 @@ pub(crate) mod adapters {
 
     #[garnet_primitive("time::now_ms")]
     pub(crate) fn bridge_time_now_ms(_args: Vec<Value>) -> Result<Value, RuntimeError> {
+        crate::eval::require_capability("time", "time::now_ms")?;
+        crate::eval::require_entry_capability("time", "time::now_ms")?;
         Ok(Value::Int(garnet_stdlib::time::now_ms()))
     }
 
     #[garnet_primitive("time::wall_clock_ms")]
     pub(crate) fn bridge_time_wall_clock_ms(_args: Vec<Value>) -> Result<Value, RuntimeError> {
+        crate::eval::require_capability("time", "time::wall_clock_ms")?;
+        crate::eval::require_entry_capability("time", "time::wall_clock_ms")?;
         garnet_stdlib::time::wall_clock_ms()
             .map(Value::Int)
             .map_err(|e| lift_std_error("wall_clock_ms", e))
@@ -309,6 +313,8 @@ pub(crate) mod adapters {
 
     #[garnet_primitive("time::sleep")]
     pub(crate) fn bridge_time_sleep(args: Vec<Value>) -> Result<Value, RuntimeError> {
+        crate::eval::require_capability("time", "time::sleep")?;
+        crate::eval::require_entry_capability("time", "time::sleep")?;
         let ms = expect_int("sleep", &args, 0)?;
         garnet_stdlib::time::sleep(ms)
             .map(|_| Value::Nil)
@@ -1137,6 +1143,8 @@ pub(crate) mod adapters {
 
     #[garnet_primitive("std::uuid::new_v4")]
     pub(crate) fn bridge_uuid_new_v4(_args: Vec<Value>) -> Result<Value, RuntimeError> {
+        crate::eval::require_capability("time", "std::uuid::new_v4")?;
+        crate::eval::require_entry_capability("time", "std::uuid::new_v4")?;
         Ok(Value::str(garnet_stdlib::uuid::new_v4()))
     }
 
@@ -1149,6 +1157,8 @@ pub(crate) mod adapters {
 
     #[garnet_primitive("std::uuid::new_v7")]
     pub(crate) fn bridge_uuid_new_v7(_args: Vec<Value>) -> Result<Value, RuntimeError> {
+        crate::eval::require_capability("time", "std::uuid::new_v7")?;
+        crate::eval::require_entry_capability("time", "std::uuid::new_v7")?;
         Ok(Value::str(garnet_stdlib::uuid::new_v7()))
     }
 
@@ -1515,8 +1525,10 @@ mod rb3_registry_join {
 
     /// Guard column ↔ adapter behavior: every Gate/GateEntry prim traps
     /// with the caps message when called from a managed frame that
-    /// declares no capabilities; Declared-with-caps prims (time::*,
-    /// uuid v4/v7) must NOT caps-trap (checker-only by design — S90 scope).
+    /// declares no capabilities; Declared prims must NOT caps-trap. Since
+    /// D-02 every capability-bearing bridged row is GateEntry (the time
+    /// class was the last checker-only group), so the Declared arm now
+    /// covers only rows that require no capability.
     #[test]
     fn guard_column_matches_runtime_backstop_behavior() {
         for (qualified, meta) in all_prims() {

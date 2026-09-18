@@ -264,7 +264,7 @@ fn build_prims() -> Vec<PrimMeta> {
             Layer::Std,
             Stability::Stable,
             Binding::Bare,
-            Guard::Declared,
+            Guard::GateEntry,
             "Monotonic clock in milliseconds since process start.",
         ),
         p(
@@ -275,7 +275,7 @@ fn build_prims() -> Vec<PrimMeta> {
             Layer::Std,
             Stability::Stable,
             Binding::Bare,
-            Guard::Declared,
+            Guard::GateEntry,
             "Wall clock in milliseconds since UNIX epoch.",
         ),
         p(
@@ -286,7 +286,7 @@ fn build_prims() -> Vec<PrimMeta> {
             Layer::Std,
             Stability::Stable,
             Binding::Bare,
-            Guard::Declared,
+            Guard::GateEntry,
             "Sleep the current thread for N milliseconds.",
         ),
         // ── str (Layer 0 core, no caps) ──
@@ -1058,7 +1058,7 @@ fn build_prims() -> Vec<PrimMeta> {
             Layer::Std,
             Stability::Experimental,
             Binding::Qualified,
-            Guard::Declared,
+            Guard::GateEntry,
             "Random UUIDv4 (128 bits of randomness; version+variant tagged).",
         ),
         p(
@@ -1080,7 +1080,7 @@ fn build_prims() -> Vec<PrimMeta> {
             Layer::Std,
             Stability::Experimental,
             Binding::Qualified,
-            Guard::Declared,
+            Guard::GateEntry,
             "Time-ordered UUIDv7 (48-bit unix-ms prefix + randomness).",
         ),
         // ── std::base64 (no caps — pure; tracks RFC 4648) ──
@@ -1362,15 +1362,21 @@ mod tests {
                 "std::process::spawn",
                 "std::process::spawn_args",
                 "std::process::wait",
+                "std::uuid::new_v4",
+                "std::uuid::new_v7",
+                "time::now_ms",
+                "time::sleep",
+                "time::wall_clock_ms",
             ]
         );
     }
 
     #[test]
     fn gate_count_matches_the_audited_runtime_backstop() {
-        // U-91: 0 call-chain-only Gate + 15 GateEntry. The 15-primitive
-        // host-authority surface is unchanged; what changed is that every row in
-        // it is now bound by the program entry's declared budget.
+        // U-91: 0 call-chain-only Gate + 15 GateEntry, every row bound by the
+        // program entry's declared budget. D-02 added the five time-class rows
+        // (time::now_ms/wall_clock_ms/sleep, std::uuid::new_v4/new_v7), which
+        // were previously `Declared` (checker-only) and ran under `@caps()`.
         let gate = static_prims()
             .iter()
             .filter(|m| m.guard == Guard::Gate)
@@ -1379,6 +1385,6 @@ mod tests {
             .iter()
             .filter(|m| m.guard == Guard::GateEntry)
             .count();
-        assert_eq!((gate, entry), (0, 15));
+        assert_eq!((gate, entry), (0, 20));
     }
 }
