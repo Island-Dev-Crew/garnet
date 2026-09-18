@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Garnet — Funding</title>
-<meta name="description" content="How Garnet is funded today and how to support or commercially engage with it. Current truth for a pre-revenue, single-maintainer project.">
+<meta name="description" content="Garnet is pre-revenue and unfunded. Nine costed goals with ranges, what money would and would not buy, and the funding channels that are live today: none.">
 <meta name="theme-color" content="#9C2B2E">
 <link rel="canonical" href="https://garnet-lang.org/funding.html">
 <style>
@@ -19,7 +19,10 @@
   .sub{color:var(--ink-soft);margin:0 0 28px;}
   h2{font-family:var(--serif);font-size:21px;margin:40px 0 10px;color:var(--gold);border-bottom:1px solid var(--rule);padding-bottom:7px;}
   p{color:var(--ink-soft);}strong{color:var(--ink);}
+  ol,ul{color:var(--ink-soft);padding-left:20px;}li{margin:14px 0;}
+  ul li{margin:8px 0;}
   code{background:#18181B;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:.9em;}
+  .est{display:block;font-family:var(--mono);font-size:12px;letter-spacing:.04em;color:var(--ink-muted);margin-top:4px;}
   .foot{border-top:1px solid var(--rule);margin-top:52px;padding-top:20px;color:var(--ink-muted);font-size:13px;text-align:center;}
 </style>
 </head>
@@ -28,18 +31,48 @@
   <div class="top"><a href="/index.html">← garnet-lang.org</a> &nbsp;·&nbsp; <a href="governance.html">Governance</a> &nbsp;·&nbsp; <a href="https://github.com/Island-Dev-Crew/garnet" target="_blank" rel="noopener noreferrer">GitHub ↗</a></div>
 
   <h1>Funding</h1>
-  <p class="sub">Plainly: Garnet is a pre-revenue, single-maintainer project under Island Development Crew. No grants, sponsors, or donors fund it today. This page exists so the support options are real and the absence of others is stated, not implied.</p>
+  <p class="sub">No grant, sponsor, donor or pilot partner funds Garnet today. Garnet is pre-revenue, and every goal below is unfunded.</p>
 
-  <h2>Support the work</h2>
-  <p><strong>Ko-fi</strong> — one-off or recurring tips go directly to the maintainer: <a href="https://ko-fi.com/jonisaac" target="_blank" rel="noopener noreferrer">ko-fi.com/jonisaac</a>. This is the only live funding channel right now.</p>
-  <p><strong>GitHub Sponsors</strong> — <em>planned, not yet set up</em>. It is listed here so the open state is explicit; there is no Sponsors page to link until it exists.</p>
-  <p><strong>Stars &amp; contributions</strong> — starring and contributing to <a href="https://github.com/Island-Dev-Crew/garnet" target="_blank" rel="noopener noreferrer">the repository</a> is, realistically, the most valuable non-financial support at this stage.</p>
+  <h2>Channels that are live</h2>
+  <p><strong>None.</strong> There is no GitHub Sponsors listing, no Open Collective and no Patreon, and this site carries no payment link. A channel appears here the day it opens, and not before.</p>
+  <p>The support that exists today costs nothing: starring, filing issues and contributing to <a href="https://github.com/Island-Dev-Crew/garnet" target="_blank" rel="noopener noreferrer">the repository</a>. At one maintainer, a reproducible bug report is worth more than a small donation.</p>
+
+  <h2>What funding would buy</h2>
+  <p>Nine goals, priced 2026-09-15. Each range is an estimate built from published wage and vendor figures, not a quote: the low end prices labor at the BLS median for software developers, the high end at senior contractor rates. The numbering is the order they were costed, not a commitment to that order, and no total is published because the order is not fixed.</p>
+  <ol>
+    <li><strong>Reject illegal enum values at check time.</strong> <code>garnet check</code> accepts a unit variant given a payload and a payload variant given none or two, and an undeclared variant fails only at runtime. This is checker correctness; it changes no capability claim.
+      <span class="est">Estimate $3,866–$17,920</span></li>
+    <li><strong>Authority-sized review as a GitHub Action.</strong> <code>garnet diff-caps</code> exits 1 on a three-character <code>@caps()</code> → <code>@caps(net)</code> widening and 0 on the unchanged control. An action routes that change to review whatever the diff size. Bound: declared surface only — it does not prove the absence of undeclared authority.
+      <span class="est">Estimate $5,155–$17,920</span></li>
+    <li><strong>Signed downloads on macOS and Windows.</strong> Release assets are checksum-verified against a GPG-signed <code>SHA256SUMS</code>, but the binaries themselves are not code-signed, so Windows can warn on first run and Studio is build-from-source. Signing proves who published a file and that it was not altered; it says nothing about what the program does. About $219/yr of that range is recurring vendor fees.
+      <span class="est">Estimate $5,374–$36,059</span></li>
+    <li><strong>A paid independent reviewer for trust-kernel changes.</strong> Every merge rule assumes an independent reviewer, but no reporter checks reviewer lineage, so independence is a convention rather than a checked field. Money buys a named outside reviewer; code makes the field a gate check. Paid review buys no merge authority, and the release tag stays the maintainer's.
+      <span class="est">Estimate $10,031–$92,960</span></li>
+    <li><strong>Close the checker's known blind spots.</strong> The capability scope table lists where <code>garnet check</code> is silent: a primitive reached only through a call-graph cycle, the body of an unannotated function, five <code>time</code>/<code>uuid</code> rows that run undeclared, and four <code>memory::*</code> natives with no capability row. Closing these shortens the scope table's "may not say" list. It does not make the checker complete.
+      <span class="est">Estimate $7,733–$35,840</span></li>
+    <li><strong>Installers that verify the release signature, and Linux packages for older distributions.</strong> <code>install.sh</code> and <code>install.ps1</code> check SHA-256, but neither fetches or verifies <code>SHA256SUMS.asc</code>. The Linux assets need glibc 2.39 or newer, so they do not install on Debian 12, Ubuntu 22.04 or RHEL 9.
+      <span class="est">Estimate $5,155–$26,880</span></li>
+    <li><strong>An outside security review of the capability boundary.</strong> No outside team has tested the fenced claim: that the 15 entry-gated primitives trap unless the program entry declares the capability, and that the <code>garnet</code> CLI and the default <code>Interpreter::new()</code> path are deny-by-default. The review would be scoped to that claim, and its final price set after scoping.
+      <span class="est">Estimate $35,155–$235,840</span></li>
+    <li><strong>A runtime execution budget for <code>@bounded</code>.</strong> Only <code>@caps</code> and <code>@max_depth</code> trap today; <code>@bounded</code> is declared, not enforced. A deterministic step-budget trap on both backends would move that one fence. Memory and time ceilings stay declared.
+      <span class="est">Estimate $10,310–$53,760</span></li>
+    <li><strong>An MCP host that refuses undeclared tool calls.</strong> <code>garnet mcp-serve</code> is one sealed local host: tool capability declarations are self-declared and nothing intercepts a call. Interception plus a deny path makes the declaration checked for this host only, not for MCP in general.
+      <span class="est">Estimate $7,733–$35,840</span></li>
+  </ol>
+
+  <h2>What money does not buy</h2>
+  <ul>
+    <li><strong>Merge authority.</strong> A paid reviewer reviews. The maintainer merges, and the release tag stays the maintainer's.</li>
+    <li><strong>A claim.</strong> Funding a goal does not move a fence from declared to enforced. A trap test that could have failed does, and until one exists the public copy keeps saying declared.</li>
+    <li><strong>Roadmap position.</strong> Money can finish work that is already the right work. It does not buy a feature onto the language, and it does not reorder the goals above.</li>
+    <li><strong>A support commitment.</strong> Garnet is a research-grade prototype at v0.x. There is no SLA, no long-term support branch and no compatibility promise attached to any contribution.</li>
+  </ul>
+
+  <h2>Where it would go</h2>
+  <p>Contributions would be received by <strong>Island Development Crew</strong>, the entity that maintains Garnet, and spent on the goals above. Island Development Crew's own running costs do not come out of Garnet money. The binding constraint is engineering hours, not infrastructure.</p>
 
   <h2>Commercial &amp; sponsorship inquiries</h2>
-  <p>For commercial support, integration help, or sponsorship discussions, write to hello@garnet-lang.org or open a <a href="https://github.com/Island-Dev-Crew/garnet/issues" target="_blank" rel="noopener noreferrer">GitHub issue</a>.</p>
-
-  <h2>Where money would go</h2>
-  <p>Still open: maintainer time. Garnet is research-grade and the binding constraint is engineering hours toward the open lanes (signed installers, native backend, proof and empirical work) — not infrastructure cost. No promises are attached to any contribution.</p>
+  <p>Write to hello@garnet-lang.org, or open a <a href="https://github.com/Island-Dev-Crew/garnet/issues" target="_blank" rel="noopener noreferrer">GitHub issue</a> if the question suits a public thread. There is no inquiry form yet.</p>
 
   <div class="foot">© 2026 Island Development Crew · Garnet is dual-licensed MIT OR Apache-2.0 · <a href="https://garnet-lang.org">garnet-lang.org</a></div>
 </div>

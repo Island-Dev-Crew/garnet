@@ -930,7 +930,7 @@
     <div class="container">
       <span>no authority without evidence</span>
       <span>research-grade · source v<!-- truth:version -->0.8.2<!-- /truth --></span>
-      <span>last signed <!-- truth:latest_tag -->v0.8.2<!-- /truth --></span>
+      <span>last tag <!-- truth:latest_tag -->v0.8.2<!-- /truth --></span>
       <span>built by <b>Island Dev Crew</b></span>
     </div>
   </div>
@@ -944,7 +944,7 @@
     <p class="lead">Most language sites open with a greeting. This one opens with a rejection, because that is the product. The function below is annotated <code>@caps()</code> and calls <code>net::tcp_connect</code>; <code>garnet check</code> refuses it and exits 1. A diff then answers <em>what new authority does this change declare?</em>, and a seal writes the paperwork out of evidence that already exists.</p>
 
     <div class="term">
-        <div class="term-bar" aria-hidden="true"><i class="dotr"></i><i class="dotr"></i><i class="dotr"></i><span>garnet 0.8.1 · built at fbd64bc5 · fresh directory</span><span class="real">real capture</span></div>
+        <div class="term-bar" aria-hidden="true"><i class="dotr"></i><i class="dotr"></i><i class="dotr"></i><span>garnet 0.8.1 · fresh directory</span><span class="real">real capture</span></div>
         <pre><span class="c">$ cat exfil.garnet</span>
 @caps()
 def main() {
@@ -982,7 +982,7 @@ def main() {
       <p class="pg-note">Choose <em>Custom source</em>, paste the five-line program from the capture above, and press <em>Check</em> &mdash; the rejection is the one you just read.</p>
     </div>
 
-    <p class="evidence-note">Committed package: <code>garnet_wasm_bg.wasm</code>, 2,216,679 bytes, sha256 <code>e0dcf1a3&hellip;</code>. Clean-browser proof <strong>pass</strong> (<a href="https://github.com/Island-Dev-Crew/garnet/blob/main/F_Project_Management/LAUNCH/W_PLAY_BROWSER_PROOF.json">the recorded run</a>), with <strong>zero external requests</strong> &mdash; every file it fetched is committed to this repository &mdash; and no OS host authority granted to the runtime. The capability diff is <strong>declared-surface-only</strong>: it reports what a change declares, not the absence of undeclared authority. <a href="playground.html">Open the playground on its own page &rarr;</a></p>
+    <p class="evidence-note">Committed package: <code>garnet_wasm_bg.wasm</code> &mdash; its byte count and sha256 are recorded in <a href="playground/pkg/provenance.json">the package provenance</a>. Clean-browser proof <strong>pass</strong> (<a href="https://github.com/Island-Dev-Crew/garnet/blob/main/F_Project_Management/LAUNCH/W_PLAY_BROWSER_PROOF.json">the recorded run</a>), with <strong>zero external requests</strong> &mdash; every file it fetched is committed to this repository &mdash; and no OS host authority granted to the runtime. The capability diff is <strong>declared-surface-only</strong>: it reports what a change declares, not the absence of undeclared authority. <a href="playground.html">Open the playground on its own page &rarr;</a></p>
   </div>
 </section>
 
@@ -997,7 +997,7 @@ def main() {
         <h3>Rust</h3>
         <div class="name">Rigor</div>
         <p>Mathematical correctness. Memory discipline. Zero-cost abstractions. Performance to the metal.</p>
-        <p class="caveat">But — cognitive load, lifetimes-as-mental-stack, ceremony.</p>
+        <p class="caveat">The cost: lifetimes carried as a mental stack, and ceremony.</p>
       </div>
       <div class="pillar garnet">
         <h3>Garnet</h3>
@@ -1009,24 +1009,13 @@ def main() {
         <h3>Ruby</h3>
         <div class="name">Velocity</div>
         <p>Conversational beauty. High velocity. Joyful to read, fast to write. DSLs flow.</p>
-        <p class="caveat">But — ambient authority, runtime surprise, no compile-time net.</p>
+        <p class="caveat">The cost: ambient authority, and no compile-time net.</p>
       </div>
     </div>
     <div style="margin-top:30px;display:flex;align-items:center;gap:18px;flex-wrap:wrap">
       <a href="why.html" class="btn btn-primary">Why &mdash; The Skinny &rarr;</a>
       <span style="font-size:.95rem;color:var(--ink-soft)">The full case for a capability-typed language in the agent era &mdash; ten reasons, the nearest neighbor, and the verified limits and open work.</span>
     </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════════════════════ THESIS -->
-<section class="thesis">
-  <div class="container reveal">
-    <blockquote>
-      Every team eventually picks: <span class="accent">Rust for the hot path</span>, <span class="accent">Ruby for the orchestration</span>, and writes a painful FFI between them. Or picks one language and swallows its weakness.<br><br>
-      <strong>Garnet's dual-mode design makes the same source file velocity-first at the top level and rigor-first in the safe modules — with no FFI in between.</strong>
-    </blockquote>
-    <cite>— The Reconciliation, Paper III §1 (design intent; the mode bridge is specified, not yet wired)</cite>
   </div>
 </section>
 
@@ -1048,7 +1037,6 @@ def main() {
       review bottleneck (the binding constraint on accepting AI-written code)
       into a machine-checkable diff of the declared surface.
     </blockquote>
-    <cite>— Positioning, evidence-matched: integration over pillar-by-pillar novelty</cite>
   </div>
 </section>
 
@@ -1378,7 +1366,7 @@ def main() {
   <div class="container reveal">
     <h3>Get Garnet</h3>
     <h2>Install with one curl command.</h2>
-    <p class="lead">The installer targets the <strong>v0.8.2 release</strong>. It installs the release asset for your platform, verifies it against <code>SHA256SUMS</code>, and falls back to a source install through <code>cargo install --locked</code> only when no asset matches. The v0.8.2 GitHub Release ships signed CLI binaries for macOS, Linux (x86_64 and ARM64) and Windows, plus a CycloneDX SBOM; productization gates are on the <a href="status.html">readiness status page</a>.</p>
+    <p class="lead">The installer targets the <strong>v0.8.2 release</strong>. It installs the release asset for your platform, verifies it against <code>SHA256SUMS</code>, and falls back to a source install through <code>cargo install --locked</code> only when no asset matches. The v0.8.2 GitHub Release ships CLI binaries for macOS, Linux (x86_64 and ARM64) and Windows, plus a CycloneDX SBOM; productization gates are on the <a href="status.html">readiness status page</a>.</p>
 
     <div id="os-detect" hidden style="display:none;align-items:center;gap:12px;margin:0 0 18px;padding:12px 16px;border:1px solid var(--rule);border-radius:10px;background:var(--bg-soft);font-size:14px;color:var(--ink-soft);">
       <span id="os-detect-msg"></span>
@@ -1396,8 +1384,8 @@ def main() {
         var plat=(uad&&uad.platform)?uad.platform:(navigator.platform||'');
         var s=(plat+' '+(navigator.userAgent||'')).toLowerCase();
         var t='';
-        if(s.indexOf('mac')>-1) t='Detected: macOS — the universal installer uses the signed v0.8.2 CLI tarball for Apple Silicon or Intel, with source fallback. A signed .pkg is not published.';
-        else if(s.indexOf('win')>-1) t='Detected: Windows — run install.ps1 (Windows tab) to install the signed v0.8.2 x86_64 build; the source install needs Rust 1.95+.';
+        if(s.indexOf('mac')>-1) t='Detected: macOS — the universal installer uses the checksum-verified v0.8.2 CLI tarball for Apple Silicon or Intel, with source fallback. A signed .pkg is not published.';
+        else if(s.indexOf('win')>-1) t='Detected: Windows — run install.ps1 (Windows tab) to install the checksum-verified v0.8.2 x86_64 build; the source install needs Rust 1.95+.';
         else if(s.indexOf('linux')>-1||s.indexOf('android')>-1) t='Detected: Linux — the universal installer uses the checksum-verified v0.8.2 package for x86_64 or ARM64 (.deb, .rpm or tarball); other targets fall back to source.';
         if(!t)return; // unknown platform → no banner, silent
         msg.textContent=t;
@@ -1447,7 +1435,7 @@ curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | GARNET
         <div class="install-wrap">
           <button class="copy" data-copy="curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh">Copy</button>
 <pre># Recommended — universal installer:
-# installs the signed v0.8.2 CLI tarball and otherwise falls back
+# installs the checksum-verified v0.8.2 CLI tarball and otherwise falls back
 # to source install. A signed .pkg / notarization is not published.
 curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh
 
@@ -1480,7 +1468,7 @@ git clone https://github.com/Island-Dev-Crew/garnet && cd garnet/garnet-cli && c
         <div class="install-wrap">
           <button class="copy" data-copy="irm https://garnet-lang.org/install.ps1 | iex">Copy</button>
 <pre># PowerShell (Windows PowerShell 5.1 or PowerShell 7+):
-# installs the signed v0.8.2 x86_64 build after checking SHA256SUMS.
+# installs the v0.8.2 x86_64 build after verifying it against SHA256SUMS.
 irm https://garnet-lang.org/install.ps1 | iex
 
 # Source install (needs a Rust toolchain):
@@ -1645,7 +1633,7 @@ dist/Garnet Studio.app</pre>
       </ol>
     </details>
 
-    <p class="evidence-note">A local recording, take-03, made on macOS arm64 on 2026-09-07. The check runs in the live public playground &mdash; the browser package, whose status is not a process exit code. The diff, the unchanged control and the seal run on a <strong>source build of the CLI at main <code>452a0e2</code></strong> (binary sha256 <code>e548b0d9&hellip;</code>), not the released <code>v0.8.1</code> binary. It is not independent review and not a launch clearance, and its opening and closing cards still carry the capture's own <em>unpublished&nbsp;·&nbsp;hold</em> stamp, set before its publication was decided. Its receipt &mdash; status <code>captured-pass-scoped</code>, recording sha256 <code>40db808f&hellip;</code>, of which this MP4 is a frame-for-frame H.264 encoding &mdash; is not yet published with it. Check and diff run in the <a href="#try">playground on this page</a>; seal needs a build from <a href="#install">Install</a>.</p>
+    <p class="evidence-note">A local recording, take-03, made on macOS arm64 on 2026-09-07. The check runs in the browser playground as deployed on 2026-09-07; that package has since been rebuilt, so it is not the package this page serves today, and the status it shows is not a process exit code. The diff, the unchanged control and the seal run on a <strong>source build of the CLI at main <code>452a0e2</code></strong> (binary sha256 <code>e548b0d9&hellip;</code>), not the released <code>v0.8.1</code> binary. It is not independent review and not a launch clearance, and its opening and closing cards still carry the capture's own <em>unpublished&nbsp;·&nbsp;hold</em> stamp, set before its publication was decided. Its receipt &mdash; status <code>captured-pass-scoped</code>, recording sha256 <code>40db808f&hellip;</code>, of which this MP4 is a frame-for-frame H.264 encoding &mdash; is not yet published with it. Check and diff run in the <a href="#try">playground on this page</a>; seal needs a build from <a href="#install">Install</a>.</p>
   </div>
 </section>
 
@@ -1659,7 +1647,7 @@ dist/Garnet Studio.app</pre>
       <a href="status.html" class="btn btn-primary">Open the status page <span aria-hidden="true">&rarr;</span></a>
       <a href="governance.html" class="btn btn-ghost">How a change gets accepted <span aria-hidden="true">&rarr;</span></a>
     </div>
-    <p class="evidence-note">Objective accounting keeps the landing page confident and the status page precise: the tracked implementation plan is complete, while platform distribution, provider-backed assist, backend lowering, proof, and empirical validation remain separately gated. Garnet is research-grade v<!-- truth:version -->0.8.2<!-- /truth --> and not production or 1.0.</p>
+    <p class="evidence-note">Objective accounting: the tracked implementation plan is complete, while platform distribution, provider-backed assist, backend lowering, proof, and empirical validation remain separately gated. Garnet is research-grade v<!-- truth:version -->0.8.2<!-- /truth --> and not production or 1.0.</p>
   </div>
 </section>
 
@@ -1725,7 +1713,7 @@ dist/Garnet Studio.app</pre>
       <a href="blog/">Blog</a>
       <a href="playground.html">Playground (runs in your browser)</a>
     </div>
-    <p class="lead" style="margin-top:16px;font-size:13.5px;color:var(--ink-muted);">Pinned threads to start with: <a href="https://github.com/Island-Dev-Crew/garnet/discussions/204" target="_blank" rel="noopener noreferrer">Welcome</a> · <a href="https://github.com/Island-Dev-Crew/garnet/discussions/205" target="_blank" rel="noopener noreferrer">Show &amp; tell — what are you building</a> · <a href="https://github.com/Island-Dev-Crew/garnet/discussions/206" target="_blank" rel="noopener noreferrer">RFC — package registry shape</a>.</p>
+    <p class="lead" style="margin-top:16px;font-size:13.5px;color:var(--ink-muted);">Threads to start with: <a href="https://github.com/Island-Dev-Crew/garnet/discussions/204" target="_blank" rel="noopener noreferrer">Welcome</a> · <a href="https://github.com/Island-Dev-Crew/garnet/discussions/205" target="_blank" rel="noopener noreferrer">Show &amp; tell — what are you building</a> · <a href="https://github.com/Island-Dev-Crew/garnet/discussions/206" target="_blank" rel="noopener noreferrer">RFC — package registry shape</a>.</p>
   </div>
 </section>
 
@@ -1742,22 +1730,18 @@ dist/Garnet Studio.app</pre>
       <a href="logo-policy.html">Logo Policy</a>
       <a href="governance.html">Governance</a>
       <a href="funding.html">Funding</a>
-      <a href="https://ko-fi.com/jonisaac" target="_blank" rel="noopener noreferrer">Support ☕</a>
     </div>
     <div class="copyright">
       © 2026 Island Development Crew · Dual-licensed MIT OR Apache-2.0 · garnet-lang.org
     </div>
     <div class="copyright" style="margin-top:6px;font-size:12px;">
-      Site updated 2026-09-11 · latest tag Garnet <!-- truth:latest_tag -->v0.8.2<!-- /truth --> (research-grade milestone; the Release ships signed binaries for macOS, Linux and Windows, plus an SBOM)
+      Latest tag Garnet <!-- truth:latest_tag -->v0.8.2<!-- /truth --> (research-grade milestone; the Release ships CLI binaries for macOS, Linux and Windows, checksum-verified against a GPG-signed SHA256SUMS, plus an SBOM)
     </div>
     <div class="copyright" style="margin-top:6px;font-size:12px;">
       No social accounts yet — follow development by watching the <a href="https://github.com/Island-Dev-Crew/garnet" target="_blank" rel="noopener noreferrer">repository</a>.
     </div>
     <div class="copyright" style="margin-top:6px;font-size:12px;">
-      🌐 English only · translations planned (none machine-stubbed here until they're real)
-    </div>
-    <div class="copyright" style="margin-top:10px;font-size:12.5px;">
-      A project by <a href="https://github.com/Island-Dev-Crew" target="_blank" rel="noopener noreferrer">Island Development Crew</a> · <a href="funding.html">support its development</a>
+      🌐 English only
     </div>
   </div>
 </footer>

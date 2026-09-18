@@ -9,6 +9,38 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ## [Unreleased]
 
+### Site — the public pages say what the code does; internal plans leave the site (2026-09-17)
+
+- Release wording on `README.md`, `FAQ.md`, `docs/index.html` and `docs/status.html`
+  no longer says "signed binaries". The release workflow signs `SHA256SUMS` with
+  GPG and signs no binary, so the pages now say the CLI binaries are
+  checksum-verified against a GPG-signed `SHA256SUMS`.
+- The landing page linked the playground package's provenance file instead of
+  repeating its size and hash inline; the inline numbers had been stale since the
+  package was rebuilt. "Pinned threads" became "Threads to start with", the
+  promo note names the package its capture ran on, and the footer says English only.
+- `docs/governance.html` describes the RFC process that exists (`rfcs/`, the
+  10-day final comment period, RFC-0001 draft and RFC-0002 accepted) instead of
+  calling it planned.
+- `docs/funding.html` carries the nine costed goals with ranges and no total, a
+  status line stating that no grant, sponsor, donor or pilot partner funds Garnet
+  today, and no personal payment handles. `.github/FUNDING.yml` carries only the
+  funding page until a channel is live.
+- Eleven internal plans, drafts and demos left `docs/`, so the site serves no
+  internal planning material. The script walkthroughs and the REPL notes moved to
+  `F_Project_Management/`, which keeps them in the public repository and off the
+  site; the rest are kept in Island Development Crew's private operating
+  repository, and Git history still carries every prior version.
+- `docs/404.html` and `docs/.well-known/security.txt` were added. The security
+  file points at `SECURITY.md`, whose preferred route is the repository's private
+  advisory form; that setting is enabled the day this change merges.
+- `F_Project_Management/ADR/` records ten decisions from 2026-09-15 and
+  2026-09-17, including the trust-gate path, the U-117 cure shape, the landing
+  navigation, the site-then-security order and the funding rulings.
+- `docs/status.html` lost unpinned prose only, and its wide table now scrolls
+  inside itself on narrow screens.
+
+
 ### Trust gate — the rolling-review gate reads Git objects through one batched reader (2026-09-15)
 
 - The rolling trust-kernel review gate (`scripts/garnet_trust_kernel_review_status.py`)

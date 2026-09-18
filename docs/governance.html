@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Garnet — Governance</title>
-<meta name="description" content="How decisions are made in Garnet today: a single maintainer under Island Development Crew, changes via PR + review, explicit about the absence of a formal RFC process.">
+<meta name="description" content="How decisions are made in Garnet today: a single maintainer under Island Development Crew, changes via PR + review, and a written RFC process with a 10-day final comment period for language, capability-model and edition changes.">
 <meta name="theme-color" content="#9C2B2E">
 <link rel="canonical" href="https://garnet-lang.org/governance.html">
 <style>
@@ -43,8 +43,16 @@
     <li>The maintainer (org-owner account) reviews and merges. CI and the readiness ledger must stay consistent.</li>
   </ol>
 
-  <h2>Proposing larger changes <span class="badge">RFC: PLANNED</span></h2>
-  <p>A formal RFC process does not exist yet. Today, propose a significant change by opening a thread in <a href="https://github.com/Island-Dev-Crew/garnet/discussions" target="_blank" rel="noopener noreferrer">GitHub Discussions</a> describing the problem, the proposed design, and the falsifiable evidence that would justify it. A lightweight written-RFC template is planned; this section will change when it is real, not before.</p>
+  <h2>Proposing larger changes <span class="badge">RFC: IN USE</span></h2>
+  <p>Substantive changes go through a written RFC before implementation: any change to the language grammar or semantics, to the capability model (<code>@caps</code>, the manifest, diff-caps, seal), to stability-tier promotion/demotion policy, or any new edition or backwards-incompatible change. Bug fixes, docs, tests, and small additive features do not need one — a PR with green CI and dogfood evidence is enough.</p>
+  <p>An RFC is authored from <code>rfcs/0000-template.md</code>, numbered with the next free integer as <code>NNNN-short-title.md</code>, and opened as a pull request. It moves through <strong>Draft → Discussion → Accepted | Rejected | Withdrawn</strong>, and the maintainer records the decision and its rationale in the RFC's <code>Status</code> field. An accepted RFC authorizes implementation slices; it is not itself an implementation, and acceptance is not a readiness or production claim.</p>
+  <p><strong>Final comment period.</strong> When discussion converges, the maintainer proposes FCP with a disposition — merge, close, or postpone — for <strong>10 calendar days</strong>, announced on the RFC's tracking PR. Any substantial new argument cancels FCP and returns the RFC to Discussion; a clean FCP executes the disposition. With one maintainer, FCP is a self-imposed cooling-off period rather than a vote. It moves no authority: releases and tags stay outside RFC scope.</p>
+  <p>Two RFCs exist today, in <a href="https://github.com/Island-Dev-Crew/garnet/tree/main/rfcs" target="_blank" rel="noopener noreferrer">rfcs/</a>:</p>
+  <ul>
+    <li><strong>RFC-0001</strong>, a cross-language capability-manifest standard — <strong>Draft</strong>. It is an intent and a draft, not an accepted standard; no external body has reviewed or adopted anything.</li>
+    <li><strong>RFC-0002</strong>, integer arithmetic checked by default — <strong>Accepted</strong>, and implemented for <code>+</code>, <code>-</code>, <code>*</code> and unary <code>-</code>. The explicit wrapping escape hatch remains deferred.</li>
+  </ul>
+  <p>The full process, including the edition mechanism for backwards-incompatible changes, is in <a href="https://github.com/Island-Dev-Crew/garnet/blob/main/GOVERNANCE.md" target="_blank" rel="noopener noreferrer">GOVERNANCE.md</a>. For a question that is not yet an RFC, open a thread in <a href="https://github.com/Island-Dev-Crew/garnet/discussions" target="_blank" rel="noopener noreferrer">GitHub Discussions</a>.</p>
 
   <h2>Conduct &amp; security</h2>
   <p>Contribution is governed by the <a href="https://github.com/Island-Dev-Crew/garnet/blob/main/CODE_OF_CONDUCT.md" target="_blank" rel="noopener noreferrer">Code of Conduct</a>. Security issues follow the disclosure path in <a href="https://github.com/Island-Dev-Crew/garnet/blob/main/SECURITY.md" target="_blank" rel="noopener noreferrer">SECURITY.md</a> — not public issues.</p>

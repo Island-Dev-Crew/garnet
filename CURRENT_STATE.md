@@ -7,7 +7,7 @@ This is the first file a fresh MIT reviewer, contributor, or agent should read
 after `README.md`. It separates current executable truth from historical proof,
 research corpus material, generated artifacts, and local scratch.
 
-> **Latest release: `v0.8.2` (2026-09-11, tag → `f25ffb5`).** Signed binaries
+> **Latest release: `v0.8.2` (2026-09-11, tag → `f25ffb5`).** Checksum-verified binaries
 > for Linux x86_64/ARM64 (glibc 2.39+), macOS and Windows; see `CHANGELOG.md`
 > `[0.8.2]`. The v0.8.1 summary below remains accurate for that release.
 >
@@ -24,7 +24,7 @@ research corpus material, generated artifacts, and local scratch.
 > **independently-re-verified-with-fixes**; Jon's separate scoped governance
 > acceptance is recorded as `accepted-scoped` (2026-07-12) — neither fact is
 > an independence relabel or a self-attested closure). The `v0.8.1`
-> Release shipped **signed `garnet-0.8.1-*` CLI binaries** (`.deb`/`.rpm`/darwin
+> Release shipped **`garnet-0.8.1-*` CLI binaries** (`.deb`/`.rpm`/darwin
 > tarballs) + a CycloneDX SBOM + a GPG-signed `SHA256SUMS.asc` — the S91–S120
 > work is now in the published binary (verify per `docs/release-signing.md`).
 > Not production / 1.0. The narrative below still carries v0.5-era detail; for
