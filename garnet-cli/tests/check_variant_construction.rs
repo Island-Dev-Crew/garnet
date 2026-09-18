@@ -100,3 +100,13 @@ fn well_formed_constructions_pass_check() {
         combined(&out)
     );
 }
+
+/// D-107b — an `impl` on `Other::Shape` must not whitelist `Target::Shape::ghost()`.
+#[test]
+fn q8_impl_on_a_same_basename_enum_fails_check_for_the_other_enum() {
+    assert_rejected(
+        "module Other {\n  enum Shape { Circle(Float), Square(Float) }\n  impl Shape {\n    fn ghost() -> Shape { Shape::Circle(1.0) }\n  }\n}\nmodule Target {\n  enum Shape { Circle(Float), Square(Float) }\n}\nfn make() -> Target::Shape { Target::Shape::ghost() }\n@caps()\ndef main() { 0 }\n",
+        "enum `Shape` has no variant `ghost`",
+        "q8",
+    );
+}

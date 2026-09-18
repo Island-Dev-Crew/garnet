@@ -207,3 +207,45 @@ fn managed_def_bodies_are_outside_the_safe_mode_walk() {
         "managed bodies are not walked by the safe-mode checker, got {errs:?}"
     );
 }
+
+/// D-107b (cross-family review of 4ce90eb6) — an `impl` on one enum must not
+/// vouch for a missing variant on a *different* enum that happens to share its
+/// last path segment. The impl exemption is keyed by the resolved enum path,
+/// so `Target::Shape::ghost()` is rejected while `Other::Shape::ghost()` (the
+/// enum that actually owns the associated function) stays accepted.
+#[test]
+fn safe_impl_on_a_same_basename_enum_does_not_vouch_for_another_enum() {
+    let errs = check(
+        r#"
+        module Other {
+            enum Shape { Circle(Float), Square(Float) }
+            impl Shape {
+                fn ghost() -> Shape { Shape::Circle(1.0) }
+            }
+        }
+        module Target {
+            enum Shape { Circle(Float), Square(Float) }
+        }
+
+        fn owned() -> Other::Shape {
+            Other::Shape::ghost()
+        }
+
+        fn borrowed() -> Target::Shape {
+            Target::Shape::ghost()
+        }
+        "#,
+    );
+    let violations = safe_violations(&errs);
+    assert_eq!(
+        violations.len(),
+        1,
+        "exactly the cross-enum construction must be rejected, got {errs:?}"
+    );
+    assert!(
+        violations[0].contains("enum `Shape` has no variant `ghost`")
+            && violations[0].contains("safe function 'borrowed'")
+            && violations[0].contains("`Target::Shape::ghost` does not exist"),
+        "got {violations:?}"
+    );
+}
