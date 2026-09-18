@@ -253,3 +253,58 @@ fn new_agent_orchestrator_template_runs_and_tests() {
         "generated agent tests did not report all tests passing\nstdout:\n{stdout}"
     );
 }
+
+#[test]
+fn new_web_api_template_runs_and_tests() {
+    // D-02 made the `time` class trap at run time. The web-api starter test
+    // calls `timestamp()` -> `wall_clock_ms()`, and a test is its own program
+    // entry, so it must declare `@caps(time)` itself or `garnet test` traps
+    // on the freshly generated project. The agentic dogfood matrix caught
+    // this on #589; this pins it in the workspace suite.
+    let dir = tempdir().unwrap();
+    let target = dir.path().join("my_service");
+    let target_arg = target.to_str().unwrap();
+
+    let out = Command::new(garnet_bin())
+        .args(["new", "--template", "web-api", target_arg])
+        .output()
+        .unwrap();
+    assert!(
+        out.status.success(),
+        "garnet new failed\nstdout:\n{}\nstderr:\n{}",
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr)
+    );
+
+    let main = target.join("src/main.garnet");
+    let out = Command::new(garnet_bin())
+        .args(["run", main.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(
+        out.status.success(),
+        "generated service run failed\nstdout:\n{}\nstderr:\n{}",
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("starting my_service on :8080"),
+        "generated service run did not announce itself\nstdout:\n{stdout}"
+    );
+
+    let out = Command::new(garnet_bin())
+        .args(["test", target_arg])
+        .output()
+        .unwrap();
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        out.status.success(),
+        "generated service tests failed\nstdout:\n{stdout}\nstderr:\n{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert!(
+        stdout.contains("1 passed; 0 failed"),
+        "generated service tests did not report all tests passing\nstdout:\n{stdout}"
+    );
+}
