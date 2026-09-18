@@ -98,6 +98,25 @@ third group — the five `time`-class rows (`time::now_ms`, `time::wall_clock_ms
 capability-bearing and checker-only, so an undeclared call really did run.
 Those rows are now `Guard::GateEntry` and trap like the rest.
 
+### Memory declarations are `mem` authority too (D-04b, 2026-09-18)
+
+A first-class `memory <kind> <name> : <type>` declaration — at the top level,
+inside a `module`, or inside an `actor` — allocates a store without calling a
+`memory::*` native, so it is not a registry row and the table above does not
+count it. It is gated all the same. The interpreter's `load_module` runs a
+pre-pass over every declaration and each allocation site applies the identical
+`require_capability("mem", "memory::<kind>")` + `require_entry_capability`
+pair the natives use, so an entry declaring `@caps()` that declares a tier
+fails at load with ``capability: `memory::working` requires @caps(mem)``
+before `main` runs — identically under `--interp`, `--vm`, `garnet test` and
+the WASM adapter. The checker attributes every declaration to the program
+entry `main` as a `memory::<kind>` callee, so `garnet check` reports the same
+`caps coverage` diagnostic. Library modules without `main` are not charged by
+the checker; the runtime still gates them at load. Pinned by the D-04b
+sections of `garnet-cli/tests/caps_enforcement.rs` and
+`check_memory_capability.rs`, `caps_graph` unit tests, and
+`garnet-wasm/tests/run_source.rs`.
+
 Garnet manages frames as follows:
 
 - **Managed (`def`) functions** push a caps frame per call; **program entry**

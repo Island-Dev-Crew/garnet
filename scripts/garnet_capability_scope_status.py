@@ -167,6 +167,10 @@ EXPECTED_ENFORCED_CLAIM_HASHES = [
 CANONICAL_TRUTH_SNIPPETS: dict[Path, list[str]] = {
     WHY_HTML: [
         "S114 acceptance is recorded as <code>accepted-scoped</code> by Jon; the independent verdict remains <code>independently-re-verified-with-fixes</code>.",
+        # D-02/D-04/D-04b: the page must not reintroduce a "checker-only" or
+        # "unrowed" wider surface once the scope table pins those classes empty.
+        "the classes that once hid checker&#8209;only or unrowed authority are pinned empty by test (D&#8209;02, D&#8209;04, D&#8209;04b)",
+        "Claim class · partial — deterministic traps proven on the entry&#8209;gated surface below; the named remainder (unbridged rows, declared&#8209;only vocabulary, generated OS sandbox) is not self&#8209;enforced",
         "WV&#8209;5 proves the Wasm build and real Node execution from a clean Windows checkout; browser&#8209;page execution remains unproven until the W&#8209;PLAY Playwright gate passes.",
     ],
     SCOPE_DOC: [

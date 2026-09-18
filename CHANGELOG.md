@@ -9,6 +9,55 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ## [Unreleased]
 
+### Capabilities — memory declarations are gated under `mem` (D-04b, 2026-09-18)
+
+- **Behaviour change — a `memory <kind> <name> : <type>` declaration now
+  requires `@caps(mem)` on the program entry.** D-04 gated the four
+  `memory::*` constructors, but the first-class declaration form allocated a
+  store directly, outside the registry: a program declaring
+  `memory working scratch : String` at the top level, in a `module` or in an
+  `actor` read and wrote memory under `@caps()` on the checker, both
+  backends and the WASM adapter. Found by the independent cross-family review
+  of the D-04 lane (GPT-5.6 Sol, blocker 1). `Interpreter::load_module` now
+  runs a capability pre-pass over every declaration and each allocation site
+  applies the same `mem` call-chain + entry check as the natives, so the
+  program fails at load with ``capability: `memory::working` requires
+  @caps(mem)`` before `main` runs, identically under `--interp`, `--vm`,
+  `garnet test` and `garnet_wasm::run_source`. `garnet check` attributes each
+  declaration to `main` as a `memory::<kind>` callee and reports the matching
+  `caps coverage` diagnostic. Programs that declare a tier must add `mem` to
+  their entry: `examples/multi_agent_builder`, `examples/agentic_log_analyzer`,
+  the interp examples and the `agent-orchestrator` template (`main`, the two
+  generated tests that spawn memory-owning actors, `Garnet.toml`, README) were
+  updated that way. Rust unit tests that exercise store semantics use the
+  documented `Interpreter::new_permissive()`. The scope document gains a
+  "Memory declarations" section, ADR 0011 records the extension, and the
+  interp/check `AGENTS.md` contracts pin the rule. Pinned by the D-04b
+  sections of `caps_enforcement.rs` and `check_memory_capability.rs`,
+  `caps_graph` unit tests and `garnet-wasm/tests/run_source.rs`. Disclosed:
+  `check_memory_capability.rs` `fresh()` gained an atomic counter because two
+  parallel tests shared a microsecond-stamped temp dir on macOS.
+
+### Checker — an `impl` on one enum no longer vouches for another (D-107b, 2026-09-18)
+
+- **Behaviour change — safe programs that passed the D-107 check may now fail
+  it.** D-107 exempted `Enum::name(..)` from the missing-variant check when
+  `name` is an associated function of `impl Enum`, keyed by the type's last
+  path segment; an `impl Shape` inside `module Other` therefore also
+  whitelisted `Target::Shape::ghost()` on an unrelated enum sharing the
+  basename. Found by the same review (blocker 2). The exemption is now keyed
+  by the enum path the impl target resolves to from the impl's own module
+  scope, so only the enum that owns the associated function can vouch for it;
+  impl targets that do not resolve to exactly one known enum exempt nothing.
+  `docs/funding.html` now describes the D-107 goal as delivered with its
+  remaining bounded scope (managed `def` bodies stay uninspected).
+  `docs/why.html` no longer describes a "checker-only" wider surface or "four
+  unrowed natives" — both classes are pinned empty — and the reconciled
+  sentences are pinned as canonical truth by
+  `scripts/garnet_capability_scope_status.py`. Pinned by
+  `safe_impl_on_a_same_basename_enum_does_not_vouch_for_another_enum`
+  (`garnet-check`) and `q8_*` (`garnet-cli/tests/check_variant_construction.rs`).
+
 ### Capabilities — the memory tiers become a capability, `mem` (D-04, ADR 0011, 2026-09-18)
 
 - **Behaviour change — `memory::working`, `memory::episodic`,
