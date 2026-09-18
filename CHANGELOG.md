@@ -9,6 +9,24 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ## [Unreleased]
 
+### Checked source seals and capability acceptance (T3, 2026-09-18)
+
+- `seal/v2` subjects bind LF-normalized source, including capability edits
+  (U-118). Sealing now refuses checker-fatal source before writing output;
+  advisories remain nonfatal. Provenance chains use v2 source identity.
+- `verify <source> <seal.json>` independently rechecks and regenerates current
+  seal bindings. It accepts exact producer JSON, rejects unknown/duplicate
+  fields and unsupported seal versions, and reports content binding without
+  claiming a signature. Existing deterministic manifests retain their own
+  format and signature verification. Minimum Shelf preserves only its exact
+  pinned historical v1 fixture; archived evidence is unchanged.
+- `verify --caps-baseline` fails on widening on both command routes (the
+  two-argument route previously ignored it). Malformed, missing, checker-invalid,
+  empty and incomplete walks fail closed. Supply explicit source roots rather
+  than repository roots containing skipped build/VCS directories. Duplicate
+  attestation keys and flags inapplicable to the selected verify route are
+  usage errors. Regression coverage: `checked_seal_acceptance`.
+
 ### Checker — `caps coverage` names the primitive, not the hop (2026-09-18)
 
 - **Diagnostic change.** The `via` half of ``caps coverage: function `main`

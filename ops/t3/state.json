@@ -1,0 +1,38 @@
+{
+  "schema": "garnet.t3.execution/1",
+  "base": "f6d448173b349a649212170b95fbc2987d73b2f2",
+  "status": "local_validation_complete_review_pending",
+  "owner": "OpenAI Codex",
+  "authorization": "User approved T3 rescope, check/seal/verify, playground Phase 1 and T-L shadow classifier in this task on 2026-09-18.",
+  "merge_policy": "Jon merges trust-kernel changes after exact-head cross-family review and approval. No settings or release-tag authority.",
+  "scope": [
+    {
+      "id": "checked-acceptance",
+      "status": "locally_validated_review_pending",
+      "branch": "codex/t3-checked-acceptance"
+    },
+    {
+      "id": "playground-phase1",
+      "status": "locally_validated_review_pending",
+      "branch": "codex/playground-phase1"
+    },
+    {
+      "id": "shadow-policy",
+      "status": "locally_validated_review_pending",
+      "branch": "codex/t3-checked-acceptance"
+    }
+  ],
+  "follow_on": [
+    "runtime step budget",
+    "socket bridging and separate per-host policy decision",
+    "converter parse corpus",
+    "T4 reconciliation with Claude"
+  ],
+  "review": {
+    "cross_family": "blocked: independent dispatcher unavailable after reviewer agent credit failures; no verdict claimed",
+    "approval": "pending",
+    "merged": false
+  },
+  "evidence_root": "/Users/IDC2.5/Desktop/dogfood/garnet-t3-2026-09-18",
+  "mission_compatibility": "Existing ops/mission is archived Lane 0 state; left unchanged. ARCHIPELAGO schema requires an unprovided cost cap, so no full protocol kickoff or fabricated budget/approval record is claimed. Evidence discipline applied to this scoped execution record."
+}

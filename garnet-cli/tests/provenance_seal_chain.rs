@@ -49,7 +49,7 @@ fn provenance_chain_binds_declared_agent_model_prompt_to_current_seal() {
         String::from_utf8_lossy(&out.stderr)
     );
     assert!(
-        s.contains(r#""provenance_chain":{"schema":"garnet-provenance-chain-v1""#),
+        s.contains(r#""provenance_chain":{"schema":"garnet-provenance-chain-v2""#),
         "{s}"
     );
     assert!(s.contains(r#""agent":"win-codex""#), "{s}");

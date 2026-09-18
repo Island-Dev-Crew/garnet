@@ -86,6 +86,29 @@ Owns the `garnet` binary, subcommand routing, template embedding, deterministic 
   walk reached was read or tallied; ABSENCE of the field means a pre-cure
   binary and an UNKNOWN walk. `caps`, `verify` and `sandbox-policy` inherit the
   walk but do not yet surface the tally.
+- `garnet seal` runs the edition-aware checker before emitting or writing any
+  output; fatal findings reject, advisory diagnostics go to stderr and remain
+  nonfatal. The current `seal/v2` subject is the BLAKE3 of LF-normalized source
+  (`garnet-source-lf-blake3-v1`), binding declared capabilities and every other
+  source edit. `ast_hash` stays a compatibility field, not the seal identity.
+  `garnet verify <source> <seal.json>` rechecks source and independently
+  regenerates the current seal, including provenance-chain bindings. Only
+  exact producer JSON bytes with at most one final LF are accepted; duplicate
+  or unknown fields, unsupported versions, and tampering fail. This verifies
+  content binding, not signatures or independent authorship. `--signature`
+  remains exclusive to the legacy deterministic-manifest format; that format
+  keeps its existing signature checks. Minimum Shelf alone retains its exact
+  byte-pinned historical v1 predicate; never generalize that compatibility to
+  arbitrary seals or reseal the archived flagship evidence.
+- `verify --caps-baseline` is an enforced acceptance condition on both verify
+  routes: widening returns nonzero, and unreadable, malformed, checker-invalid,
+  empty, or partially walked input cannot become PASS or pending. Supply
+  explicit source roots when `.git`, `target`, vendor, or linked directories
+  would be omitted. No-baseline runs keep their existing pending signal;
+  external reviewer bands remain advisory. Baseline checking is a local
+  filesystem observation, not an atomic snapshot of concurrently edited files.
+  Test these contracts with `cargo test -p garnet-cli --test checked_seal_acceptance`
+  and the Minimum Shelf suites after changing sealing or verification.
 - Deterministic build/verify behavior must stay reproducible.
 - Crash surface (RB-2): `src/lib.rs` AND `src/bin/garnet.rs` carry
   `#![deny(clippy::unwrap_used, clippy::expect_used)]` (tests exempt via

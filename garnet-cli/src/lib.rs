@@ -136,7 +136,7 @@ pub fn print_help() {
         "                                     (--machine: deterministic single-line JSON verdict for agent reviewers)"
     );
     println!(
-        "    seal   <file.garnet>             Emit an in-toto seal attestation (cosign-signable; SBOM-equivalent)"
+        "    seal   <file.garnet>             Check source, then emit source-bound seal/v2 (unsigned)"
     );
     println!(
         "    agent-loop --baseline <o> --proposal <n>  Accept agent-authored code ONLY on diff-caps + enforced-kernel evidence, then seal (S102)"
@@ -171,9 +171,12 @@ pub fn print_help() {
     println!(
         "           [--external-band <1-5>]   check; emits a fused merge-confidence band (min of"
     );
-    println!("           [--caps-baseline <old>]   internal/external/diff-caps; nonzero on fatal)");
-    println!("    verify <file> <manifest.json>    Verify the manifest matches the source");
-    println!("           [--signature]             Require a valid Ed25519 signature");
+    println!("           [--caps-baseline <old>]   internal/external/diff-caps; nonzero on fatal or widening)");
+    println!("    verify <file> <artifact.json>    Verify a seal/v2 or deterministic manifest");
+    println!("           [--caps-baseline <old>]   Refuse widening or invalid/incomplete comparison inputs");
+    println!(
+        "           [--signature]             Manifest only: require a valid Ed25519 signature"
+    );
     println!("    keygen <keyfile>                 Generate an Ed25519 signing keypair");
     println!(
         "    convert <lang> <file>            Migration assistant — lift Rust/Ruby/Python/Go source"

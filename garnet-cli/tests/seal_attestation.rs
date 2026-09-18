@@ -34,7 +34,7 @@ fn seal_emits_an_in_toto_statement() {
         s.contains(r#""_type":"https://in-toto.io/Statement/v1""#),
         "{s}"
     );
-    assert!(s.contains(r#""predicateType":"https://garnet-lang.org/attestation/seal/v1""#));
+    assert!(s.contains(r#""predicateType":"https://garnet-lang.org/attestation/seal/v2""#));
     assert!(s.contains(r#""build_manifest":{"#), "{s}");
     assert!(
         s.contains(r#""capability_manifest":{"schema":"garnet-capability-manifest-v1""#),

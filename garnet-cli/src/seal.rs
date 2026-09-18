@@ -20,9 +20,11 @@ use std::process::Command;
 /// in-toto Statement type (v1).
 pub const STATEMENT_TYPE: &str = "https://in-toto.io/Statement/v1";
 /// Garnet's seal predicate type.
-pub const PREDICATE_TYPE: &str = "https://garnet-lang.org/attestation/seal/v1";
+pub const PREDICATE_TYPE: &str = "https://garnet-lang.org/attestation/seal/v2";
+/// Digest identity: source bytes after CRLF-to-LF normalization, not a project closure.
+pub const SUBJECT_IDENTITY: &str = "garnet-source-lf-blake3-v1";
 /// Garnet's self-declared provenance-chain block schema.
-pub const PROVENANCE_CHAIN_SCHEMA: &str = "garnet-provenance-chain-v1";
+pub const PROVENANCE_CHAIN_SCHEMA: &str = "garnet-provenance-chain-v2";
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SealProvenanceChain {
@@ -129,6 +131,7 @@ pub fn statement_json_with_chain(
          \"subject\":[{{\"name\":\"{name}\",\"digest\":{{\"blake3\":\"{ast}\"}}}}],\
          \"predicateType\":\"{ptype}\",\
          \"predicate\":{{\
+         \"subject_identity\":\"{identity}\",\
          \"source_blake3\":\"{src}\",\
          \"build_manifest\":{build_json},\
          \"capability_manifest\":{caps_json},\
@@ -136,7 +139,8 @@ pub fn statement_json_with_chain(
          }}}}",
         stmt = json_escape(STATEMENT_TYPE),
         name = json_escape(program),
-        ast = json_escape(&build.ast_hash),
+        ast = json_escape(&build.source_hash),
+        identity = SUBJECT_IDENTITY,
         ptype = json_escape(PREDICATE_TYPE),
         src = json_escape(&build.source_hash),
         build_json = build.to_canonical_json(),
@@ -144,6 +148,70 @@ pub fn statement_json_with_chain(
         cosign_note = json_escape(cosign_note),
         sbom = json_escape(sbom_note),
     )
+}
+
+/// Verify a current seal against freshly checked source. Only the exact producer
+/// serialization (with an optional trailing newline) is accepted: this rejects
+/// duplicate/unknown fields, not merely the last value a JSON parser retained.
+/// This verifies content binding, never a signature or independent origin.
+pub fn verify_statement(
+    input: &str,
+    build: &Manifest,
+    caps: &CapabilityManifest,
+) -> Result<(), String> {
+    use serde_json::Value;
+    let value: Value = serde_json::from_str(input).map_err(|e| format!("seal JSON: {e}"))?;
+    if value.get("_type").and_then(Value::as_str) != Some(STATEMENT_TYPE)
+        || value.get("predicateType").and_then(Value::as_str) != Some(PREDICATE_TYPE)
+    {
+        return Err("unsupported seal format/version; reseal checked source with seal/v2".into());
+    }
+    let program = value
+        .pointer("/subject/0/name")
+        .and_then(Value::as_str)
+        .ok_or("seal subject name is missing")?;
+    let predicate = value.get("predicate").ok_or("seal predicate is missing")?;
+    let authorship = match predicate.get("authorship") {
+        None => None,
+        Some(value) => Some(value.as_str().ok_or("seal authorship must be a string")?),
+    };
+    let mut attestation = Vec::new();
+    if let Some(value) = predicate.get("attestation") {
+        for (key, value) in value
+            .as_object()
+            .ok_or("seal attestation must be an object")?
+        {
+            attestation.push((
+                key.clone(),
+                value
+                    .as_str()
+                    .ok_or("seal attestation values must be strings")?
+                    .to_string(),
+            ));
+        }
+    }
+    let chain = if predicate.get("provenance_chain").is_some() {
+        Some(build_provenance_chain(build, authorship, &attestation)?)
+    } else {
+        None
+    };
+    // Tool availability is producer metadata; verification must never depend on
+    // whether cosign is installed on the verifying machine or invoke it.
+    for cosign in [false, true] {
+        let expected = statement_json_with_chain(
+            program,
+            build,
+            caps,
+            cosign,
+            authorship,
+            &attestation,
+            chain.as_ref(),
+        );
+        if input.strip_suffix('\n').unwrap_or(input) == expected {
+            return Ok(());
+        }
+    }
+    Err("seal content/binding mismatch or noncanonical fields/bytes".into())
 }
 
 /// Build and verify the S97 chain from the existing self-declared attestation
@@ -177,7 +245,7 @@ pub fn build_provenance_chain(
     payload.push_str(&build.source_hash);
     payload.push('\n');
     payload.push_str("artifact_blake3=");
-    payload.push_str(&build.ast_hash);
+    payload.push_str(&build.source_hash);
     payload.push('\n');
     payload.push_str("authorship=");
     payload.push_str(authorship.unwrap_or(""));
@@ -194,7 +262,7 @@ pub fn build_provenance_chain(
         agent,
         model,
         prompt_sha256,
-        artifact_blake3: build.ast_hash.clone(),
+        artifact_blake3: build.source_hash.clone(),
         source_blake3: build.source_hash.clone(),
         chain_blake3: blake3::hash(payload.as_bytes()).to_hex().to_string(),
     })
@@ -272,7 +340,7 @@ mod tests {
             json.contains(r#""_type":"https://in-toto.io/Statement/v1""#),
             "{json}"
         );
-        assert!(json.contains(r#""predicateType":"https://garnet-lang.org/attestation/seal/v1""#));
+        assert!(json.contains(r#""predicateType":"https://garnet-lang.org/attestation/seal/v2""#));
         assert!(json.contains(r#""name":"demo""#));
         assert!(json.contains(r#""digest":{"blake3":""#), "{json}");
         // The two embedded manifests are present as nested JSON.
@@ -319,7 +387,7 @@ mod tests {
         .expect("valid chain");
         assert_eq!(chain.agent, "win-codex");
         assert_eq!(chain.model, "gpt-5");
-        assert_eq!(chain.artifact_blake3, build.ast_hash);
+        assert_eq!(chain.artifact_blake3, build.source_hash);
         assert_eq!(chain.source_blake3, build.source_hash);
         assert_eq!(chain.chain_blake3.len(), 64);
     }

@@ -108,7 +108,10 @@ automated reviewers.
 
 .TP
 .B seal \fIFILE\fR
-Emit an in-toto attestation (a seal) for \fIFILE\fR, ready for cosign to sign.
+Check source and emit a seal/v2 in-toto attestation, ready for external signing.
+The subject binds LF-normalized source, including capability declarations.
+Fatal checker diagnostics prevent output; advisories remain nonfatal.
+The seal is content provenance, not a signature.
 
 .TP
 .B caps\-log \fIFILE\fR \fR[\fB\-\-log\fR \fIPATH\fR] | \fB\-\-verify\fR \fILOG\fR
@@ -128,7 +131,10 @@ support it, then seal it.
 Acceptance gate: an edition-aware parse and safe-mode check that reports a
 merge-confidence band, the minimum of the signals present: the internal
 check, plus \fB\-\-external\-band\fR and the diff-caps comparison when given.
-A low band alone does not fail the command; a fatal finding does.
+A fatal finding or declared capability widening against the baseline fails.
+A supplied baseline must be readable, checker-valid and nonempty; a comparison
+that omits directories fails. Use explicit source roots without skipped build
+or VCS directories. External reviewer bands remain advisory.
 
 .TP
 .B trust\-report \fIFILE\fR
@@ -175,7 +181,13 @@ the Ed25519 key stored in \fIKEYFILE\fR.
 
 .TP
 .B verify \fIFILE\fR \fIMANIFEST\fR \fR[\fB\-\-signature\fR]
-Check that \fIMANIFEST\fR matches a fresh build of \fIFILE\fR.
+Check that the artifact matches a fresh build of \fIFILE\fR.
+A seal/v2 also reruns the checker and regenerates source/capability bindings;
+only exact producer JSON with at most one final LF is accepted. Unknown seal
+versions and duplicate or unknown fields fail. This is content verification,
+not signature verification. The signature option is rejected for seals.
+The optional capability baseline applies to this route too and refuses
+widening or invalid/incomplete comparison inputs.
 A signed manifest always needs a valid Ed25519 signature;
 \fB\-\-signature\fR also rejects an unsigned one.
 
