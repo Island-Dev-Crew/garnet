@@ -8,9 +8,11 @@ description = "A Garnet multi-actor agent orchestrator (Researcher / Synthesizer
 mode = "managed"
 
 [caps]
-# Starter project is pure so first run is frictionless.
-# Add time/fs/net as the project grows into persisted traces or services.
-allowed = []
+# The starter holds only memory authority: each actor declares a memory tier,
+# and a `memory` declaration is gated under `mem` (ADR 0011). No host
+# authority; add time/fs/net as the project grows into persisted traces or
+# services.
+allowed = ["mem"]
 
 [[bin]]
 name = "{{name}}"

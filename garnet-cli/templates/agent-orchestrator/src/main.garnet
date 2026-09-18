@@ -84,7 +84,7 @@ def orchestrate(seed) {
   }
 }
 
-@caps()
+@caps(mem)
 def main() {
   println("starting {{name}}: Researcher / Synthesizer / Reviewer")
   let accepted = orchestrate(3)

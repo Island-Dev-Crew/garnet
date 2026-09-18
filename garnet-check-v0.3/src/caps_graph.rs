@@ -82,13 +82,35 @@
 //! audit.rs error is enough), and permits managed-mode wildcard use to pass.
 
 use crate::capset::CapSet;
-use garnet_parser::ast::{Capability, Expr, FnDef, FnMode, Item, Module, Stmt, TypeExpr};
+use garnet_parser::ast::{
+    ActorItem, Capability, Expr, FnDef, FnMode, Item, Module, Stmt, TypeExpr,
+};
 use std::collections::{BTreeMap, BTreeSet};
 
 /// The graph key for a function. Free functions key on their bare name; impl
 /// methods key on `Owner::name`. This MUST match the `Owner::method` naming
 /// the S114 capability surface uses ([`crate::capability_surface`]) so the
 /// graph and the surface agree on impl-method identity.
+/// Collect the constructor row (`memory::<kind>`) of every `memory` declaration
+/// under `items`, recursing into nested modules and into actor bodies. The walk
+/// mirrors the interpreter's `require_module_memory_capabilities`.
+fn collect_memory_declaration_rows(items: &[Item], rows: &mut Vec<String>) {
+    for item in items {
+        match item {
+            Item::Memory(decl) => rows.push(format!("memory::{}", decl.kind.as_str())),
+            Item::Actor(actor) => {
+                for actor_item in &actor.items {
+                    if let ActorItem::Memory(decl) = actor_item {
+                        rows.push(format!("memory::{}", decl.kind.as_str()));
+                    }
+                }
+            }
+            Item::Module(m) => collect_memory_declaration_rows(&m.items, rows),
+            _ => {}
+        }
+    }
+}
+
 fn fn_key(owner: Option<&str>, name: &str) -> String {
     match owner {
         Some(owner) => format!("{owner}::{name}"),
@@ -270,6 +292,26 @@ impl CapsGraph {
         // Second pass: walk each fn's body, record its callees.
         for item in &module.items {
             graph.collect_fn_callees(item);
+        }
+
+        // Third pass (D-04b, ADR 0011): every `memory <kind> <name> : <type>`
+        // declaration — top level, inside a nested `module`, or inside an
+        // `actor` — is the same store construction as the `memory::<kind>`
+        // constructor row and is charged to the program entry as that row.
+        // The runtime builds these stores at load time under the entry frame
+        // (`garnet-interp-v0.3/src/lib.rs` `load_module`), so `main` is the
+        // fn whose declared caps must cover them; a module without `main` is
+        // a library and has no entry to charge. Before this pass the
+        // declaration form was caps-invisible while the constructor rows were
+        // gated (cross-family review of 4ce90eb6, blocker 1).
+        if graph.declared.contains_key("main") {
+            let mut rows = Vec::new();
+            collect_memory_declaration_rows(&module.items, &mut rows);
+            graph
+                .callees
+                .entry("main".to_string())
+                .or_default()
+                .extend(rows.into_iter().map(CalleeRef::Primitive));
         }
 
         graph

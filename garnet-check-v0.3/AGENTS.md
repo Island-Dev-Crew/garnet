@@ -27,6 +27,12 @@ Owns safe-mode validation, CapCaps propagation, borrow/safety checks, and depend
 - `capability_surface`/`caps_diff` keep full string fidelity (including
   unknown and wildcard names): a gained unknown capability must still gate
   as authority expansion in diff-caps.
+- Memory declarations charge `mem` (D-04b, cured 2026-09-18). `CapsGraph::build`
+  attributes every `memory <kind> ..` declaration (top-level, module, actor)
+  to the program entry `main` as a `memory::<kind>` primitive callee, so
+  `garnet check` reports `caps coverage` for an entry that declares a tier
+  without `@caps(mem)`, matching the runtime pre-pass. Library modules
+  without `main` are not charged; the runtime still gates them at load.
 - Enum variant construction is checked in safe functions (D-107, cured
   2026-09-18). `match_coverage::check_variant_construction` runs on every
   `Enum::Variant(args...)` call and bare `Enum::Variant` path the safe-mode

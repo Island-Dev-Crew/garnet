@@ -41,7 +41,7 @@ pub use error::RuntimeError;
 pub use prelude::{PRELUDE_SOURCE, PRELUDE_VERSION};
 pub use value::Value;
 
-use garnet_parser::ast::{FnDef, Item, Module, TypeExpr};
+use garnet_parser::ast::{ActorItem, FnDef, Item, Module, TypeExpr};
 use std::rc::Rc;
 
 /// The top-level interpreter. Owns the global environment and the set of
@@ -149,6 +149,14 @@ impl Interpreter {
         // called. A pre-pass means a bad bound fails the load cleanly with
         // nothing partially registered.
         validate_module_max_depth(&module.items)?;
+        // D-04b: every `memory` declaration the module hosts — top level, inside
+        // a nested `module`, or inside an `actor` — is gated on `mem` BEFORE
+        // anything registers, so an uncovered declaration fails the load with no
+        // store built and no `main` run. Nested modules are otherwise deferred
+        // (see `register_item`), which is exactly why they are walked here: the
+        // declaration must not become a caps-free allocation the day module
+        // evaluation lands. The allocation sites re-check as defense in depth.
+        require_module_memory_capabilities(&module.items)?;
         for item in module.items {
             self.register_item(item)?;
         }
@@ -193,6 +201,9 @@ impl Interpreter {
                 self.global.define(&decl.name, val);
             }
             Item::Memory(decl) => {
+                // D-04b: the declaration carries the `mem` gate of its
+                // constructor row; refused before any store is built.
+                eval::require_memory_declaration_capability(&decl)?;
                 // Kind-aware allocator dispatch (Paper VI Contribution 4):
                 // each declared kind gets its purpose-built backing store.
                 let backend = value::MemoryBackend::for_kind(decl.kind);
@@ -365,6 +376,27 @@ fn validate_module_max_depth(items: &[Item]) -> Result<(), RuntimeError> {
                 }
             }
             Item::Module(m) => validate_module_max_depth(&m.items)?,
+            _ => {}
+        }
+    }
+    Ok(())
+}
+
+/// Recursively gate every `memory` declaration in `items` on `mem` (D-04b). The
+/// walk mirrors `garnet check`'s `caps_graph`, which charges `main` with the
+/// tier's `memory::<kind>` row for the same three placements.
+fn require_module_memory_capabilities(items: &[Item]) -> Result<(), RuntimeError> {
+    for item in items {
+        match item {
+            Item::Memory(decl) => eval::require_memory_declaration_capability(decl)?,
+            Item::Actor(actor) => {
+                for actor_item in &actor.items {
+                    if let ActorItem::Memory(decl) = actor_item {
+                        eval::require_memory_declaration_capability(decl)?;
+                    }
+                }
+            }
+            Item::Module(m) => require_module_memory_capabilities(&m.items)?,
             _ => {}
         }
     }

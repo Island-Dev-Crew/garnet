@@ -9,7 +9,9 @@
 use garnet_interp::{Interpreter, Value};
 
 fn load(src: &str) -> Interpreter {
-    let mut interp = Interpreter::new();
+    // D-04b: memory declarations are gated by `mem`; these tests exercise
+    // backend dispatch, not capability policy, so use the permissive instance.
+    let mut interp = Interpreter::new_permissive();
     interp.load_source(src).expect("load");
     interp
 }
@@ -68,7 +70,7 @@ fn procedural_kind_produces_workflowstore_backend() {
 
 #[test]
 fn working_store_supports_push_len_clear() {
-    let mut interp = Interpreter::new();
+    let mut interp = Interpreter::new_permissive(); // D-04b, see `load`
     interp
         .load_source(
             r#"
@@ -88,7 +90,7 @@ fn working_store_supports_push_len_clear() {
 
 #[test]
 fn episodic_store_supports_append_recent() {
-    let mut interp = Interpreter::new();
+    let mut interp = Interpreter::new_permissive(); // D-04b, see `load`
     interp
         .load_source(
             r#"
@@ -109,7 +111,7 @@ fn episodic_store_supports_append_recent() {
 
 #[test]
 fn semantic_store_supports_insert_search() {
-    let mut interp = Interpreter::new();
+    let mut interp = Interpreter::new_permissive(); // D-04b, see `load`
     interp
         .load_source(
             r#"
@@ -129,7 +131,7 @@ fn semantic_store_supports_insert_search() {
 
 #[test]
 fn procedural_store_supports_register_find() {
-    let mut interp = Interpreter::new();
+    let mut interp = Interpreter::new_permissive(); // D-04b, see `load`
     interp
         .load_source(
             r#"
@@ -153,7 +155,7 @@ fn procedural_store_supports_register_find() {
 
 #[test]
 fn working_store_rejects_recent_method() {
-    let mut interp = Interpreter::new();
+    let mut interp = Interpreter::new_permissive(); // D-04b, see `load`
     interp
         .load_source(
             r#"
@@ -171,7 +173,7 @@ fn working_store_rejects_recent_method() {
 
 #[test]
 fn semantic_store_rejects_recent_method() {
-    let mut interp = Interpreter::new();
+    let mut interp = Interpreter::new_permissive(); // D-04b, see `load`
     interp
         .load_source(
             r#"
@@ -186,7 +188,7 @@ fn semantic_store_rejects_recent_method() {
 
 #[test]
 fn procedural_store_rejects_search_method() {
-    let mut interp = Interpreter::new();
+    let mut interp = Interpreter::new_permissive(); // D-04b, see `load`
     interp
         .load_source(
             r#"
@@ -203,7 +205,7 @@ fn procedural_store_rejects_search_method() {
 
 #[test]
 fn rebind_shares_backend_so_writes_are_visible() {
-    let mut interp = Interpreter::new();
+    let mut interp = Interpreter::new_permissive(); // D-04b, see `load`
     interp
         .load_source(
             r#"

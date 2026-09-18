@@ -298,7 +298,7 @@ def synthetic_log() {
   ]
 }
 
-@caps()
+@caps(mem)
 def main() {
   let log = synthetic_log()
   let recorded = ingest(log)

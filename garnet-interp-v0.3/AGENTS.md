@@ -25,6 +25,17 @@ Owns managed-mode tree-walk execution, expression evaluation, stdlib bridging, a
   chain: `garnet run` does not run the checker, so this is the only place the
   entry budget is enforced. `garnet-cli/tests/entry_budget_enforcement.rs`
   pins each shape named above, on both backends.
+- Memory declarations are `mem` authority (D-04b, cured 2026-09-18). A
+  first-class `memory <kind> <name> : <type>` — top-level, inside a `module`,
+  or inside an `actor` — allocates a store without touching the registry, so
+  `load_module` runs `require_module_memory_capabilities` as a pre-pass and
+  every allocation site (`register_item`, `init_actor_env`) calls
+  `require_memory_declaration_capability`, which applies the same
+  `require_capability("mem", ..)` + `require_entry_capability` pair as the
+  `memory::*` natives. An entry declaring `@caps()` therefore cannot own a
+  memory tier by declaring it instead of constructing it. Rust unit tests
+  that exercise store semantics use `Interpreter::new_permissive()`; anything
+  reachable from `garnet run`/WASM stays strict.
 - Prefer explicit errors over silent no-ops for unsupported language features.
 - Registry-derived dispatch (RB-3): `stdlib_bridge::install()` is ONE loop
   joining `garnet_stdlib::registry::all_prims()` (Binding/Guard/arity

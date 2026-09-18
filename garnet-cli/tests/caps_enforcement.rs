@@ -489,7 +489,10 @@ fn undeclared_memory_declaration_traps_before_main_runs() {
     let out = run_interp(
         "memory working scratch : String\n\n@caps()\ndef main() {\n  scratch.push(\"leak\")\n  scratch.len()\n}\n",
     );
-    assert!(!out.status.success(), "undeclared memory declaration must trap");
+    assert!(
+        !out.status.success(),
+        "undeclared memory declaration must trap"
+    );
     let stdout = String::from_utf8_lossy(&out.stdout);
     assert!(
         !stdout.contains("=> 1"),

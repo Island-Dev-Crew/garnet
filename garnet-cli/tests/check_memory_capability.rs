@@ -19,13 +19,18 @@ fn garnet() -> Command {
 }
 
 fn fresh(tag: &str) -> PathBuf {
+    // A per-process counter disambiguates two tests that call this within the
+    // same clock tick (macOS `SystemTime` is microsecond-granular): two threads
+    // sharing one directory made a `garnet check` read a half-written file.
+    static SEQ: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
     let dir = std::env::temp_dir().join(format!(
-        "garnet-check-mem-{tag}-{}-{}",
+        "garnet-check-mem-{tag}-{}-{}-{}",
         std::process::id(),
         std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
-            .as_nanos()
+            .as_nanos(),
+        SEQ.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
     ));
     std::fs::create_dir_all(&dir).unwrap();
     dir
@@ -185,9 +190,18 @@ fn sandbox_policy_does_not_call_mem_unknown() {
 fn check_rejects_an_undeclared_memory_declaration() {
     for (decl, tier) in [
         ("memory working scratch : String", "memory::working"),
-        ("memory episodic scratch : EpisodeStore<String>", "memory::episodic"),
-        ("memory semantic scratch : VectorIndex<String>", "memory::semantic"),
-        ("memory procedural scratch : WorkflowStore<String>", "memory::procedural"),
+        (
+            "memory episodic scratch : EpisodeStore<String>",
+            "memory::episodic",
+        ),
+        (
+            "memory semantic scratch : VectorIndex<String>",
+            "memory::semantic",
+        ),
+        (
+            "memory procedural scratch : WorkflowStore<String>",
+            "memory::procedural",
+        ),
     ] {
         let (code, text) = check(&format!("{decl}\n\n@caps()\ndef main() {{\n  1\n}}\n"));
         assert_eq!(
