@@ -889,3 +889,7 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+#[path = "caps_graph_cycle_tests.rs"]
+mod cycle_tests;
