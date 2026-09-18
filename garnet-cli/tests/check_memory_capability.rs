@@ -173,3 +173,74 @@ fn sandbox_policy_does_not_call_mem_unknown() {
         "mem is a canonical capability, not an unknown one: {text}"
     );
 }
+
+// D-04b (2026-09-18, cross-family review of 4ce90eb6) — the `memory`
+// declaration is charged to the program entry the way its constructor call
+// is. Before this cure `garnet check` walked only function bodies, so a
+// top-level or actor `memory ...` declaration under `@caps()` produced no
+// diagnostic and `garnet caps` reported an empty set for a program that owned
+// four stores.
+
+#[test]
+fn check_rejects_an_undeclared_memory_declaration() {
+    for (decl, tier) in [
+        ("memory working scratch : String", "memory::working"),
+        ("memory episodic scratch : EpisodeStore<String>", "memory::episodic"),
+        ("memory semantic scratch : VectorIndex<String>", "memory::semantic"),
+        ("memory procedural scratch : WorkflowStore<String>", "memory::procedural"),
+    ] {
+        let (code, text) = check(&format!("{decl}\n\n@caps()\ndef main() {{\n  1\n}}\n"));
+        assert_eq!(
+            code,
+            Some(1),
+            "`{decl}`: an undeclared memory declaration must fail check: {text}"
+        );
+        assert!(
+            text.contains(&format!(
+                "caps coverage: function `main` does not declare `mem` but transitively calls `{tier}` which requires it"
+            )),
+            "`{decl}`: expected a caps coverage diagnostic naming `mem` via `{tier}`, got: {text}"
+        );
+    }
+}
+
+#[test]
+fn check_accepts_a_declared_memory_declaration() {
+    let (code, text) = check(
+        "memory working scratch : String\n\n@caps(mem)\ndef main() {\n  scratch.push(\"a\")\n  scratch.len()\n}\n",
+    );
+    assert_eq!(code, Some(0), "declared @caps(mem) must pass check: {text}");
+    assert!(
+        !text.contains("caps coverage"),
+        "declared `mem` must satisfy caps coverage: {text}"
+    );
+}
+
+#[test]
+fn check_rejects_an_undeclared_actor_memory_declaration() {
+    let (code, text) = check(
+        "actor Recorder {\n  memory episodic log : EpisodeStore<String>\n\n  protocol note(x: String) -> Int\n\n  on note(x) {\n    log.append(x)\n    1\n  }\n}\n\n@caps()\ndef main() {\n  let r = spawn Recorder.note(\"a\")\n  r\n}\n",
+    );
+    assert_eq!(code, Some(1), "{text}");
+    assert!(
+        text.contains("does not declare `mem`") && text.contains("memory::episodic"),
+        "expected the caps coverage diagnostic for the actor store, got: {text}"
+    );
+}
+
+#[test]
+fn check_rejects_an_undeclared_module_memory_declaration() {
+    let (code, text) = check(
+        "module Store {\n  memory semantic facts : VectorIndex<String>\n}\n\n@caps()\ndef main() {\n  1\n}\n",
+    );
+    assert_eq!(code, Some(1), "{text}");
+    assert!(text.contains("does not declare `mem`"), "{text}");
+}
+
+#[test]
+fn fs_does_not_cover_a_memory_declaration_at_check_time() {
+    let (code, text) =
+        check("memory semantic facts : VectorIndex<String>\n\n@caps(fs)\ndef main() {\n  1\n}\n");
+    assert_eq!(code, Some(1), "{text}");
+    assert!(text.contains("does not declare `mem`"), "{text}");
+}

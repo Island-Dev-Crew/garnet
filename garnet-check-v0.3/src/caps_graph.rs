@@ -930,6 +930,44 @@ mod tests {
         );
     }
 
+    /// D-04b — a `memory` declaration (top-level, in a module, or inside an
+    /// actor) is charged to `main` as the tier's constructor row, so the same
+    /// `mem` coverage rule the `memory::*` calls obey applies to declarations.
+    #[test]
+    fn memory_declarations_charge_main_with_mem() {
+        for (src, tier) in [
+            (
+                "memory working scratch : String\n@caps()\ndef main() { 1 }\n",
+                "memory::working",
+            ),
+            (
+                "module Store {\n  memory semantic facts : VectorIndex<String>\n}\n@caps()\ndef main() { 1 }\n",
+                "memory::semantic",
+            ),
+            (
+                "actor Recorder {\n  memory episodic log : EpisodeStore<String>\n  protocol note(x: String) -> Int\n  on note(x) { 1 }\n}\n@caps()\ndef main() { 1 }\n",
+                "memory::episodic",
+            ),
+        ] {
+            let r = check_caps_coverage(&parse(src));
+            assert!(
+                r.violations
+                    .iter()
+                    .any(|v| v.fn_name == "main" && v.missing == "mem" && v.via == tier),
+                "expected `main` charged with `mem` via `{tier}` for:\n{src}\ngot {:?}",
+                r.violations
+            );
+        }
+        let r = check_caps_coverage(&parse(
+            "memory working scratch : String\n@caps(mem)\ndef main() { 1 }\n",
+        ));
+        assert!(
+            r.violations.is_empty(),
+            "a declared `mem` covers the declaration, got {:?}",
+            r.violations
+        );
+    }
+
     #[test]
     fn pure_fn_needs_no_caps() {
         let m = parse(
