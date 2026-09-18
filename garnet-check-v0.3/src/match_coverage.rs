@@ -164,15 +164,27 @@ struct Scope {
 #[derive(Debug, Default)]
 struct Checker {
     enums: BTreeMap<Vec<String>, EnumInfo>,
-    /// D-107: associated function names per `impl <Type>` target, keyed by the
-    /// target's last path segment. `Shape::new(...)` is a call to an impl fn,
-    /// not a variant construction; the key is the bare type name so a
-    /// mis-resolved impl path can only make the check more lenient, never
-    /// produce a false rejection.
-    impl_fns: BTreeMap<String, BTreeSet<String>>,
+    /// D-107: associated function names per `impl <Type>` target, keyed by
+    /// the resolved enum path the impl block targets. `Shape::new(...)` is a
+    /// call to an impl fn, not a variant construction, but only the enum that
+    /// owns the impl may vouch for it (D-107b): an impl on `other::Shape`
+    /// must not whitelist `target::Shape::ghost()`. Impl blocks whose target
+    /// does not resolve to a known enum exempt nothing.
+    impl_fns: BTreeMap<Vec<String>, BTreeSet<String>>,
+    /// Raw `impl` targets gathered alongside enums, resolved into `impl_fns`
+    /// once module scopes (imports, aliases) are known.
+    pending_impls: Vec<PendingImpl>,
     const_guard_facts: BTreeMap<Vec<String>, ConstFact>,
     scopes: BTreeMap<Vec<String>, Scope>,
     errors: Vec<CheckError>,
+}
+
+/// An `impl <Type> { .. }` block seen in `collect_enums`, before scopes exist.
+#[derive(Debug)]
+struct PendingImpl {
+    module_path: Vec<String>,
+    target_path: Vec<String>,
+    method_names: BTreeSet<String>,
 }
 
 type Env = BTreeMap<String, FiniteDomain>;
@@ -184,6 +196,7 @@ pub fn check_match_coverage(module: &Module) -> Vec<CheckError> {
     checker.collect_enums(&module.items, &[]);
     checker.collect_const_guard_facts(&module.items, &[]);
     checker.collect_scopes(&module.items, &[]);
+    checker.resolve_impl_targets();
     checker.check_items(&module.items, module.safe, &[]);
     checker.errors
 }
@@ -211,10 +224,15 @@ impl Checker {
                 }
                 Item::Impl(impl_block) => {
                     if let TypeExpr::Named { path, .. } = &impl_block.target {
-                        if let Some(type_name) = path.last() {
-                            let names = self.impl_fns.entry(type_name.clone()).or_default();
-                            names.extend(impl_block.methods.iter().map(|m| m.name.clone()));
-                        }
+                        self.pending_impls.push(PendingImpl {
+                            module_path: prefix.to_vec(),
+                            target_path: path.clone(),
+                            method_names: impl_block
+                                .methods
+                                .iter()
+                                .map(|m| m.name.clone())
+                                .collect(),
+                        });
                     }
                 }
                 Item::Module(module) => {
@@ -377,6 +395,27 @@ impl Checker {
             return None;
         }
         candidates.into_values().next()
+    }
+
+    /// D-107b: key every impl block's associated functions by the enum the
+    /// target resolves to from the impl's own module scope. Unresolvable or
+    /// ambiguous targets are dropped, so they exempt no missing variant.
+    fn resolve_impl_targets(&mut self) {
+        let pending = std::mem::take(&mut self.pending_impls);
+        for PendingImpl {
+            module_path,
+            target_path,
+            method_names,
+        } in pending
+        {
+            let scope = self.scope_for(&module_path);
+            if let Some(domain) = self.resolve_enum(&target_path, &scope) {
+                self.impl_fns
+                    .entry(domain.info.path)
+                    .or_default()
+                    .extend(method_names);
+            }
+        }
     }
 
     fn collect_scopes(&mut self, items: &[Item], module_path: &[String]) {
@@ -963,7 +1002,7 @@ impl Checker {
         let Some(info) = domain.info.variants.get(variant) else {
             let is_impl_fn = self
                 .impl_fns
-                .get(enum_name)
+                .get(&domain.info.path)
                 .is_some_and(|names| names.contains(variant));
             if !is_impl_fn {
                 self.errors.push(CheckError::SafeModeViolation(format!(
