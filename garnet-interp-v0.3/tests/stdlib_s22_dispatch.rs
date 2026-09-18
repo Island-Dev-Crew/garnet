@@ -127,7 +127,7 @@ fn s22_process_dispatch_spawns_waits_and_reports_exit_code() {
 #[test]
 fn s22_memory_constructors_return_live_mnemos_handles() {
     let result = run(r#"
-        @caps()
+        @caps(mem)
         def main() {
           let work_store = memory::working("scratch")
           work_store.push("alpha")

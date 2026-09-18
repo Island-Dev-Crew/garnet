@@ -104,6 +104,7 @@ actor Greeter {
 # Main: drive every contribution end-to-end
 # ════════════════════════════════════════════════════════════════════
 
+@caps(mem)
 def main() {
   println("--- categorize ---")
   println(categorize(-3))

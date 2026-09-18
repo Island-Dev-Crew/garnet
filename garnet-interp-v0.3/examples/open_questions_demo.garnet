@@ -66,6 +66,7 @@ impl Named for Person {
 # OQ11: lifetime elision — borrow without explicit lifetime parses
 fn echo(borrow s: String) -> String { s }
 
+@caps(mem)
 def main() {
   println("OQ2 mutate_box() =", mutate_box())
   println("OQ4 boundary_demo(5) =", boundary_demo(5))

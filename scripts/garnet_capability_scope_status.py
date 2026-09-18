@@ -151,14 +151,26 @@ STALE_TRUTH_PATTERNS = [
 
 ENFORCED_CLAIM_MARKER = "<b>enforced:</b>"
 EXPECTED_ENFORCED_CLAIMS = 2
+# The first claim (test-runner entry authority) was re-pinned by D-02
+# (2026-09-18): the `time` class moved from checker-only to entry-gated, so
+# the sentence "does not reject a test that calls a checker-only primitive
+# such as time::now_ms" became false and was rewritten to point at the scope
+# table's classes outside the gated surface. Precedent: #564 re-pinned it when
+# U-91 moved the gated surface to (0, 15). Re-pinned again for D-04
+# (2026-09-18): the same claim now says "twenty-four" gated primitives — the
+# four memory tiers earned `mem` rows and joined the gated surface.
 EXPECTED_ENFORCED_CLAIM_HASHES = [
-    "8fdeb3988acbabb8e5171dc5940809af4321deee7a0a4522586275482a8d70ff",
+    "804c948cd0edca5774f710989a38e1b834b498c0ee3dcea58a064379673be0af",
     "032b790318e1d10a80418f59e6f363e43671193a080c26a4803dd2beffb2a541",
 ]
 
 CANONICAL_TRUTH_SNIPPETS: dict[Path, list[str]] = {
     WHY_HTML: [
         "S114 acceptance is recorded as <code>accepted-scoped</code> by Jon; the independent verdict remains <code>independently-re-verified-with-fixes</code>.",
+        # D-02/D-04/D-04b: the page must not reintroduce a "checker-only" or
+        # "unrowed" wider surface once the scope table pins those classes empty.
+        "the classes that once hid checker&#8209;only or unrowed authority are pinned empty by test (D&#8209;02, D&#8209;04, D&#8209;04b)",
+        "Claim class · partial — deterministic traps proven on the entry&#8209;gated surface below; the named remainder (unbridged rows, declared&#8209;only vocabulary, generated OS sandbox) is not self&#8209;enforced",
         "WV&#8209;5 proves the Wasm build and real Node execution from a clean Windows checkout; browser&#8209;page execution remains unproven until the W&#8209;PLAY Playwright gate passes.",
     ],
     SCOPE_DOC: [

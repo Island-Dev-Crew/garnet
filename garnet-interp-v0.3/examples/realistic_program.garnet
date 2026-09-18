@@ -66,6 +66,7 @@ def render_summary(s) {
 }
 
 # Drive everything.
+@caps(mem)
 def main() {
   let entries = [
     make_log("ok", Severity::Info),

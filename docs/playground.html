@@ -52,7 +52,9 @@
     border-bottom: 1px solid var(--rule);
   }
   .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
-  .brand img { width: 38px; height: 38px; border-radius: 6px; }
+  .brand-home { display: inline-flex; line-height: 0; border-radius: 6px; }
+  .brand-home:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  .brand img { width: 38px; height: 38px; border-radius: 6px; display: block; }
   h1 { margin: 0; font-size: 25px; line-height: 1.15; font-weight: 680; }
   .eyebrow { margin: 2px 0 0; color: var(--muted); font: 12px/1.3 var(--mono); }
   .runtime {
@@ -196,7 +198,11 @@
 <main class="shell">
   <header class="topbar">
     <div class="brand">
-      <img src="icons/garnet-192.png" alt="" width="38" height="38">
+      <!-- index.html embeds this page in a small iframe; target="_top" makes
+           the logo leave the frame and open the home page in the whole window. -->
+      <a class="brand-home" href="index.html" target="_top" aria-label="Garnet home">
+        <img src="icons/garnet-192.png" alt="" width="38" height="38">
+      </a>
       <div>
         <h1>Garnet Playground</h1>
         <p class="eyebrow">W-PLAY / committed WebAssembly package</p>

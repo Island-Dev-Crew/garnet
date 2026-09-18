@@ -77,6 +77,19 @@ pub enum MemoryKind {
     Procedural,
 }
 
+impl MemoryKind {
+    /// The source keyword for this tier — also the suffix of its constructor
+    /// row `memory::<kind>` in the stdlib registry.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            MemoryKind::Working => "working",
+            MemoryKind::Episodic => "episodic",
+            MemoryKind::Semantic => "semantic",
+            MemoryKind::Procedural => "procedural",
+        }
+    }
+}
+
 // ════════════════════════════════════════════════════════════════════
 // Type expressions (Mini-Spec §11)
 // ════════════════════════════════════════════════════════════════════

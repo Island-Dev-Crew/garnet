@@ -1,0 +1,21 @@
+# undeclared_memory_tier.garnet — a memory tier is authority, and this
+# program never asked for it.
+#
+# `@caps()` declares no authority at all. The body then reaches for
+# `memory::working`, one of the four memory tiers that require `@caps(mem)`
+# (D-04, ADR 0011). Two independent gates stop it:
+#
+#   garnet check  — check.caps_coverage: `main` does not declare `mem` but
+#                   transitively calls `memory::working` which requires it
+#   garnet run    — runtime trap before the store is created, on both the
+#                   interpreter and the VM
+#
+# Add `mem` to the `@caps(...)` list and `garnet diff-caps` reports the
+# expansion. The fix is one word; the point is that it must be written down.
+
+@caps()
+def main() {
+  let scratch = memory::working("scratch")
+  scratch.push("never reached")
+  0
+}

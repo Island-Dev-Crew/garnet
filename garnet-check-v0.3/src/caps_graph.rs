@@ -53,16 +53,25 @@
 //! ## Cycle handling
 //!
 //! Functions can self-recurse or participate in mutually-recursive SCCs. The
-//! propagator uses a simple colored-DFS: white (unvisited), gray (currently
-//! computing), black (finalized with memoized result). Encountering a gray
-//! node during DFS short-circuits by contributing an empty caps set for that
-//! edge — the fn-under-computation will union its own caps once it resolves,
-//! so an SCC converges in one pass.
+//! transitive caps of a function is the union of the direct caps of every
+//! function reachable from it, so every member of a strongly connected
+//! component has the same transitive set. The propagator computes exactly
+//! that with the DeRemer–Pennello digraph algorithm: a Tarjan SCC traversal
+//! that accumulates caps up the DFS tree and, when it closes a component,
+//! assigns the accumulated union to every member at once. Each edge is
+//! visited once; the per-node bookkeeping lives in `BTreeMap`s, so the pass
+//! is O((V + E) log V) in the size of the call graph rather than strictly
+//! linear. The verdict does not depend on which member of a cycle the caller
+//! asks about first.
 //!
-//! A Tarjan SCC + iterated fixed-point would be slightly more aggressive for
-//! pathological many-way mutual recursion, but the colored-DFS approach is
-//! sound (always terminates, never over-reports) and handles the realistic
-//! Garnet call-graph shapes we see in MVPs 1–10 in a single traversal.
+//! The traversal is iterative — an explicit frame stack rather than
+//! recursion — so a long chain of functions cannot overflow the thread stack
+//! (U-117 also covered a deep-chain abort).
+//!
+//! Before U-117 (2026-09) this pass was a colored DFS that returned an empty
+//! set for an edge back into a function still being computed and memoised
+//! that partial answer. A primitive reached only through a cycle was then
+//! attributed to some members and not others, depending on visit order.
 //!
 //! ## Wildcard semantics
 //!
@@ -73,13 +82,35 @@
 //! audit.rs error is enough), and permits managed-mode wildcard use to pass.
 
 use crate::capset::CapSet;
-use garnet_parser::ast::{Capability, Expr, FnDef, FnMode, Item, Module, Stmt, TypeExpr};
+use garnet_parser::ast::{
+    ActorItem, Capability, Expr, FnDef, FnMode, Item, Module, Stmt, TypeExpr,
+};
 use std::collections::{BTreeMap, BTreeSet};
 
 /// The graph key for a function. Free functions key on their bare name; impl
 /// methods key on `Owner::name`. This MUST match the `Owner::method` naming
 /// the S114 capability surface uses ([`crate::capability_surface`]) so the
 /// graph and the surface agree on impl-method identity.
+/// Collect the constructor row (`memory::<kind>`) of every `memory` declaration
+/// under `items`, recursing into nested modules and into actor bodies. The walk
+/// mirrors the interpreter's `require_module_memory_capabilities`.
+fn collect_memory_declaration_rows(items: &[Item], rows: &mut Vec<String>) {
+    for item in items {
+        match item {
+            Item::Memory(decl) => rows.push(format!("memory::{}", decl.kind.as_str())),
+            Item::Actor(actor) => {
+                for actor_item in &actor.items {
+                    if let ActorItem::Memory(decl) = actor_item {
+                        rows.push(format!("memory::{}", decl.kind.as_str()));
+                    }
+                }
+            }
+            Item::Module(m) => collect_memory_declaration_rows(&m.items, rows),
+            _ => {}
+        }
+    }
+}
+
 fn fn_key(owner: Option<&str>, name: &str) -> String {
     match owner {
         Some(owner) => format!("{owner}::{name}"),
@@ -161,10 +192,31 @@ struct CapsGraph {
     /// all canonical (`capset.rs` registry-drift trap), so these bitsets
     /// never carry `OTHER`.
     prim_caps: BTreeMap<String, CapSet>,
-    /// Memoized transitive caps per fn (black-colored nodes).
+    /// Finalized transitive caps per fn. A fn is inserted only when the SCC
+    /// it belongs to has been closed, so an entry is never partial.
     memo: BTreeMap<String, CapSet>,
-    /// DFS stack color. True = currently computing (gray); absence = white.
-    in_progress: BTreeSet<String>,
+    /// Tarjan node stack: fns whose SCC is still open, in visit order. Empty
+    /// between top-level [`Self::transitive_caps`] calls.
+    stack: Vec<String>,
+    /// fn key → its position in `stack`, for every fn currently on it.
+    on_stack: BTreeMap<String, usize>,
+}
+
+/// One open frame of the iterative SCC traversal in
+/// [`CapsGraph::transitive_caps`].
+struct DfsFrame {
+    /// Position of this frame's fn in [`CapsGraph::stack`] (its Tarjan
+    /// index).
+    pos: usize,
+    /// Lowest stack position reachable from this fn so far (Tarjan
+    /// low-link). `low == pos` on exit means this fn is the root of its SCC.
+    low: usize,
+    /// Caps gathered so far: direct primitive caps, finalized callee caps,
+    /// and everything passed up from child frames in the same SCC.
+    caps: CapSet,
+    /// User-fn targets not yet visited (method calls already expanded to
+    /// their impl-method keys). Consumed from the back.
+    targets: Vec<String>,
 }
 
 /// A callee reference — either a primitive (stdlib registry entry) or a
@@ -226,7 +278,8 @@ impl CapsGraph {
             method_index: BTreeMap::new(),
             prim_caps,
             memo: BTreeMap::new(),
-            in_progress: BTreeSet::new(),
+            stack: Vec::new(),
+            on_stack: BTreeMap::new(),
         };
 
         // First pass: record every user fn and its declared caps (and build
@@ -239,6 +292,26 @@ impl CapsGraph {
         // Second pass: walk each fn's body, record its callees.
         for item in &module.items {
             graph.collect_fn_callees(item);
+        }
+
+        // Third pass (D-04b, ADR 0011): every `memory <kind> <name> : <type>`
+        // declaration — top level, inside a nested `module`, or inside an
+        // `actor` — is the same store construction as the `memory::<kind>`
+        // constructor row and is charged to the program entry as that row.
+        // The runtime builds these stores at load time under the entry frame
+        // (`garnet-interp-v0.3/src/lib.rs` `load_module`), so `main` is the
+        // fn whose declared caps must cover them; a module without `main` is
+        // a library and has no entry to charge. Before this pass the
+        // declaration form was caps-invisible while the constructor rows were
+        // gated (cross-family review of 4ce90eb6, blocker 1).
+        if graph.declared.contains_key("main") {
+            let mut rows = Vec::new();
+            collect_memory_declaration_rows(&module.items, &mut rows);
+            graph
+                .callees
+                .entry("main".to_string())
+                .or_default()
+                .extend(rows.into_iter().map(CalleeRef::Primitive));
         }
 
         graph
@@ -529,50 +602,103 @@ impl CapsGraph {
         }
     }
 
-    /// Compute the transitive caps set for `fn_name`. Colored-DFS: gray
-    /// nodes encountered mid-recursion contribute empty (avoiding infinite
-    /// loops in cyclic SCCs).
+    /// Compute the transitive caps set for `fn_name`: the union of the direct
+    /// caps of every fn reachable from it.
+    ///
+    /// Iterative DeRemer–Pennello digraph traversal (see the module doc,
+    /// "Cycle handling"). Every fn visited on the way — the whole SCC forest
+    /// below `fn_name` — is finalized into `memo`, so later queries are hits.
+    /// A fn whose SCC is still open is never read as "empty"; the edge into
+    /// it only lowers the current frame's low-link, and the shared union is
+    /// written to every member when the SCC root closes.
     fn transitive_caps(&mut self, fn_name: &str) -> CapSet {
         if let Some(&cached) = self.memo.get(fn_name) {
             return cached;
         }
-        if self.in_progress.contains(fn_name) {
-            // Cycle — the caller will fold in its own direct caps separately.
-            return CapSet::EMPTY;
+        debug_assert!(
+            self.stack.is_empty() && self.on_stack.is_empty(),
+            "transitive_caps is not re-entrant; the SCC stack must be empty between calls"
+        );
+
+        let mut frames: Vec<DfsFrame> = vec![self.open_frame(fn_name)];
+        while let Some(frame) = frames.last_mut() {
+            if let Some(target) = frame.targets.pop() {
+                if let Some(&done) = self.memo.get(&target) {
+                    frame.caps |= done;
+                } else if let Some(&pos) = self.on_stack.get(&target) {
+                    // Back or cross edge into an open SCC: `target` and this
+                    // fn are mutually reachable, so they share one answer.
+                    frame.low = frame.low.min(pos);
+                } else {
+                    let child = self.open_frame(&target);
+                    frames.push(child);
+                }
+                continue;
+            }
+
+            // Every target of this frame has been visited.
+            let frame = match frames.pop() {
+                Some(frame) => frame,
+                None => break,
+            };
+            if frame.low == frame.pos {
+                // SCC root: everything on the stack from `pos` up is exactly
+                // this component. All members get the same union.
+                for member in self.stack.drain(frame.pos..) {
+                    self.on_stack.remove(&member);
+                    self.memo.insert(member, frame.caps);
+                }
+                if let Some(parent) = frames.last_mut() {
+                    parent.caps |= frame.caps;
+                }
+            } else if let Some(parent) = frames.last_mut() {
+                // Not a root: this fn stays on the stack until its SCC root
+                // closes. Its caps and low-link flow to the DFS parent, which
+                // is in the same SCC.
+                parent.caps |= frame.caps;
+                parent.low = parent.low.min(frame.low);
+            }
         }
-        self.in_progress.insert(fn_name.to_string());
+
+        debug_assert!(self.stack.is_empty() && self.on_stack.is_empty());
+        self.memo.get(fn_name).copied().unwrap_or(CapSet::EMPTY)
+    }
+
+    /// Push `fn_name` onto the Tarjan stack and build its traversal frame:
+    /// direct primitive caps folded in, user-fn and method targets queued.
+    fn open_frame(&mut self, fn_name: &str) -> DfsFrame {
+        let pos = self.stack.len();
+        self.stack.push(fn_name.to_string());
+        self.on_stack.insert(fn_name.to_string(), pos);
 
         let mut caps = CapSet::EMPTY;
-        // Clone the callee list so we don't hold a borrow on self while
-        // recursing into transitive_caps(callee).
-        let callees = self.callees.get(fn_name).cloned().unwrap_or_default();
-        for callee in callees {
+        let mut targets = Vec::new();
+        for callee in self.callees.get(fn_name).into_iter().flatten() {
             match callee {
                 CalleeRef::Primitive(key) => {
-                    if let Some(&pc) = self.prim_caps.get(&key) {
+                    if let Some(&pc) = self.prim_caps.get(key) {
                         caps |= pc;
                     }
                 }
-                CalleeRef::UserFn(name) => {
-                    caps |= self.transitive_caps(&name);
-                }
+                CalleeRef::UserFn(name) => targets.push(name.clone()),
                 CalleeRef::MethodByName(method) => {
                     // Sound over-approximation: union the transitive caps of
                     // EVERY impl method named `method`. No receiver-type info
                     // is available, so we cannot pick the one true target;
                     // unioning never under-attributes authority (precise
                     // type-directed dispatch is a future slice).
-                    let targets = self.method_index.get(&method).cloned().unwrap_or_default();
-                    for target in targets {
-                        caps |= self.transitive_caps(&target);
+                    if let Some(impls) = self.method_index.get(method) {
+                        targets.extend(impls.iter().cloned());
                     }
                 }
             }
         }
-
-        self.in_progress.remove(fn_name);
-        self.memo.insert(fn_name.to_string(), caps);
-        caps
+        DfsFrame {
+            pos,
+            low: pos,
+            caps,
+            targets,
+        }
     }
 
     /// Verify every fn's declared caps covers its transitive requirement.
@@ -846,6 +972,44 @@ mod tests {
         );
     }
 
+    /// D-04b — a `memory` declaration (top-level, in a module, or inside an
+    /// actor) is charged to `main` as the tier's constructor row, so the same
+    /// `mem` coverage rule the `memory::*` calls obey applies to declarations.
+    #[test]
+    fn memory_declarations_charge_main_with_mem() {
+        for (src, tier) in [
+            (
+                "memory working scratch : String\n@caps()\ndef main() { 1 }\n",
+                "memory::working",
+            ),
+            (
+                "module Store {\n  memory semantic facts : VectorIndex<String>\n}\n@caps()\ndef main() { 1 }\n",
+                "memory::semantic",
+            ),
+            (
+                "actor Recorder {\n  memory episodic log : EpisodeStore<String>\n  protocol note(x: String) -> Int\n  on note(x) { 1 }\n}\n@caps()\ndef main() { 1 }\n",
+                "memory::episodic",
+            ),
+        ] {
+            let r = check_caps_coverage(&parse(src));
+            assert!(
+                r.violations
+                    .iter()
+                    .any(|v| v.fn_name == "main" && v.missing == "mem" && v.via == tier),
+                "expected `main` charged with `mem` via `{tier}` for:\n{src}\ngot {:?}",
+                r.violations
+            );
+        }
+        let r = check_caps_coverage(&parse(
+            "memory working scratch : String\n@caps(mem)\ndef main() { 1 }\n",
+        ));
+        assert!(
+            r.violations.is_empty(),
+            "a declared `mem` covers the declaration, got {:?}",
+            r.violations
+        );
+    }
+
     #[test]
     fn pure_fn_needs_no_caps() {
         let m = parse(
@@ -889,3 +1053,7 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+#[path = "caps_graph_cycle_tests.rs"]
+mod cycle_tests;

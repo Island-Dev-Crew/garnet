@@ -113,3 +113,30 @@ fn consecutive_runs_do_not_leak_output() {
     assert_eq!(first.stdout, second.stdout);
     assert_eq!("Hello from Garnet!\n", second.stdout);
 }
+
+#[test]
+fn undeclared_memory_declaration_is_trapped_not_granted() {
+    // D-04b: the `memory` declaration is gated under `mem` like the
+    // constructor rows; the browser adapter fails closed identically.
+    let src = r#"
+memory working scratch : String
+
+@caps()
+def main() {
+  scratch.push("leak")
+  scratch.len()
+}
+"#;
+    let result = run_source(src);
+    assert_ne!(ExitClass::Ok, result.exit_class);
+    let diagnostic = result.diagnostic.unwrap_or_default();
+    assert!(
+        diagnostic.contains("requires @caps(mem)"),
+        "diagnostic should name the memory capability: {diagnostic}"
+    );
+    assert!(
+        !result.stdout.contains("1"),
+        "no value may come back from a store the entry did not declare: {}",
+        result.stdout
+    );
+}

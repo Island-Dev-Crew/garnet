@@ -11,7 +11,7 @@
 # Host-authority surfaces (`std::env`, `std::process`) are covered in the Rust
 # S22 integration test because they mutate or launch host state.
 
-@caps()
+@caps(mem)
 def main() {
   let doc = std::json::parse("{\"domain\":\"agentic\",\"score\":7}")
   let domain = std::json::get(doc, "domain")

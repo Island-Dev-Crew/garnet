@@ -36,15 +36,20 @@ reference semantics.
 
 ```toml
 [caps]
-allowed = []
+allowed = ["mem"]
 ```
 
-The generated `main` declares `@caps()` because the starter program is pure. If
-you extend it to read or write fact files, annotate the I/O function with
-`@caps(fs)` and declare `fs` on `main` too: `garnet check` reports a `main`
-whose named, acyclic calls reach `fs` without declaring it, and at run time the
-file primitives trap unless `main` declares it. Nothing reads the `[caps]` list
-yet; update it by hand so it documents the budget.
+The generated `main` declares `@caps(mem)`: the three actors each own a
+`memory` tier (`episodic trace`, `semantic facts`, `procedural workflow`), and
+a memory declaration is store construction under the `mem` capability (ADR
+0011) — `garnet check` charges `main` for every declared tier, and at run time
+the load traps before any store is built unless `main` declares `mem`. The
+program touches no file, network, process or clock authority. If you extend it
+to read or write fact files, annotate the I/O function with `@caps(fs)` and
+declare `fs` on `main` too: `garnet check` reports a `main` whose named,
+acyclic calls reach `fs` without declaring it, and at run time the file
+primitives trap unless `main` declares it. Nothing reads the `[caps]` list yet;
+update it by hand so it documents the budget.
 
 ## Run
 

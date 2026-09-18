@@ -107,6 +107,45 @@ def main() {
 }
 
 #[test]
+fn implemented_capcaps_rejects_fs_authority_reached_through_a_cycle() {
+    // U-117: `b` and `main` reach `write_file` only through the `a <-> b`
+    // cycle. Before the cure the checker accepted this program (exit 0, no
+    // diagnostics) while rejecting the same graph under other names.
+    let src = r#"
+@caps(fs)
+def a() {
+  b()
+  write_file("/tmp/never.txt", "x")
+}
+@caps()
+def b() {
+  a()
+}
+@caps()
+def main() {
+  b()
+}
+"#;
+    let path = temp_source("fs_cap_through_cycle", src);
+    let out = run(&["check"], &path);
+    assert!(
+        !out.status.success(),
+        "CapCaps must reject fs authority reached through a call-graph cycle"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    for f in ["`b`", "`main`"] {
+        assert!(
+            stdout.contains(f),
+            "expected a caps_coverage diagnostic naming {f}, got:\n{stdout}"
+        );
+    }
+    assert!(
+        stdout.contains("does not declare `fs`") || stdout.contains("does not declare .fs."),
+        "expected missing fs diagnostic, got:\n{stdout}"
+    );
+}
+
+#[test]
 fn implemented_reproducible_manifest_smoke_builds() {
     let src = r#"
 @caps()

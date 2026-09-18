@@ -310,11 +310,12 @@ mod tests {
     use proptest::prelude::*;
 
     /// Cap-name pool: the closed set, the wildcard, and unknown names.
-    const POOL: [&str; 10] = [
+    const POOL: [&str; 11] = [
         "*",
         "env",
         "ffi",
         "fs",
+        "mem",
         "net",
         "net_internal",
         "proc",

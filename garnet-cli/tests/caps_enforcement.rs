@@ -292,3 +292,250 @@ fn vm_pure_computation_is_unaffected() {
     );
     assert!(stdout.contains("=> 7"), "got {stdout}");
 }
+
+// ---------------------------------------------------------------------------
+// D-02 (2026-09-18): the `time` class moves from checker-only to gated.
+//
+// `time::now_ms` / `wall_clock_ms` / `sleep` and `std::uuid::new_v4` / `new_v7`
+// required `@caps(time)` at CHECK time but carried `Guard::Declared` — no
+// runtime gate — so `garnet run` (which does not run the checker) executed them
+// under `@caps()`. That was the last host-authority class outside the runtime
+// latch. Each adapter now carries the same two backstops as `fs`/`net`/`env`/
+// `proc`: the calling-chain gate and the program-entry gate. `std::uuid::new_v5`
+// is pure (name-based, no clock) and stays ungated as the control.
+// ---------------------------------------------------------------------------
+
+#[test]
+fn undeclared_time_traps() {
+    traps_with("@caps()\ndef main() {\n  time::now_ms()\n}\n", "time");
+    traps_with(
+        "@caps()\ndef main() {\n  time::wall_clock_ms()\n}\n",
+        "time",
+    );
+    traps_with("@caps()\ndef main() {\n  time::sleep(0)\n}\n", "time");
+}
+
+#[test]
+fn undeclared_clock_seeded_uuid_traps() {
+    traps_with("@caps()\ndef main() {\n  std::uuid::new_v4()\n}\n", "time");
+    traps_with("@caps()\ndef main() {\n  std::uuid::new_v7()\n}\n", "time");
+}
+
+#[test]
+fn declared_time_runs() {
+    for program in [
+        "@caps(time)\ndef main() {\n  time::now_ms()\n  0\n}\n",
+        "@caps(time)\ndef main() {\n  std::uuid::new_v7()\n  0\n}\n",
+    ] {
+        let out = run_interp(program);
+        assert!(
+            out.status.success(),
+            "declared @caps(time) must run: {}",
+            String::from_utf8_lossy(&out.stderr)
+        );
+    }
+}
+
+#[test]
+fn name_based_uuid_v5_stays_ungated() {
+    let out = run_interp(
+        "@caps()\ndef main() {\n  std::uuid::new_v5(\"6ba7b810-9dad-11d1-80b4-00c04fd430c8\", \"garnet\")\n  0\n}\n",
+    );
+    assert!(
+        out.status.success(),
+        "std::uuid::new_v5 is pure and must not trap under @caps(): {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+}
+
+#[test]
+fn vm_undeclared_time_traps_identically() {
+    traps_on_both_with(
+        "@caps()\ndef main() {\n  time::now_ms()\n}\n",
+        "requires @caps(time)",
+    );
+    traps_on_both_with(
+        "@caps()\ndef main() {\n  std::uuid::new_v4()\n}\n",
+        "requires @caps(time)",
+    );
+}
+
+#[test]
+fn vm_entry_time_not_launderable_through_helper() {
+    // The checker sees this named chain and rejects it; `garnet run` does not
+    // run the checker, so the program-entry gate is the only thing that binds.
+    traps_on_both_with(
+        "@caps(time)\ndef helper() {\n  time::now_ms()\n}\n\n@caps()\ndef main() {\n  helper()\n}\n",
+        "requires program entry @caps(time)",
+    );
+}
+
+#[test]
+fn vm_declared_time_runs() {
+    let out = run_vm("@caps(time)\ndef main() {\n  time::now_ms()\n  0\n}\n");
+    assert!(
+        out.status.success(),
+        "declared @caps(time) must run on the VM: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+}
+
+// ---------------------------------------------------------------------------
+// D-04 (2026-09-18, ADR 0011) — the memory tiers are a capability class.
+// Before this cure the four `memory::*` constructors were bridged into the
+// interpreter with no registry row: `garnet check` was silent, `garnet caps`
+// reported an empty set, and `garnet run` built and wrote every tier under
+// `@caps()` on both backends. Each constructor now carries a `mem` row with the
+// same two backstops as the other gated classes.
+// ---------------------------------------------------------------------------
+
+const MEMORY_TIERS: [&str; 4] = [
+    "memory::working",
+    "memory::episodic",
+    "memory::semantic",
+    "memory::procedural",
+];
+
+#[test]
+fn undeclared_memory_tier_traps_on_both_backends() {
+    for tier in MEMORY_TIERS {
+        traps_on_both_with(
+            &format!("@caps()\ndef main() {{\n  let store = {tier}(\"scratch\")\n  0\n}}\n"),
+            "requires @caps(mem)",
+        );
+    }
+}
+
+#[test]
+fn undeclared_memory_tier_traps_before_the_store_is_touched() {
+    // The trap is the first statement of the adapter: no handle exists to write to.
+    let out = run_interp(
+        "@caps()\ndef main() {\n  let store = memory::working(\"scratch\")\n  store.push(\"leak\")\n  store.len()\n}\n",
+    );
+    assert!(!out.status.success(), "undeclared memory must trap");
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        !stdout.contains("=> 1"),
+        "no write may reach a store the entry did not declare: {stdout}"
+    );
+}
+
+#[test]
+fn declared_mem_runs_on_both_backends() {
+    for tier in MEMORY_TIERS {
+        let program =
+            format!("@caps(mem)\ndef main() {{\n  let store = {tier}(\"scratch\")\n  0\n}}\n");
+        for (label, out) in [("interp", run_interp(&program)), ("vm", run_vm(&program))] {
+            assert!(
+                out.status.success(),
+                "declared @caps(mem) must run {tier} on {label}: {}",
+                String::from_utf8_lossy(&out.stderr)
+            );
+        }
+    }
+}
+
+#[test]
+fn memory_helper_laundering_traps_when_entry_lacks_mem() {
+    traps_on_both_with(
+        "@caps(mem)\ndef helper() {\n  memory::episodic(\"trace\")\n}\n\n@caps()\ndef main() {\n  helper()\n  0\n}\n",
+        "requires program entry @caps(mem)",
+    );
+}
+
+#[test]
+fn fs_does_not_grant_memory() {
+    // ADR 0011 rejected mapping memory onto `fs`: a file-capable program may
+    // not reach a memory tier without saying so.
+    traps_on_both_with(
+        "@caps(fs)\ndef main() {\n  let store = memory::semantic(\"facts\")\n  0\n}\n",
+        "requires @caps(mem)",
+    );
+}
+
+// ---------------------------------------------------------------------------
+// D-04b (2026-09-18, cross-family review of 4ce90eb6) — the `memory` declaration
+// is the same store construction as the `memory::*` constructor and carries the
+// same gate. Before this cure `memory working scratch : String` at the top level
+// (and `memory ...` inside an `actor`) built the store directly in
+// `register_item` / actor spawn, so a program could declare, write to and read
+// every tier under `@caps()` on both backends while the four constructor rows
+// trapped. Declaration and constructor are now one policy: both backstops fire
+// before the store exists.
+// ---------------------------------------------------------------------------
+
+const MEMORY_DECLARATIONS: [&str; 4] = [
+    "memory working scratch : String",
+    "memory episodic scratch : EpisodeStore<String>",
+    "memory semantic scratch : VectorIndex<String>",
+    "memory procedural scratch : WorkflowStore<String>",
+];
+
+#[test]
+fn undeclared_memory_declaration_traps_on_both_backends() {
+    for decl in MEMORY_DECLARATIONS {
+        traps_on_both_with(
+            &format!("{decl}\n\n@caps()\ndef main() {{\n  1\n}}\n"),
+            "requires @caps(mem)",
+        );
+    }
+}
+
+#[test]
+fn undeclared_memory_declaration_traps_before_main_runs() {
+    // The declaration is registered at load time, under the entry frame that
+    // `garnet run` installs for top-level initializers; the trap happens there
+    // and `main` never produces a value.
+    let out = run_interp(
+        "memory working scratch : String\n\n@caps()\ndef main() {\n  scratch.push(\"leak\")\n  scratch.len()\n}\n",
+    );
+    assert!(
+        !out.status.success(),
+        "undeclared memory declaration must trap"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        !stdout.contains("=> 1"),
+        "no write may reach a declared store the entry did not cover: {stdout}"
+    );
+}
+
+#[test]
+fn declared_memory_declaration_runs_on_both_backends() {
+    for decl in MEMORY_DECLARATIONS {
+        let program = format!("{decl}\n\n@caps(mem)\ndef main() {{\n  1\n}}\n");
+        for (label, out) in [("interp", run_interp(&program)), ("vm", run_vm(&program))] {
+            assert!(
+                out.status.success(),
+                "declared @caps(mem) must accept `{decl}` on {label}: {}",
+                String::from_utf8_lossy(&out.stderr)
+            );
+        }
+    }
+}
+
+#[test]
+fn undeclared_actor_memory_declaration_traps_on_both_backends() {
+    // Actor-scoped memory is built at spawn time, inside the program's call
+    // chain; the entry gate applies to it exactly as to a top-level store.
+    traps_on_both_with(
+        "actor Recorder {\n  memory episodic log : EpisodeStore<String>\n\n  protocol note(x: String) -> Int\n\n  on note(x) {\n    log.append(x)\n    1\n  }\n}\n\n@caps()\ndef main() {\n  let r = spawn Recorder.note(\"a\")\n  r\n}\n",
+        "requires @caps(mem)",
+    );
+}
+
+#[test]
+fn undeclared_module_memory_declaration_traps_on_both_backends() {
+    traps_on_both_with(
+        "module Store {\n  memory semantic facts : VectorIndex<String>\n}\n\n@caps()\ndef main() {\n  1\n}\n",
+        "requires @caps(mem)",
+    );
+}
+
+#[test]
+fn fs_does_not_grant_a_memory_declaration() {
+    traps_on_both_with(
+        "memory semantic facts : VectorIndex<String>\n\n@caps(fs)\ndef main() {\n  1\n}\n",
+        "requires @caps(mem)",
+    );
+}

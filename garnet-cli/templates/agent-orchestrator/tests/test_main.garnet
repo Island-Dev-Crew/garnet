@@ -1,9 +1,16 @@
 # Starter tests for {{name}}.
+#
+# Each test is its own program entry. The actors below own memory tiers
+# (`memory episodic ..`, `memory procedural ..`), and a memory declaration is
+# `mem` authority, so the tests that spawn them declare `@caps(mem)` exactly
+# as `main` does in src/main.garnet.
 
+@caps(mem)
 def test_actor_orchestration_pipeline_runs() {
   assert_eq(orchestrate(3), 25)
 }
 
+@caps(mem)
 def test_bounded_mailbox_backpressure() {
   let reviewer = Reviewer.spawn(1)
   let first = reviewer.try_tell(:review, 12)

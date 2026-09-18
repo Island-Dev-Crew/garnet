@@ -6,7 +6,9 @@
 use garnet_interp::{Interpreter, Value};
 
 fn run(src: &str, fn_name: &str) -> Value {
-    let mut interp = Interpreter::new();
+    // D-04b: memory declarations are gated by `mem`; these tests exercise
+    // store semantics, not capability policy, so use the permissive instance.
+    let mut interp = Interpreter::new_permissive();
     interp.load_source(src).expect("load");
     interp.call(fn_name, vec![]).expect("call")
 }
@@ -137,7 +139,7 @@ fn oq6_memory_store_offers_no_compression_method() {
         memory working unit : Store<T>
         def main() { unit.compress() }
     "#;
-    let mut interp = Interpreter::new();
+    let mut interp = Interpreter::new_permissive(); // D-04b, see `run`
     interp.load_source(src).unwrap();
     let r = interp.call("main", vec![]);
     assert!(r.is_err());

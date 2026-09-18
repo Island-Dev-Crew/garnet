@@ -7,9 +7,12 @@ use garnet_interp::{Interpreter, Value};
 fn load_and_run(path: &str, fn_name: &str) -> Value {
     let src =
         std::fs::read_to_string(path).unwrap_or_else(|e| panic!("failed to read {path}: {e}"));
+    // Load under the program-entry `@caps` frame exactly as `garnet run` does:
+    // the examples declare `memory` tiers, and a declaration is gated under
+    // `mem` (D-04b), so `main` carries `@caps(mem)` and the load installs it.
     let mut interp = Interpreter::new();
     interp
-        .load_source(&src)
+        .load_source_with_entry_caps(&src, fn_name)
         .unwrap_or_else(|e| panic!("load {path}: {e}"));
     interp
         .call(fn_name, vec![])

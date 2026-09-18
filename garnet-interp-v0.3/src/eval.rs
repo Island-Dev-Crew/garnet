@@ -837,6 +837,24 @@ pub(crate) fn require_entry_capability(needed: &str, fn_name: &str) -> Result<()
     })
 }
 
+/// D-04b (ADR 0011): a `memory <kind> <name> : <type>` declaration is the same
+/// store construction as the `memory::<kind>(name)` constructor row and carries
+/// the same `mem` gate. Before this, `register_item` (top level) and
+/// `init_actor_env` (actor spawn) built the `Value::MemoryStore` directly, so a
+/// program could declare, write to and read every tier under `@caps()` on the
+/// interpreter, the VM (which loads through the interpreter) and the WASM
+/// adapter while the four constructor rows trapped. Both backstops run before
+/// the store exists, so a trap leaves nothing allocated. The label is the
+/// constructor row the checker charges (`memory::<kind>`) so a declaration and a
+/// constructor call fail with the same words on every backend.
+pub(crate) fn require_memory_declaration_capability(
+    decl: &garnet_parser::ast::MemoryDecl,
+) -> Result<(), RuntimeError> {
+    let row = format!("memory::{}", decl.kind.as_str());
+    require_capability("mem", &row)?;
+    require_entry_capability("mem", &row)
+}
+
 /// Call a value as the program entry point, installing an `@caps` frame from the
 /// entry function before dispatch. This closes the safe/direct-entry gap where a
 /// safe-mode `fn main` could reach host authority with no managed frame active.
@@ -1278,6 +1296,7 @@ fn init_actor_env(actor: &ActorDef, env: &Rc<Env>) -> Result<Rc<Env>, RuntimeErr
                 actor_env.define(&decl.name, value);
             }
             ActorItem::Memory(decl) => {
+                require_memory_declaration_capability(decl)?;
                 actor_env.define(
                     &decl.name,
                     Value::MemoryStore {

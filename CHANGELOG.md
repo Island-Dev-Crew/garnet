@@ -9,6 +9,179 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ## [Unreleased]
 
+### Capabilities — memory declarations are gated under `mem` (D-04b, 2026-09-18)
+
+- **Behaviour change — a `memory <kind> <name> : <type>` declaration now
+  requires `@caps(mem)` on the program entry.** D-04 gated the four
+  `memory::*` constructors, but the first-class declaration form allocated a
+  store directly, outside the registry: a program declaring
+  `memory working scratch : String` at the top level, in a `module` or in an
+  `actor` read and wrote memory under `@caps()` on the checker, both
+  backends and the WASM adapter. Found by the independent cross-family review
+  of the D-04 lane (GPT-5.6 Sol, blocker 1). `Interpreter::load_module` now
+  runs a capability pre-pass over every declaration and each allocation site
+  applies the same `mem` call-chain + entry check as the natives, so the
+  program fails at load with ``capability: `memory::working` requires
+  @caps(mem)`` before `main` runs, identically under `--interp`, `--vm`,
+  `garnet test` and `garnet_wasm::run_source`. `garnet check` attributes each
+  declaration to `main` as a `memory::<kind>` callee and reports the matching
+  `caps coverage` diagnostic. Programs that declare a tier must add `mem` to
+  their entry: `examples/multi_agent_builder`, `examples/agentic_log_analyzer`,
+  the interp examples and the `agent-orchestrator` template (`main`, the two
+  generated tests that spawn memory-owning actors, `Garnet.toml`, README) were
+  updated that way. Rust unit tests that exercise store semantics use the
+  documented `Interpreter::new_permissive()`. The scope document gains a
+  "Memory declarations" section, ADR 0011 records the extension, and the
+  interp/check `AGENTS.md` contracts pin the rule. Pinned by the D-04b
+  sections of `caps_enforcement.rs` and `check_memory_capability.rs`,
+  `caps_graph` unit tests and `garnet-wasm/tests/run_source.rs`. Disclosed:
+  `check_memory_capability.rs` `fresh()` gained an atomic counter because two
+  parallel tests shared a microsecond-stamped temp dir on macOS.
+
+### Checker — an `impl` on one enum no longer vouches for another (D-107b, 2026-09-18)
+
+- **Behaviour change — safe programs that passed the D-107 check may now fail
+  it.** D-107 exempted `Enum::name(..)` from the missing-variant check when
+  `name` is an associated function of `impl Enum`, keyed by the type's last
+  path segment; an `impl Shape` inside `module Other` therefore also
+  whitelisted `Target::Shape::ghost()` on an unrelated enum sharing the
+  basename. Found by the same review (blocker 2). The exemption is now keyed
+  by the enum path the impl target resolves to from the impl's own module
+  scope, so only the enum that owns the associated function can vouch for it;
+  impl targets that do not resolve to exactly one known enum exempt nothing.
+  `docs/funding.html` now describes the D-107 goal as delivered with its
+  remaining bounded scope (managed `def` bodies stay uninspected).
+  `docs/why.html` no longer describes a "checker-only" wider surface or "four
+  unrowed natives" — both classes are pinned empty — and the reconciled
+  sentences are pinned as canonical truth by
+  `scripts/garnet_capability_scope_status.py`. Pinned by
+  `safe_impl_on_a_same_basename_enum_does_not_vouch_for_another_enum`
+  (`garnet-check`) and `q8_*` (`garnet-cli/tests/check_variant_construction.rs`).
+
+### Capabilities — the memory tiers become a capability, `mem` (D-04, ADR 0011, 2026-09-18)
+
+- **Behaviour change — `memory::working`, `memory::episodic`,
+  `memory::semantic` and `memory::procedural` now require `@caps(mem)`.**
+  Before this change the four tier constructors were bridged into the
+  interpreter through a `BRIDGE_ONLY` const with no registry row: `garnet
+  check` was silent on a program that built every tier under `@caps()`,
+  `@caps(mem)` was rejected as an unknown capability, `garnet caps` reported
+  an empty set for a program that wrote to memory, and `garnet sandbox`
+  warned that `mem` was unmapped. Each tier is now an ordinary registry row
+  (`RequiredCaps::mem()`, `Guard::GateEntry`, `Stability::Experimental` like
+  its S22 siblings), so `garnet check` reports ``caps coverage: function
+  `main` does not declare `mem` but transitively calls `memory::working`
+  which requires it``, `garnet run` traps under `@caps()` on both backends
+  before any store is constructed, a `@caps(mem)` helper cannot launder the
+  tier past an entry that lacks `mem`, `@caps(fs)` does not grant it (the
+  ADR's rejected alternative), and adding `mem` moves a `diff-caps` verdict.
+  `mem` is a canonical checker bit ordered between `fs` and `net`; the
+  capability vocabulary is a closed set of 9. The gated surface is 24 rows,
+  the registry 84, the caps-invisible class is empty and the `BRIDGE_ONLY`
+  const is gone — every interpreter adapter key is now a registry row.
+  Programs that construct a tier must add `mem` to their entry's `@caps`;
+  `examples/novel_05` and `novel_06`, the S22 dispatch test and the S25
+  host-effect composition test were updated that way. The scope table,
+  `CURRENT_STATE.md`, `CLAUDE.md`, `FAQ.md`, `docs/stdlib.html`, the man page,
+  the site copy and ADR 0011 (now *Implemented*) say so.
+  `garnet-cli/tests/check_memory_capability.rs` (new) and the D-04 section of
+  `caps_enforcement.rs` pin the check-time and both-backend run-time
+  behaviour; `scripts/garnet_caps_enforcement_status.py` requires the `mem`
+  gate. Disclosed: the `derived_install_binds_the_full_audited_surface` pin
+  stays at 82 bound natives (84 rows less 2 unbridged) — the red commit's 84
+  was a miscount of a table that gained a source, not members.
+- **Playground — an "Undeclared memory tier" preset, and the logo goes
+  home.** `examples/undeclared_memory_tier.garnet` (new) reaches
+  `memory::working` under `@caps()`; it is the fourth committed preset in
+  `docs/playground/examples.json`, and the browser proof now selects it from
+  the picker, runs it (trap naming `memory::working` and `mem`, no stdout)
+  and checks it (`check.caps_coverage` naming `mem`) against the committed
+  package. `scripts/garnet_playground_build.py` records a stopped program's
+  diagnostics and exit code instead of an empty string, so the preset's
+  recorded output shows the trap; regenerating the manifest also picked up
+  the `@caps()` line `documented_math.garnet` gained in #409, which the
+  manifest had been missing since. The playground logo is now a link to
+  `index.html` with `target="_top"`: `index.html` embeds the playground in a
+  small iframe, and the link leaves that frame instead of loading the home
+  page inside it. `test_garnet_playground_browser_contract.py` pins the link
+  and the preset; `test_garnet_playground_browser_proof.py` pins both new
+  journeys in `W_PLAY_BROWSER_PROOF.json`.
+
+### Runtime — the `time` class traps at run time (D-02, 2026-09-18)
+
+- **Behaviour change — `garnet run` and `garnet test` now trap where they
+  used to run.** `time::now_ms`, `time::wall_clock_ms`, `time::sleep`,
+  `std::uuid::new_v4` and `std::uuid::new_v7` were `Guard::Declared`: the
+  checker required `@caps(time)`, but `garnet run` — which does not run the
+  checker — executed them under `@caps()` and returned real values. They are
+  now `Guard::GateEntry` like every other host-authority row: calling one
+  traps with ``capability: `time::now_ms` requires @caps(time), not declared
+  in the calling chain`` unless both an active frame and the program entry's
+  own budget declare `time`, identically under `--interp` and `--vm`. A
+  program whose entry declares `@caps(time)` is unchanged; `std::uuid::new_v5`
+  (name-based) requires nothing and stays ungated. The gated surface is 20
+  rows, the checker-only class is empty, and the scope table
+  (`GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md`), `README.md`, `FAQ.md`,
+  `docs/stdlib.html` and the man page say so. `garnet-cli/tests/caps_enforcement.rs`
+  pins the trap on both backends and the helper-laundering shape;
+  `scripts/garnet_caps_enforcement_status.py` requires the `time` gate.
+  `garnet-cli/tests/checker_only_caps.rs`, which pinned the old behaviour, is
+  removed.
+- **Template fix.** The `web-api` starter test `test_timestamp_shape` reached
+  `wall_clock_ms()` through `timestamp()` with no `@caps`, so `garnet test`
+  on a freshly generated project trapped after this change (the agentic
+  dogfood matrix caught it on #589). A test is its own program entry; the
+  starter test now declares `@caps(time)` as `main` does, and
+  `garnet-cli/tests/cli_smoke.rs::new_web_api_template_runs_and_tests` pins
+  new → run → test for that template in the workspace suite.
+
+### Checker — enum variant construction is checked in safe functions (D-107, 2026-09-18)
+
+- **Behaviour change — safe programs that passed `garnet check` may now fail
+  it.** In `fn` / `@safe` bodies, `Shape::Triangle(1.0)` (no such variant),
+  `Shape::Empty(1.0)` (unit variant given a payload), a bare `Shape::Circle`
+  (payload variant with no payload) and `Shape::Circle(1.0, 2.0)` (wrong field
+  count) are `check.safe_mode_violation` errors. Before, the checker was
+  silent and the interpreter built the malformed value or failed only at run
+  time. The enum resolves the way match arms already do (modules, `use`
+  aliases); an `impl` fn reached through the enum path (`Shape::unit()`) is a
+  call and is not judged; structs, module functions and prelude `Ok`/`Some`
+  are untouched. Managed `def` bodies are outside the safe-mode walk, as
+  before — `garnet-check-v0.3/tests/variant_construction.rs` pins the scope
+  and `garnet-cli/tests/check_variant_construction.rs` runs the four probe
+  shapes through the binary. `garnet check` output over the 184 tracked
+  `.garnet` files is byte-identical to the pre-cure binary.
+
+### Checker — capabilities reached through a call-graph cycle are now reported (U-117, 2026-09-18)
+
+- **Behaviour change — programs that passed `garnet check` may now fail it.**
+  `garnet check`, `garnet verify`, `garnet agent-loop`, the LSP and the
+  playground share the CapCaps propagator, and it now attributes a capability
+  to every function in a strongly connected component of the call graph. A
+  function that reaches `write_file` only through a cycle (`a` declares
+  `@caps(fs)` and calls `b`, `b` declares `@caps()` and calls `a`, `main`
+  declares `@caps()` and calls `b`) is reported on `b` and on `main` exactly as
+  the acyclic version was. Before, the verdict depended on the functions'
+  names: `a`/`b` passed and `zed`/`yak` failed on the same graph.
+- The recursive walk that produced the wrong answer also aborted with a stack
+  overflow at roughly 8 400 chained functions; the replacement is iterative and
+  has no recursion to overflow (12 000-function chain in the tests).
+- The propagator is an iterative DeRemer–Pennello digraph traversal over
+  Tarjan SCCs (`garnet-check-v0.3/src/caps_graph.rs`); each call edge is
+  visited once. Red-first tests in `caps_graph_cycle_tests.rs` include 3 000
+  random call graphs checked against a brute-force reachability oracle.
+  `garnet check` output over the 184 tracked `.garnet` files is byte-identical
+  before and after the change; only genuinely cyclic programs change verdict.
+- The scope fence (`GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md`), README, FAQ, man
+  page and web-api template drop the "acyclic" qualifier and the cycle
+  boundary; the U-91 boundaries that remain are unannotated bodies and call
+  shapes for which no edge is built. Other public "named, acyclic" wording is
+  corrected in a later public-truth change (ADR 0002). The playground WASM
+  bundle (`docs/playground/pkg`) is rebuilt in this change and the browser
+  proof re-captured against it, because the wasm readiness gate hashes the
+  checker sources at the PR head. This entry is the release note for the
+  behaviour change; it becomes the release body when the next tag is cut.
+
 ### Site — the landing navigation takes two presses to leave the page (2026-09-17)
 
 - Why, Install, Playground and Status now answer the first press by scrolling to

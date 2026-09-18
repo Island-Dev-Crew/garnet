@@ -19,7 +19,9 @@ use std::rc::Rc;
 fn matching_kind_and_backend_dispatches_as_usual() {
     // Baseline sanity: the kind-aware dispatch still works for well-
     // formed MemoryStores constructed via `MemoryBackend::for_kind`.
-    let mut interp = Interpreter::new();
+    // D-04b: memory declarations are gated by `mem`; this test exercises
+    // kind dispatch, not capability policy, so use the permissive instance.
+    let mut interp = Interpreter::new_permissive();
     interp
         .load_source(
             r#"

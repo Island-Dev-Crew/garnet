@@ -13,14 +13,15 @@
 //! | 1    | `env`          | process-environment access (S17)                 |
 //! | 2    | `ffi`          | `extern "C"` calls                               |
 //! | 3    | `fs`           | file-system read + write                         |
-//! | 4    | `net`          | public TCP/UDP                                   |
-//! | 5    | `net_internal` | RFC1918/loopback TCP/UDP                         |
-//! | 6    | `proc`         | process spawn, signals                           |
-//! | 7    | `time`         | wall clock + sleep                               |
-//! | 8    | (other)        | at least one unknown/user-defined cap declared   |
-//! | 9–15 | reserved       | must be zero; reserved for future canonical caps |
+//! | 4    | `mem`          | memory-tier construction (ADR 0011, D-04)        |
+//! | 5    | `net`          | public TCP/UDP                                   |
+//! | 6    | `net_internal` | RFC1918/loopback TCP/UDP                         |
+//! | 7    | `proc`         | process spawn, signals                           |
+//! | 8    | `time`         | wall clock + sleep                               |
+//! | 9    | (other)        | at least one unknown/user-defined cap declared   |
+//! | 10–15| reserved       | must be zero; reserved for future canonical caps |
 //!
-//! Bits 0..=7 are assigned in **lexicographic order of the canonical name**
+//! Bits 0..=8 are assigned in **lexicographic order of the canonical name**
 //! (`*` is ASCII 0x2A, before lowercase letters), so ascending-bit iteration
 //! yields names in exactly the order a `BTreeSet<String>` iterates. That
 //! ordering equivalence is what keeps diagnostics byte-identical with the
@@ -50,15 +51,16 @@ pub struct CapSet(u16);
 /// Canonical capability names and their bits, sorted lexicographically.
 /// Ascending-bit iteration over this table reproduces `BTreeSet<String>`
 /// iteration order for the closed set.
-const NAMED: [(&str, u16); 8] = [
+const NAMED: [(&str, u16); 9] = [
     ("*", 1 << 0),
     ("env", 1 << 1),
     ("ffi", 1 << 2),
     ("fs", 1 << 3),
-    ("net", 1 << 4),
-    ("net_internal", 1 << 5),
-    ("proc", 1 << 6),
-    ("time", 1 << 7),
+    ("mem", 1 << 4),
+    ("net", 1 << 5),
+    ("net_internal", 1 << 6),
+    ("proc", 1 << 7),
+    ("time", 1 << 8),
 ];
 
 impl CapSet {
@@ -72,17 +74,19 @@ impl CapSet {
     pub const FFI: CapSet = CapSet(1 << 2);
     /// `fs` — file-system read + write.
     pub const FS: CapSet = CapSet(1 << 3);
+    /// `mem` — memory-tier construction (`memory::*`, ADR 0011).
+    pub const MEM: CapSet = CapSet(1 << 4);
     /// `net` — public TCP/UDP.
-    pub const NET: CapSet = CapSet(1 << 4);
+    pub const NET: CapSet = CapSet(1 << 5);
     /// `net_internal` — RFC1918/loopback TCP/UDP.
-    pub const NET_INTERNAL: CapSet = CapSet(1 << 5);
+    pub const NET_INTERNAL: CapSet = CapSet(1 << 6);
     /// `proc` — process spawn, signals.
-    pub const PROC: CapSet = CapSet(1 << 6);
+    pub const PROC: CapSet = CapSet(1 << 7);
     /// `time` — wall clock + sleep.
-    pub const TIME: CapSet = CapSet(1 << 7);
+    pub const TIME: CapSet = CapSet(1 << 8);
     /// Presence marker for unknown/user-defined declared cap names. See the
     /// module docs for the exact (deliberately narrow) semantics.
-    pub const OTHER: CapSet = CapSet(1 << 8);
+    pub const OTHER: CapSet = CapSet(1 << 9);
 
     /// Look up a canonical capability name. Returns `None` for unknown
     /// (user-defined) names — callers that need old `BTreeSet` presence
@@ -197,14 +201,15 @@ mod tests {
     use proptest::prelude::*;
     use std::collections::BTreeSet;
 
-    /// Mask of every named (canonical) capability bit — bits 0..=7.
-    const NAMED_MASK: u16 = (1 << 8) - 1;
+    /// Mask of every named (canonical) capability bit — bits 0..=8.
+    const NAMED_MASK: u16 = (1 << 9) - 1;
 
-    const ALL_NAMES: [&str; 8] = [
+    const ALL_NAMES: [&str; 9] = [
         "*",
         "env",
         "ffi",
         "fs",
+        "mem",
         "net",
         "net_internal",
         "proc",
@@ -246,10 +251,10 @@ mod tests {
         for (name, bit) in NAMED {
             assert!(
                 bit & !NAMED_MASK == 0,
-                "named cap {name} must sit in bits 0..=7"
+                "named cap {name} must sit in bits 0..=8"
             );
         }
-        assert_eq!(CapSet::OTHER.bits(), 1 << 8, "OTHER is bit 8");
+        assert_eq!(CapSet::OTHER.bits(), 1 << 9, "OTHER is bit 9");
     }
 
     #[test]
@@ -269,6 +274,20 @@ mod tests {
         let b = capset_of(&["net", "time"]);
         assert_eq!(a.delta(b).names(), vec!["fs", "time"]);
         assert!(a.delta(a).is_empty());
+    }
+
+    /// D-04 (ADR 0011): `mem` is a canonical capability with its own bit,
+    /// placed in lexicographic order between `fs` and `net` so iteration
+    /// still matches `BTreeSet<String>` order.
+    #[test]
+    fn mem_is_a_canonical_capability_between_fs_and_net() {
+        let mem = CapSet::from_name("mem").expect("mem must have a CapSet bit");
+        assert_eq!(mem, CapSet::MEM);
+        assert_eq!(
+            (CapSet::FS | mem | CapSet::NET).names(),
+            vec!["fs", "mem", "net"]
+        );
+        assert!(ALL_NAMES.contains(&"mem"));
     }
 
     /// Registry-drift trap: every capability string any stdlib primitive
@@ -295,8 +314,8 @@ mod tests {
         /// Union via `|` agrees with the `BTreeSet` model.
         #[test]
         fn union_matches_set_model(
-            a in proptest::sample::subsequence(ALL_NAMES.to_vec(), 0..=8),
-            b in proptest::sample::subsequence(ALL_NAMES.to_vec(), 0..=8),
+            a in proptest::sample::subsequence(ALL_NAMES.to_vec(), 0..=9),
+            b in proptest::sample::subsequence(ALL_NAMES.to_vec(), 0..=9),
         ) {
             let bits = capset_of(&a) | capset_of(&b);
             let mut model = model_of(&a);
@@ -307,8 +326,8 @@ mod tests {
         /// Subset agrees with the `BTreeSet` model.
         #[test]
         fn subset_matches_set_model(
-            a in proptest::sample::subsequence(ALL_NAMES.to_vec(), 0..=8),
-            b in proptest::sample::subsequence(ALL_NAMES.to_vec(), 0..=8),
+            a in proptest::sample::subsequence(ALL_NAMES.to_vec(), 0..=9),
+            b in proptest::sample::subsequence(ALL_NAMES.to_vec(), 0..=9),
         ) {
             let (sa, sb) = (capset_of(&a), capset_of(&b));
             let (ma, mb) = (model_of(&a), model_of(&b));
@@ -318,8 +337,8 @@ mod tests {
         /// Difference agrees with the `BTreeSet` model, including iteration order.
         #[test]
         fn difference_matches_set_model(
-            a in proptest::sample::subsequence(ALL_NAMES.to_vec(), 0..=8),
-            b in proptest::sample::subsequence(ALL_NAMES.to_vec(), 0..=8),
+            a in proptest::sample::subsequence(ALL_NAMES.to_vec(), 0..=9),
+            b in proptest::sample::subsequence(ALL_NAMES.to_vec(), 0..=9),
         ) {
             let bits = capset_of(&a).difference(capset_of(&b));
             let model: Vec<&str> = model_of(&a)
@@ -332,8 +351,8 @@ mod tests {
         /// XOR delta agrees with the `BTreeSet` symmetric difference.
         #[test]
         fn delta_matches_symmetric_difference(
-            a in proptest::sample::subsequence(ALL_NAMES.to_vec(), 0..=8),
-            b in proptest::sample::subsequence(ALL_NAMES.to_vec(), 0..=8),
+            a in proptest::sample::subsequence(ALL_NAMES.to_vec(), 0..=9),
+            b in proptest::sample::subsequence(ALL_NAMES.to_vec(), 0..=9),
         ) {
             let bits = capset_of(&a).delta(capset_of(&b));
             let model: Vec<&str> = model_of(&a)
@@ -348,8 +367,8 @@ mod tests {
         /// the exact identity diff-caps relies on.
         #[test]
         fn intersect_matches_set_model_and_splits_delta(
-            a in proptest::sample::subsequence(ALL_NAMES.to_vec(), 0..=8),
-            b in proptest::sample::subsequence(ALL_NAMES.to_vec(), 0..=8),
+            a in proptest::sample::subsequence(ALL_NAMES.to_vec(), 0..=9),
+            b in proptest::sample::subsequence(ALL_NAMES.to_vec(), 0..=9),
         ) {
             let (sa, sb) = (capset_of(&a), capset_of(&b));
             let (ma, mb) = (model_of(&a), model_of(&b));
@@ -363,7 +382,7 @@ mod tests {
         /// Name iteration is exactly `BTreeSet<String>` order.
         #[test]
         fn iteration_order_matches_btreeset(
-            a in proptest::sample::subsequence(ALL_NAMES.to_vec(), 0..=8),
+            a in proptest::sample::subsequence(ALL_NAMES.to_vec(), 0..=9),
         ) {
             let bits = capset_of(&a);
             let model: Vec<&str> = model_of(&a).into_iter().collect();

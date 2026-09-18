@@ -120,7 +120,7 @@ identity, log records, and recall handles compose without leaving the language.
 (S22) · `std::json` (S22) · `crypto::blake3` provenance.
 
 This capstone threads the runtime surfaces completed across S22–S24 into one
-`@caps(fs)` pipeline that none of novel_01..05 fuse: a structured JSON event is
+`@caps(fs, mem)` pipeline that none of novel_01..05 fuse: a structured JSON event is
 emitted, each stage is appended to a **durable log file** under the gitignored
 `.garnet-cache/`, an episodic Mnemos handle keeps a live trace of exactly what
 was logged, and a `crypto::blake3` fingerprint is bound to the structured event.

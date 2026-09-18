@@ -25,6 +25,9 @@ touches them; nothing here may be cited as independently reviewed on that basis 
 - result **before**: the distinct token set runs `U-1`, `U-04` … `U-116` — **census 99**.
   **No occurrence at or above U-117 exists in any swept tree.**
 - result **after** this file: `U-1`, `U-04` … `U-121` — **census 104** (99 + 5 allocations).
+- census update 2026-09-18 (Train T2a, U-117 cured): the cure allocates no new finding and
+  retires none; the distinct token set is unchanged and the census stays **104**. The
+  2026-09-04 figures above are historical and are not rewritten.
 
 ## U-117 — CapCaps propagator: a primitive reached only through a call-graph cycle is not reported, annotated or not
 
@@ -41,9 +44,22 @@ touches them; nothing here may be cited as independently reviewed on that basis 
   printf '@caps(fs)\ndef a() {\n  b()\n  write_file("/tmp/never.txt", "x")\n}\n@caps()\ndef b() {\n  a()\n}\n@caps()\ndef main() {\n  b()\n}\n' > cyc.gn
   garnet check cyc.gn      # 3 functions checked, 4 boundary call sites, 0 diagnostics
   ```
-- **Status:** open. The public surfaces and the normative fence were bounded to "named, acyclic
-  chain from an annotated function" in #553. The checker cure is a separate slice on the trust
-  surface (`garnet-check-v0.3/src`) with a red-first test; it is not registered as cured here.
+- **Status:** cured (2026-09-18, Train T2a). The public surfaces and the normative fence were
+  bounded to "named, acyclic chain from an annotated function" in #553. The cure replaces the
+  colored DFS in `transitive_caps` with an iterative DeRemer–Pennello digraph traversal over
+  Tarjan SCCs, so every member of a cycle receives the union of the cycle's requirements and
+  the verdict no longer depends on function names; the same change removes the deep-chain
+  stack overflow (≈8 400 chained functions). Red-first tests live in
+  `garnet-check-v0.3/src/caps_graph_cycle_tests.rs` (included from `caps_graph.rs`), plus a
+  `garnet check` conformance test and a `gate_tally` case. The reproduction above now reports
+  `2 diagnostics` (`b` and `main`, missing `fs`). Over the 184 tracked `.garnet` files
+  `garnet check` output is byte-identical before and after the cure.
+- **Correction (2026-09-18):** the statement two bullets up that "the boundary is any cycle"
+  described the defect, not the guarantee. After the cure there is no cycle boundary; the
+  U-91 boundaries that remain inside the named-chain case are the unchecked body of an
+  unannotated function and the call shapes for which no edge is built. Public "named,
+  acyclic" wording outside the scope fence, README, FAQ, man page and web-api template is
+  corrected in the later public-truth change (ADR 0002), not here.
 
 ## U-118 — `garnet seal` in-toto subject digest is the shape-stable AST hash and collides across different `@caps(...)` declarations
 

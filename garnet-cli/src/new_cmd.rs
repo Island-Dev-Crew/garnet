@@ -361,7 +361,7 @@ mod tests {
         assert!(main.contains(".ask(:find"));
         assert!(main.contains(".try_tell(:review"));
         assert!(main.contains(".drain()"));
-        assert!(main.contains("@caps()"));
+        assert!(main.contains("@caps(mem)"));
         assert!(!main.contains("actor spawning is deliberately left"));
 
         let readme = std::fs::read_to_string(target.join("README.md")).unwrap();

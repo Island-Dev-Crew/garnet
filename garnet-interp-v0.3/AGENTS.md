@@ -15,7 +15,7 @@ Owns managed-mode tree-walk execution, expression evaluation, stdlib bridging, a
 - The program entry's declared budget bounds every gated primitive reached
   (U-91). `require_capability` unions the capabilities of all active frames,
   so a callee's own `@caps` can satisfy it; that alone is not enough. Each of
-  the fifteen gated adapters therefore also calls `require_entry_capability`,
+  the twenty-four gated adapters therefore also calls `require_entry_capability`,
   which reads the entry frame only. Without it, an entry declaring `@caps()`
   reaches a `@caps(fs)` helper through a function value, a closure, an actor
   handler, a top-level initializer, string interpolation or `method_missing` —
@@ -25,15 +25,28 @@ Owns managed-mode tree-walk execution, expression evaluation, stdlib bridging, a
   chain: `garnet run` does not run the checker, so this is the only place the
   entry budget is enforced. `garnet-cli/tests/entry_budget_enforcement.rs`
   pins each shape named above, on both backends.
+- Memory declarations are `mem` authority (D-04b, cured 2026-09-18). A
+  first-class `memory <kind> <name> : <type>` — top-level, inside a `module`,
+  or inside an `actor` — allocates a store without touching the registry, so
+  `load_module` runs `require_module_memory_capabilities` as a pre-pass and
+  every allocation site (`register_item`, `init_actor_env`) calls
+  `require_memory_declaration_capability`, which applies the same
+  `require_capability("mem", ..)` + `require_entry_capability` pair as the
+  `memory::*` natives. An entry declaring `@caps()` therefore cannot own a
+  memory tier by declaring it instead of constructing it. Rust unit tests
+  that exercise store semantics use `Interpreter::new_permissive()`; anything
+  reachable from `garnet run`/WASM stays strict.
 - Prefer explicit errors over silent no-ops for unsupported language features.
 - Registry-derived dispatch (RB-3): `stdlib_bridge::install()` is ONE loop
   joining `garnet_stdlib::registry::all_prims()` (Binding/Guard/arity
   columns) against the `#[garnet_primitive]` adapter table — never add a
   hand-written registration row. Adapter bodies keep the literal
   `require_capability` backstops as grep-able source text (gate scripts
-  parse this file). The four `memory::*` natives live in `BRIDGE_ONLY`;
-  the registry-join trap tests + `guard_column_matches_runtime_backstop_behavior`
-  make any registry/adapter drift a red test.
+  parse this file). Since D-04 (ADR 0011) the four `memory::*` natives are
+  ordinary `mem`-gated registry rows — there is no bridged-but-unregistered
+  set; every adapter key must be a registry row. The registry-join trap tests
+  + `guard_column_matches_runtime_backstop_behavior` make any registry/adapter
+  drift a red test.
 - Crash surface (RB-2): the crate carries
   `#![deny(clippy::unwrap_used, clippy::expect_used)]` (tests exempt via
   `cfg_attr`). Sanctioned escapes are in-line `// INVARIANT:` allows only.

@@ -1,16 +1,16 @@
 {
   "_generated_by": "cargo run -p xtask -- truth — do not edit by hand; `xtask truth --check` fails on drift",
-  "generated_at_commit": "1011bc4",
+  "generated_at_commit": "9d17ba99",
   "latest_tag": "v0.8.2",
   "omissions": {
     "security_test_count": "No trusted derivation exists for the historical public '136 security tests' figure (it entered the site undocumented). Re-stamping an unverifiable number would automate drift; the public row is removed/replaced by RB-0d instead."
   },
-  "primitive_count": 80,
+  "primitive_count": 84,
   "primitives_by_layer": {
     "core": 40,
-    "std": 40
+    "std": 44
   },
-  "readiness_pct": 93.1,
+  "readiness_pct": 93.0,
   "tracked_slices": "87/87",
   "version": "0.8.2",
   "workspace_tests": {

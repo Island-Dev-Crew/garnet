@@ -53,6 +53,14 @@ impl RequiredCaps {
     pub fn env() -> Self {
         Self(vec!["env"])
     }
+    /// Memory-tier access (`memory::working` / `episodic` / `semantic` /
+    /// `procedural`). New in D-04 (ADR 0011): the four tiers were bridged
+    /// but caps-invisible; they now require `mem` at check time and at run
+    /// time on both backends. The matching known-capability entry lives in
+    /// `garnet-check-v0.3::capset`.
+    pub fn mem() -> Self {
+        Self(vec!["mem"])
+    }
     pub fn contains(&self, cap: &str) -> bool {
         self.0.contains(&cap)
     }
@@ -264,7 +272,7 @@ fn build_prims() -> Vec<PrimMeta> {
             Layer::Std,
             Stability::Stable,
             Binding::Bare,
-            Guard::Declared,
+            Guard::GateEntry,
             "Monotonic clock in milliseconds since process start.",
         ),
         p(
@@ -275,7 +283,7 @@ fn build_prims() -> Vec<PrimMeta> {
             Layer::Std,
             Stability::Stable,
             Binding::Bare,
-            Guard::Declared,
+            Guard::GateEntry,
             "Wall clock in milliseconds since UNIX epoch.",
         ),
         p(
@@ -286,7 +294,7 @@ fn build_prims() -> Vec<PrimMeta> {
             Layer::Std,
             Stability::Stable,
             Binding::Bare,
-            Guard::Declared,
+            Guard::GateEntry,
             "Sleep the current thread for N milliseconds.",
         ),
         // ── str (Layer 0 core, no caps) ──
@@ -1058,7 +1066,7 @@ fn build_prims() -> Vec<PrimMeta> {
             Layer::Std,
             Stability::Experimental,
             Binding::Qualified,
-            Guard::Declared,
+            Guard::GateEntry,
             "Random UUIDv4 (128 bits of randomness; version+variant tagged).",
         ),
         p(
@@ -1080,7 +1088,7 @@ fn build_prims() -> Vec<PrimMeta> {
             Layer::Std,
             Stability::Experimental,
             Binding::Qualified,
-            Guard::Declared,
+            Guard::GateEntry,
             "Time-ordered UUIDv7 (48-bit unix-ms prefix + randomness).",
         ),
         // ── std::base64 (no caps — pure; tracks RFC 4648) ──
@@ -1162,6 +1170,55 @@ fn build_prims() -> Vec<PrimMeta> {
             Guard::GateEntry,
             "Append a formatted `[level] message` log line to a file (creating it \
              if missing); requires the fs capability.",
+        ),
+        // ── memory (cap: mem — ADR 0011, D-04; the four tiers were caps-invisible) ──
+        p(
+            "memory",
+            "working",
+            1,
+            RequiredCaps::mem(),
+            Layer::Std,
+            Stability::Experimental,
+            Binding::Qualified,
+            Guard::GateEntry,
+            "Open the named working-memory store (task-scoped scratch); requires \
+             the mem capability.",
+        ),
+        p(
+            "memory",
+            "episodic",
+            1,
+            RequiredCaps::mem(),
+            Layer::Std,
+            Stability::Experimental,
+            Binding::Qualified,
+            Guard::GateEntry,
+            "Open the named episodic-memory store (dated event history); requires \
+             the mem capability.",
+        ),
+        p(
+            "memory",
+            "semantic",
+            1,
+            RequiredCaps::mem(),
+            Layer::Std,
+            Stability::Experimental,
+            Binding::Qualified,
+            Guard::GateEntry,
+            "Open the named semantic-memory store (durable facts); requires the \
+             mem capability.",
+        ),
+        p(
+            "memory",
+            "procedural",
+            1,
+            RequiredCaps::mem(),
+            Layer::Std,
+            Stability::Experimental,
+            Binding::Qualified,
+            Guard::GateEntry,
+            "Open the named procedural-memory store (skills and workflows); \
+             requires the mem capability.",
         ),
     ]
 }
@@ -1352,6 +1409,10 @@ mod tests {
                 "fs::read_file",
                 "fs::write_bytes",
                 "fs::write_file",
+                "memory::episodic",
+                "memory::procedural",
+                "memory::semantic",
+                "memory::working",
                 "net::tcp_connect",
                 "std::env::get",
                 "std::env::set",
@@ -1362,15 +1423,42 @@ mod tests {
                 "std::process::spawn",
                 "std::process::spawn_args",
                 "std::process::wait",
+                "std::uuid::new_v4",
+                "std::uuid::new_v7",
+                "time::now_ms",
+                "time::sleep",
+                "time::wall_clock_ms",
             ]
         );
     }
 
+    /// D-04 (ADR 0011): each memory-tier constructor is a registry row that
+    /// requires exactly `mem` — not `fs`, not nothing — so the checker, the
+    /// manifest and `diff-caps` can see memory.
+    #[test]
+    fn memory_tiers_require_the_mem_capability() {
+        let t = all_prims();
+        for tier in ["working", "episodic", "semantic", "procedural"] {
+            let key = format!("memory::{tier}");
+            let meta = t
+                .get(&key)
+                .unwrap_or_else(|| panic!("{key} has no registry row"));
+            assert_eq!(meta.required_caps.0, vec!["mem"], "{key}");
+            assert_eq!(meta.arity, 1, "{key}");
+            assert_eq!(meta.binding, Binding::Qualified, "{key}");
+            assert_eq!(meta.guard, Guard::GateEntry, "{key}");
+        }
+    }
+
     #[test]
     fn gate_count_matches_the_audited_runtime_backstop() {
-        // U-91: 0 call-chain-only Gate + 15 GateEntry. The 15-primitive
-        // host-authority surface is unchanged; what changed is that every row in
-        // it is now bound by the program entry's declared budget.
+        // U-91: 0 call-chain-only Gate + 15 GateEntry, every row bound by the
+        // program entry's declared budget. D-02 added the five time-class rows
+        // (time::now_ms/wall_clock_ms/sleep, std::uuid::new_v4/new_v7), which
+        // were previously `Declared` (checker-only) and ran under `@caps()`.
+        // D-04 (ADR 0011) added the four memory-tier constructors
+        // (memory::working/episodic/semantic/procedural) under the new `mem`
+        // capability; they previously had no registry row at all.
         let gate = static_prims()
             .iter()
             .filter(|m| m.guard == Guard::Gate)
@@ -1379,6 +1467,6 @@ mod tests {
             .iter()
             .filter(|m| m.guard == Guard::GateEntry)
             .count();
-        assert_eq!((gate, entry), (0, 15));
+        assert_eq!((gate, entry), (0, 24));
     }
 }

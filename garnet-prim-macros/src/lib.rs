@@ -9,7 +9,7 @@
 //!   `#[garnet_primitive("module::name")]` on a
 //!   `fn(Vec<Value>) -> Result<Value, RuntimeError>` item. Pure marker +
 //!   shape validation; the key must be the primitive's qualified registry
-//!   key (or a documented bridge-only key like `memory::working`).
+//!   key.
 //! - [`macro@garnet_primitive_module`] — on an inline `mod` containing
 //!   adapters; collects every `#[garnet_primitive]` item and appends
 //!   `pub(crate) fn entries() -> Vec<(&'static str, crate::value::NativeFn)>`

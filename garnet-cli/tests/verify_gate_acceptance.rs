@@ -47,6 +47,26 @@ fn planted_regression_fails_the_gate() {
 }
 
 #[test]
+fn fs_authority_reached_through_a_cycle_fails_the_gate() {
+    let dir = fresh_dir("u117_cycle");
+    // U-117: `main` reaches `write_file` only through the `a <-> b` cycle.
+    // The gate must reject this exactly as it rejects the acyclic control.
+    let cyclic = write(
+        &dir,
+        "cyclic.garnet",
+        "@caps(fs)\ndef a() { b()\n write_file(\"/tmp/never.txt\", \"x\") }\n\
+         @caps()\ndef b() { a() }\n\
+         @caps()\ndef main() { b() }\n",
+    );
+    let tally = gate_tally(&cyclic).expect("a readable .garnet file is a valid target");
+    assert!(
+        !tally.passes(),
+        "fs authority reached through a cycle must fail the gate: {tally:?}"
+    );
+    assert_eq!(tally.failing, 1);
+}
+
+#[test]
 fn directory_walk_aggregates_mixed_results() {
     let dir = fresh_dir("mixed");
     write(&dir, "clean.garnet", "@caps()\ndef main() { 1 }\n");

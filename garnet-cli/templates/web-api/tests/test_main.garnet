@@ -1,9 +1,11 @@
 # Starter tests for {{name}}.
 #
-# Tests run with the capabilities they declare; nothing seeds a socket.
-# This scaffold exercises the pure helpers; add socket-level tests as
-# your service grows.
+# Each test is its own program entry and runs with exactly the capabilities
+# it declares; nothing seeds a socket. `timestamp()` reads the wall clock,
+# which is `time` authority, so the test declares `@caps(time)` as `main`
+# does in src/main.garnet. Add socket-level tests as your service grows.
 
+@caps(time)
 def test_timestamp_shape() {
   # timestamp() returns a "[<ms>ms]" string — fragile-format but
   # sufficient for a starter test. Real services should return a

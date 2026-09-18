@@ -94,16 +94,13 @@ and aimed at agent-authored code:
   declared budgets transitively at check time **across named call chains**, and the entry point
   must declare its budget. Reached instead through a function value, a closure, an actor handler,
   a top-level initializer, a string interpolation or `method_missing`, a call contributes no edge
-  and the checker stays silent; a primitive reached only through a cycle in the call graph is not
-  reported even along a named chain, annotated or not (finding U-91; the cycle case is a checker
-  defect with its own cure pending). `garnet run` does not invoke the checker. Under the `garnet` CLI the 15
-  gated host-authority primitives (fs, net, proc, env, log-to-file) additionally trap at run time
+  and the checker stays silent (finding U-91). A cycle in the call graph is followed: every function
+  in it inherits the cycle's requirements (U-117, cured 2026-09). `garnet run` does not invoke the checker. Under the `garnet` CLI the 20
+  gated host-authority primitives (fs, net, proc, env, time, log-to-file) additionally trap at run time
   unless the **program entry's** own declared budget covers the capability, whichever call edge
-  reached them. The other 65 registry rows carry no runtime gate, and they are not one group:
-  58 require no capability at all, 5 are capability-bearing and checker-only (`time::now_ms`,
-  `time::wall_clock_ms`, `time::sleep`, `std::uuid::new_v4`, `std::uuid::new_v7`; `new_v5`
-  requires nothing) and really do execute undeclared, and `net::tcp_listen` / `net::udp_bind`
-  are unbridged and do not execute either. See the
+  reached them. The other 60 registry rows carry no runtime gate, and they are not one group:
+  58 require no capability at all (`std::uuid::new_v5` among them), and `net::tcp_listen` /
+  `net::udp_bind` are unbridged and do not execute either. See the
   [capability enforcement scope table](C_Language_Specification/GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md).
 - **An enforced kernel** — `@caps` and `@max_depth` trap identically on both execution backends,
   with cross-OS trap parity recorded as evidence, not asserted.
@@ -161,7 +158,7 @@ production-complete** — and this README will never tell you otherwise.
 | <!-- truth:latest_tag -->v0.8.2<!-- /truth --> release: Linux x86_64/ARM64 `.deb`, `.rpm` and tarballs, macOS tarballs, Windows zip, SBOM, GPG-signed `SHA256SUMS` | macOS `.pkg` notarization, Windows `.msi` (credential-gated) |
 | `@caps` + `@max_depth` enforced on interpreter **and** VM; cross-OS trap parity recorded | OS-sandbox enforcement beyond Linux seccomp |
 | Capability-bounded acceptance demo: agent code accepted *and refused* on evidence, sealed | **Under construction:** `garnet build --evidence` (W-SHIP; no shipping CLI flag); independent verification of the self-found red-team fix |
-| <!-- truth:primitive_count -->80<!-- /truth --> capability- and stability-tagged stdlib primitives | Production VM performance (unbenchmarked, unclaimed) |
+| <!-- truth:primitive_count -->84<!-- /truth --> capability- and stability-tagged stdlib primitives | Production VM performance (unbenchmarked, unclaimed) |
 | LSP + VS Code extension (local VSIX), trivia-preserving CST, formatter baseline | Marketplace/OpenVSX publication; incremental parsing |
 | Rust / Ruby / Python / Go migration assistant with lineage; output starts `@sandbox` + `@caps()` as reviewer notes | Package registry beyond stub |
 

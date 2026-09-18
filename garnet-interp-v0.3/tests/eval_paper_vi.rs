@@ -6,13 +6,17 @@
 use garnet_interp::{Interpreter, RuntimeError, Value};
 
 fn run(src: &str, fn_name: &str) -> Value {
-    let mut interp = Interpreter::new();
+    // D-04b: memory declarations are gated by `mem`; these tests exercise
+    // store semantics, not capability policy, so use the permissive instance.
+    let mut interp = Interpreter::new_permissive();
     interp.load_source(src).expect("load");
     interp.call(fn_name, vec![]).expect("call")
 }
 
 fn run_result(src: &str, fn_name: &str) -> Result<Value, RuntimeError> {
-    let mut interp = Interpreter::new();
+    // D-04b: memory declarations are gated by `mem`; these tests exercise
+    // store semantics, not capability policy, so use the permissive instance.
+    let mut interp = Interpreter::new_permissive();
     interp.load_source(src).expect("load");
     interp.call(fn_name, vec![])
 }
