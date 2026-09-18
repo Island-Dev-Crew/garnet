@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Garnet lang — the evidence language</title>
-<meta name="description" content="English is how you tell an agent what to do. Garnet lang is how anyone else can trust what it did. A capability-bounded language whose checker rejects an undeclared call reached along a named, acyclic call chain from an annotated function, whose diffs report widened authority, and whose builds and seals a stranger can recompute. By Island Dev Crew.">
+<meta name="description" content="English is how you tell an agent what to do. Garnet lang is how anyone else can trust what it did. A capability-bounded language whose checker rejects an undeclared call reached along a named call chain from an annotated function, cycles included, whose diffs report widened authority, and whose builds and seals a stranger can recompute. By Island Dev Crew.">
 <meta name="theme-color" content="#73021E">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/garnet-192.png">
@@ -1081,7 +1081,7 @@ def main() {
 <span class="g">garnet seal:</span> cosign not installed — in-toto predicate emitted UNSIGNED (wrap-don't-rebuild: install cosign to attest; Garnet does not sign supply-chain itself)</pre>
     </div>
 
-    <p class="evidence-note">Captured unedited on 2026-09-02 from <code>garnet 0.8.1</code> built at main <code>fbd64bc5</code>, in a fresh directory with no <code>.garnet-cache</code>; only long JSON lines are elided with an ellipsis. The checker rejects an undeclared call reached along a named, acyclic call chain from an annotated function &mdash; that is the bound the check holds to, and the <a href="https://github.com/Island-Dev-Crew/garnet/blob/main/C_Language_Specification/GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md">capability enforcement scope</a> states where it ends. <code>garnet run</code> does not invoke the checker. <a href="#try">Run check and diff-caps yourself, in the browser &rarr;</a></p>
+    <p class="evidence-note">Captured unedited on 2026-09-02 from <code>garnet 0.8.1</code> built at main <code>fbd64bc5</code>, in a fresh directory with no <code>.garnet-cache</code>; only long JSON lines are elided with an ellipsis. The checker rejects an undeclared call reached along a named call chain from an annotated function, cycles included &mdash; that is the bound the check holds to, and the <a href="https://github.com/Island-Dev-Crew/garnet/blob/main/C_Language_Specification/GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md">capability enforcement scope</a> states where it ends. <code>garnet run</code> does not invoke the checker. <a href="#try">Run check and diff-caps yourself, in the browser &rarr;</a></p>
   </div>
 </section>
 
@@ -1317,7 +1317,7 @@ def main() {
       <div class="feature">
         <div class="icon">@caps(fs)</div>
         <h4>Capability Model</h4>
-        <p>A function declares its OS-authority budget with <code>@caps</code>. <code>garnet check</code> rejects an undeclared call reached along a named, acyclic call chain from an annotated function, and the twenty-four gated host primitives also require the program entry's declared budget at run time.</p>
+        <p>A function declares its OS-authority budget with <code>@caps</code>. <code>garnet check</code> rejects an undeclared call reached along a named call chain from an annotated function, cycles included, and the twenty-four gated host primitives also require the program entry's declared budget at run time.</p>
       </div>
       <div class="feature">
         <div class="icon">memory · 4</div>
@@ -1370,7 +1370,7 @@ def main() {
   <div class="container reveal">
     <h3>The Capability Model</h3>
     <h2>Read one token. <span class="accent">Know what the function declares.</span></h2>
-    <p class="lead"><code>@caps(fs)</code> is a semantic beacon: a single annotation that front-loads the function's declared OS-authority budget. Humans and language models can scan a file and read what each function claims, and <code>garnet check</code> rejects an undeclared call reached along a named, acyclic call chain from an annotated function.</p>
+    <p class="lead"><code>@caps(fs)</code> is a semantic beacon: a single annotation that front-loads the function's declared OS-authority budget. Humans and language models can scan a file and read what each function claims, and <code>garnet check</code> rejects an undeclared call reached along a named call chain from an annotated function, cycles included.</p>
 
     <div class="caps-showcase">
       <div class="code-col garnet"><div class="head"><div class="swatch"></div>GARNET</div>
