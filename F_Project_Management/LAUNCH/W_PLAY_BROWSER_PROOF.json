@@ -1,8 +1,8 @@
 {
   "schema": "garnet.w-play.browser-proof/1",
-  "captured_at": "2026-09-18T09:10:37.333Z",
+  "captured_at": "2026-09-18T10:32:20.402Z",
   "verdict": "pass",
-  "duration_ms": 1516,
+  "duration_ms": 1972,
   "execution": {
     "engine": "playwright-browser-page",
     "browser": "149.0.7827.55",
@@ -11,8 +11,8 @@
     "service_workers": "blocked"
   },
   "git": {
-    "tested_commit": "2af92e9604b53cb56a4a7bec580b5be8d83c10d6",
-    "tested_tree": "afa2c37b4dbe80efdda8483e1edfe237a8c7fccc",
+    "tested_commit": "372b77af91fb19a5b8aac1468db76ae6ecc5e8b4",
+    "tested_tree": "5356561a8add54a0d53826a1d9cf648baaad718b",
     "runtime_inputs_clean": true
   },
   "host": {
@@ -22,21 +22,21 @@
   },
   "package": {
     "schema": "garnet.playground.wasm-package/1",
-    "source_tree_sha256": "a60eeb27545b32b2efa7924d1322bd3a4d7b184000abc9a09d8fbf28016e6b5d",
+    "source_tree_sha256": "1c1375b94df3e448248d35266c8192d0c88f5bc59eef866bfb2418e7d11f6552",
     "artifacts": {
       "garnet_wasm.js": {
         "bytes": 6581,
         "sha256": "bf72509961525b4eb2e0702f41da61b4e8087ceee98787b7a046d83a85791a6d"
       },
       "garnet_wasm_bg.wasm": {
-        "bytes": 2227161,
-        "sha256": "d2d8a20fb8368328177a9aaa35972b7e157160fb33b407d0f6e76b2886d33c32"
+        "bytes": 2231290,
+        "sha256": "a5920c209b06e5719f44e7ed44687572f0d62b923298803b1cebdab84e023569"
       }
     }
   },
   "runtime_inputs": {
     "schema": "garnet.w-play.runtime-inputs/1",
-    "sha256": "721b898aad22994e48a1e00a10c163324a2b99c4ff0d9e05df701658b4205d0e",
+    "sha256": "a73d84fd4ed2f2a5770ce94e40ee78c42fcb3b2efe8c6bb523b4ac19076bcf0e",
     "files": {
       "apps/garnet-studio/package-lock.json": {
         "bytes": 44280,
@@ -51,12 +51,12 @@
         "sha256": "790a70b22ea92e6f7004eec6196c0807f612d149a2bb40115d31d44ab68927fa"
       },
       "docs/playground.html": {
-        "bytes": 8973,
-        "sha256": "79747cd760fb06c9c73cb9def52b0e96da916f4b5d4735a4576b58032a25a577"
+        "bytes": 9411,
+        "sha256": "213a5ce2fe32287d552da2180f726f4ed65125312180bd0d4649b9f747045e78"
       },
       "docs/playground/examples.json": {
-        "bytes": 3016,
-        "sha256": "eb1b7edb207c2a695b7d51c5b3c4acfac51bf42eb706c0da520b5586a0534d18"
+        "bytes": 4269,
+        "sha256": "8705f3add6e992616baa7e3d589e15f80bf196f84cd5ee9341ef702b15672cde"
       },
       "docs/playground/live.js": {
         "bytes": 6530,
@@ -67,16 +67,16 @@
         "sha256": "bf72509961525b4eb2e0702f41da61b4e8087ceee98787b7a046d83a85791a6d"
       },
       "docs/playground/pkg/garnet_wasm_bg.wasm": {
-        "bytes": 2227161,
-        "sha256": "d2d8a20fb8368328177a9aaa35972b7e157160fb33b407d0f6e76b2886d33c32"
+        "bytes": 2231290,
+        "sha256": "a5920c209b06e5719f44e7ed44687572f0d62b923298803b1cebdab84e023569"
       },
       "docs/playground/pkg/provenance.json": {
-        "bytes": 8539,
-        "sha256": "fd325e9d3b9f2813ec5108584f2cb18be9adbe2f68efef3fc0ef704c533737e4"
+        "bytes": 8589,
+        "sha256": "97ef78d12604fe5908bc85e4f27d137fb6f0864f0a8ba98b45f56442a87e49fb"
       },
       "scripts/smoke_garnet_playground_browser.mjs": {
-        "bytes": 17844,
-        "sha256": "ddbd4ac831a8cc108514527f70ae06ea58b0e8064b51a18897d4c08348d3978d"
+        "bytes": 20792,
+        "sha256": "8cffd5feb4719ca6cc7263144cfa0aef794ddb8e6f3a177ad2b7043359e746db"
       }
     }
   },
@@ -183,11 +183,41 @@
         "diagnostic": "Message(\"unresolved path: proc::run\")"
       },
       "ui_state": "Denied"
+    },
+    "memory_tier": {
+      "run": {
+        "schema": "garnet.wasm.run/1",
+        "exit_class": "runtime_error",
+        "stdout": "",
+        "diagnostic": "Message(\"capability: `memory::working` requires @caps(mem), not declared in the calling chain\")"
+      },
+      "check": {
+        "schema": "garnet.wasm.check/1",
+        "ok": false,
+        "diagnostics": [
+          {
+            "code": "check.caps_coverage",
+            "severity": "error",
+            "message": "caps coverage: function `main` does not declare `mem` but transitively calls `memory::working` which requires it"
+          },
+          {
+            "code": "check.stability_advice",
+            "severity": "info",
+            "message": "stability warning: function `main` calls experimental primitive `memory::working`; its API may change between minor releases"
+          }
+        ]
+      },
+      "run_ui_state": "Denied",
+      "check_ui_state": "Check failed"
+    },
+    "home_link": {
+      "href": "index.html",
+      "target": "_top"
     }
   },
   "visual": {
     "screenshot": "ops/lane2a/evidence/30-playground-browser.png",
-    "screenshot_sha256": "fc13d41bb8ec0ae39170dc15a48344aaf46057b1ea64f49c4e4e8f49b280dd1e",
+    "screenshot_sha256": "9690ed4899a683d904088240002e03f56f3bbdf8febc4f08679a69e0bf1b6388",
     "desktop": {
       "horizontal_overflow": false,
       "runtime_state": "ready"
