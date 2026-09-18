@@ -9,6 +9,39 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ## [Unreleased]
 
+### Capabilities — the memory tiers become a capability, `mem` (D-04, ADR 0011, 2026-09-18)
+
+- **Behaviour change — `memory::working`, `memory::episodic`,
+  `memory::semantic` and `memory::procedural` now require `@caps(mem)`.**
+  Before this change the four tier constructors were bridged into the
+  interpreter through a `BRIDGE_ONLY` const with no registry row: `garnet
+  check` was silent on a program that built every tier under `@caps()`,
+  `@caps(mem)` was rejected as an unknown capability, `garnet caps` reported
+  an empty set for a program that wrote to memory, and `garnet sandbox`
+  warned that `mem` was unmapped. Each tier is now an ordinary registry row
+  (`RequiredCaps::mem()`, `Guard::GateEntry`, `Stability::Experimental` like
+  its S22 siblings), so `garnet check` reports ``caps coverage: function
+  `main` does not declare `mem` but transitively calls `memory::working`
+  which requires it``, `garnet run` traps under `@caps()` on both backends
+  before any store is constructed, a `@caps(mem)` helper cannot launder the
+  tier past an entry that lacks `mem`, `@caps(fs)` does not grant it (the
+  ADR's rejected alternative), and adding `mem` moves a `diff-caps` verdict.
+  `mem` is a canonical checker bit ordered between `fs` and `net`; the
+  capability vocabulary is a closed set of 9. The gated surface is 24 rows,
+  the registry 84, the caps-invisible class is empty and the `BRIDGE_ONLY`
+  const is gone — every interpreter adapter key is now a registry row.
+  Programs that construct a tier must add `mem` to their entry's `@caps`;
+  `examples/novel_05` and `novel_06`, the S22 dispatch test and the S25
+  host-effect composition test were updated that way. The scope table,
+  `CURRENT_STATE.md`, `CLAUDE.md`, `FAQ.md`, `docs/stdlib.html`, the man page,
+  the site copy and ADR 0011 (now *Implemented*) say so.
+  `garnet-cli/tests/check_memory_capability.rs` (new) and the D-04 section of
+  `caps_enforcement.rs` pin the check-time and both-backend run-time
+  behaviour; `scripts/garnet_caps_enforcement_status.py` requires the `mem`
+  gate. Disclosed: the `derived_install_binds_the_full_audited_surface` pin
+  stays at 82 bound natives (84 rows less 2 unbridged) — the red commit's 84
+  was a miscount of a table that gained a source, not members.
+
 ### Runtime — the `time` class traps at run time (D-02, 2026-09-18)
 
 - **Behaviour change — `garnet run` and `garnet test` now trap where they

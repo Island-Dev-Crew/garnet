@@ -53,6 +53,14 @@ impl RequiredCaps {
     pub fn env() -> Self {
         Self(vec!["env"])
     }
+    /// Memory-tier access (`memory::working` / `episodic` / `semantic` /
+    /// `procedural`). New in D-04 (ADR 0011): the four tiers were bridged
+    /// but caps-invisible; they now require `mem` at check time and at run
+    /// time on both backends. The matching known-capability entry lives in
+    /// `garnet-check-v0.3::capset`.
+    pub fn mem() -> Self {
+        Self(vec!["mem"])
+    }
     pub fn contains(&self, cap: &str) -> bool {
         self.0.contains(&cap)
     }
@@ -1162,6 +1170,55 @@ fn build_prims() -> Vec<PrimMeta> {
             Guard::GateEntry,
             "Append a formatted `[level] message` log line to a file (creating it \
              if missing); requires the fs capability.",
+        ),
+        // ── memory (cap: mem — ADR 0011, D-04; the four tiers were caps-invisible) ──
+        p(
+            "memory",
+            "working",
+            1,
+            RequiredCaps::mem(),
+            Layer::Std,
+            Stability::Experimental,
+            Binding::Qualified,
+            Guard::GateEntry,
+            "Open the named working-memory store (task-scoped scratch); requires \
+             the mem capability.",
+        ),
+        p(
+            "memory",
+            "episodic",
+            1,
+            RequiredCaps::mem(),
+            Layer::Std,
+            Stability::Experimental,
+            Binding::Qualified,
+            Guard::GateEntry,
+            "Open the named episodic-memory store (dated event history); requires \
+             the mem capability.",
+        ),
+        p(
+            "memory",
+            "semantic",
+            1,
+            RequiredCaps::mem(),
+            Layer::Std,
+            Stability::Experimental,
+            Binding::Qualified,
+            Guard::GateEntry,
+            "Open the named semantic-memory store (durable facts); requires the \
+             mem capability.",
+        ),
+        p(
+            "memory",
+            "procedural",
+            1,
+            RequiredCaps::mem(),
+            Layer::Std,
+            Stability::Experimental,
+            Binding::Qualified,
+            Guard::GateEntry,
+            "Open the named procedural-memory store (skills and workflows); \
+             requires the mem capability.",
         ),
     ]
 }

@@ -158,7 +158,7 @@ production-complete** — and this README will never tell you otherwise.
 | <!-- truth:latest_tag -->v0.8.2<!-- /truth --> release: Linux x86_64/ARM64 `.deb`, `.rpm` and tarballs, macOS tarballs, Windows zip, SBOM, GPG-signed `SHA256SUMS` | macOS `.pkg` notarization, Windows `.msi` (credential-gated) |
 | `@caps` + `@max_depth` enforced on interpreter **and** VM; cross-OS trap parity recorded | OS-sandbox enforcement beyond Linux seccomp |
 | Capability-bounded acceptance demo: agent code accepted *and refused* on evidence, sealed | **Under construction:** `garnet build --evidence` (W-SHIP; no shipping CLI flag); independent verification of the self-found red-team fix |
-| <!-- truth:primitive_count -->80<!-- /truth --> capability- and stability-tagged stdlib primitives | Production VM performance (unbenchmarked, unclaimed) |
+| <!-- truth:primitive_count -->84<!-- /truth --> capability- and stability-tagged stdlib primitives | Production VM performance (unbenchmarked, unclaimed) |
 | LSP + VS Code extension (local VSIX), trivia-preserving CST, formatter baseline | Marketplace/OpenVSX publication; incremental parsing |
 | Rust / Ruby / Python / Go migration assistant with lineage; output starts `@sandbox` + `@caps()` as reviewer notes | Package registry beyond stub |
 

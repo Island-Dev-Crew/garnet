@@ -86,7 +86,17 @@ fn check_accepts_a_declared_memory_tier() {
         !text.contains("unknown capability"),
         "`mem` must be a known capability: {text}"
     );
-    assert!(text.contains("0 diagnostics"), "{text}");
+    assert!(
+        !text.contains("caps coverage"),
+        "declared `mem` must satisfy caps coverage: {text}"
+    );
+    // The memory rows are `Stability::Experimental` like their S22 siblings,
+    // so the layer policy's non-fatal "calls experimental primitive" warning
+    // is expected here; only capability diagnostics are asserted absent.
+    assert!(
+        !text.contains("error"),
+        "declared `mem` must produce no error-level diagnostic: {text}"
+    );
 }
 
 #[test]

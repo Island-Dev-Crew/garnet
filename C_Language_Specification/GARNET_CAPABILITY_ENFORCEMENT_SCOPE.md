@@ -48,10 +48,10 @@ the OS boundary — where the guarantees are real but **bounded**, not universal
 
 ## Capability kinds
 
-The checker vocabulary is a closed set of **8** kinds
-(`garnet-check-v0.3/src/capset.rs`): `*` (wildcard), `env`, `ffi`, `fs`, `net`,
-`net_internal`, `proc`, `time`. The stdlib registry constructs rows requiring
-`fs`, `net`, `time`, `proc`, `env`.
+The checker vocabulary is a closed set of **9** kinds
+(`garnet-check-v0.3/src/capset.rs`): `*` (wildcard), `env`, `ffi`, `fs`, `mem`,
+`net`, `net_internal`, `proc`, `time`. The stdlib registry constructs rows
+requiring `fs`, `net`, `time`, `proc`, `env`, `mem` (`mem` since D-04, ADR 0011).
 
 ## Enforcement classes
 
@@ -59,13 +59,13 @@ The checker vocabulary is a closed set of **8** kinds
 |-------|---------------|-------|---------|
 | **Declared (checker-only)** | Capability required by the checker; **no runtime gate**. Reachable at run time without a trap once the program type-checks. **0 primitives — this class is empty (D-02, 2026-09).** Until D-02 it held the five `time`-class rows, which ran undeclared under `@caps()`. | `Guard::Declared` with a non-empty `RequiredCaps` (`registry.rs`) | *(none)* |
 | **Runtime-gated (call chain only)** | `require_capability` alone: traps when no *active* frame declares the capability. **0 primitives — this class is empty (U-91).** The union is satisfied by ANY active frame, so a helper that declares the capability satisfied it for an entry point that did not. | `Guard::Gate` | *(none)* |
-| **Entry-gated** | `require_capability` **plus** the program-entry-frame check, so the PROGRAM ENTRY's declared budget must cover the capability regardless of which call edge reached the primitive. **20 primitives — the whole gated surface.** S92 introduced this for the three subprocess surfaces; U-91 extended it to the rest of the host-authority rows; D-02 moved the `time` class in. | `Guard::GateEntry`; `eval.rs` `require_entry_capability` | `fs::read_file` / `write_file` / `read_bytes` / `write_bytes` / `list_dir`; `net::tcp_connect`; `std::env::get` / `set` / `vars`; `std::process::wait` / `exit_code` / `spawn` / `spawn_args` / `output`; `std::log::to_file`; `time::now_ms` / `wall_clock_ms` / `sleep`; `std::uuid::new_v4` / `new_v7` |
+| **Entry-gated** | `require_capability` **plus** the program-entry-frame check, so the PROGRAM ENTRY's declared budget must cover the capability regardless of which call edge reached the primitive. **24 primitives — the whole gated surface.** S92 introduced this for the three subprocess surfaces; U-91 extended it to the rest of the host-authority rows; D-02 moved the `time` class in; D-04 gave the four memory tiers rows under `mem`. | `Guard::GateEntry`; `eval.rs` `require_entry_capability` | `fs::read_file` / `write_file` / `read_bytes` / `write_bytes` / `list_dir`; `net::tcp_connect`; `std::env::get` / `set` / `vars`; `std::process::wait` / `exit_code` / `spawn` / `spawn_args` / `output`; `std::log::to_file`; `time::now_ms` / `wall_clock_ms` / `sleep`; `std::uuid::new_v4` / `new_v7`; `memory::working` / `episodic` / `semantic` / `procedural` |
 | **Declared-only, no bridge** | In the checker vocabulary and/or sandbox-policy mapping, but **no runtime enforcement path exists**. | — | `ffi` (checker + manifest + sandbox-policy warning only); `net_internal` (checker vocab + loopback-only in generated sandbox policy; `tcp_connect` always uses strict `NetPolicy::default()`) |
 | **Unbridged** | Registry row exists for the CapCaps propagator only; **no interpreter binding at all**. | `Binding::Unbridged` (`registry.rs`) | `net::tcp_listen`, `net::udp_bind` |
 | **OS-sandboxed (generated, not self-enforced)** | `garnet sandbox` generates seccomp / WASI / egress policy from aggregate `@caps`. The generator emits `enforced: false`; the policy was applied and trapped on a real **Linux** kernel via an external C reference harness (`tools/seccomp-apply`). macOS / Windows OS-sandbox application is **named-deferred**. | `GARNET_SANDBOX_POLICY.md`, `GARNET_SECCOMP_APPLY.md` | all `@caps` → policy |
-| **Caps-invisible** | Host-visible natives with **no capability row at all**. Any "all authority is capability-tagged" claim is false until these earn rows. | `BRIDGE_ONLY` const (`stdlib_bridge.rs`) | `memory::working` / `episodic` / `semantic` / `procedural` |
+| **Caps-invisible** | Host-visible natives with **no capability row at all**. **0 primitives — this class is empty (D-04, 2026-09).** Until D-04 it held the four `memory::*` tiers, bridged through a `BRIDGE_ONLY` const with no registry row; they are now entry-gated under `mem` (ADR 0011). Every interpreter adapter key must be a registry row (`registry_join_is_total`). | *(none — the `BRIDGE_ONLY` const is gone)* | *(none)* |
 
-The `(0 Gate, 20 GateEntry)` split is pinned by
+The `(0 Gate, 24 GateEntry)` split is pinned by
 `gate_count_matches_the_audited_runtime_backstop` and the exact member list by
 `entry_gates_are_the_whole_gated_surface` in `registry.rs`, and the
 guard-column-vs-runtime behavior is pinned by
@@ -77,7 +77,7 @@ not). The `time` class is pinned on both backends by
 
 ## Runtime-trap scope (the fence that matters most)
 
-Runtime capability trapping applies to the **20 entry-gated** host-authority
+Runtime capability trapping applies to the **24 entry-gated** host-authority
 primitives. Each one requires both a live call-chain frame declaring the
 capability and a program-entry frame whose declared budget covers it. Since the
 U-91 cure that is the whole gated surface: `Guard::Gate`, the class with only
@@ -131,7 +131,7 @@ scope-parity tests.
 
 - **May say (true):** undeclared OS authority fails `garnet check` **when the
   primitive is reached through a named call chain the propagator can
-  build, from a function that carries an annotation** (U-91); all 20 gated primitives additionally require the program entry's own
+  build, from a function that carries an annotation** (U-91); all 24 gated primitives additionally require the program entry's own
   declared budget, whichever call edge reached them; `@caps` and `@max_depth`
   trap identically on both backends for the gated surface, with cross-OS trap
   parity recorded as evidence; the `garnet` CLI and the default high-level
@@ -142,18 +142,18 @@ scope-parity tests.
   named chain — the body of an unannotated function is not checked at all;
   that `garnet test` rejects a
   `@caps()` test that invokes *any* undeclared authority — it rejects one that
-  reaches a gated primitive, and passes one that reaches authority with no
-  capability row (`memory::*`); that
+  reaches a gated primitive, and passes one that reaches authority outside the
+  registry (an embedder-supplied native, `ffi`); that
   running a
   program is protected by the checker — `garnet run` does not invoke it; that
   the runtime refuses any capability-bearing primitive nothing declares — that
-  is true of the 20 gated rows only (the 60 `Declared` rows need no capability
-  or are unbridged, and `memory::*` has no row at all); "universal `@caps` runtime enforcement"; "no
+  is true of the 24 gated rows only (the 60 `Declared` rows need no capability
+  or are unbridged); "universal `@caps` runtime enforcement"; "no
   ambient authority, ever" as a runtime-universal claim; that every third-party
   embedder is forced to use the strict constructor, that the explicit
   `new_permissive()` opt-out does not exist, or that raw public Env/Value/eval
   calls inherit an instance scope they do not enter; that
-  `ffi`/`net_internal`/`memory::*` are runtime-gated; that
+  `ffi`/`net_internal` are runtime-gated; that
   OS-sandbox enforcement holds beyond Linux-seccomp via the reference harness.
 
 The two currently-published bounded enforcement claims (test-runner entry

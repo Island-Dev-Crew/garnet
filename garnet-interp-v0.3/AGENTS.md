@@ -15,7 +15,7 @@ Owns managed-mode tree-walk execution, expression evaluation, stdlib bridging, a
 - The program entry's declared budget bounds every gated primitive reached
   (U-91). `require_capability` unions the capabilities of all active frames,
   so a callee's own `@caps` can satisfy it; that alone is not enough. Each of
-  the twenty gated adapters therefore also calls `require_entry_capability`,
+  the twenty-four gated adapters therefore also calls `require_entry_capability`,
   which reads the entry frame only. Without it, an entry declaring `@caps()`
   reaches a `@caps(fs)` helper through a function value, a closure, an actor
   handler, a top-level initializer, string interpolation or `method_missing` —
@@ -31,9 +31,11 @@ Owns managed-mode tree-walk execution, expression evaluation, stdlib bridging, a
   columns) against the `#[garnet_primitive]` adapter table — never add a
   hand-written registration row. Adapter bodies keep the literal
   `require_capability` backstops as grep-able source text (gate scripts
-  parse this file). The four `memory::*` natives live in `BRIDGE_ONLY`;
-  the registry-join trap tests + `guard_column_matches_runtime_backstop_behavior`
-  make any registry/adapter drift a red test.
+  parse this file). Since D-04 (ADR 0011) the four `memory::*` natives are
+  ordinary `mem`-gated registry rows — there is no bridged-but-unregistered
+  set; every adapter key must be a registry row. The registry-join trap tests
+  + `guard_column_matches_runtime_backstop_behavior` make any registry/adapter
+  drift a red test.
 - Crash surface (RB-2): the crate carries
   `#![deny(clippy::unwrap_used, clippy::expect_used)]` (tests exempt via
   `cfg_attr`). Sanctioned escapes are in-line `// INVARIANT:` allows only.

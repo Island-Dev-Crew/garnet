@@ -10,7 +10,8 @@
 # Novel discovery: a managed Garnet program can now emit DURABLE, capability-
 # checked observability (logs persisted to disk) for an agent pipeline AND bind
 # a content-addressed provenance fingerprint to the data it processed — the
-# loop from S23's process-output capture to S24's file sink, all gated by @caps.
+# loop from S23's process-output capture to S24's file sink, all gated by @caps
+# (fs for the sink, mem for the episodic trace — D-04).
 #
 # Deterministic + cross-platform: the asserted output is derived from the
 # formatter return values and a blake3 over a fixed JSON string, not from host
@@ -18,7 +19,7 @@
 # the gitignored `.garnet-cache/`; the end-to-end write->read-back is proven in
 # `garnet-interp-v0.3/tests/host_effect_composition.rs`.
 
-@caps(fs)
+@caps(fs, mem)
 def main() {
   # Stage 1 — a structured event (std::json).
   let event = std::json::parse("{\"stage\":\"ingest\",\"tokens\":3}")

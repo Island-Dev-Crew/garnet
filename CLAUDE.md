@@ -72,7 +72,7 @@ a tag autonomously.
   backends), with seccomp applied on **Linux only**. "`@caps` is enforced"
   means exactly this and no more: at check time, the propagator rejects an
   undeclared capability along a **named, acyclic** call chain from an
-  **annotated** function; at run time, the **twenty gated host-authority
+  **annotated** function; at run time, the **twenty-four gated host-authority
   primitives** require the program entry's declared budget, and the other 60
   registry rows carry no runtime gate (58 need no capability, 2 are
   unbridged). `garnet run` does not invoke the checker.

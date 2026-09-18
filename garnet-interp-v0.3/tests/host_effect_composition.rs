@@ -1,6 +1,6 @@
 //! S25 capstone: the host-effect runtime composes END-TO-END from Garnet source.
 //!
-//! A single `@caps(proc, fs)` program threads every surface completed across
+//! A single `@caps(proc, fs, mem)` program threads every surface completed across
 //! S22-S24 together:
 //!   * `std::process::output` (S23) runs a host command and captures its stdout,
 //!   * `std::log::to_file` (S24) appends a leveled line to a real file,
@@ -70,7 +70,7 @@ fn host_effect_pipeline_composes_process_log_memory_provenance() {
 
     let src = format!(
         r#"
-        @caps(proc, fs)
+        @caps(proc, fs, mem)
         def main() {{
           let out = std::process::output("{prog}", {argv})
           let token = trim(out.get("stdout"))
@@ -116,7 +116,7 @@ fn host_effect_pipeline_logs_each_stage_and_recalls_all() {
 
     let src = format!(
         r#"
-        @caps(proc, fs)
+        @caps(proc, fs, mem)
         def main() {{
           let a_out = std::process::output("{prog}", {alpha})
           let a = trim(a_out.get("stdout"))

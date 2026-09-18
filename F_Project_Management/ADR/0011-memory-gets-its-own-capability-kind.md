@@ -1,6 +1,6 @@
 # ADR 0011 — Memory tiers get their own capability kind
 
-**Status.** Accepted (2026-09-17). Not implemented.
+**Status.** Accepted (2026-09-17). Implemented 2026-09-18 (D-04): `RequiredCaps::mem()`, four `memory::*` rows (`Guard::GateEntry`, `Stability::Experimental`), `CapSet::MEM` between `fs` and `net`, both runtime backstops in `bridge_memory_kind`, and the `BRIDGE_ONLY` const removed; pinned by `garnet-cli/tests/check_memory_capability.rs` and the D-04 section of `caps_enforcement.rs`.
 
 ## Context
 
@@ -14,8 +14,8 @@ rather than a part of the language's evidence story.
 ## Decision
 
 Memory gets its own capability kind, `mem`, with a registry row for each of the
-four tier constructors, gated at the runtime entry the way the other fifteen
-gated primitives are. A tier then appears in `garnet caps`, an undeclared tier
+four tier constructors, gated at the runtime entry the way the other twenty
+gated primitives are (the gated surface becomes 24). A tier then appears in `garnet caps`, an undeclared tier
 traps identically on the interpreter and the virtual machine, and adding one
 moves a `diff-caps` verdict.
 

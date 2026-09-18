@@ -226,11 +226,13 @@ The capabilities are \fBfs\fR (file-system read and write), \fBnet\fR
 primitive is gated on them.
 
 .SH ENFORCEMENT SCOPE
-At run time, \fI@caps\fR is enforced for the 20 entry-gated host primitives:
+At run time, \fI@caps\fR is enforced for the 24 entry-gated host primitives:
 the file-system calls (\fIread_file\fR, \fIwrite_file\fR, \fIread_bytes\fR,
 \fIwrite_bytes\fR, \fIlist_dir\fR), \fInet::tcp_connect\fR, the environment
 and process calls, the \fBtime\fR calls (\fInow_ms\fR, \fIwall_clock_ms\fR,
-\fIsleep\fR) and UUID v4/v7, and \fIstd::log::to_file\fR.
+\fIsleep\fR) and UUID v4/v7, \fIstd::log::to_file\fR, and the four
+\fBmem\fR-gated memory tiers (\fImemory::working\fR, \fIepisodic\fR,
+\fIsemantic\fR, \fIprocedural\fR).
 Calling one traps unless both the calling chain and the program's entry
 function declare the capability.
 \fI@max_depth\fR is enforced.

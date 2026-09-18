@@ -66,10 +66,11 @@ use std::collections::BTreeSet;
 
 /// Capability names the checker accepts that the parser still surfaces as
 /// `Capability::Other(_)` because they postdate the parser's enum. S17
-/// (v0.7) adds `env` (process-environment access for `std::env`). The
+/// (v0.7) adds `env` (process-environment access for `std::env`); D-04
+/// (ADR 0011) adds `mem` (memory-tier construction for `memory::*`). The
 /// parser's built-in variants (fs, net, net_internal, time, proc, ffi, *)
 /// are validated structurally and never reach this list.
-const CHECKER_KNOWN_OTHER_CAPS: &[&str] = &["env"];
+const CHECKER_KNOWN_OTHER_CAPS: &[&str] = &["env", "mem"];
 
 /// A diagnostic from the checker, with a user-readable message and severity.
 #[derive(Debug, Clone, thiserror::Error)]
@@ -505,7 +506,7 @@ fn check_fn(f: &FnDef, module_safe: bool, report: &mut CheckReport) {
                         if !CHECKER_KNOWN_OTHER_CAPS.contains(&name.as_str()) {
                             report.errors.push(CheckError::AnnotationError(format!(
                                 "function '{}' declares unknown capability '{}'; \
-                                 known caps: fs, net, net_internal, time, proc, env, ffi, *",
+                                 known caps: fs, net, net_internal, time, proc, env, mem, ffi, *",
                                 f.name, name
                             )));
                         }

@@ -14,15 +14,19 @@ Owns Garnet stdlib primitives and their capability metadata.
   layer-gate and promotion-gate scripts regex-parse. Doc strings are part
   of the row contract (RB-7 `?doc` will be their first consumer).
 - Do not add file, network, process, or time authority without updating CapCaps expectations and tests.
+- Memory-tier authority (`mem`, D-04 / ADR 0011) is host authority under the
+  same rule: the four `memory::*` rows carry `RequiredCaps::mem()` and
+  `Guard::GateEntry`, and adding a tier requires the same CapCaps updates.
 - Every host-authority row carries `Guard::GateEntry`, not `Guard::Gate`
   (U-91). `Gate` alone lets a non-entry frame supply the capability, which
   launders the entry's budget through any call edge the checker cannot see.
   The `Gate` variant remains defined and currently has zero members. The test
   that holds that to zero is `gate_count_matches_the_audited_runtime_backstop`,
-  which asserts the pair `(gate_count, gate_entry_count) == (0, 20)`; adding any
+  which asserts the pair `(gate_count, gate_entry_count) == (0, 24)`; adding any
   `Gate` row turns it red. `entry_gates_are_the_whole_gated_surface` does NOT
   catch that case — it only compares the `GateEntry` names to the expected
-  twenty, so a new `Gate` row leaves it green.
+  twenty-four (the four `memory::*` tiers joined the set in D-04, ADR 0011,
+  under the `mem` capability), so a new `Gate` row leaves it green.
   Adding a row with `Gate` requires stating in the same change why the entry
   budget must not bound it.
 - Keep primitives small and predictable; richer behavior belongs in higher-level libraries or examples.

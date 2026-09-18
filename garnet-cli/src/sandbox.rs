@@ -217,6 +217,7 @@ pub fn sandbox_policy(caps: &[String]) -> SandboxPolicy {
         "proc",
         "ffi",
         "env",
+        "mem",
         "*",
     ];
     for c in caps {

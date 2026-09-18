@@ -156,9 +156,11 @@ EXPECTED_ENFORCED_CLAIMS = 2
 # the sentence "does not reject a test that calls a checker-only primitive
 # such as time::now_ms" became false and was rewritten to point at the scope
 # table's classes outside the gated surface. Precedent: #564 re-pinned it when
-# U-91 moved the gated surface to (0, 15).
+# U-91 moved the gated surface to (0, 15). Re-pinned again for D-04
+# (2026-09-18): the same claim now says "twenty-four" gated primitives — the
+# four memory tiers earned `mem` rows and joined the gated surface.
 EXPECTED_ENFORCED_CLAIM_HASHES = [
-    "e124c265ef2004b31f670dd42f7c18d93613591f702e3e211a847af688baea8d",
+    "804c948cd0edca5774f710989a38e1b834b498c0ee3dcea58a064379673be0af",
     "032b790318e1d10a80418f59e6f363e43671193a080c26a4803dd2beffb2a541",
 ]
 

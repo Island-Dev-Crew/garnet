@@ -43,9 +43,8 @@ use std::rc::Rc;
 /// the macro-collected adapter table. No hand-written rows: a registry row
 /// without an adapter (or vice versa) is caught by the registry-join trap
 /// tests; in a tree where those are green this loop cannot skip a binding.
-/// The four `memory::*` natives are bridged-but-unregistered by design
-/// (caps-invisible memory scaffold) — they live in `BRIDGE_ONLY` with
-/// their arities until they earn registry rows.
+/// Since D-04 (ADR 0011) the four `memory::*` natives are ordinary
+/// registry rows gated on `mem`; there is no bridged-but-unregistered set.
 pub fn install(global: &Env) {
     use std::collections::BTreeMap;
     let adapters: BTreeMap<&'static str, crate::value::NativeFn> =
@@ -67,26 +66,10 @@ pub fn install(global: &Env) {
         };
         define_native(global, bound, Some(meta.arity), ptr);
     }
-    for (key, arity) in BRIDGE_ONLY {
-        let Some(&ptr) = adapters.get(key) else {
-            debug_assert!(false, "no adapter for bridge-only native {key}");
-            continue;
-        };
-        define_native(global, key, Some(*arity), ptr);
-    }
 }
 
-/// The bridged-but-unregistered natives (see `install`). Kept in lockstep
-/// with the `bridge_only_list_is_exact` trap test.
-pub(crate) const BRIDGE_ONLY: &[(&str, usize)] = &[
-    ("memory::working", 1),
-    ("memory::episodic", 1),
-    ("memory::semantic", 1),
-    ("memory::procedural", 1),
-];
-
 /// Qualified registry keys become `&'static str` bound names. The registry
-/// is a fixed 80-row table built once per process, so this interning map
+/// is a fixed 84-row table built once per process, so this interning map
 /// leaks a bounded, constant amount.
 fn leak_key(qualified: String) -> &'static str {
     use std::collections::BTreeMap;
@@ -1386,6 +1369,10 @@ pub(crate) mod adapters {
         kind: MemoryKind,
         args: Vec<Value>,
     ) -> Result<Value, RuntimeError> {
+        // D-04 (ADR 0011): the tiers were caps-invisible; both backstops run
+        // before the store handle exists, so a trap leaves no partial write.
+        crate::eval::require_capability("mem", prim)?;
+        crate::eval::require_entry_capability("mem", prim)?;
         let name = expect_str(prim, &args, 0)?;
         Ok(memory_store(kind, name.to_string()))
     }
@@ -1437,8 +1424,10 @@ mod rb3_registry_join {
         let table = native_table(install);
         assert_eq!(
             table.len(),
-            84,
-            "22 bare + 62 qualified (D-04 moved the four memory natives into the registry)"
+            82,
+            "22 bare + 60 qualified: the 84 registry rows less the 2 Unbridged (D-04 \
+             moved the four memory natives into the registry; the bound surface did \
+             not grow, its source did)"
         );
         for (qualified, meta) in all_prims() {
             let bound = match meta.binding {
@@ -1461,18 +1450,11 @@ mod rb3_registry_join {
                 "{bound}: arity must come from the registry"
             );
         }
-        for (key, arity) in BRIDGE_ONLY {
-            assert_eq!(
-                table.get(*key).map(|(_, a, _)| *a),
-                Some(Some(*arity)),
-                "bridge-only native {key} must be bound with its documented arity"
-            );
-        }
     }
 
     /// Every non-Unbridged registry row has an adapter; every adapter key
-    /// is a registry row or an explicit BRIDGE_ONLY entry. Drift in either
-    /// direction is a deterministic failure.
+    /// is a registry row. Drift in either direction is a deterministic
+    /// failure (D-04 removed the last bridged-but-unregistered natives).
     #[test]
     fn registry_join_is_total() {
         // Global key uniqueness FIRST: the macro rejects duplicates within
@@ -1502,23 +1484,9 @@ mod rb3_registry_join {
         }
         let registry = all_prims();
         for (key, _) in adapters::entries() {
-            let in_registry = registry.contains_key(key);
-            let in_bridge_only = BRIDGE_ONLY.iter().any(|(k, _)| *k == key);
             assert!(
-                in_registry || in_bridge_only,
-                "adapter `{key}` is neither a registry row nor a documented BRIDGE_ONLY native"
-            );
-        }
-    }
-
-    #[test]
-    fn bridge_only_list_is_exact() {
-        let registry = all_prims();
-        assert_eq!(BRIDGE_ONLY.len(), 4);
-        for (key, _) in BRIDGE_ONLY {
-            assert!(
-                !registry.contains_key(*key),
-                "{key} gained a registry row — remove it from BRIDGE_ONLY"
+                registry.contains_key(key),
+                "adapter `{key}` is not a registry row"
             );
         }
     }
