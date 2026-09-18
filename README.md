@@ -36,8 +36,8 @@ And in 2026 there's a second bargain nobody should accept. AI agents now write t
 *allowed to do* — the supply chain has already produced validly-signed malware. Garnet doesn't
 ask you to trust that the model understood. **It makes acceptance a decision on capability
 evidence your own toolchain recomputes — not the model's claims**: functions declare their
-authority budget, the checker verifies declared budgets transitively across the named, acyclic call
-edges it can build from annotated functions, and `diff-caps` answers
+authority budget, the checker verifies declared budgets transitively across the named call
+edges it can build from annotated functions, cycles included, and `diff-caps` answers
 *"what new authority does this change declare?"* in one screen.
 
 ## Origin
@@ -95,10 +95,11 @@ and aimed at agent-authored code:
   must declare its budget. Reached instead through a function value, a closure, an actor handler,
   a top-level initializer, a string interpolation or `method_missing`, a call contributes no edge
   and the checker stays silent (finding U-91). A cycle in the call graph is followed: every function
-  in it inherits the cycle's requirements (U-117, cured 2026-09). `garnet run` does not invoke the checker. Under the `garnet` CLI the 20
-  gated host-authority primitives (fs, net, proc, env, time, log-to-file) additionally trap at run time
+  in it inherits the cycle's requirements (U-117, cured 2026-09). `garnet run` does not invoke the checker. Under the `garnet` CLI the 24
+  gated host-authority primitives (fs, net, proc, env, time, log-to-file, and the four `memory::*`
+  tiers under `mem`) additionally trap at run time
   unless the **program entry's** own declared budget covers the capability, whichever call edge
-  reached them. The other 60 registry rows carry no runtime gate, and they are not one group:
+  reached them. The other 60 of the 84 registry rows carry no runtime gate, and they are not one group:
   58 require no capability at all (`std::uuid::new_v5` among them), and `net::tcp_listen` /
   `net::udp_bind` are unbridged and do not execute either. See the
   [capability enforcement scope table](C_Language_Specification/GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md).
