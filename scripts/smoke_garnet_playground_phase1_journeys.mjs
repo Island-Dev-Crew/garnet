@@ -26,6 +26,11 @@ export async function phase1Journeys(page, baseUrl, equal) {
   await page.locator('#source-editor').fill('def helper() { 0 }\n@caps()\ndef main() { helper() }');
   await page.locator('#diff-caps').click();
   equal(await page.locator('#lane-card').getAttribute('data-state'), 'unknown', 'unannotated coverage unknown');
+  await page.locator('#baseline-editor').fill('@caps(net)\ndef f() { 0 }\n@caps()\ndef main() { 0 }');
+  await page.locator('#source-editor').fill('@caps(net)\ndef f() { 0 }\n@caps(net)\ndef main() { 0 }');
+  await page.locator('#diff-caps').click();
+  equal(await page.locator('#lane-card').getAttribute('data-state'), 'review', 'per-function gain requires review');
+  equal(await page.evaluate(() => window.__garnetPlayground.state.lastDiff.authority_expanded), false, 'S37 aggregate rule unchanged');
   const presets = {};
   for (const name of ['capability_cycle', 'illegal_enum', 'undeclared_clock', 'wording_vs_write']) {
     await page.locator('#example-picker').selectOption(name);
@@ -50,6 +55,10 @@ export async function phase1Journeys(page, baseUrl, equal) {
   await page.locator('#source-editor').press('ControlOrMeta+Shift+Enter');
   equal(await page.locator('#diff-verdict').textContent(), 'No authority expansion', 'keyboard diff');
   equal(await page.locator('#source-lines').textContent(), '1\n2\n3', 'line numbers');
+  await page.locator('#source-editor').press('ControlOrMeta+A');
+  const selectedText = await page.locator('#source-editor').inputValue();
+  await page.locator('#source-editor').press('Tab');
+  equal(await page.locator('#source-editor').inputValue(), selectedText, 'Tab preserves selected text');
   // Share round-trip includes Unicode and HTML-shaped data. Restoring must not
   // evaluate markup or execute Garnet, and malformed links must preserve defaults.
   const unicode = '@caps()\ndef main() { println("🌴 café <img src=x onerror=alert(1)>") }';
@@ -58,6 +67,10 @@ export async function phase1Journeys(page, baseUrl, equal) {
   await page.locator('#share-source').click();
   const link = await page.locator('#share-link').inputValue();
   if (!link.includes('#garnet=')) throw Error('versioned fragment link missing');
+  await page.locator('#source-editor').fill('changed');
+  await page.evaluate(link => { location.hash = new URL(link).hash; }, link);
+  await page.waitForFunction(expected => document.querySelector('#source-editor').value === expected, unicode);
+  equal(await page.locator('#run-state').textContent(), 'Not run', 'hashchange invalidates old results');
   await page.goto(link, { waitUntil: 'networkidle' });
   await page.reload({ waitUntil: 'networkidle' });
   equal(await page.locator('#source-editor').inputValue(), unicode, 'Unicode share source');
@@ -95,7 +108,12 @@ export async function phase1Journeys(page, baseUrl, equal) {
   await page.waitForURL(`${baseUrl}/index.html`);
   equal(await page.locator('#pg-mount iframe').count(), 0, 'home exits iframe');
   await page.goto(`${baseUrl}/playground.html`, {waitUntil:'networkidle'});
-  return {results_readable:true, lanes_card:true, authority_panel:true, share_link:true, presets_v2:presets, editor_keys:true, evidence_badge:true, embed_mode:true, mobile_375:true};
+  await page.locator('#source-editor').fill('@caps(time)\ndef main() { time::now_ms() }');
+  await page.locator('#run-source').click();
+  equal(await page.locator('#run-state').textContent(), 'Adapter error', 'unsupported clock trap shown');
+  if (!(await page.locator('#run-result').textContent()).includes('Browser adapter failed')) throw Error('adapter failure hidden');
+  await page.reload({waitUntil:'networkidle'});
+  return {review_fixes:true, results_readable:true, lanes_card:true, authority_panel:true, share_link:true, presets_v2:presets, editor_keys:true, evidence_badge:true, embed_mode:true, mobile_375:true};
 }
 
 export async function offlineJourney(browser, baseUrl, equal) {
@@ -123,7 +141,10 @@ export async function offlineJourney(browser, baseUrl, equal) {
     equal(await page.locator('#check-state').textContent(), 'Check passed', 'cold install offline check');
     await page.locator('#diff-caps').click();
     equal(await page.locator('#diff-verdict').textContent(), 'No authority expansion', 'cold install offline diff');
+    await page.goto(`${baseUrl}/index.html`, {waitUntil:'domcontentloaded'});
+    await page.locator('#pg-load').click();
+    await page.frameLocator('#pg-mount iframe').locator('#runtime-status[data-state=ready]').waitFor();
     equal(external.length, 0, 'offline no external requests');
-    return {cold_install:true, offline_run:true, offline_check:true, offline_diff:true, old_cache_retired:true, cached, external_requests:external};
+    return {offline_embed:true, cold_install:true, offline_run:true, offline_check:true, offline_diff:true, old_cache_retired:true, cached, external_requests:external};
   } finally { await context.close(); }
 }

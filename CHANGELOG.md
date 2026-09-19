@@ -9,6 +9,15 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ## [Unreleased]
 
+### Playground Phase 1
+
+- Added readable results with raw JSON, declared-function capabilities, conservative
+  review cards, fragment sharing, four presets, keyboard controls and package digests.
+- Added compact landing embed and offline precaching; the landing page discloses
+  the runtime download. Function-level capability gains require UI review even
+  when S37's program-wide aggregate is unchanged. Adapter traps are displayed;
+  share hash changes restore without running, and Tab preserves selected text.
+
 ### Checked source seals and capability acceptance (T3, 2026-09-18)
 
 - `seal/v2` subjects bind LF-normalized source, including capability edits
@@ -30,6 +39,7 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   duplicate keys before running. The S97 reporter recognizes v2; public
   attestation copy and the U-118 row match the new source identity.
   Regression coverage: `checked_seal_acceptance` and `agent_loop`.
+
 
 ### Checker — `caps coverage` names the primitive, not the hop (2026-09-18)
 

@@ -45,7 +45,7 @@ function renderAuthority(result) {
   }
   ui["authority-total"].textContent = `Declared total: ${surface.aggregate.join(", ") || "none"}. ${surface.per_function.length} annotated functions; unannotated functions are omitted.`;
 }
-function runCurrentSource() {
+function runCurrentSourceImpl() {
   const result = parseAdapterJson(run_source(source.value), RUN_SCHEMA);
   publicState.lastRun = result;
   ui["run-result"].dataset.exitClass = result.exit_class;
@@ -54,7 +54,7 @@ function runCurrentSource() {
   renderJson(ui["run-json"], result);
   return result;
 }
-function checkCurrentSource() {
+function checkCurrentSourceImpl() {
   const result = check(source.value);
   publicState.lastCheck = result;
   setVerdict(ui["check-state"], result.ok ? "Check passed" : "Check failed", result.ok ? "ok" : "denied");
@@ -63,7 +63,7 @@ function checkCurrentSource() {
   renderAuthority(diff(source.value, source.value));
   return result;
 }
-function diffCurrentSource() {
+function diffCurrentSourceImpl() {
   const result = diff(baseline.value, source.value);
   const machine = machineVerdictFromDiff(result);
   publicState.lastDiff = result; publicState.lastMachineVerdict = machine;
@@ -78,14 +78,29 @@ function diffCurrentSource() {
   const checks = {baseline:check(baseline.value), current:check(source.value)};
   if (!result.ok || !checks.baseline.ok || !checks.current.ok) {
     setVerdict(ui["lane-card"], "Blocked: a source failed parsing or checking. Resolve its diagnostics before policy review.", "blocked");
-  } else if (result.authority_expanded) {
+  } else if (result.authority_expanded || result.functions_caps_expanded.length > 0) {
     const gained = result.functions_caps_expanded.map(fn => `${fn.name} gained ${fn.gained.join(", ")}`).join("; ");
     setVerdict(ui["lane-card"], `${gained || "Declared capabilities expanded"}. A human reviews this change.`, "review");
   } else {
-    setVerdict(ui["lane-card"], "No new declared capabilities detected. Eligible for further policy checks; this is not merge approval. Complete checker coverage is unknown; tests, path policy and bound base/head evidence are still required.", "unknown");
+    setVerdict(ui["lane-card"], "No program-wide declared capability added. Eligible for further policy checks; this is not merge approval. Complete checker coverage is unknown; tests, path policy and bound base/head evidence are still required.", "unknown");
   }
   return {adapterResult:result, humanVerdict:human, machineVerdict:machine};
 }
+function adapterAction(kind, action) {
+  try { return action(); }
+  catch (error) {
+    const message = `Browser adapter failed: ${error instanceof Error ? error.message : String(error)}. This is not a clean authority denial. Reload before retrying.`;
+    invalidate();
+    setVerdict(ui[kind === "diff" ? "diff-verdict" : `${kind}-state`], "Adapter error", "denied");
+    ui[`${kind}-result`].textContent = message;
+    renderJson(ui[`${kind}-json`], {error:message});
+    setVerdict(ui["lane-card"], "Blocked: browser adapter failed. No policy result is available.", "blocked");
+    return null;
+  }
+}
+const runCurrentSource = () => adapterAction("run", runCurrentSourceImpl);
+const checkCurrentSource = () => adapterAction("check", checkCurrentSourceImpl);
+const diffCurrentSource = () => adapterAction("diff", diffCurrentSourceImpl);
 function refreshLines(editor) {
   const gutter = element(editor === source ? "source-lines" : "baseline-lines");
   gutter.textContent = Array.from({length:editor.value.split("\n").length}, (_, i) => i + 1).join("\n");
@@ -127,6 +142,9 @@ function restoreShare() {
     const value = JSON.parse(new TextDecoder("utf-8", {fatal:true}).decode(Uint8Array.from(binary, ch => ch.charCodeAt(0))));
     if (!value || value.v !== 1 || typeof value.source !== "string" || typeof value.baseline !== "string" || Object.keys(value).sort().join(",") !== "baseline,source,v") throw new Error("unsupported share format");
     source.value = value.source; baseline.value = value.baseline; source.dataset.edited = "true";
+    invalidate();
+    ui["example-picker"].value = ""; ui["preset-alternate"].hidden = true;
+    ui["preset-description"].textContent = "Shared source (not executed).";
     setVerdict(ui["share-status"], "Shared source restored. Nothing has been run.");
   } catch {
     setVerdict(ui["share-status"], "Share link rejected: invalid, unsupported or larger than 16,000 fragment characters. Editors were not restored.", "denied");
@@ -161,7 +179,7 @@ for (const editor of [source, baseline]) {
   editor.addEventListener("scroll", () => refreshLines(editor));
   editor.addEventListener("keydown", event => {
     if (event.key === "Escape") { escapeTab = true; return; }
-    if (event.key === "Tab" && !event.shiftKey && !escapeTab) { event.preventDefault(); editor.setRangeText("  ", editor.selectionStart, editor.selectionEnd, "end"); editor.dispatchEvent(new Event("input", {bubbles:true})); }
+    if (event.key === "Tab" && !event.shiftKey && !escapeTab && editor.selectionStart === editor.selectionEnd) { event.preventDefault(); editor.setRangeText("  ", editor.selectionStart, editor.selectionEnd, "end"); editor.dispatchEvent(new Event("input", {bubbles:true})); }
     escapeTab = false;
     if (event.key === "Enter" && (event.metaKey || event.ctrlKey) && publicState.ready) { event.preventDefault(); event.shiftKey ? diffCurrentSource() : checkCurrentSource(); }
   });
@@ -177,6 +195,7 @@ function showBaseline(show) {
 }
 ui["toggle-baseline"].addEventListener("click", () => showBaseline(ui["baseline-panel"].hidden));
 if (window.self !== window.top || new URLSearchParams(location.search).get("embed") === "1") { document.body.classList.add("embedded"); showBaseline(false); }
+window.addEventListener("hashchange", restoreShare);
 restoreShare(); refreshLines(source); refreshLines(baseline);
 window.__garnetPlayground = {state:publicState, run:runCurrentSource, check:checkCurrentSource, diff:diffCurrentSource};
 loadExamples().catch(() => { const option = document.createElement("option"); option.disabled = true; option.textContent = "Examples unavailable"; ui["example-picker"].appendChild(option); });

@@ -34,7 +34,7 @@ GALLERY = [
     ),
     ("capability_cycle", "Authority hidden in a cycle", "Check follows a named-call cycle to fs::write_file; run refuses undeclared fs."),
     ("illegal_enum", "Illegal enum construction", "Safe-mode check refuses a payload on a unit variant; managed bodies are outside this rule."),
-    ("undeclared_clock", "Undeclared clock read", "Reading time requires time authority, and the browser host grants none."),
+    ("undeclared_clock", "Undeclared clock read", "The checker rejects this undeclared clock read. Adding @caps(time) does not provide a browser clock: running it can trap in the WASM adapter."),
     ("wording_vs_write", "Wording versus a file write", "Compare a wording edit, then try a write edit. Declarations do not grant merge approval."),
 ]
 

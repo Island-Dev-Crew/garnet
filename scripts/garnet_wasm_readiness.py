@@ -456,7 +456,7 @@ def browser_proof_valid(proof: dict | None = None) -> bool:
                 "scope": DIFF_SCOPE,
             }
             and all(phase1.get(key) is True for key in (
-                "results_readable", "lanes_card", "authority_panel", "share_link",
+                "review_fixes", "results_readable", "lanes_card", "authority_panel", "share_link",
                 "editor_keys", "evidence_badge", "embed_mode", "mobile_375",
             ))
             and all(phase1["presets_v2"][name].get("ok") is expected for name, expected in (
@@ -464,7 +464,7 @@ def browser_proof_valid(proof: dict | None = None) -> bool:
                 ("undeclared_clock", False), ("wording_vs_write", True),
             ))
             and all(offline.get(key) is True for key in (
-                "cold_install", "offline_run", "offline_check", "offline_diff", "old_cache_retired",
+                "offline_embed", "cold_install", "offline_run", "offline_check", "offline_diff", "old_cache_retired",
             ))
             and offline.get("external_requests") == []
             and denial.get("ui_state") == "Denied"
