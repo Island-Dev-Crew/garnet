@@ -74,9 +74,12 @@ pub fn run(args: GateArgs) -> ExitCode {
         ExitCode::SUCCESS
     } else {
         println!(
-            "\ngate: FAIL ({} target(s) with fatal diagnostics; capability widening also fails)",
+            "\ngate: FAIL ({} target(s) with fatal diagnostics)",
             tally.failing
         );
+        if matches!(capability, CapabilitySignal::Surface(b) if b.get() < 5) {
+            println!("  program-wide declared capability surface widened against baseline");
+        }
         ExitCode::from(1)
     }
 }
@@ -93,14 +96,14 @@ pub(crate) fn resolve_capability_signal(
     };
     // A baseline is evidence, not merely a parseable declaration. Check it as
     // source and reject non-total scans instead of silently comparing a subset.
-    for target in [baseline, path] {
+    for (role, target) in [("baseline", baseline), ("current", path)] {
         let (_, omissions) = collect_targets_with_omissions(target).map_err(|e| e.to_string())?;
         if omissions.total() != 0 {
             return Err(format!("--caps-baseline comparison is incomplete: {} omitted directories ({:?}); supply explicit source roots", omissions.total(), omissions.by_rule()));
         }
         if !gate_tally(target)?.passes() {
             return Err(format!(
-                "--caps-baseline source failed checker: {}",
+                "{role} source failed checker: {}",
                 target.display()
             ));
         }

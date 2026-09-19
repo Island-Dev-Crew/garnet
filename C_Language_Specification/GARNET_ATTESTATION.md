@@ -140,8 +140,10 @@ verification instruction; successful seal verification reports content binding
 only. `--external-band` belongs to the one-path gate and is rejected on the
 two-argument route; `--signature` without an artifact is likewise rejected.
 
-`--caps-baseline <old-source>` now enforces no declared-authority expansion on
-both verify routes. Missing, unreadable, unparsable, checker-invalid, empty or
+`--caps-baseline <old-source>` now enforces no program-wide declared surface expansion on
+both verify routes (S37 aggregate gains or a new wildcard). Per-function gains
+already present elsewhere in the program remain diff details, not aggregate
+expansion. Missing, unreadable, unparsable, checker-invalid, empty or
 incompletely walked baseline/current source returns nonzero. Omissions name
 the walk rules and counts; use explicit source roots that exclude build and
 VCS directories. An absent flag retains the pending signal. External reviewer

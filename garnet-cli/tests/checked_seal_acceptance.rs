@@ -275,3 +275,28 @@ fn omitted_source_roots_and_duplicate_attestation_fail_closed() {
     assert!(!out.status.success());
     assert!(out.stdout.is_empty());
 }
+
+#[test]
+fn gate_diagnostics_distinguish_current_source_and_absent_baseline() {
+    let dir = tempfile::tempdir().unwrap();
+    let current = dir.path().join("current.garnet");
+    let baseline = dir.path().join("baseline.garnet");
+    std::fs::write(&current, "@caps()\ndef main() { time::now_ms() }\n").unwrap();
+    std::fs::write(&baseline, "@caps()\ndef main() { 0 }\n").unwrap();
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_garnet"))
+        .arg("verify")
+        .arg(&current)
+        .output()
+        .unwrap();
+    assert!(!output.status.success());
+    assert!(!String::from_utf8_lossy(&output.stdout).contains("widening"));
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_garnet"))
+        .arg("verify")
+        .arg(&current)
+        .arg("--caps-baseline")
+        .arg(&baseline)
+        .output()
+        .unwrap();
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("current source failed checker"));
+}

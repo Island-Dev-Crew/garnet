@@ -60,13 +60,12 @@ blind — the defect was solely in the surface derivation.)
   *local hash-chained stub — no signed tree head, no witness* (not Rekor), and verify
   executes no host effect. Follow-up: bind `caps_blake3` to `caps` in verify and/or
   anchor the tip; soften the "append-only verified" wording.
-- **in-toto seal `subject.digest` is capability-blind.** `stable_ast_repr` omits
-  `@caps`, so `@caps(fs)` and `@caps(fs,net,proc)` share an identical subject digest.
-  **Mitigated:** the predicate embeds a differing `source_blake3` + `capability_manifest`,
-  so a cosign signature over the predicate is not fooled — only a consumer keying
-  provenance off the canonical subject digest is at risk. Follow-up: encode the
-  capability surface into the subject (a digest change, deferred to avoid churning
-  every existing seal).
+- **Historical v1 seal subject capability collision (U-118): repaired in v2.**
+  The old shape-stable AST subject omitted `@caps`. Current seals use the
+  LF-normalized source digest, so capability edits change the subject. Sealing
+  checks source first; verification recomputes v2 bindings. Generic v1 seals
+  require resealing. This is content binding, not authenticated authorship.
+  `garnet-cli/tests/checked_seal_acceptance.rs` pins the regression.
 
 ## HELD — the enforced kernel withstood
 

@@ -20,12 +20,15 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   claiming a signature. Existing deterministic manifests retain their own
   format and signature verification. Minimum Shelf preserves only its exact
   pinned historical v1 fixture; archived evidence is unchanged.
-- `verify --caps-baseline` fails on widening on both command routes (the
+- `verify --caps-baseline` fails on program-wide declared surface widening on both command routes (the
   two-argument route previously ignored it). Malformed, missing, checker-invalid,
   empty and incomplete walks fail closed. Supply explicit source roots rather
   than repository roots containing skipped build/VCS directories. Duplicate
   attestation keys and flags inapplicable to the selected verify route are
-  usage errors. Regression coverage: `checked_seal_acceptance`.
+  usage errors. Agent-loop preserves caller `tool=` metadata and rejects
+  duplicate keys before running. The S97 reporter recognizes v2; public
+  attestation copy and the U-118 row match the new source identity.
+  Regression coverage: `checked_seal_acceptance` and `agent_loop`.
 
 ### Checker — `caps coverage` names the primitive, not the hop (2026-09-18)
 

@@ -36,5 +36,4 @@ mechanical test before any instance can become effective.
 `GARNET_Agent_Documentation_Runtime_Contracts.md` records the Space-Agent-inspired design note that repo-local markdown contracts are procedural memory. Treat it as a design bridge: tooling may implement it before the grammar does.
 
 `GARNET_ATTESTATION.md` owns the source-bound checked seal and verification
-contract. `GARNET_SHADOW_LANES.md` owns the opt-in local policy prototype; it
-is not language semantics, an operational merge gate, or approval authority.
+contract.
