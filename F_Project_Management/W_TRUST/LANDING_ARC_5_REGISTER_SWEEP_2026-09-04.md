@@ -78,11 +78,11 @@ touches them; nothing here may be cited as independently reviewed on that basis 
   jq -r '.subject[0].digest.blake3' a.json b.json     # identical
   jq -r '.predicate.source_blake3' a.json b.json      # differ
   ```
-- **Status:** open. A verifier reading an in-toto Statement treats `subject.digest` as the
-  artifact identity; here it is invariant under a capability change. Public copy that says the
-  Statement "binds the source digest" must show `predicate.source_blake3` or say `subject` is a
-  shape hash (the RF-03 front-door handoff already does). Whether `subject` should carry the
-  source digest is a product decision.
+- **Status:** implemented in the T3 candidate; independent review and landing pending.
+  Current seal/v2 uses LF-normalized source identity and recomputes that binding
+  during verification. `garnet-cli/tests/checked_seal_acceptance.rs` covers edits
+  to capabilities and source. The historical observation above describes v1;
+  it does not describe current v2 identity. No authenticated authorship is claimed.
 
 ## U-119 — "cross-family review" is a process convention, not a gate-checked predicate
 

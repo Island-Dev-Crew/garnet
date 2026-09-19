@@ -65,8 +65,8 @@ DEFERRED_FOR_V0_8_1 = [
     "transparency log is a local stub (not Rekor).",
     "Adopted capability-manifest standard — RFC-0001 is intent + reference impl; "
     "no OWASP/LF body has adopted anything.",
-    "Two LOW red-team findings (caps-log tail; seal subject-digest) — open within "
-    "their explicit stub/mitigated scope.",
+    "LOW caps-log tail finding remains open within its local-stub scope; the "
+    "historical seal subject-digest finding is repaired by current source-bound v2 seals.",
 ]
 
 HONESTY_ANCHORS = [

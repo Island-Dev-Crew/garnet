@@ -142,6 +142,8 @@ fn verify_package_manifest(manifest: &Value) -> Result<(), PackageError> {
     Ok(())
 }
 
+// Compatibility is limited to the byte-pinned historical flagship, checked
+// before this function. Generic v1 seals are NOT accepted by garnet verify.
 fn verify_seal(
     bytes: &[u8],
     build: &Manifest,
@@ -154,7 +156,8 @@ fn verify_seal(
     };
     if root.len() != 4
         || root.get("_type").and_then(Value::as_str) != Some(crate::seal::STATEMENT_TYPE)
-        || root.get("predicateType").and_then(Value::as_str) != Some(crate::seal::PREDICATE_TYPE)
+        || root.get("predicateType").and_then(Value::as_str)
+            != Some("https://garnet-lang.org/attestation/seal/v1")
     {
         return Err(reject("seal statement envelope is not exact"));
     }

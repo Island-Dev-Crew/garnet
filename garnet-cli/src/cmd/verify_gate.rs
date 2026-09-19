@@ -1,9 +1,10 @@
 //! `garnet verify <path>` — the S33 acceptance gate.
 //!
 //! Runs edition-aware parse + safe-mode check over the target(s), emits a fused
-//! merge-confidence band, and exits non-zero iff any target fails fatally.
-//! (Distinct from `garnet verify <file> <manifest.json>`, the 2-arg
-//! deterministic-manifest verify in `cmd/verify.rs`; the dispatcher routes on
+//! merge-confidence band, and rejects fatal diagnostics, invalid comparison
+//! inputs, or declared authority widening against an explicit baseline.
+//! (Distinct from `garnet verify <file> <artifact.json>`, the 2-arg
+//! seal/manifest verify in `cmd/verify.rs`; the dispatcher routes on
 //! positional-arg count.)
 
 use crate::verify_gate::{fuse, Band, CapabilitySignal, GateTally};
@@ -33,7 +34,13 @@ pub fn run(args: GateArgs) -> ExitCode {
 
     let internal = tally.internal_band();
     let external = args.external_band.map(Band::new);
-    let capability = resolve_capability_signal(&args);
+    let capability = match resolve_capability_signal(&args.path, args.caps_baseline.as_deref()) {
+        Ok(signal) => signal,
+        Err(message) => {
+            eprintln!("garnet verify: {message}");
+            return ExitCode::from(2);
+        }
+    };
     let fused = fuse(internal, external, capability);
 
     println!();
@@ -62,7 +69,7 @@ pub fn run(args: GateArgs) -> ExitCode {
     }
     println!("  fusion rule: min of the present signals");
 
-    if tally.passes() {
+    if tally.passes() && !matches!(capability, CapabilitySignal::Surface(b) if b.get() < 5) {
         println!("\ngate: PASS");
         ExitCode::SUCCESS
     } else {
@@ -70,6 +77,9 @@ pub fn run(args: GateArgs) -> ExitCode {
             "\ngate: FAIL ({} target(s) with fatal diagnostics)",
             tally.failing
         );
+        if matches!(capability, CapabilitySignal::Surface(b) if b.get() < 5) {
+            println!("  program-wide declared capability surface widened against baseline");
+        }
         ExitCode::from(1)
     }
 }
@@ -77,26 +87,32 @@ pub fn run(args: GateArgs) -> ExitCode {
 /// Compute the S37 capability signal. With a `--caps-baseline`, run
 /// `diff-caps(baseline, current)` and map an authority change to a band;
 /// otherwise the slot stays pending (back-compat with S33).
-fn resolve_capability_signal(args: &GateArgs) -> CapabilitySignal {
-    let Some(baseline) = &args.caps_baseline else {
-        return CapabilitySignal::Pending;
+pub(crate) fn resolve_capability_signal(
+    path: &Path,
+    baseline: Option<&Path>,
+) -> Result<CapabilitySignal, String> {
+    let Some(baseline) = baseline else {
+        return Ok(CapabilitySignal::Pending);
     };
-    match (
-        crate::cap_manifest::surface_for_path(baseline),
-        crate::cap_manifest::surface_for_path(&args.path),
-    ) {
-        (Ok(base), Ok(current)) => {
-            let diff = garnet_check::diff_caps(&base, &current);
-            CapabilitySignal::Surface(capability_band(&diff))
+    // A baseline is evidence, not merely a parseable declaration. Check it as
+    // source and reject non-total scans instead of silently comparing a subset.
+    for (role, target) in [("baseline", baseline), ("current", path)] {
+        let (_, omissions) = collect_targets_with_omissions(target).map_err(|e| e.to_string())?;
+        if omissions.total() != 0 {
+            return Err(format!("--caps-baseline comparison is incomplete: {} omitted directories ({:?}); supply explicit source roots", omissions.total(), omissions.by_rule()));
         }
-        _ => {
-            eprintln!(
-                "garnet verify: could not build capability surfaces for --caps-baseline; \
-                 capability signal left pending"
-            );
-            CapabilitySignal::Pending
+        if !gate_tally(target)?.passes() {
+            return Err(format!(
+                "{role} source failed checker: {}",
+                target.display()
+            ));
         }
     }
+    let base = crate::cap_manifest::surface_for_path(baseline)?;
+    let current = crate::cap_manifest::surface_for_path(path)?;
+    Ok(CapabilitySignal::Surface(capability_band(
+        &garnet_check::diff_caps(&base, &current),
+    )))
 }
 
 /// Map a capability diff to the capability signal band: `5` when the program did

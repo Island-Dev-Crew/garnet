@@ -65,7 +65,7 @@ def read_status(run_gate: bool = False) -> ProvenanceSealChainStatus:
         and "provenance-chain:" in cmd_text
     )
     chain_builder_present = (
-        "garnet-provenance-chain-v1" in seal_text
+        'PROVENANCE_CHAIN_SCHEMA: &str = "garnet-provenance-chain-v2"' in seal_text
         and "build_provenance_chain" in seal_text
         and "binding_verified" in seal_text
         and "independent_origin_verified" in seal_text

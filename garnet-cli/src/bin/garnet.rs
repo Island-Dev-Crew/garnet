@@ -276,21 +276,30 @@ fn main() -> ExitCode {
                 }
             }
             match positionals.len() {
+                1 if require_sig => {
+                    eprintln!("--signature requires a manifest argument");
+                    ExitCode::from(2)
+                }
+                2 if external_band.is_some() => {
+                    eprintln!("--external-band applies only to the one-path acceptance gate");
+                    ExitCode::from(2)
+                }
                 1 => cmd::verify_gate::run(cmd::verify_gate::GateArgs {
                     path: PathBuf::from(&positionals[0]),
                     external_band,
                     caps_baseline,
                 }),
-                2 => cmd::verify::run(
+                2 => cmd::verify::run_with_baseline(
                     PathBuf::from(&positionals[0]),
                     PathBuf::from(&positionals[1]),
                     require_sig,
+                    caps_baseline,
                 ),
                 _ => {
                     eprintln!(
                         "usage: garnet verify <path>                          (acceptance gate)"
                     );
-                    eprintln!("       garnet verify <file> <manifest.json> [--signature]  (manifest verify)");
+                    eprintln!("       garnet verify <file> <artifact.json> [--caps-baseline <old>] [--signature]  (seal/manifest verify)");
                     ExitCode::from(2)
                 }
             }

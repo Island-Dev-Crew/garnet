@@ -6,6 +6,7 @@ import importlib.util
 import io
 import sys
 import unittest
+from unittest.mock import patch
 from contextlib import redirect_stdout
 from pathlib import Path
 
@@ -47,6 +48,15 @@ class ProvenanceSealChainStatusTests(unittest.TestCase):
         self.assertTrue(status.cli_flag_present)
         self.assertTrue(status.chain_builder_present)
         self.assertTrue(status.readiness_lane_present)
+
+    def test_old_chain_schema_is_not_current_evidence(self) -> None:
+        original = provenance_status._text
+        def old_source(path):
+            text = original(path)
+            return text.replace("garnet-provenance-chain-v2", "garnet-provenance-chain-v1") if path == provenance_status.SEAL_RS else text
+        with patch.object(provenance_status, "_text", side_effect=old_source):
+            self.assertFalse(provenance_status.read_status().chain_builder_present)
+            self.assertFalse(provenance_status.read_status().ok)
 
     def test_scope_text_stays_calibrated(self) -> None:
         status = self.status()
