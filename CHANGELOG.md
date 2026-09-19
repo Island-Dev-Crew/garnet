@@ -22,7 +22,8 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   pinned historical v1 fixture; archived evidence is unchanged.
 - `verify --caps-baseline` fails on program-wide declared surface widening on both command routes (the
   two-argument route previously ignored it). Malformed, missing, checker-invalid,
-  empty and incomplete walks fail closed. Supply explicit source roots rather
+  source-free directories and incomplete walks fail closed; empty source files
+  remain valid checker inputs. Supply explicit source roots rather
   than repository roots containing skipped build/VCS directories. Duplicate
   attestation keys and flags inapplicable to the selected verify route are
   usage errors. Agent-loop preserves caller `tool=` metadata and rejects

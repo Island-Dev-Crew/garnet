@@ -60,7 +60,7 @@ blind — the defect was solely in the surface derivation.)
   *local hash-chained stub — no signed tree head, no witness* (not Rekor), and verify
   executes no host effect. Follow-up: bind `caps_blake3` to `caps` in verify and/or
   anchor the tip; soften the "append-only verified" wording.
-- **Historical v1 seal subject capability collision (U-118): repaired in v2.**
+- **Historical v1 seal `subject.digest` was capability-blind (U-118): repaired in v2.**
   The old shape-stable AST subject omitted `@caps`. Current seals use the
   LF-normalized source digest, so capability edits change the subject. Sealing
   checks source first; verification recomputes v2 bindings. Generic v1 seals

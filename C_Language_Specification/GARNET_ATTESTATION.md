@@ -143,8 +143,9 @@ two-argument route; `--signature` without an artifact is likewise rejected.
 `--caps-baseline <old-source>` now enforces no program-wide declared surface expansion on
 both verify routes (S37 aggregate gains or a new wildcard). Per-function gains
 already present elsewhere in the program remain diff details, not aggregate
-expansion. Missing, unreadable, unparsable, checker-invalid, empty or
-incompletely walked baseline/current source returns nonzero. Omissions name
+expansion. Missing, unreadable, unparsable, checker-invalid, source-free directories or
+incompletely walked baseline/current source returns nonzero. Empty, whitespace
+and comment-only source files are valid inputs with no declared capabilities. Omissions name
 the walk rules and counts; use explicit source roots that exclude build and
 VCS directories. An absent flag retains the pending signal. External reviewer
 bands are advisory and do not grant merge permission. Verification is not an

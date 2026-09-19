@@ -105,7 +105,8 @@ Owns the `garnet` binary, subcommand routing, template embedding, deterministic 
   arbitrary seals or reseal the archived flagship evidence.
 - `verify --caps-baseline` is an enforced acceptance condition on both verify
   routes: program-wide declared surface widening (S37) returns nonzero, and unreadable, malformed, checker-invalid,
-  empty, or partially walked input cannot become PASS or pending. Supply
+  source-free directories, or partially walked input cannot become PASS or
+  pending. Empty source files remain valid checker inputs. Supply
   explicit source roots when `.git`, `target`, vendor, or linked directories
   would be omitted. No-baseline runs keep their existing pending signal;
   external reviewer bands remain advisory. Baseline checking is a local
