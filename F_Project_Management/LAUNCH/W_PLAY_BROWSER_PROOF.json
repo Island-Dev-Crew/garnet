@@ -1,8 +1,8 @@
 {
   "schema": "garnet.w-play.browser-proof/1",
-  "captured_at": "2026-09-19T00:03:23.062Z",
+  "captured_at": "2026-09-20T02:23:26.966Z",
   "verdict": "pass",
-  "duration_ms": 7522,
+  "duration_ms": 7721,
   "execution": {
     "engine": "playwright-browser-page",
     "browser": "153.0.8010.48",
@@ -11,8 +11,8 @@
     "service_workers": "blocked"
   },
   "git": {
-    "tested_commit": "32776fa9b63ddec543a55d38f6b45c99de1210be",
-    "tested_tree": "375914396d6903c4bd30c971a0cd6f15f85172fd",
+    "tested_commit": "cd0f6a4eb8910c10b38d2d17bbe5bdc18405a58e",
+    "tested_tree": "83521b7a975952667b181f72c04c1264f32f1bd2",
     "runtime_inputs_clean": true
   },
   "host": {
@@ -36,7 +36,7 @@
   },
   "runtime_inputs": {
     "schema": "garnet.w-play.runtime-inputs/1",
-    "sha256": "1f9da0af22d028778133d8965caf6b74acaa4927aeb83ae811475f2b74502d5d",
+    "sha256": "0ad561995082eb24098531ec1266e42ff256c621b1cc102e99842352d3d74484",
     "files": {
       "apps/garnet-studio/package-lock.json": {
         "bytes": 44280,
@@ -59,12 +59,12 @@
         "sha256": "60ad29884893761b5cbc3cd25d55aefd74e0280ad1a14506f5b8081c609fe70f"
       },
       "docs/playground.html": {
-        "bytes": 14009,
-        "sha256": "92b5217c442c401587e331b4e8f65be60fb2cac9850914c4fe6665def8bf0f99"
+        "bytes": 13981,
+        "sha256": "1325ad68fce6ddd134aa738bb21a4d5c8c2b0265aa45c728bb4eef9e42bca6f6"
       },
       "docs/playground/examples.json": {
-        "bytes": 6607,
-        "sha256": "23b3507165973d36d7282288fae0d2a3ac77c415bf6be22e618e3a3d06498443"
+        "bytes": 6628,
+        "sha256": "5529b2f3c1d44fd9fe17d9c443c3be8daf29635cc1ac2dcb86defca7c4449b84"
       },
       "docs/playground/live.js": {
         "bytes": 15063,
@@ -339,7 +339,7 @@
   },
   "visual": {
     "screenshot": "ops/lane2a/evidence/30-playground-browser.png",
-    "screenshot_sha256": "8e4e8f9425fb927c2f7219e55a5b04e68176bee52f43ae9e482041f3aed20c99",
+    "screenshot_sha256": "a00f576cfb09c01223d6cba88f5aa77da1b5c7a84cb2673780370d437c314b01",
     "desktop": {
       "horizontal_overflow": false,
       "runtime_state": "ready"
