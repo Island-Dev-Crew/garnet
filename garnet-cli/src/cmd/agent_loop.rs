@@ -138,14 +138,26 @@ fn parse(args: &[String]) -> Result<Args, ExitCode> {
     // loop accepted under. These are the harness's own truthful provenance; the
     // caller supplies agent/model/prompt_sha256 via --attest.
     let mut full_attest = vec![
-        "tool=garnet-agent-loop".to_string(),
         "autonomous=true".to_string(),
         "decision=accepted-on-capability+depth-evidence".to_string(),
     ];
     if let Some(gv) = gate_version {
         full_attest.push(format!("gate_version={gv}"));
     }
+    if !attest.iter().any(|kv| kv.starts_with("tool=")) {
+        full_attest.push("tool=garnet-agent-loop".to_string());
+    }
     full_attest.extend(attest);
+    let mut keys = std::collections::BTreeSet::new();
+    for kv in &full_attest {
+        let key = kv.split('=').next().unwrap_or_default();
+        if key.is_empty() || !keys.insert(key) {
+            eprintln!(
+                "garnet agent-loop: empty or duplicate --attest key `{key}`; rejected before run"
+            );
+            return Err(ExitCode::from(2));
+        }
+    }
 
     Ok(Args {
         baseline,

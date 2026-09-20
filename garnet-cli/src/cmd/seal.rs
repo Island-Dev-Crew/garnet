@@ -112,6 +112,19 @@ pub fn run(args: &[String]) -> ExitCode {
         }
     };
 
+    let report = garnet_check::check_module(&module);
+    for diagnostic in &report.errors {
+        eprintln!("{diagnostic}");
+    }
+    if !report.ok() {
+        eprintln!("garnet seal: checker rejected source; no seal emitted");
+        return ExitCode::from(1);
+    }
+    let mut keys = std::collections::BTreeSet::new();
+    if attestation.iter().any(|(key, _)| !keys.insert(key)) {
+        eprintln!("garnet seal: duplicate --attest key; use one comma-separated value");
+        return ExitCode::from(2);
+    }
     let build = Manifest::build(&src, &module);
     let caps = CapabilityManifest::from_surface(capability_surface(&module));
     let program = path

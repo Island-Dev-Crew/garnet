@@ -41,7 +41,7 @@ fn seal_attests_the_ffi_authority() {
     assert!(out.status.success());
     let s = String::from_utf8(out.stdout).unwrap();
     assert!(
-        s.contains(r#""predicateType":"https://garnet-lang.org/attestation/seal/v1""#),
+        s.contains(r#""predicateType":"https://garnet-lang.org/attestation/seal/v2""#),
         "{s}"
     );
     // The embedded capability manifest must attest `ffi`.

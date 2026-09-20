@@ -1,0 +1,40 @@
+{
+  "author_emails": [
+    "email:275140286+islanddevcrew@users.noreply.github.com"
+  ],
+  "author_ids": [
+    275140286
+  ],
+  "base_commit": "f6d448173b349a649212170b95fbc2987d73b2f2",
+  "blocking_findings": [],
+  "content_digest": "sha256:5b4ba6fc2caa5d151215f758d40184f5db4efe8ff19d094292ad44a6fac64f8e",
+  "head_repository": "Island-Dev-Crew/garnet",
+  "head_repository_id": 1218183013,
+  "pull_request_id": 4575039087,
+  "pull_request_number": 592,
+  "repository": "Island-Dev-Crew/garnet",
+  "repository_id": 1218183013,
+  "review_scope": "Content proof binds exactly reviewed_head f8c6a5444171cf4750924c6aae611d7695af5d20 and reviewed_tree 37da1d8af8c645af5c07b77cf6d2fdfce400521d on base f6d448173b349a649212170b95fbc2987d73b2f2; it does not extend or backdate reviewed_head coverage. Linear record-only successor to T3_CHECKED_ACCEPTANCE_592.review.json, whose bytes are preserved. Author seat OpenAI Codex. Grok 4.6 (Amp High) independently approved reviewed_head in VERDICT-T3-f8c6a544.md; IDC-Trust-Review approved that exact head in GitHub review 5255866128. Implementation and the 12-path trust content digest remain unchanged. The prior CI evidence exceeded the live governance two-hour freshness window; Jon authorized this new record-only CI venue. No previous approval is claimed for the new record-containing head: fresh independent review and exact-head IDC-Trust-Review approval remain required. This record changes no implementation, thresholds, workflows, settings, or merge authority.",
+  "review_state": "APPROVED",
+  "reviewed_head": "f8c6a5444171cf4750924c6aae611d7695af5d20",
+  "reviewed_tree": "37da1d8af8c645af5c07b77cf6d2fdfce400521d",
+  "reviewer_id": 306739987,
+  "reviewer_login": "IDC-Trust-Review",
+  "schema": "garnet.trust_kernel_review_record/v2",
+  "state": "premerge",
+  "touched_paths": [
+    "docs/why.html",
+    "garnet-cli/src/bin/garnet.rs",
+    "garnet-cli/src/cmd/agent_loop.rs",
+    "garnet-cli/src/cmd/seal.rs",
+    "garnet-cli/src/cmd/verify.rs",
+    "garnet-cli/src/cmd/verify_gate.rs",
+    "garnet-cli/src/lib.rs",
+    "garnet-cli/src/minimum_shelf.rs",
+    "garnet-cli/src/seal.rs",
+    "scripts/garnet_provenance_seal_chain_status.py",
+    "scripts/garnet_v0_8_1_release_readiness.py",
+    "scripts/test_garnet_provenance_seal_chain_status.py"
+  ],
+  "verdict": "pass"
+}

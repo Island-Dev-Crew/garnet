@@ -208,3 +208,48 @@ fn vm_backend_parity_on_accept_and_trap() {
         "a VM-trapped proposal must NOT be sealed"
     );
 }
+
+#[test]
+fn caller_tool_attestation_is_preserved_without_duplicate_after_run() {
+    let dir = tempfile::tempdir().unwrap();
+    let baseline = write(dir.path(), "base.garnet", ACCEPT);
+    let proposal = write(dir.path(), "proposal.garnet", ACCEPT);
+    let seal = dir.path().join("seal.json");
+    let out = garnet()
+        .arg("agent-loop")
+        .arg("--baseline")
+        .arg(baseline)
+        .arg("--proposal")
+        .arg(proposal)
+        .args(["--backend", "interp", "--attest", "tool=caller"])
+        .arg("--seal-out")
+        .arg(&seal)
+        .output()
+        .unwrap();
+    assert!(
+        out.status.success(),
+        "{} {}",
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert!(std::fs::read_to_string(seal).unwrap().contains("caller"));
+}
+
+#[test]
+fn duplicate_attestation_is_rejected_before_run() {
+    let dir = tempfile::tempdir().unwrap();
+    let baseline = write(dir.path(), "base.garnet", ACCEPT);
+    let proposal = write(dir.path(), "proposal.garnet", ACCEPT);
+    let out = garnet()
+        .arg("agent-loop")
+        .arg("--baseline")
+        .arg(baseline)
+        .arg("--proposal")
+        .arg(proposal)
+        .args(["--attest", "agent=a", "--attest", "agent=b"])
+        .output()
+        .unwrap();
+    assert!(!out.status.success());
+    assert!(!String::from_utf8_lossy(&out.stdout).contains("stage run"));
+    assert!(String::from_utf8_lossy(&out.stderr).contains("before run"));
+}

@@ -32,7 +32,7 @@ authority**:
 - `examples/ffi/rust_extern.garnet` (a `@caps(ffi)` Rust-wrapper) `garnet check`s
   clean and runs (with the body as a stand-in for the future binding).
 - `garnet seal examples/ffi/rust_extern.garnet` emits an in-toto predicate
-  (`predicateType: https://garnet-lang.org/attestation/seal/v1`) whose embedded
+  (`predicateType: https://garnet-lang.org/attestation/seal/v2`) whose embedded
   capability manifest **attests `ffi`** in its aggregate — so a Rust-FFI binding
   can be diffed (S37), reviewed (S49), and signed (`cosign attest`, S51) like any
   other authority.

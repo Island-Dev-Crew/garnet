@@ -1,0 +1,40 @@
+{
+  "author_emails": [
+    "email:275140286+islanddevcrew@users.noreply.github.com"
+  ],
+  "author_ids": [
+    275140286
+  ],
+  "base_commit": "f6d448173b349a649212170b95fbc2987d73b2f2",
+  "blocking_findings": [],
+  "content_digest": "sha256:5b4ba6fc2caa5d151215f758d40184f5db4efe8ff19d094292ad44a6fac64f8e",
+  "head_repository": "Island-Dev-Crew/garnet",
+  "head_repository_id": 1218183013,
+  "pull_request_id": 4575039087,
+  "pull_request_number": 592,
+  "repository": "Island-Dev-Crew/garnet",
+  "repository_id": 1218183013,
+  "review_scope": "Content proof binds exactly reviewed_head 1df186392ed2c85fdea0d57c312951c206bb3e81 and its reviewed_tree on base f6d448173b349a649212170b95fbc2987d73b2f2; it does not extend or backdate reviewed_head coverage. Author seat OpenAI Codex. Independent reviewer Grok 4.6 (Amp High) approved that exact content head in VERDICT-T3-1df18639.md after a fresh-clone review; Claude review at a65e8a20 is void. All must-fix findings closed; S37 aggregate semantics unchanged; shadow classifier excluded. IDC-Trust-Review approved that content head on GitHub. This record declares the required reviewer and APPROVED state; it does not assert authenticated approval of a future record-containing head. A record-only successor requires fresh independent review and IDC-Trust-Review approval at its exact new SHA. No merge or release authority is exercised by this record.",
+  "review_state": "APPROVED",
+  "reviewed_head": "1df186392ed2c85fdea0d57c312951c206bb3e81",
+  "reviewed_tree": "1d209db6ad5f2fb6a45282d6dc7236b2b3867db3",
+  "reviewer_id": 306739987,
+  "reviewer_login": "IDC-Trust-Review",
+  "schema": "garnet.trust_kernel_review_record/v2",
+  "state": "premerge",
+  "touched_paths": [
+    "docs/why.html",
+    "garnet-cli/src/bin/garnet.rs",
+    "garnet-cli/src/cmd/agent_loop.rs",
+    "garnet-cli/src/cmd/seal.rs",
+    "garnet-cli/src/cmd/verify.rs",
+    "garnet-cli/src/cmd/verify_gate.rs",
+    "garnet-cli/src/lib.rs",
+    "garnet-cli/src/minimum_shelf.rs",
+    "garnet-cli/src/seal.rs",
+    "scripts/garnet_provenance_seal_chain_status.py",
+    "scripts/garnet_v0_8_1_release_readiness.py",
+    "scripts/test_garnet_provenance_seal_chain_status.py"
+  ],
+  "verdict": "pass"
+}
