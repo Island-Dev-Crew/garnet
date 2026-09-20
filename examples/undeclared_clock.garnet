@@ -1,4 +1,4 @@
 # Reading the clock requires declared time authority.
-# The browser host grants no clock authority even if time is declared.
+# Even with @caps(time), the browser clock is unsupported and can trap in the WASM adapter.
 @caps()
 def main() { time::now_ms() }

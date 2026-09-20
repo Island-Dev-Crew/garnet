@@ -261,7 +261,7 @@
   <section class="editors" aria-label="Source editors">
     <div class="editor">
       <label for="source-editor">Current source</label>
-      <div class="editor-body"><pre id="source-lines" class="line-numbers" aria-hidden="true">1</pre><textarea wrap="off" wrap="off" id="source-editor" spellcheck="false" autocapitalize="off" onbeforeinput="this.dataset.edited = 'true'" oninput="this.dataset.edited = 'true'">@caps()
+      <div class="editor-body"><pre id="source-lines" class="line-numbers" aria-hidden="true">1</pre><textarea wrap="off" id="source-editor" spellcheck="false" autocapitalize="off" onbeforeinput="this.dataset.edited = 'true'" oninput="this.dataset.edited = 'true'">@caps()
 def main() {
   println("Hello from Garnet!")
   0
@@ -270,7 +270,7 @@ def main() {
     </div>
     <div class="editor" id="baseline-panel">
       <label for="baseline-editor">Capability baseline</label>
-      <div class="editor-body"><pre id="baseline-lines" class="line-numbers" aria-hidden="true">1</pre><textarea wrap="off" wrap="off" id="baseline-editor" spellcheck="false" autocapitalize="off">@caps()
+      <div class="editor-body"><pre id="baseline-lines" class="line-numbers" aria-hidden="true">1</pre><textarea wrap="off" id="baseline-editor" spellcheck="false" autocapitalize="off">@caps()
 def main() {
   0
 }
@@ -298,7 +298,7 @@ def main() {
 
   <section class="policy-panel" aria-labelledby="lane-heading">
     <h2 id="lane-heading">What changed in the declarations?</h2>
-    <p class="helper">Illustration only · T-L policy and merge checks are separate.</p>
+    <p class="helper">Illustration only · this card does not approve a merge.</p>
     <p id="lane-card" role="status" data-state="unknown">Compare edits to inspect their declared capabilities.</p>
   </section>
   <details class="authority-panel"><summary>Declared capabilities</summary>

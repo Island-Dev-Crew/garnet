@@ -47,7 +47,7 @@
       "name": "undeclared_clock",
       "title": "Undeclared clock read",
       "description": "The checker rejects this undeclared clock read. Adding @caps(time) does not provide a browser clock: running it can trap in the WASM adapter.",
-      "source": "# Reading the clock requires declared time authority.\n# The browser host grants no clock authority even if time is declared.\n@caps()\ndef main() { time::now_ms() }\n",
+      "source": "# Reading the clock requires declared time authority.\n# Even with @caps(time), the browser clock is unsupported and can trap in the WASM adapter.\n@caps()\ndef main() { time::now_ms() }\n",
       "output": "runtime error: capability: `time::now_ms` requires @caps(time), not declared in the calling chain\nexit 1"
     },
     {
