@@ -1,0 +1,9 @@
+# A named-call cycle must not conceal filesystem authority.
+# Check reports the gated primitive and its path. Run traps before the write.
+@caps()
+def main() { a(false) }
+def a(recurse) { b(recurse) }
+def b(recurse) {
+  if recurse { a(false) }
+  fs::write_file("never-written.txt", "denied")
+}

@@ -1,0 +1,6 @@
+# Safe functions reject a payload on a unit enum variant.
+# This check is scoped to safe functions; managed def bodies differ.
+enum Shape { Empty }
+fn make() -> Shape { Shape::Empty(1) }
+@caps()
+def main() { 0 }

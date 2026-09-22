@@ -1,24 +1,24 @@
 {
   "schema": "garnet.w-play.browser-proof/1",
-  "captured_at": "2026-09-18T19:46:14.759Z",
+  "captured_at": "2026-09-20T02:23:26.966Z",
   "verdict": "pass",
-  "duration_ms": 1807,
+  "duration_ms": 7721,
   "execution": {
     "engine": "playwright-browser-page",
-    "browser": "149.0.7827.55",
+    "browser": "153.0.8010.48",
     "node_global_present": false,
     "runtime_ready": true,
     "service_workers": "blocked"
   },
   "git": {
-    "tested_commit": "b9957c7255ff0f1acab9421537e5115625a690c3",
-    "tested_tree": "2cd314fc3c35a51e601c02b4c0635075d86c3fbb",
+    "tested_commit": "cd0f6a4eb8910c10b38d2d17bbe5bdc18405a58e",
+    "tested_tree": "83521b7a975952667b181f72c04c1264f32f1bd2",
     "runtime_inputs_clean": true
   },
   "host": {
     "os": "darwin",
     "arch": "arm64",
-    "node": "v22.22.2"
+    "node": "v22.22.3"
   },
   "package": {
     "schema": "garnet.playground.wasm-package/1",
@@ -36,7 +36,7 @@
   },
   "runtime_inputs": {
     "schema": "garnet.w-play.runtime-inputs/1",
-    "sha256": "0f2b106cd502dc172c4e6b065e986c3c9c9652d4303942c358032059bd387840",
+    "sha256": "0ad561995082eb24098531ec1266e42ff256c621b1cc102e99842352d3d74484",
     "files": {
       "apps/garnet-studio/package-lock.json": {
         "bytes": 44280,
@@ -50,17 +50,25 @@
         "bytes": 67820,
         "sha256": "790a70b22ea92e6f7004eec6196c0807f612d149a2bb40115d31d44ab68927fa"
       },
+      "docs/index.html": {
+        "bytes": 116150,
+        "sha256": "3a8258866f818623cf3ec14059d59b5bc55a9775c342302cf4db6eef415d8226"
+      },
+      "docs/service-worker.js": {
+        "bytes": 2698,
+        "sha256": "60ad29884893761b5cbc3cd25d55aefd74e0280ad1a14506f5b8081c609fe70f"
+      },
       "docs/playground.html": {
-        "bytes": 9411,
-        "sha256": "213a5ce2fe32287d552da2180f726f4ed65125312180bd0d4649b9f747045e78"
+        "bytes": 13981,
+        "sha256": "1325ad68fce6ddd134aa738bb21a4d5c8c2b0265aa45c728bb4eef9e42bca6f6"
       },
       "docs/playground/examples.json": {
-        "bytes": 4269,
-        "sha256": "8705f3add6e992616baa7e3d589e15f80bf196f84cd5ee9341ef702b15672cde"
+        "bytes": 6628,
+        "sha256": "5529b2f3c1d44fd9fe17d9c443c3be8daf29635cc1ac2dcb86defca7c4449b84"
       },
       "docs/playground/live.js": {
-        "bytes": 6530,
-        "sha256": "882b91d1a5503ee6f6d03d9c934c0541a25bd960426aecbd553004e1dd31a45d"
+        "bytes": 15063,
+        "sha256": "a85fe627de323b48a0531aa3545e9171527e5003678219d7881d8c77e45939df"
       },
       "docs/playground/pkg/garnet_wasm.js": {
         "bytes": 6581,
@@ -75,8 +83,12 @@
         "sha256": "19f5ec1d6b84cd25e7de543a642ad54de914ab75d841ff6910861f9e51483c16"
       },
       "scripts/smoke_garnet_playground_browser.mjs": {
-        "bytes": 20792,
-        "sha256": "8cffd5feb4719ca6cc7263144cfa0aef794ddb8e6f3a177ad2b7043359e746db"
+        "bytes": 21332,
+        "sha256": "c4e858ae44873c02680be0b2c82240bd285c6fa12acc1a1d7848e74dc3b819bd"
+      },
+      "scripts/smoke_garnet_playground_phase1_journeys.mjs": {
+        "bytes": 11613,
+        "sha256": "61429bba924ff3b27a3d7be3a01ed261d858da02cb4944ba74fe67501b42692f"
       }
     }
   },
@@ -94,12 +106,31 @@
   "network": {
     "external_requests": [],
     "requested_committed_files": [
+      "docs/assets/garnet-demonstration-poster.jpg",
+      "docs/assets/garnet-demonstration.mp4",
+      "docs/assets/garnet-hero.webp",
+      "docs/blog/feed.xml",
+      "docs/blog/index.html",
+      "docs/getting-started.html",
       "docs/icons/garnet-192.png",
+      "docs/icons/garnet-512.png",
+      "docs/index.html",
+      "docs/install.sh",
+      "docs/ladder.html",
+      "docs/manifest.webmanifest",
+      "docs/minispec.html",
+      "docs/novel.html",
       "docs/playground.html",
       "docs/playground/examples.json",
       "docs/playground/live.js",
       "docs/playground/pkg/garnet_wasm.js",
-      "docs/playground/pkg/garnet_wasm_bg.wasm"
+      "docs/playground/pkg/garnet_wasm_bg.wasm",
+      "docs/playground/pkg/provenance.json",
+      "docs/releases.xml",
+      "docs/service-worker.js",
+      "docs/status.html",
+      "docs/stdlib.html",
+      "docs/synthesis.html"
     ],
     "untracked_requests": []
   },
@@ -213,11 +244,102 @@
     "home_link": {
       "href": "index.html",
       "target": "_top"
+    },
+    "phase1": {
+      "review_fixes": true,
+      "results_readable": true,
+      "lanes_card": true,
+      "authority_panel": true,
+      "share_link": true,
+      "presets_v2": {
+        "capability_cycle": {
+          "schema": "garnet.wasm.check/1",
+          "ok": false,
+          "diagnostics": [
+            {
+              "code": "check.caps_coverage",
+              "severity": "error",
+              "message": "caps coverage: function `main` does not declare `fs` but transitively calls `fs::write_file (via a → b)` which requires it"
+            }
+          ]
+        },
+        "illegal_enum": {
+          "schema": "garnet.wasm.check/1",
+          "ok": false,
+          "diagnostics": [
+            {
+              "code": "check.safe_mode_violation",
+              "severity": "error",
+              "message": "safe-mode violation: unit variant `Shape::Empty` takes no payload, given 1 in safe function 'make'"
+            }
+          ]
+        },
+        "undeclared_clock": {
+          "schema": "garnet.wasm.check/1",
+          "ok": false,
+          "diagnostics": [
+            {
+              "code": "check.caps_coverage",
+              "severity": "error",
+              "message": "caps coverage: function `main` does not declare `time` but transitively calls `time::now_ms` which requires it"
+            }
+          ]
+        },
+        "wording_vs_write": {
+          "schema": "garnet.wasm.check/1",
+          "ok": true,
+          "diagnostics": []
+        }
+      },
+      "editor_keys": true,
+      "evidence_badge": true,
+      "embed_mode": true,
+      "mobile_375": true
+    },
+    "offline": {
+      "offline_embed": true,
+      "cold_install": true,
+      "offline_run": true,
+      "offline_check": true,
+      "offline_diff": true,
+      "old_cache_retired": true,
+      "cached": [
+        {
+          "name": "garnet-web-v7",
+          "paths": [
+            "/",
+            "/getting-started.html",
+            "/index.html",
+            "/install.sh",
+            "/ladder.html",
+            "/manifest.webmanifest",
+            "/minispec.html",
+            "/novel.html",
+            "/playground.html",
+            "/playground/live.js",
+            "/playground/examples.json",
+            "/playground/pkg/garnet_wasm.js",
+            "/playground/pkg/garnet_wasm_bg.wasm",
+            "/playground/pkg/provenance.json",
+            "/status.html",
+            "/stdlib.html",
+            "/synthesis.html",
+            "/blog/index.html",
+            "/blog/feed.xml",
+            "/releases.xml",
+            "/assets/garnet-hero.webp",
+            "/assets/garnet-demonstration-poster.jpg",
+            "/icons/garnet-192.png",
+            "/icons/garnet-512.png"
+          ]
+        }
+      ],
+      "external_requests": []
     }
   },
   "visual": {
     "screenshot": "ops/lane2a/evidence/30-playground-browser.png",
-    "screenshot_sha256": "9690ed4899a683d904088240002e03f56f3bbdf8febc4f08679a69e0bf1b6388",
+    "screenshot_sha256": "a00f576cfb09c01223d6cba88f5aa77da1b5c7a84cb2673780370d437c314b01",
     "desktop": {
       "horizontal_overflow": false,
       "runtime_state": "ready"

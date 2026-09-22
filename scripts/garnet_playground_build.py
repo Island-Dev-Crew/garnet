@@ -32,7 +32,14 @@ GALLERY = [
         "Undeclared memory tier",
         "`@caps()` reaches `memory::working`; `check` reports the missing `mem` and `run` traps before the store exists (D-04).",
     ),
+    ("capability_cycle", "Authority hidden in a cycle", "Check follows a named-call cycle to fs::write_file; run refuses undeclared fs."),
+    ("illegal_enum", "Illegal enum construction", "Safe-mode check refuses a payload on a unit variant; managed bodies are outside this rule."),
+    ("undeclared_clock", "Undeclared clock read", "The checker rejects this undeclared clock read. Adding @caps(time) does not provide a browser clock: running it can trap in the WASM adapter."),
+    ("wording_vs_write", "Wording versus a file write", "Compare a wording edit, then try a write edit. Declarations do not grant merge approval."),
 ]
+
+PAIR_BASELINE = '@caps()\ndef main() { println("Hello!") 0 }\n'
+PAIR_WRITE = '@caps(fs)\ndef main() { fs::write_file("README.md", "Hello, Garnet reader!") 0 }\n'
 
 # `garnet run` prints its own diagnostics to stderr beside cache notes
 # (`note: this source has N prior failure(s) ...`) that depend on the
@@ -89,6 +96,8 @@ def main() -> int:
         entries.append(
             {"name": stem, "title": title, "description": desc, "source": source, "output": output}
         )
+        if stem == "wording_vs_write":
+            entries[-1].update(baseline=PAIR_BASELINE, alternate_source=PAIR_WRITE)
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps({"schema": "garnet.playground/v1", "examples": entries}, indent=2) + "\n", encoding="utf-8")
     print(f"wrote {OUT} ({len(entries)} examples)")

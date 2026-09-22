@@ -46,6 +46,8 @@ BROWSER_RUNTIME_INPUTS = (
     "apps/garnet-studio/package-lock.json",
     "apps/garnet-studio/package.json",
     "docs/icons/garnet-192.png",
+    "docs/index.html",
+    "docs/service-worker.js",
     "docs/playground.html",
     "docs/playground/examples.json",
     "docs/playground/live.js",
@@ -53,6 +55,7 @@ BROWSER_RUNTIME_INPUTS = (
     "docs/playground/pkg/garnet_wasm_bg.wasm",
     "docs/playground/pkg/provenance.json",
     "scripts/smoke_garnet_playground_browser.mjs",
+    "scripts/smoke_garnet_playground_phase1_journeys.mjs",
 )
 DIFF_SCOPE = (
     "declared-surface-only; does not prove absence of undeclared authority; "
@@ -369,6 +372,8 @@ def browser_proof_valid(proof: dict | None = None) -> bool:
         machine = diff["machine_verdict"]
         denial = journeys["denial"]
         denial_run = denial["run"]
+        phase1 = journeys["phase1"]
+        offline = journeys["offline"]
         requested = network["requested_committed_files"]
         if (
             not isinstance(requested, list)
@@ -450,6 +455,18 @@ def browser_proof_valid(proof: dict | None = None) -> bool:
                 "wildcard_introduced": False,
                 "scope": DIFF_SCOPE,
             }
+            and all(phase1.get(key) is True for key in (
+                "review_fixes", "results_readable", "lanes_card", "authority_panel", "share_link",
+                "editor_keys", "evidence_badge", "embed_mode", "mobile_375",
+            ))
+            and all(phase1["presets_v2"][name].get("ok") is expected for name, expected in (
+                ("capability_cycle", False), ("illegal_enum", False),
+                ("undeclared_clock", False), ("wording_vs_write", True),
+            ))
+            and all(offline.get(key) is True for key in (
+                "offline_embed", "cold_install", "offline_run", "offline_check", "offline_diff", "old_cache_retired",
+            ))
+            and offline.get("external_requests") == []
             and denial.get("ui_state") == "Denied"
             and denial_run.get("schema") == "garnet.wasm.run/1"
             and denial_run.get("exit_class") == "runtime_error"

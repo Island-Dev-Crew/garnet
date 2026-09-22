@@ -2,6 +2,7 @@
 """Regression contract for the committed W-PLAY browser proof."""
 from __future__ import annotations
 
+import copy
 import importlib.util
 import sys
 import unittest
@@ -24,6 +25,18 @@ class PlaygroundBrowserProofTests(unittest.TestCase):
         self.assertLess(proof["duration_ms"], 30_000)
         self.assertEqual([], proof["network"]["external_requests"])
         self.assertEqual([], proof["network"]["untracked_requests"])
+
+    def test_phase1_and_offline_evidence_are_required(self) -> None:
+        proof = wasm.read_browser_proof()
+        self.assertTrue(wasm.browser_proof_valid(proof))
+        for journey in ("phase1", "offline"):
+            altered = copy.deepcopy(proof)
+            del altered["journeys"][journey]
+            self.assertFalse(wasm.browser_proof_valid(altered))
+        for journey, field in (("phase1", "share_link"), ("offline", "offline_run")):
+            altered = copy.deepcopy(proof)
+            altered["journeys"][journey][field] = False
+            self.assertFalse(wasm.browser_proof_valid(altered))
 
     def test_human_and_machine_diff_verdicts_are_one_decision(self) -> None:
         proof = wasm.read_browser_proof()

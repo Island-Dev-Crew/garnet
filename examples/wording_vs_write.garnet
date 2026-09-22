@@ -1,0 +1,4 @@
+# A wording edit leaves the declared capability surface unchanged.
+# Select "Try the write edit" to compare a filesystem-authority expansion.
+@caps()
+def main() { println("Hello, Garnet reader!") 0 }

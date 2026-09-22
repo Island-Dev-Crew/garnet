@@ -389,7 +389,7 @@
     font-size: 13px; color: var(--ink-muted);
   }
   @media (max-width: 720px) {
-    .pg-mount iframe { height: 1180px; }
+    .pg-mount iframe { height: 940px; }
   }
 
   .btn {
@@ -1090,7 +1090,7 @@ def main() {
   <div class="container reveal">
     <div class="section-head"><h3>Try it</h3><a class="section-offer" href="playground.html">Full playground page <span aria-hidden="true">&rarr;</span></a></div>
     <h2>The checker, <span class="accent">in your browser</span>.</h2>
-    <p class="lead">The capture above ran on a machine you have to take our word for. This one runs on yours. It is a committed WebAssembly build of Garnet's checker. It runs two of the capture's acts &mdash; check a program, and diff its declared capability surface against a baseline &mdash; plus run; sealing stays on the command line. It loads only when you ask, because the runtime is 2.2&nbsp;MB and a landing page should not spend that uninvited.</p>
+    <p class="lead">The capture above ran on a machine you have to take our word for. This one runs on yours. It is a committed WebAssembly build of Garnet's checker. It runs two of the capture's acts &mdash; check a program, and diff its declared capability surface against a baseline &mdash; plus run; sealing stays on the command line. The service worker downloads the 2.2&nbsp;MB runtime for offline use when you visit this page. The editor opens when you ask.</p>
 
     <div class="pg-mount" id="pg-mount">
       <a class="btn btn-primary" id="pg-load" href="playground.html">Load the checker and run it here <span aria-hidden="true">&rarr;</span></a>

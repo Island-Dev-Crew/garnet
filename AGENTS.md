@@ -454,3 +454,31 @@ For documentation-contract changes, run:
 5. `cargo test --workspace --no-fail-fast` when Rust behavior changed.
 
 For release-impacting work, follow the latest verification ladder in `F_Project_Management/`.
+
+## Playground Phase 1 Contract
+
+`docs/playground/live.js` presents committed WASM results without granting host
+authority. Raw adapter JSON remains available beside readable results. The lane
+card is an illustration, never merge approval: independently check both inputs,
+block parser/checker failures, require human review for aggregate or per-function declared gains, and
+keep unchanged declarations neutral because complete checker coverage is unknown.
+The declaration table contains annotated functions only; omissions never mean
+no authority. Editing either source invalidates displayed decisions.
+
+Share links use a versioned UTF-8 fragment capped at 16,000 encoded characters.
+Restore text without execution or HTML interpretation; reject invalid schemas,
+UTF-8 and oversized input. The fragment is not encryption or a secret store.
+The evidence badge reports recorded package/source digests, never an invented
+build commit. Keep the plain editors keyboard escapable with Escape then Tab; Tab on a
+selection must preserve its text. Restore hash changes without execution and
+invalidate prior results. Catch adapter failures and distinguish them from
+clean authority denials. The landing page discloses service-worker precaching.
+
+When changing the playground, update `scripts/smoke_garnet_playground_phase1_journeys.mjs`
+and run `node scripts/smoke_garnet_playground_browser.mjs` after committing all
+runtime inputs. Its proof includes readable/raw results, lane failure states,
+declarations, shared input, presets, keyboard controls, provenance, 375px and
+iframe behavior, and first-online-install then offline run/check/diff. Include
+all browser dependencies in the versioned service-worker precache and preserve
+other applications' caches. Browser proof and readiness gates bind these bytes;
+UI success alone does not certify language completeness or merge policy.

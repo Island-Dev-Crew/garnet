@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { phase1Journeys, offlineJourney } from "./smoke_garnet_playground_phase1_journeys.mjs";
 import { createHash } from "node:crypto";
 import {
   createReadStream,
@@ -27,6 +28,8 @@ const RUNTIME_INPUTS = [
   "apps/garnet-studio/package-lock.json",
   "apps/garnet-studio/package.json",
   "docs/icons/garnet-192.png",
+  "docs/index.html",
+  "docs/service-worker.js",
   "docs/playground.html",
   "docs/playground/examples.json",
   "docs/playground/live.js",
@@ -34,6 +37,7 @@ const RUNTIME_INPUTS = [
   "docs/playground/pkg/garnet_wasm_bg.wasm",
   "docs/playground/pkg/provenance.json",
   "scripts/smoke_garnet_playground_browser.mjs",
+  "scripts/smoke_garnet_playground_phase1_journeys.mjs",
 ];
 const DIFF_SCOPE = "declared-surface-only; does not prove absence of undeclared authority; bound annotations are not part of this surface";
 
@@ -181,6 +185,8 @@ function contentType(pathname) {
   const extension = extname(pathname);
   if (extension === ".html") return "text/html; charset=utf-8";
   if (extension === ".js" || extension === ".mjs") return "text/javascript; charset=utf-8";
+  if (extension === ".webmanifest") return "application/manifest+json";
+  if (extension === ".css") return "text/css; charset=utf-8";
   if (extension === ".json") return "application/json; charset=utf-8";
   if (extension === ".wasm") return "application/wasm";
   if (extension === ".png") return "image/png";
@@ -391,6 +397,9 @@ async function main() {
     assertEqual(homeLink.href, "index.html", "logo home link href");
     assertEqual(homeLink.target, "_top", "logo home link target");
 
+    const phase1 = await phase1Journeys(page, trackedServer.baseUrl, assertEqual);
+    const offline = await offlineJourney(browser, trackedServer.baseUrl, assertEqual);
+
     const desktop = await page.evaluate(() => ({
       horizontal_overflow: document.documentElement.scrollWidth > window.innerWidth,
       runtime_state: document.getElementById("runtime-status").dataset.state,
@@ -466,6 +475,8 @@ async function main() {
         denial,
         memory_tier: memoryTier,
         home_link: homeLink,
+        phase1,
+        offline,
       },
       visual: {
         screenshot: relative(ROOT, args.screenshot).split(sep).join("/"),
