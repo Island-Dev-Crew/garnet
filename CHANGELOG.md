@@ -37,6 +37,13 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   bump alone no longer refuses the package; source, AST, capabilities, tooling
   note and `signed:false` are still pinned. The flagship is resealed as v2 and
   its hash pins are updated (`ops/lane2b/evidence/22-t5a-v2-reseal.txt`).
+- **Windows Studio clean-VM proof is read from the repo (path (a)).** The
+  clean-VM installer reporter read only a Desktop dogfood folder on whichever
+  machine ran it, so "verified" depended on the host. With no explicit root it
+  now reads the newest bundle under `proofs/windows/studio-clean-vm/`, and
+  counts it only when the manifest, every gate, the x64 guest and the in-bundle
+  evidence check out. A failing newest bundle is reported, not replaced by an
+  older one.
 - **Playground rebuild (X-9).** The browser Wasm package is rebuilt once with
   the pinned toolchain (Rust 1.95.0, Node v22.22.2, wasm-pack 0.15.0, esbuild
   0.25.12); two builds matched byte for byte. The W-PLAY browser proof is
