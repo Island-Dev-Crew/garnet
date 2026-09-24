@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
 """Report and record Windows clean-VM installer proof for Garnet Studio.
 
+Threat model for committed bundles (T5a): the reader checks what is committed
+under proofs/windows/studio-clean-vm/. It does not defend against a process
+that can write the checkout while the reporter runs, because such a process
+could write a consistent bundle outright: the manifest is an unsigned list of
+hashes. Who committed a bundle is established by review, not by this reader.
+
 This script is intentionally evidence-first. It can record a clean Windows VM
 proof bundle from an already-produced installer/log/screenshot set, and it can
 summarize the latest bundle for Studio and MIT-readiness panels. It does not
@@ -412,12 +418,15 @@ def _read_bundle_file(path: Path, seen: set[tuple[int, int]]) -> tuple[str | Non
     fd = os.open(path, flags)
     try:
         info = os.fstat(fd)
+        if not before.st_ino or not info.st_ino:
+            # Python promises inode uniqueness only when st_ino is nonzero.
+            return f"{path.name}: this filesystem gives no stable file identity, so the bundle cannot be checked here", b""
         if not stat.S_ISREG(info.st_mode) or (info.st_dev, info.st_ino) != (before.st_dev, before.st_ino):
             return f"{path.name} changed while it was being read", b""
         if info.st_nlink != 1:
             return f"{path.name} has {info.st_nlink} links; a bundle file has exactly one", b""
         identity = (info.st_dev, info.st_ino)
-        if info.st_ino and identity in seen:
+        if identity in seen:
             return f"{path.name} is the same file as another bundle entry", b""
         seen.add(identity)
         chunks = []
