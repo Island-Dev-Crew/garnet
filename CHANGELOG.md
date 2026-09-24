@@ -12,11 +12,15 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 ### T5a — evidence tools made correct before 0.8.3 freezes seal/v2
 
 - **Per-function names carry their module path (C1-01).** `module a { def f }`
-  is `a::f`, and an impl method inside it is `a::Type::m`. Top-level names stay
-  bare, so programs without modules keep byte-identical surfaces, manifests and
-  seals. Before this, same-named functions in two modules shared one name and
-  `diff-caps` kept only the last, so a real gain was dropped or an unchanged
-  capability was reported as gained.
+  is `a::f`, and an impl method inside it is `a::Type::m`. An impl whose type is
+  written with a path (`impl a::R`) now names its methods by that full path
+  (`a::R::m`, where it was `R::m`). Top-level functions and methods of an impl on
+  an unqualified type keep their names, so a single-file program with neither
+  modules nor path-qualified impl types keeps byte-identical capability surfaces
+  and manifests. Its seal bytes still change (see C2-07). Before this,
+  same-named functions in two modules shared one name and `diff-caps` kept only
+  the last, so a real gain was dropped or an unchanged capability was reported
+  as gained.
 - **Directory scans name each function by its file.** `caps`, `diff-caps` and
   `verify --caps-baseline` on a directory use `<relative path>::<name>`, with `/`
   on every OS and the `.garnet` suffix kept. Capability-manifest entries and
@@ -31,7 +35,9 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 - **Seal (C2-07).** Seal bytes no longer depend on whether cosign is installed:
   `tooling.cosign` is a fixed note, every predicate carries `"signed": false`,
   `verify` accepts exactly one form, and `garnet seal` prints UNSIGNED on every
-  machine.
+  machine. This changes the bytes of every seal once, including a single-file
+  program with only `main`, and a seal/v2 predicate made before this no longer
+  verifies; re-seal it.
 - **Minimum Shelf (C3-03, U-120).** The shelf accepts the flagship's seal/v2 and
   borrows only `parser_version` and `interp_version` from it, so a CLI version
   bump alone no longer refuses the package; source, AST, capabilities, tooling

@@ -34,8 +34,9 @@ fn type_label(ty: &TypeExpr) -> String {
 /// and slipped past `diff-caps`, the seal manifest, and the agent-loop gate.
 ///
 /// T5a (C1-01): names carry their module path, so `module a { def f }` is `a::f`
-/// and an impl method inside it is `a::Type::m`. Top-level names stay bare, so a
-/// program without modules keeps byte-identical names. Before this, same-named
+/// and an impl method inside it is `a::Type::m`. Top-level functions and methods
+/// of an impl on an unqualified type keep their names; an impl written with a
+/// path (`impl a::R`) names its methods by that full path. Before this, same-named
 /// functions in two modules shared one name and `diff-caps` kept only the last.
 fn collect_cap_fns<'a>(items: &'a [Item], prefix: &str, out: &mut Vec<(String, &'a FnDef)>) {
     for item in items {
@@ -222,8 +223,9 @@ mod tests {
 
     #[test]
     fn top_level_names_stay_bare() {
-        // Single-module programs keep byte-identical names: committed fixtures,
-        // manifests and seals of top-level-only programs do not change.
+        // Top-level functions and methods of an impl on an unqualified type keep
+        // their names, so these programs' capability surfaces and manifests do
+        // not change. (Their seal bytes change once with C2-07.)
         let s = surface(
             "struct R {}\nimpl R {\n  @caps(fs)\n  def m(self) -> int { 0 }\n}\n@caps(net)\ndef f() -> int { 0 }\n",
         );
