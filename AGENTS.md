@@ -393,8 +393,9 @@ Interim practice, disclosed rather than enforced: since 2026-09-13 the
 maintainer has accepted approve-then-re-run, in which `IDC-Trust-Review`
 approves the exact record-containing head and then triggers one re-run
 (#585, #589, #591, #592, #593). The approving account is also the carrier, so
-this does not satisfy `r2_role_separation_v1`, and no gate checks it. Each
-review record states it under its venue limits. It stays in force until S-R1
+this does not satisfy `r2_role_separation_v1`, and no gate checks it. The
+#585, #589, #591 and #593 records state it under their venue limits; the two
+#592 records do not. It stays in force until S-R1
 supersedes U-59, and it is never described as enforced.
 
 Attempt 2 treats the replayed event payload as stale coordinates, never current

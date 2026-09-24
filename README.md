@@ -20,7 +20,7 @@ built for the code agents write and humans accept.</strong></p>
 
 <p align="center"><sub>Source on <code>main</code> is <!-- truth:version -->0.8.2<!-- /truth -->; the last release is <!-- truth:latest_tag -->v0.8.2<!-- /truth -->.</sub></p>
 
-<p align="center"><sub>The v0.8.2 binary lags <code>main</code>: it gates 15 host primitives, has no <code>mem</code> capability and emits seal/v1. The 24-row gate, <code>mem</code> and seal/v2 described below are on <code>main</code> and not yet in a release.</sub></p>
+<p align="center"><sub>The v0.8.2 binary lags <code>main</code>: it gates 15 host primitives, has no <code>mem</code> capability gate and emits seal/v1. The 24-row gate, <code>mem</code> and seal/v2 described below are on <code>main</code> and not yet in a release.</sub></p>
 
 ---
 
@@ -98,7 +98,7 @@ and aimed at agent-authored code:
   a top-level initializer, a string interpolation or `method_missing`, a call contributes no edge
   and the checker stays silent (finding U-91). A cycle in the call graph is followed: every function
   in it inherits the cycle's requirements (U-117, cured 2026-09). `garnet run` does not invoke the checker. Under the `garnet` CLI on `main`
-  (the v0.8.2 binary gates 15 and has no `mem`) the 24 gated host-authority primitives (fs, net, proc, env, time, log-to-file, and the four `memory::*`
+  (the v0.8.2 binary gates 15 and has no `mem` capability gate) the 24 gated host-authority primitives (fs, net, proc, env, time, log-to-file, and the four `memory::*`
   tiers under `mem`) additionally trap at run time
   unless the **program entry's** own declared budget covers the capability, whichever call edge
   reached them. The other 60 of the 84 registry rows carry no runtime gate, and they are not one group:
