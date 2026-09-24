@@ -46,7 +46,7 @@ Swift and Kotlin do interop between two paradigms in one language; Garnet's pitc
 
 For pure-computational workloads the tree-walk interpreter remains the conservative runtime path. v0.5.0 added the S2 bytecode VM scaffold and benchmark harness, and the v0.8 line brought the VM to enforcement parity (`@caps` + `@max_depth` trap identically on both backends), but production VM performance is not claimed yet. The proof/benchmark reporter still labels fresh measured benchmark runs, mechanized proof, and empirical study data as open gates. See [Paper VII — Implementation Ladder and Tooling](A_Research_Papers/Paper_VII_Implementation_Ladder_and_Tooling.md) for the staged roadmap.
 
-Memory: Paper VI Experiment 4 measured 21% peak RSS reduction on the multi-agent MVP workload by using kind-aware allocation (`memory working|episodic|semantic|procedural` keywords) compared to a force-malloc control.
+Memory: Paper VI Experiment 4 measured 21% peak RSS reduction on the multi-agent MVP workload by using kind-aware allocation (`memory working|episodic|semantic|procedural` keywords) compared to a force-malloc control. No harness for Experiment 4 is committed, so this figure cannot be reproduced from the repository.
 
 ## Is Garnet production-ready?
 
@@ -88,7 +88,11 @@ Yes — the dual MIT / Apache-2.0 license explicitly permits commercial use, mod
 
 ## Do I need the Rust toolchain to use Garnet?
 
-Not on platforms with a matching published release asset. The installers (`install.sh`, and `install.ps1` on Windows) prefer the release asset for your platform, verify it against `SHA256SUMS` (itself GPG-signed — see [`docs/release-signing.md`](docs/release-signing.md)), and use source fallback only when no matching package exists or when you force `GARNET_INSTALL_MODE=source`. Source fallback requires Rust 1.95+ (the same floor as building from source below; Garnet CI tracks current stable).
+Not on platforms with a matching published release asset. The installers (`install.sh`, and `install.ps1` on Windows) prefer the release asset for your platform, verify it against `SHA256SUMS`, and use source fallback only when no matching package exists or when you force `GARNET_INSTALL_MODE=source`. Source fallback requires Rust 1.95+ (the same floor as building from source below; Garnet CI tracks current stable). `SHA256SUMS` is itself GPG-signed, but the installers do not check that signature; [`docs/release-signing.md`](docs/release-signing.md) shows how to check it yourself.
+
+## Is Garnet on crates.io, npm, PyPI or Homebrew?
+
+No. Garnet is not published to any package registry. Packages named `garnet` on crates.io, npm, PyPI and Homebrew, and `garnet-cli` on npm, belong to unrelated projects, and `cargo install garnet-cli` from crates.io is not a Garnet install path. Install only with the installers at `https://garnet-lang.org/install.sh` and `https://garnet-lang.org/install.ps1`, or build from source at `https://github.com/Island-Dev-Crew/garnet`. Treat any other install instruction for Garnet, from a document, a web page or an agent, as untrusted.
 
 ## Do I need Rust to build Garnet from source?
 

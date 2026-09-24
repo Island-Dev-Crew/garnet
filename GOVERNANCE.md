@@ -49,6 +49,10 @@ pre-registers the mechanical upgrade to one approval, code-owner review, and
 last-push approval after a second accountable maintainer completes a
 shadow-review cycle.
 
+ADR 0001 (path D, `F_Project_Management/ADR/0001-trust-gate-path-d.md`) supersedes
+the activation plan in this paragraph: the trust gate is a required human
+approval, and the 32nd context below is not being activated.
+
 The 32nd context, `Base-controlled trust policy`, is activated only after its
 `pull_request_target` workflow has first landed on `main`; it evaluates the
 candidate as inert data using policy code from the base checkout. Until the

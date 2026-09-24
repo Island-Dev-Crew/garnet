@@ -231,7 +231,7 @@ ln -sfn "$OMARCHY_PATH/default/agents/skills/omarchy" ~/.pi/agent/skills/omarchy
         </div>
         <div class="ev">
           <p class="cond"><b>Opens when</b><code>garnet seal</code> accepts a plugin manifest. Until then no command on this page produces one, and no sample output is shown, because a sample would be fiction.</p>
-          <p>What exists on the Garnet side today and would be reused, not invented: <code>garnet caps</code> emits a capability manifest for a <code>.garnet</code> file; <code>garnet diff-caps</code> reports declared authority that widened between two files; <code>garnet seal</code> wraps a build manifest and a capability manifest in an in-toto Statement, unsigned unless cosign is installed. The last two run in the capture below; <code>garnet caps</code> is not a packet rung.</p>
+          <p>What exists on the Garnet side today and would be reused, not invented: <code>garnet caps</code> emits a capability manifest for a <code>.garnet</code> file; <code>garnet diff-caps</code> reports declared authority that widened between two files; <code>garnet seal</code> wraps a build manifest and a capability manifest in an in-toto Statement. It never signs: it only detects whether cosign is installed and prints the command you would run to sign. The last two run in the capture below; <code>garnet caps</code> is not a packet rung.</p>
           <p class="src">source: <code>garnet help</code> and the packet rungs from garnet 0.8.1 at fbd64bc5</p>
         </div>
       </article>
@@ -244,7 +244,7 @@ ln -sfn "$OMARCHY_PATH/default/agents/skills/omarchy" ~/.pi/agent/skills/omarchy
           <p>Today Omarchy Quattro watches for process crashes and hands them to the default agent with a skill. Verbatim, the first line of <code>migrations/1786539345.sh</code>:</p>
 <pre class="q">echo "Announce process crashes and offer an AI diagnosis"</pre>
           <p>The skill, <code>default/agents/skills/diagnose-crash/SKILL.md</code>, is a Markdown file. Its front matter carries only a name and a description: no capability or permission declaration. Its body does direct reads, in prose. Line 43 is the heading "Read the whole core, not just frame 0"; lines 88–89 say "Diagnosis reads; it does not fix, tidy, or reconfigure." Nothing declares or bounds what it may read; a paragraph asks, and no checker holds the agent to it.</p>
-          <p>Today Garnet lang declares and checks authority for <code>.garnet</code> code: <code>@caps</code> on a function, <code>garnet check</code> rejecting an undeclared call reached along a named, acyclic call chain from an annotated function, <code>garnet diff-caps</code> reporting widened authority. None of that reaches a Markdown skill, and no Garnet-bounded triage skill exists.</p>
+          <p>Today Garnet lang declares and checks authority for <code>.garnet</code> code: <code>@caps</code> on a function, <code>garnet check</code> rejecting an undeclared call reached along a named call chain from an annotated function, cycles included, <code>garnet diff-caps</code> reporting widened authority. None of that reaches a Markdown skill, and no Garnet-bounded triage skill exists.</p>
           <p class="src">sources: migrations/1786539345.sh and default/agents/skills/diagnose-crash/SKILL.md in the Quattro tree · the front door's capture for check and diff-caps</p>
         </div>
         <div class="ev">

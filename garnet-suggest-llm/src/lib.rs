@@ -1,6 +1,11 @@
 #![forbid(unsafe_code)]
 //! Feature-gated LLM advisory tier for Garnet compiler suggestions.
 //!
+//! **Staging (D-42).** Nothing in the workspace links this crate: it is a
+//! workspace member with no dependents, so no `garnet` command reaches it.
+//! Review by 2026-12-31: link it in a release with a test that proves it from
+//! the binary, or remove it.
+//!
 //! The default build keeps the crate inert. Enable the `llm` feature to use the
 //! provider-compatible request/response layer and the non-deterministic
 //! suggestion report.

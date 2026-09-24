@@ -9,14 +9,17 @@ with `git` or a current reporter, trust `git`/the reporter and fix this file.
 
 Before editing, read:
 
-1. `F_Project_Management/GARNET_POST_0_8_1_SYSTEM_HANDOFF.md` — the current
-   post-cut operating brief and non-negotiable boundaries.
-2. `F_Project_Management/GARNET_v0_8_1_PLAN.md` — the active runway/plan.
-3. `F_Project_Management/AGENT_COORDINATION_LEDGER.md` — the live multi-agent
-   ledger (most recent entries = current frontier).
-4. `CURRENT_STATE.md` — reviewer/contributor orientation.
-5. `CHANGELOG.md` — the canonical, same-PR release ledger.
-6. Root `AGENTS.md` and the nearest subsystem `AGENTS.md` before edits.
+1. `CURRENT_STATE.md` — reviewer/contributor orientation.
+2. `CHANGELOG.md` — the canonical, same-PR release ledger; its Unreleased
+   section is the live frontier.
+3. The newest `F_Project_Management/W_TRUST/LANDING_ARC_*_REGISTER_SWEEP_*.md` —
+   the finding register.
+4. Root `AGENTS.md` and the nearest subsystem `AGENTS.md` before edits.
+
+Historical, dated June 2026, and not current: `F_Project_Management/GARNET_POST_0_8_1_SYSTEM_HANDOFF.md`,
+`F_Project_Management/GARNET_v0_8_1_PLAN.md` and
+`F_Project_Management/AGENT_COORDINATION_LEDGER.md`. Live git state and open
+PRs outrank all three.
 
 ## Current Repository Truth
 
@@ -25,14 +28,15 @@ Verify with `git` before relying on any line here.
 - **Latest tagged release: `v0.8.2`** (annotated tag → commit `f25ffb5`,
   2026-09-11). `v0.8.1` (`8107c01`), `v0.8.0` (`cc165e8`) and `v0.4.2`/`v0.5.0`
   precede it.
-- **Binary status:** the `v0.8.2` Release ships **signed `garnet-0.8.2-*` CLI
-  binaries**: Linux x86_64 and ARM64 `.deb`/`.rpm`/tarballs (glibc 2.39+), macOS
-  arm64/x86_64 tarballs and a Windows x86_64 zip, plus a CycloneDX SBOM and a
+- **Binary status:** the `v0.8.2` Release ships **`garnet-0.8.2-*` CLI
+  binaries (not code-signed; checksums in a GPG-signed `SHA256SUMS`)**: Linux
+  x86_64 and ARM64 `.deb`/`.rpm`/tarballs (glibc 2.39+), macOS arm64/x86_64 tarballs and a Windows x86_64 zip, plus a CycloneDX SBOM and a
   GPG-signed `SHA256SUMS.asc` (public key in `docs/garnet-release-signing.pub.asc`,
   fpr `04D5…6ED1`; verify per `docs/release-signing.md`). The older `v0.8.0` tag
   still carries the `garnet-0.5.0-*` build. Still research-grade, not production/1.0.
-- **Remotes:** `origin` = `Island-Dev-Crew/garnet` (main); `fork` =
-  `Navigata1/garnet` (PRs open from the fork → origin).
+- **Remotes:** `origin` = `Island-Dev-Crew/garnet` (main). Since #571, PRs open
+  from same-repo branches on origin; `fork` = `Navigata1/garnet` has read access
+  only.
 - Garnet is a **research-grade prototype (v0.x.x), not production / 1.0.**
 
 ## Boot Verification
@@ -53,10 +57,10 @@ For any dogfood archive you depend on, verify its manifest before citing it.
 
 ## Work Selection
 
-Do not hardcode the next slice from this file. Choose it from the live plan
-(`GARNET_v0_8_1_PLAN.md`), the post-cut handoff, the coordination ledger, the
-goal ledger (`.dogfood/goal.json`), and open PR state after the boot
-verification above. The cut act and release tags are **Jon-owned** — never push
+Do not hardcode the next slice from this file. Choose it from open PR state, the
+CHANGELOG Unreleased section, the newest register sweep and the goal ledger
+(`.dogfood/goal.json`) after the boot verification above. The June plan,
+handoff and coordination ledger are historical. The cut act and release tags are **Jon-owned** — never push
 a tag autonomously.
 
 ## Mandatory Discipline
@@ -71,8 +75,8 @@ a tag autonomously.
   declared-not-enforced; only `@caps` + `@max_depth` are enforced (both
   backends), with seccomp applied on **Linux only**. "`@caps` is enforced"
   means exactly this and no more: at check time, the propagator rejects an
-  undeclared capability along a **named, acyclic** call chain from an
-  **annotated** function; at run time, the **twenty-four gated host-authority
+  undeclared capability along a **named** call chain (cycles included) from
+  an **annotated** function; at run time, the **twenty-four gated host-authority
   primitives** require the program entry's declared budget, and the other 60
   registry rows carry no runtime gate (58 need no capability, 2 are
   unbridged). `garnet run` does not invoke the checker.

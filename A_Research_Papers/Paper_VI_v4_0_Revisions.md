@@ -168,6 +168,8 @@ corresponding parts of the published paper.
 
 **Zero refuted. Four supported. Two partial. One pending-infra.**
 
+> **Reproducibility note (2026-09-23).** The measured results for experiments 2–6 cannot be reproduced from this repository: experiments 2, 4, 5 and 6 have no committed harness, and the experiment 3 harness does not include the measured run. The scorecard above is kept verbatim as the v4.0 record.
+
 ---
 
 ## Methodological note for reviewers
