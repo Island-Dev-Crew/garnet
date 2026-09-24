@@ -695,3 +695,28 @@ fn directory_mode_names_each_function_by_its_file() {
         "the unchanged net must not be reported as gained: {text}"
     );
 }
+
+#[test]
+fn swapping_two_definitions_of_one_name_is_reported() {
+    // T5a (Codex review of #598): the last definition runs, so reversing two
+    // definitions of `f` turns its effective @caps() into @caps(fs).
+    let dir = fresh("t5a_dup_order");
+    let old = write(
+        dir.as_path(),
+        "old.garnet",
+        "@caps(fs)\ndef f() -> int { 0 }\n@caps()\ndef f() -> int { 0 }\n@caps(fs)\ndef main() -> int { 0 }\n",
+    );
+    let new = write(
+        dir.as_path(),
+        "new.garnet",
+        "@caps()\ndef f() -> int { 0 }\n@caps(fs)\ndef f() -> int { 0 }\n@caps(fs)\ndef main() -> int { 0 }\n",
+    );
+    let out = garnet()
+        .arg("diff-caps")
+        .arg(&old)
+        .arg(&new)
+        .output()
+        .unwrap();
+    let text = String::from_utf8(out.stdout).unwrap();
+    assert!(text.contains("~ f gained: fs"), "{text}");
+}

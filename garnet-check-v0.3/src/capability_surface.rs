@@ -222,6 +222,17 @@ mod tests {
     }
 
     #[test]
+    fn a_top_level_impl_on_a_path_qualified_type_is_named_by_the_full_path() {
+        // T5a (Codex review of #598): disclosed in the CHANGELOG. `impl a::R` and
+        // `impl b::R` would both have been `R::m` and collided in diff-caps.
+        let s = surface(
+            "@caps(fs)\ndef main() -> int { 0 }\nimpl a::R {\n  @caps(fs)\n  def m(self) -> int { 0 }\n}\nimpl b::R {\n  @caps(net)\n  def m(self) -> int { 0 }\n}\n",
+        );
+        let names: Vec<&str> = s.per_function.iter().map(|(n, _)| n.as_str()).collect();
+        assert_eq!(names, vec!["a::R::m", "b::R::m", "main"]);
+    }
+
+    #[test]
     fn top_level_names_stay_bare() {
         // Top-level functions and methods of an impl on an unqualified type keep
         // their names, so these programs' capability surfaces and manifests do

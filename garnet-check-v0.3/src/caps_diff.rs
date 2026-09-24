@@ -350,6 +350,21 @@ mod tests {
         assert!(!d.authority_expanded(), "aggregate unchanged");
     }
 
+    #[test]
+    fn a_repeated_name_is_compared_in_declaration_order() {
+        // T5a (Codex review of #598): the last definition of a repeated name is
+        // the one that runs, so swapping two entries' order is a change. The
+        // same entries in another order must still fail toward review.
+        let d = diff_caps(
+            &surf(&["fs"], &[("f", &["fs"]), ("f", &[])], false),
+            &surf(&["fs"], &[("f", &[]), ("f", &["fs"])], false),
+        );
+        assert_eq!(
+            d.functions_caps_expanded,
+            vec![("f".to_string(), vec!["fs".to_string()])]
+        );
+    }
+
     // ── RB-1 permanent reference suite ─────────────────────────────────
     //
     // `reference_diff_caps` is the pre-RB-1 set-difference implementation,

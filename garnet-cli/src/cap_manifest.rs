@@ -284,11 +284,28 @@ mod tests {
     #[test]
     fn file_label_uses_forward_slashes_and_keeps_the_suffix() {
         let root = Path::new("pkg");
-        assert_eq!(file_label(root, &root.join("a.garnet")), "a.garnet");
         assert_eq!(
-            file_label(root, &root.join("lib").join("b.garnet")),
-            "lib/b.garnet"
+            file_label(root, &root.join("a.garnet")).as_deref(),
+            Ok("a.garnet")
         );
+        assert_eq!(
+            file_label(root, &root.join("lib").join("b.garnet")).as_deref(),
+            Ok("lib/b.garnet")
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn file_label_rejects_a_non_utf8_path_instead_of_collapsing_it() {
+        // T5a (Codex review of #598): a lossy conversion maps a\x80.garnet and
+        // a\x81.garnet to one label, so two files' functions share names.
+        use std::ffi::OsStr;
+        use std::os::unix::ffi::OsStrExt;
+        let root = Path::new("pkg");
+        for bytes in [&b"pkg/a\x80.garnet"[..], &b"pkg/a\x81.garnet"[..]] {
+            let target = Path::new(OsStr::from_bytes(bytes));
+            assert!(file_label(root, target).is_err(), "{target:?}");
+        }
     }
 
     #[test]
