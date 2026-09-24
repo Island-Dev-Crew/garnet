@@ -157,6 +157,9 @@ fn surface_from_targets(path: &Path, targets: &[PathBuf]) -> Result<CapabilitySu
     if targets.is_empty() {
         return Err(format!("no .garnet files found under {}", path.display()));
     }
+    // T5a (C1-01): in directory mode every function is named by its file, so
+    // same-named functions in two files are not collapsed into one entry.
+    let qualify_by_file = path.is_dir();
     let mut surfaces = Vec::with_capacity(targets.len());
     for target in targets {
         let src = read_file(target)?;
@@ -167,7 +170,12 @@ fn surface_from_targets(path: &Path, targets: &[PathBuf]) -> Result<CapabilitySu
         let edition = resolved.edition;
         let module = garnet_parser::parse_source_with_edition(&src, edition)
             .map_err(|e| format!("parse error in {}: {e}", target.display()))?;
-        surfaces.push(capability_surface(&module));
+        let surface = capability_surface(&module);
+        surfaces.push(if qualify_by_file {
+            file_qualified(surface, &file_label(path, target))
+        } else {
+            surface
+        });
     }
     if surfaces.len() == 1 {
         #[allow(clippy::expect_used)]
@@ -177,6 +185,31 @@ fn surface_from_targets(path: &Path, targets: &[PathBuf]) -> Result<CapabilitySu
         return Ok(only);
     }
     Ok(merge_surfaces(surfaces))
+}
+
+/// The label a directory-mode surface gives one file: its path relative to the
+/// scanned directory, with `/` separators on every OS and the `.garnet` suffix
+/// kept, so a file label can never be mistaken for a module path.
+fn file_label(root: &Path, target: &Path) -> String {
+    let rel = target.strip_prefix(root).unwrap_or(target);
+    rel.components()
+        .map(|c| c.as_os_str().to_string_lossy().into_owned())
+        .collect::<Vec<_>>()
+        .join("/")
+}
+
+/// A copy of `surface` whose per-function names are prefixed `<label>::`.
+fn file_qualified(surface: CapabilitySurface, label: &str) -> CapabilitySurface {
+    let mut per_function: Vec<(String, Vec<String>)> = surface
+        .per_function
+        .into_iter()
+        .map(|(name, caps)| (format!("{label}::{name}"), caps))
+        .collect();
+    per_function.sort_by(|a, b| a.0.cmp(&b.0));
+    CapabilitySurface {
+        per_function,
+        ..surface
+    }
 }
 
 /// Render a slice of strings as a JSON array of escaped strings.
@@ -246,6 +279,28 @@ mod tests {
         assert_eq!(merged.per_function[0].0, "a");
         assert_eq!(merged.per_function[1].0, "b");
         assert!(merged.has_wildcard);
+    }
+
+    #[test]
+    fn file_label_uses_forward_slashes_and_keeps_the_suffix() {
+        let root = Path::new("pkg");
+        assert_eq!(file_label(root, &root.join("a.garnet")), "a.garnet");
+        assert_eq!(
+            file_label(root, &root.join("lib").join("b.garnet")),
+            "lib/b.garnet"
+        );
+    }
+
+    #[test]
+    fn file_qualified_prefixes_every_name_and_keeps_the_rest() {
+        let q = file_qualified(
+            surface(&["fs"], &[("m::f", &["fs"]), ("main", &[])], true),
+            "a.garnet",
+        );
+        let names: Vec<&str> = q.per_function.iter().map(|(n, _)| n.as_str()).collect();
+        assert_eq!(names, vec!["a.garnet::m::f", "a.garnet::main"]);
+        assert_eq!(q.aggregate, vec!["fs"]);
+        assert!(q.has_wildcard);
     }
 
     #[test]
