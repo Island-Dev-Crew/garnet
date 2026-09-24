@@ -411,6 +411,12 @@ class CommittedCleanVmBundleAdversarialTests(_CommittedRepoCase):
         (self.bundle / "MANIFEST.sha256").write_bytes(b"\xff\n")
         self._assert_unverified()
 
+    def test_a_bundle_holds_only_regular_files(self) -> None:
+        # A link or a subdirectory inside the bundle, even one no field names,
+        # breaks "no link anywhere from the repository down".
+        self._link_dir(self.bundle / "extra", Path(self._temp.name))
+        self._assert_unverified()
+
     def test_the_fresh_guest_identity_is_checked_not_its_gate_label(self) -> None:
         self._edit_proof(guest_os="", vm_name="")
         self._assert_unverified()
