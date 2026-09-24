@@ -200,6 +200,7 @@ class _CommittedRepoCase(unittest.TestCase):
         self.repo = Path(self._temp.name) / "repo"
         self.repo.mkdir()
         empty_home = Path(self._temp.name) / "home"
+        self.local_root = empty_home / "Desktop" / "dogfood" / "garnet-studio-windows-clean-vm"
         for patcher in (
             mock.patch.object(status_mod, "ROOT", self.repo),
             mock.patch.object(
@@ -345,6 +346,69 @@ class CommittedCleanVmBundleAdversarialTests(_CommittedRepoCase):
     def test_a_link_inside_a_recorded_path_does_not_count(self) -> None:
         self._link_dir(self.repo / "evidence-alias", self.bundle)
         self._edit_proof(install_log="evidence-alias/install.log")
+        self._assert_unverified()
+
+    def _write_verified_local_proof(self) -> None:
+        """A verified proof in the local Desktop root: any fallback would show."""
+        local = self.local_root / "local-bundle"
+        local.mkdir(parents=True)
+        for name, data in (("setup.exe", b"x"), ("install.log", b"ok"), ("launch.png", b"png")):
+            (local / name).write_bytes(data)
+        (local / "studio-smoke.json").write_text(
+            json.dumps({"status": "passed", "source_included": False, "provider_api_called": False}),
+            encoding="utf-8",
+        )
+        record = status_mod.build_proof_record(
+            mode="clean-vm",
+            installer=local / "setup.exe",
+            vm_name="Windows Sandbox",
+            guest_os="Windows 11",
+            guest_arch="x64",
+            install_log=local / "install.log",
+            studio_smoke_json=local / "studio-smoke.json",
+            screenshot=local / "launch.png",
+        )
+        status_mod.write_proof(record, local)
+
+    def test_a_newest_entry_that_is_not_a_directory_does_not_bring_back_an_older_bundle(self) -> None:
+        (self.repo / BUNDLES_REL / "20260925-0900-nuc").write_text("not a bundle", encoding="utf-8")
+        self._assert_unverified()
+
+    def test_a_dangling_link_on_the_proof_path_does_not_fall_back_to_local_evidence(self) -> None:
+        self._write_verified_local_proof()
+        proofs = self.repo / "proofs"
+        proofs.rename(Path(self._temp.name) / "moved-proofs")
+        self._link_dir(proofs, Path(self._temp.name) / "missing-target")
+        self._assert_unverified()
+
+    def test_duplicate_keys_in_the_record_do_not_count(self) -> None:
+        path = self.bundle / status_mod.PROOF_FILE
+        data = json.loads(path.read_text(encoding="utf-8"))
+        data["verified"] = False
+        path.write_text(json.dumps(data)[:-1] + ', "verified": true}', encoding="utf-8")
+        status_mod._write_manifest(self.bundle)
+        self._assert_unverified()
+
+    def test_duplicate_keys_in_the_smoke_record_do_not_count(self) -> None:
+        (self.bundle / "studio-smoke.json").write_text(
+            '{"status": "failed", "status": "passed", "source_included": false, "provider_api_called": false}',
+            encoding="utf-8",
+        )
+        status_mod._write_manifest(self.bundle)
+        self._assert_unverified()
+
+    def test_a_file_listed_twice_in_the_manifest_does_not_count(self) -> None:
+        manifest = self.bundle / "MANIFEST.sha256"
+        manifest.write_text(f"{'0' * 64}  install.log\n" + manifest.read_text(encoding="utf-8"), encoding="utf-8")
+        self._assert_unverified()
+
+    def test_invalid_utf8_evidence_is_unverified_not_an_exception(self) -> None:
+        (self.bundle / "studio-smoke.json").write_bytes(b"\xff")
+        status_mod._write_manifest(self.bundle)
+        self._assert_unverified()
+
+    def test_an_invalid_utf8_manifest_is_unverified_not_an_exception(self) -> None:
+        (self.bundle / "MANIFEST.sha256").write_bytes(b"\xff\n")
         self._assert_unverified()
 
     def test_the_fresh_guest_identity_is_checked_not_its_gate_label(self) -> None:

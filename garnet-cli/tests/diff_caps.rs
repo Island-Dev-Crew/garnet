@@ -720,3 +720,26 @@ fn swapping_two_definitions_of_one_name_is_reported() {
     let text = String::from_utf8(out.stdout).unwrap();
     assert!(text.contains("~ f gained: fs"), "{text}");
 }
+
+#[test]
+fn directory_mode_reports_reordered_definitions_of_one_name() {
+    // T5a (Codex round 2): with a second file present, merging must not sort or
+    // dedup a.garnet's two definitions of `f` into identical surfaces.
+    let old = fresh("t5a_dir_dup_old");
+    let new = fresh("t5a_dir_dup_new");
+    let fs_first = "@caps(fs)\ndef f() -> int { 0 }\n@caps()\ndef f() -> int { 0 }\n";
+    let fs_last = "@caps()\ndef f() -> int { 0 }\n@caps(fs)\ndef f() -> int { 0 }\n";
+    write(old.as_path(), "a.garnet", fs_first);
+    write(new.as_path(), "a.garnet", fs_last);
+    for dir in [&old, &new] {
+        write(dir.as_path(), "b.garnet", "@caps()\ndef g() -> int { 0 }\n");
+    }
+    let out = garnet()
+        .arg("diff-caps")
+        .arg(&old)
+        .arg(&new)
+        .output()
+        .unwrap();
+    let text = String::from_utf8(out.stdout).unwrap();
+    assert!(text.contains("~ a.garnet::f gained: fs"), "{text}");
+}

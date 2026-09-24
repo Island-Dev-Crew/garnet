@@ -277,18 +277,44 @@ mod tests {
     }
 
     #[test]
-    fn merge_unions_and_dedups() {
+    fn merge_unions_and_keeps_every_entry_in_order() {
+        // T5a (Codex round 2): merging no longer dedups (name, caps) entries.
+        // A repeated name's entries keep their multiplicity and declaration
+        // order, because the last definition is the one that runs.
         let merged = merge_surfaces(vec![
             surface(&["fs"], &[("a", &["fs"])], false),
             surface(&["net"], &[("b", &["net"])], true),
-            surface(&["fs"], &[("a", &["fs"])], false), // duplicate of the first
+            surface(&["fs"], &[("a", &["fs"])], false),
         ]);
         assert_eq!(merged.aggregate, vec!["fs", "net"]);
-        // (a,[fs]) deduped; (b,[net]) kept; sorted by name.
-        assert_eq!(merged.per_function.len(), 2);
-        assert_eq!(merged.per_function[0].0, "a");
-        assert_eq!(merged.per_function[1].0, "b");
+        let names: Vec<&str> = merged
+            .per_function
+            .iter()
+            .map(|(n, _)| n.as_str())
+            .collect();
+        assert_eq!(names, vec!["a", "a", "b"]);
         assert!(merged.has_wildcard);
+    }
+
+    #[test]
+    fn merge_keeps_a_repeated_name_in_declaration_order() {
+        let merged = merge_surfaces(vec![
+            surface(
+                &["fs"],
+                &[("a.garnet::f", &["fs"]), ("a.garnet::f", &[])],
+                false,
+            ),
+            surface(&[], &[("b.garnet::g", &[])], false),
+        ]);
+        let entries: Vec<(&str, usize)> = merged
+            .per_function
+            .iter()
+            .map(|(n, c)| (n.as_str(), c.len()))
+            .collect();
+        assert_eq!(
+            entries,
+            vec![("a.garnet::f", 1), ("a.garnet::f", 0), ("b.garnet::g", 0)]
+        );
     }
 
     #[test]
