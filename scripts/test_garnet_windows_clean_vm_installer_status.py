@@ -295,6 +295,14 @@ class CommittedCleanVmBundleAdversarialTests(_CommittedRepoCase):
         path.write_text(json.dumps(data), encoding="utf-8")
         status_mod._write_manifest(self.bundle)
 
+    def _link_dir(self, link: Path, target: Path) -> None:
+        # Windows refuses symlinks without Developer Mode or the privilege;
+        # a skip says so instead of failing for a reason that is not the reader.
+        try:
+            link.symlink_to(target, target_is_directory=True)
+        except OSError as error:
+            self.skipTest(f"this host cannot create a directory symlink: {error}")
+
     def _assert_unverified(self) -> None:
         status = status_mod.read_status()
         self.assertFalse(status.clean_vm_verified, status.proof_source)
@@ -317,14 +325,14 @@ class CommittedCleanVmBundleAdversarialTests(_CommittedRepoCase):
     def test_a_symlinked_bundle_outside_the_repo_does_not_count(self) -> None:
         outside = Path(self._temp.name) / "outside"
         self.bundle.rename(outside)
-        self.bundle.symlink_to(outside, target_is_directory=True)
+        self._link_dir(self.bundle, outside)
         self._assert_unverified()
 
     def test_a_symlinked_proof_root_does_not_count(self) -> None:
         root = self.repo / BUNDLES_REL
         outside = Path(self._temp.name) / "outside-root"
         root.rename(outside)
-        root.symlink_to(outside, target_is_directory=True)
+        self._link_dir(root, outside)
         self._assert_unverified()
 
     def test_the_fresh_guest_identity_is_checked_not_its_gate_label(self) -> None:
