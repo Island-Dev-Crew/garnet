@@ -220,9 +220,10 @@ def _load_smoke_json(path_text: str) -> dict[str, object]:
     if not path.exists():
         return {}
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
+        data = json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError:
         return {}
+    return data if isinstance(data, dict) else {}
 
 
 def build_proof_record(
@@ -327,12 +328,46 @@ def write_proof(record: ProofRecord, output_dir: Path) -> Path:
 
 def _load_proof(path: Path) -> ProofRecord:
     data = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        raise ValueError("the proof record is not a JSON object")
+    return _proof_from_data(data)
+
+
+RECORD_STRING_FIELDS = (
+    "schema", "created_at", "mode", "installer_path", "installer_sha256", "vm_name",
+    "guest_os", "guest_arch", "install_log", "studio_smoke_json", "screenshot",
+)
+GATE_FIELDS = frozenset({"id", "label", "status", "evidence"})
+
+
+def _committed_record_problem(data: object) -> str | None:
+    """Check a committed record's JSON shape strictly, before any field is used."""
+    if not isinstance(data, dict):
+        return "the proof record is not a JSON object"
+    for key in RECORD_STRING_FIELDS:
+        if not isinstance(data.get(key), str):
+            return f"{key} is missing or not a string"
+    if data.get("verified") is not True:
+        return "verified is not the literal true"
+    gates = data.get("gates")
+    if not isinstance(gates, list) or not all(
+        isinstance(gate, dict) and set(gate) == GATE_FIELDS and all(isinstance(value, str) for value in gate.values())
+        for gate in gates
+    ):
+        return "the gates are malformed"
+    claims = data.get("forbidden_claims")
+    if not isinstance(claims, list) or not all(isinstance(claim, str) for claim in claims):
+        return "forbidden_claims is malformed"
+    return None
+
+
+def _proof_from_data(data: dict) -> ProofRecord:
     gates = [SmokeGate(**gate) for gate in data.get("gates", [])]
     return ProofRecord(
         schema=data.get("schema", ""),
         created_at=data.get("created_at", ""),
         mode=data.get("mode", ""),
-        verified=bool(data.get("verified", False)),
+        verified=data.get("verified") is True,
         installer_path=data.get("installer_path", ""),
         installer_sha256=data.get("installer_sha256", ""),
         vm_name=data.get("vm_name", ""),
@@ -377,9 +412,17 @@ def _committed_bundle_problem(bundle: Path, repo: Path, proof: ProofRecord) -> s
         return f"guest architecture {proof.guest_arch!r} is not x64"
     if not re.fullmatch(r"[0-9a-f]{64}", proof.installer_sha256):
         return "the installer SHA-256 is missing"
-    gate_ids = {gate.id for gate in proof.gates}
-    if gate_ids != REQUIRED_GATE_IDS or any(gate.status != "pass" for gate in proof.gates):
-        return "not every required gate passed"
+    gate_ids = [gate.id for gate in proof.gates]
+    if sorted(gate_ids) != sorted(REQUIRED_GATE_IDS) or any(gate.status != "pass" for gate in proof.gates):
+        return "the record does not carry each required gate exactly once, passing"
+    # The gate labels are the recorder's summary; check the facts behind them.
+    if not proof.vm_name.strip() or not proof.guest_os.strip():
+        return "the fresh guest's VM name and OS are not recorded"
+    if not proof.installer_path.strip():
+        return "the installer path is not recorded"
+    missing_claims = [claim for claim in forbidden_claims() if claim not in proof.forbidden_claims]
+    if missing_claims:
+        return f"the claim boundary is missing {missing_claims[0]!r}"
     bundle_dir = bundle.resolve()
     for field, text in (
         ("install_log", proof.install_log),
@@ -406,26 +449,60 @@ def _committed_bundle_problem(bundle: Path, repo: Path, proof: ProofRecord) -> s
     return None
 
 
-def latest_committed_proof(repo: Path | None = None) -> tuple[ProofRecord, str] | None:
-    """Read the newest committed bundle (by directory name), checked in full.
+def _is_link(path: Path) -> bool:
+    return path.is_symlink() or bool(getattr(path, "is_junction", lambda: False)())
 
-    A newest bundle that fails its checks is reported unverified; an older
-    bundle never stands in for it.
+
+def _confinement_problem(repo: Path, path: Path) -> str | None:
+    """Committed evidence must be real directories inside the repo's proof root."""
+    current = repo
+    for part in path.relative_to(repo).parts:
+        current = current / part
+        if _is_link(current):
+            return f"{current.relative_to(repo).as_posix()} is a link; committed evidence must be real files in the repository"
+    if not path.resolve().is_relative_to((repo / COMMITTED_BUNDLES_REL).resolve()):
+        return "the bundle resolves outside proofs/windows/studio-clean-vm"
+    return None
+
+
+def _broken_proof(problem: str) -> ProofRecord:
+    return replace(_empty_proof(), gates=[_integrity_gate(problem)])
+
+
+def latest_committed_proof(repo: Path | None = None) -> tuple[ProofRecord, str] | None:
+    """Read the newest committed bundle directory (by name), checked in full.
+
+    The newest bundle directory decides: if it is missing its record, is a
+    link, or fails any check, it is reported unverified, and an older bundle
+    never stands in for it.
     """
     repo = repo or ROOT
     root = repo / COMMITTED_BUNDLES_REL
-    if not root.is_dir():
+    if not (root.exists() or _is_link(root)):
         return None
-    bundles = sorted(path.parent for path in root.glob(f"*/{PROOF_FILE}"))
+    root_source = f"committed:{COMMITTED_BUNDLES_REL.as_posix()}"
+    problem = _confinement_problem(repo, root)
+    if problem:
+        return _broken_proof(problem), root_source
+    bundles = sorted(path for path in root.iterdir() if path.is_dir() or _is_link(path))
     if not bundles:
         return None
     bundle = bundles[-1]
     source = f"committed:{(COMMITTED_BUNDLES_REL / bundle.name).as_posix()}"
+    problem = _confinement_problem(repo, bundle)
+    if problem:
+        return _broken_proof(problem), source
+    record = bundle / PROOF_FILE
+    if _is_link(record) or not record.is_file():
+        return _broken_proof("the newest bundle has no proof record"), source
     try:
-        proof = _load_proof(bundle / PROOF_FILE)
-    except (OSError, ValueError, TypeError) as error:
-        broken = replace(_empty_proof(), gates=[_integrity_gate(f"unreadable proof: {error}")])
-        return broken, source
+        data = json.loads(record.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as error:
+        return _broken_proof(f"unreadable proof: {error}"), source
+    problem = _committed_record_problem(data)
+    if problem:
+        return _broken_proof(problem), source
+    proof = _proof_from_data(data)
     problem = _committed_bundle_problem(bundle, repo, proof)
     if problem:
         proof = replace(proof, verified=False, gates=[*proof.gates, _integrity_gate(problem)])
