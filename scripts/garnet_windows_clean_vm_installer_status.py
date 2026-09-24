@@ -13,13 +13,22 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import sys
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA = "garnet.windows_studio.clean_vm_installer_proof.v1"
+PROOF_FILE = "windows-clean-vm-installer-proof.json"
+# A bundle committed here is read on every host (T5a, path (a)); the Desktop
+# dogfood root is only a local fallback when the repo carries no bundle.
+COMMITTED_BUNDLES_REL = Path("proofs/windows/studio-clean-vm")
+X64_GUEST_ARCHES = frozenset({"x64", "x86_64", "amd64"})
+REQUIRED_GATE_IDS = frozenset(
+    {"installer-artifact", "fresh-guest", "install-log", "studio-smoke", "launch-screenshot", "claim-boundary"}
+)
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
@@ -68,6 +77,7 @@ class WindowsCleanVmInstallerStatus:
     status: str
     default_evidence_root: str
     clean_vm_verified: bool
+    proof_source: str
     current_truth: list[str]
     package_targets: list[PackageTarget]
     required_gates: list[SmokeGate]
@@ -315,14 +325,8 @@ def write_proof(record: ProofRecord, output_dir: Path) -> Path:
     return path
 
 
-def latest_proof(evidence_root: Path | None = None) -> ProofRecord | None:
-    root = evidence_root or default_evidence_root()
-    if not root.exists():
-        return None
-    candidates = sorted(root.glob("*/windows-clean-vm-installer-proof.json"), key=lambda path: path.stat().st_mtime)
-    if not candidates:
-        return None
-    data = json.loads(candidates[-1].read_text(encoding="utf-8"))
+def _load_proof(path: Path) -> ProofRecord:
+    data = json.loads(path.read_text(encoding="utf-8"))
     gates = [SmokeGate(**gate) for gate in data.get("gates", [])]
     return ProofRecord(
         schema=data.get("schema", ""),
@@ -342,6 +346,118 @@ def latest_proof(evidence_root: Path | None = None) -> ProofRecord | None:
     )
 
 
+def _manifest_problem(bundle: Path) -> str | None:
+    manifest = bundle / "MANIFEST.sha256"
+    if not manifest.is_file() or manifest.is_symlink():
+        return "MANIFEST.sha256 is missing"
+    listed: dict[str, str] = {}
+    for line in manifest.read_text(encoding="utf-8").splitlines():
+        digest, sep, name = line.partition("  ")
+        if not sep or not re.fullmatch(r"[0-9a-f]{64}", digest) or "/" in name or "\\" in name:
+            return f"malformed manifest line: {line!r}"
+        listed[name] = digest
+    present = {path.name for path in bundle.iterdir() if path.is_file() and path.name != "MANIFEST.sha256"}
+    if set(listed) != present:
+        return f"manifest lists {sorted(listed)} but the bundle holds {sorted(present)}"
+    for name, digest in listed.items():
+        path = bundle / name
+        if path.is_symlink() or hashlib.sha256(path.read_bytes()).hexdigest() != digest:
+            return f"{name} does not match its manifest digest"
+    return None
+
+
+def _committed_bundle_problem(bundle: Path, repo: Path, proof: ProofRecord) -> str | None:
+    """Return why a committed bundle cannot back the claim, or None if it can."""
+    problem = _manifest_problem(bundle)
+    if problem:
+        return problem
+    if proof.schema != SCHEMA or proof.mode != "clean-vm" or not proof.verified:
+        return "the proof is not a verified clean-vm record of the current schema"
+    if proof.guest_arch.lower() not in X64_GUEST_ARCHES:
+        return f"guest architecture {proof.guest_arch!r} is not x64"
+    if not re.fullmatch(r"[0-9a-f]{64}", proof.installer_sha256):
+        return "the installer SHA-256 is missing"
+    gate_ids = {gate.id for gate in proof.gates}
+    if gate_ids != REQUIRED_GATE_IDS or any(gate.status != "pass" for gate in proof.gates):
+        return "not every required gate passed"
+    bundle_dir = bundle.resolve()
+    for field, text in (
+        ("install_log", proof.install_log),
+        ("studio_smoke_json", proof.studio_smoke_json),
+        ("screenshot", proof.screenshot),
+    ):
+        relative = Path(text.replace("\\", "/"))
+        candidate = repo / relative
+        if (
+            not text
+            or relative.is_absolute()
+            or candidate.is_symlink()
+            or not candidate.is_file()
+            or candidate.resolve().parent != bundle_dir
+        ):
+            return f"{field} must be a repo-relative file inside the bundle"
+    smoke = _load_smoke_json(str(repo / Path(proof.studio_smoke_json.replace("\\", "/"))))
+    if not (
+        smoke.get("status") == "passed"
+        and smoke.get("source_included") is False
+        and smoke.get("provider_api_called") is False
+    ):
+        return "studio-smoke.json in the bundle does not show a passing smoke"
+    return None
+
+
+def latest_committed_proof(repo: Path | None = None) -> tuple[ProofRecord, str] | None:
+    """Read the newest committed bundle (by directory name), checked in full.
+
+    A newest bundle that fails its checks is reported unverified; an older
+    bundle never stands in for it.
+    """
+    repo = repo or ROOT
+    root = repo / COMMITTED_BUNDLES_REL
+    if not root.is_dir():
+        return None
+    bundles = sorted(path.parent for path in root.glob(f"*/{PROOF_FILE}"))
+    if not bundles:
+        return None
+    bundle = bundles[-1]
+    source = f"committed:{(COMMITTED_BUNDLES_REL / bundle.name).as_posix()}"
+    try:
+        proof = _load_proof(bundle / PROOF_FILE)
+    except (OSError, ValueError, TypeError) as error:
+        broken = replace(_empty_proof(), gates=[_integrity_gate(f"unreadable proof: {error}")])
+        return broken, source
+    problem = _committed_bundle_problem(bundle, repo, proof)
+    if problem:
+        proof = replace(proof, verified=False, gates=[*proof.gates, _integrity_gate(problem)])
+    return proof, source
+
+
+def _integrity_gate(problem: str) -> SmokeGate:
+    return SmokeGate("committed-bundle", "Committed Bundle Integrity", "blocked", problem)
+
+
+def _empty_proof() -> ProofRecord:
+    return ProofRecord(SCHEMA, "", "", False, "", "", "", "", "", "", "", "", [], forbidden_claims())
+
+
+def latest_proof(evidence_root: Path | None = None) -> ProofRecord | None:
+    return _locate_proof(evidence_root)[0]
+
+
+def _locate_proof(evidence_root: Path | None) -> tuple[ProofRecord | None, str]:
+    if evidence_root is None:
+        committed = latest_committed_proof()
+        if committed is not None:
+            return committed
+    root = evidence_root or default_evidence_root()
+    if not root.exists():
+        return None, "none"
+    candidates = sorted(root.glob(f"*/{PROOF_FILE}"), key=lambda path: path.stat().st_mtime)
+    if not candidates:
+        return None, "none"
+    return _load_proof(candidates[-1]), f"local:{candidates[-1].parent}"
+
+
 def blocked_by(proof: ProofRecord | None) -> list[str]:
     if proof and proof.verified:
         return []
@@ -353,6 +469,7 @@ def blocked_by(proof: ProofRecord | None) -> list[str]:
             "studio-smoke": "installed Studio --studio-smoke JSON",
             "launch-screenshot": "installed app launch screenshot",
             "claim-boundary": "claim boundary evidence",
+            "committed-bundle": "committed clean-VM bundle integrity",
         }
         return [
             gate_blockers.get(gate.id, gate.label)
@@ -369,13 +486,14 @@ def blocked_by(proof: ProofRecord | None) -> list[str]:
 
 
 def read_status(evidence_root: Path | None = None) -> WindowsCleanVmInstallerStatus:
-    proof = latest_proof(evidence_root)
+    proof, proof_source = _locate_proof(evidence_root)
     verified = bool(proof and proof.verified)
     return WindowsCleanVmInstallerStatus(
         source=str(ROOT),
         status="clean-vm-proof-verified" if verified else "proof-contract-ready-clean-vm-open",
         default_evidence_root=str(evidence_root or default_evidence_root()),
         clean_vm_verified=verified,
+        proof_source=proof_source,
         current_truth=[
             "Windows x64 is the first Studio installer proof target because current Tauri NSIS evidence is x64-local.",
             "Windows ARM64 is a reasonable follow-up target, but it needs its own Rust/MSVC target install, build, and clean-machine smoke.",
@@ -400,6 +518,7 @@ def render_markdown(status: WindowsCleanVmInstallerStatus) -> str:
         f"Status: `{status.status}`",
         f"Default evidence root: `{status.default_evidence_root}`",
         f"Clean VM verified: `{str(status.clean_vm_verified).lower()}`",
+        f"Proof source: `{status.proof_source}`",
         "",
         "## Current Truth",
         "",
