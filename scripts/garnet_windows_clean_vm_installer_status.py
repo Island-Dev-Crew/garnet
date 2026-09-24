@@ -394,6 +394,43 @@ def _proof_from_data(data: dict) -> ProofRecord:
     )
 
 
+def _read_bundle_file(path: Path, seen: set[tuple[int, int]]) -> tuple[str | None, bytes]:
+    """Open one bundle file once and read it from that handle.
+
+    The checks run on the open handle whose bytes are returned, so nothing can
+    be swapped between check and read: it must still be the file lstat saw, a
+    regular file with exactly one link, not opened through a link, and not the
+    same file as another bundle entry (`seen` holds the identities read so far).
+    """
+    try:
+        before = os.lstat(path)
+    except FileNotFoundError:
+        return f"{path.name} is missing", b""
+    if stat.S_ISLNK(before.st_mode) or _is_link(path) or not stat.S_ISREG(before.st_mode):
+        return f"{path.name} is not a regular file; a bundle holds only regular files", b""
+    flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_BINARY", 0)
+    fd = os.open(path, flags)
+    try:
+        info = os.fstat(fd)
+        if not stat.S_ISREG(info.st_mode) or (info.st_dev, info.st_ino) != (before.st_dev, before.st_ino):
+            return f"{path.name} changed while it was being read", b""
+        if info.st_nlink != 1:
+            return f"{path.name} has {info.st_nlink} links; a bundle file has exactly one", b""
+        identity = (info.st_dev, info.st_ino)
+        if info.st_ino and identity in seen:
+            return f"{path.name} is the same file as another bundle entry", b""
+        seen.add(identity)
+        chunks = []
+        while True:
+            chunk = os.read(fd, 1 << 20)
+            if not chunk:
+                break
+            chunks.append(chunk)
+        return None, b"".join(chunks)
+    finally:
+        os.close(fd)
+
+
 def _verified_manifest(bundle: Path) -> tuple[str | None, dict[str, bytes]]:
     """Verify MANIFEST.sha256 against the bundle in one read.
 
@@ -402,11 +439,12 @@ def _verified_manifest(bundle: Path) -> tuple[str | None, dict[str, bytes]]:
     bytes and a file that appears afterwards is never evidence. Every entry is
     a regular file with exactly one link (git never checks out a hard link).
     """
-    manifest = bundle / "MANIFEST.sha256"
-    if _is_link(manifest) or not manifest.is_file():
-        return "MANIFEST.sha256 is missing", {}
+    seen: set[tuple[int, int]] = set()
+    problem, manifest_bytes = _read_bundle_file(bundle / "MANIFEST.sha256", seen)
+    if problem:
+        return problem, {}
     listed: dict[str, str] = {}
-    for line in manifest.read_bytes().decode("utf-8").splitlines():
+    for line in manifest_bytes.decode("utf-8").splitlines():
         digest, sep, name = line.partition("  ")
         if not sep or not re.fullmatch(r"[0-9a-f]{64}", digest) or "/" in name or "\\" in name:
             return f"malformed manifest line: {line!r}", {}
@@ -425,7 +463,9 @@ def _verified_manifest(bundle: Path) -> tuple[str | None, dict[str, bytes]]:
         return f"manifest lists {sorted(listed)} but the bundle holds {sorted(present)}", {}
     contents: dict[str, bytes] = {}
     for name, digest in listed.items():
-        data = (bundle / name).read_bytes()
+        problem, data = _read_bundle_file(bundle / name, seen)
+        if problem:
+            return problem, {}
         if hashlib.sha256(data).hexdigest() != digest:
             return f"{name} does not match its manifest digest", {}
         contents[name] = data
@@ -555,7 +595,12 @@ def latest_committed_proof(repo: Path | None = None) -> tuple[ProofRecord, str] 
                 return _broken_proof(f"{label} is a link"), root_source
             if not stat.S_ISDIR(info.st_mode):
                 return _broken_proof(f"{label} is not a directory"), root_source
-            if not os.access(current, os.R_OK | os.X_OK):
+            # Listing it is the readability test: on Windows os.access checks
+            # only attributes, not the permission to list a directory.
+            try:
+                with os.scandir(current):
+                    pass
+            except PermissionError:
                 return _broken_proof(f"{label} is not a readable directory"), root_source
         entries = sorted(path for path in root.iterdir() if BUNDLE_NAME.match(path.name))
         if not entries:
