@@ -34,6 +34,10 @@ PROOF_FILE = "windows-clean-vm-installer-proof.json"
 # dogfood root is only a local fallback when the repo carries no bundle.
 COMMITTED_BUNDLES_REL = Path("proofs/windows/studio-clean-vm")
 X64_GUEST_ARCHES = frozenset({"x64", "x86_64", "amd64"})
+# The guest must be Windows ("Windows 11 Pro ...", or "Microsoft Windows ..." as
+# systeminfo prints it), and never a Linux, BSD or macOS system, WSL included.
+WINDOWS_GUEST_OS = re.compile(r"(?:Microsoft )?Windows\b", re.IGNORECASE)
+NON_WINDOWS_GUEST_OS = re.compile(r"linux|bsd|darwin|mac ?os|ubuntu|debian|fedora", re.IGNORECASE)
 # Committed bundles are named <YYYYMMDD-HHMM>-<host>. Any entry whose name
 # starts with a timestamp is a candidate; the newest decides, and it must carry
 # the full name or it is reported (fail closed), never skipped.
@@ -500,6 +504,8 @@ def _committed_bundle_problem(
     # The gate labels are the recorder's summary; check the facts behind them.
     if not proof.vm_name.strip() or not proof.guest_os.strip():
         return "the fresh guest's VM name and OS are not recorded"
+    if not WINDOWS_GUEST_OS.match(proof.guest_os.strip()) or NON_WINDOWS_GUEST_OS.search(proof.guest_os):
+        return f"guest OS {proof.guest_os!r} is not Windows"
     if not proof.installer_path.strip():
         return "the installer path is not recorded"
     missing_claims = [claim for claim in forbidden_claims() if claim not in proof.forbidden_claims]
