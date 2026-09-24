@@ -31,6 +31,28 @@ checker, parser, or macOS SwiftUI Studio implementation.
   installer proof status, and notarization preflight status. They must not
   upgrade platform, package, provider, proof, or notarization claims without
   separate target-system evidence.
+- **Committed clean-VM proof (T5a, path (a)).**
+  `scripts/garnet_windows_clean_vm_installer_status.py` reads the newest
+  committed bundle under `proofs/windows/studio-clean-vm/`. The Desktop root
+  is only a fallback when no bundle is committed, and an explicit root or
+  `GARNET_WINDOWS_CLEAN_VM_EVIDENCE_ROOT` wins over both. A bundle counts only
+  when all of these hold:
+  - its name is `<YYYYMMDD-HHMM>-<host>`;
+  - it holds only regular files, each with one link and a nonzero inode, and
+    each read from the handle it was checked on;
+  - `MANIFEST.sha256` lists every file once and matches;
+  - its JSON is strict, and `verified` is the literal `true`;
+  - every gate passes, and the facts behind the gates are present;
+  - the guest is Windows and x64;
+  - the three evidence files are distinct, manifest-verified files named
+    directly inside the bundle;
+  - no directory on the way is a link, and each one can be listed.
+
+  A failing newest bundle is reported, never replaced by an older one.
+  **Threat model:** the reader checks committed content. A process that can
+  write the checkout while it runs can write a consistent bundle outright,
+  because the manifest is unsigned, so that process is out of scope; review
+  settles who committed a bundle.
 - `mac_domain_proofs` is the macOS Studio UI wrapper for
   `scripts/smoke_garnet_mac_domain_proofs.py`. It may record local Mac S105
   domain evidence under `target/mac-studio-domain-proofs/`, but it must not
@@ -77,6 +99,7 @@ cargo fmt --manifest-path apps/garnet-studio/src-tauri/Cargo.toml -- --check
 cargo test --manifest-path apps/garnet-studio/src-tauri/Cargo.toml
 python scripts/test_garnet_windows_linux_studio_shell.py
 python scripts/test_garnet_windows_linux_studio_status.py
+python scripts/test_garnet_windows_clean_vm_installer_status.py
 npm --prefix apps/garnet-studio run build
 ```
 

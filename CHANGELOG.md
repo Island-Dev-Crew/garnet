@@ -63,7 +63,8 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
     their JSON types, and `verified` is the literal `true`;
   - each required gate appears once and passes, and the guest identity,
     installer path and claim boundary behind those gates are present;
-  - the guest is x64;
+  - the guest is Windows (`Windows ...` or `Microsoft Windows ...`, never a
+    Linux, BSD or macOS system) and x64;
   - the install log, smoke record and screenshot are three different files
     (no bundle file may have a second hard link), each named exactly as one of
     the files the manifest verified, so an NTFS alternate stream or a case or
