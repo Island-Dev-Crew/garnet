@@ -87,11 +87,11 @@ Security-specific tests were added across four historical hardening layers (v3.3
   addresses. It does not yet recognize NAT64 local-use (`64:ff9b:1::/48`),
   IPv4-translated (`::ffff:0:a.b.c.d`) or Teredo (`2001::/32`) addresses, and
   it does not treat site-local `fec0::/10` as internal. A probe on 2026-09-23
-  showed the policy allowing all four and the OS attempting the connection.
-  The NAT64, IPv4-translated and Teredo forms reach an internal host only
-  through a translator or relay on the network. A site-local `fec0::/10`
-  address can reach a host directly wherever a site still routes it
-  (site-local addressing is deprecated by RFC 3879). The `@caps(net)` gate is
+  showed the policy allowing all four and the OS attempting the connection
+  (it failed with "No route to host" on the test Mac). Garnet hands the
+  connection to the host's network stack, so whether an internal host is
+  reachable through these forms depends on the host's routing and on any
+  translators, relays or local peers on its network. The `@caps(net)` gate is
   unaffected. Network-specific NAT64
   prefixes cannot be caught by address classification at all. The code fix is
   planned for 0.8.3.
