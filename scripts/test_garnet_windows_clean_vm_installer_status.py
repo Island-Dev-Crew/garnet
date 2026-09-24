@@ -434,6 +434,20 @@ class CommittedCleanVmBundleAdversarialTests(_CommittedRepoCase):
         self.addCleanup(proofs.chmod, 0o755)
         self._assert_unverified()
 
+    def test_a_search_only_proof_path_does_not_count(self) -> None:
+        # Codex round 4: a directory that can be traversed but not listed (mode
+        # 0100) still let the bundle verify; every ancestor must be readable.
+        if os.name != "posix" or os.geteuid() == 0:
+            self.skipTest("needs a non-root POSIX host to make a directory search-only")
+        for ancestor in ("proofs", "proofs/windows"):
+            with self.subTest(ancestor=ancestor):
+                directory = self.repo / ancestor
+                directory.chmod(0o100)
+                try:
+                    self._assert_unverified()
+                finally:
+                    directory.chmod(0o755)
+
     def test_an_evidence_name_must_be_a_verified_file_of_the_bundle(self) -> None:
         # Codex round 3: on NTFS, 'studio-smoke.json:passed' names a stream the
         # manifest never hashes. Case and alias variants must not count either.
