@@ -24,6 +24,13 @@ sys.modules["garnet_windows_linux_studio_status"] = status_mod
 SPEC.loader.exec_module(status_mod)
 
 
+# A real 1x1 PNG, so screenshot fixtures pass the reader's PNG check.
+TINY_PNG = bytes.fromhex(
+    "89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4890000000a494441"
+    "54789c63000100000500010d0a2db40000000049454e44ae426082"
+)
+
+
 class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
     @classmethod
     def tearDownClass(cls) -> None:
@@ -275,7 +282,7 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
                 json.dumps({"status": "passed", "source_included": False, "provider_api_called": False}),
                 encoding="utf-8",
             )
-            (bundle / "launch.png").write_bytes(b"fake png")
+            (bundle / "launch.png").write_bytes(TINY_PNG)
             cwd = Path.cwd()
             os.chdir(repo)
             try:
@@ -322,7 +329,7 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
-            screenshot.write_bytes(b"fake png")
+            screenshot.write_bytes(TINY_PNG)
             clean_vm_record = status_mod.garnet_windows_clean_vm_installer_status.build_proof_record(
                 mode="clean-vm",
                 installer=installer,

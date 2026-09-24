@@ -21,6 +21,13 @@ sys.modules["garnet_windows_clean_vm_installer_status"] = status_mod
 SPEC.loader.exec_module(status_mod)
 
 
+# A real 1x1 PNG, so screenshot fixtures pass the reader's PNG check.
+TINY_PNG = bytes.fromhex(
+    "89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4890000000a494441"
+    "54789c63000100000500010d0a2db40000000049454e44ae426082"
+)
+
+
 class GarnetWindowsCleanVmInstallerStatusTests(unittest.TestCase):
     def test_target_matrix_names_architectures_without_overclaiming(self) -> None:
         status = status_mod.read_status(Path("missing-root"))
@@ -55,7 +62,7 @@ class GarnetWindowsCleanVmInstallerStatusTests(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
-            screenshot.write_bytes(b"fake image")
+            screenshot.write_bytes(TINY_PNG)
 
             record = status_mod.build_proof_record(
                 mode="current-host",
@@ -99,7 +106,7 @@ class GarnetWindowsCleanVmInstallerStatusTests(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
-            screenshot.write_bytes(b"fake image")
+            screenshot.write_bytes(TINY_PNG)
 
             record = status_mod.build_proof_record(
                 mode="clean-vm",
@@ -126,7 +133,7 @@ class GarnetWindowsCleanVmInstallerStatusTests(unittest.TestCase):
         # name shows as a blocked fresh-guest gate at record time.
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
-            for name, data in (("setup.exe", b"x"), ("install.log", b"ok"), ("launch.png", b"png")):
+            for name, data in (("setup.exe", b"x"), ("install.log", b"ok"), ("launch.png", TINY_PNG)):
                 (root / name).write_bytes(data)
             (root / "studio-smoke.json").write_text(
                 json.dumps({"status": "passed", "source_included": False, "provider_api_called": False}),
@@ -146,6 +153,34 @@ class GarnetWindowsCleanVmInstallerStatusTests(unittest.TestCase):
                     )
                     gates = {gate.id: gate for gate in record.gates}
                     self.assertEqual("blocked", gates["fresh-guest"].status)
+                    self.assertFalse(record.verified)
+
+    def test_the_recorder_blocks_an_empty_log_or_a_non_png_screenshot(self) -> None:
+        # Codex round 9: the recorder's gates check the evidence, not only that
+        # the files exist.
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / "setup.exe").write_bytes(b"x")
+            (root / "studio-smoke.json").write_text(
+                json.dumps({"status": "passed", "source_included": False, "provider_api_called": False}),
+                encoding="utf-8",
+            )
+            for log, shot, blocked in ((b"", TINY_PNG, "install-log"), (b"ok", b"not an image", "launch-screenshot")):
+                with self.subTest(blocked=blocked):
+                    (root / "install.log").write_bytes(log)
+                    (root / "launch.png").write_bytes(shot)
+                    record = status_mod.build_proof_record(
+                        mode="clean-vm",
+                        installer=root / "setup.exe",
+                        vm_name="Windows Sandbox",
+                        guest_os="Windows 11 Pro 26100",
+                        guest_arch="x64",
+                        install_log=root / "install.log",
+                        studio_smoke_json=root / "studio-smoke.json",
+                        screenshot=root / "launch.png",
+                    )
+                    gates = {gate.id: gate for gate in record.gates}
+                    self.assertEqual("blocked", gates[blocked].status)
                     self.assertFalse(record.verified)
 
     def test_cli_json_and_markdown_are_honest_without_evidence(self) -> None:
@@ -198,7 +233,7 @@ def _record_committed_bundle(
         json.dumps({"status": "passed", "source_included": False, "provider_api_called": False}),
         encoding="utf-8",
     )
-    (bundle / "launch.png").write_bytes(b"fake image")
+    (bundle / "launch.png").write_bytes(TINY_PNG)
     previous = Path.cwd()
     os.chdir(repo)
     try:
@@ -281,7 +316,7 @@ class CommittedCleanVmBundleTests(_CommittedRepoCase):
     def test_newest_committed_bundle_decides_without_falling_back(self) -> None:
         _record_committed_bundle(self.repo, "20260924-1200-nuc")
         newer = _record_committed_bundle(self.repo, "20260925-0900-nuc")
-        (newer / "launch.png").write_bytes(b"swapped image")
+        (newer / "launch.png").write_bytes(TINY_PNG + b"swapped")
 
         status = status_mod.read_status()
 
@@ -379,7 +414,7 @@ class CommittedCleanVmBundleAdversarialTests(_CommittedRepoCase):
         """A verified proof in the local Desktop root: any fallback would show."""
         local = self.local_root / "local-bundle"
         local.mkdir(parents=True)
-        for name, data in (("setup.exe", b"x"), ("install.log", b"ok"), ("launch.png", b"png")):
+        for name, data in (("setup.exe", b"x"), ("install.log", b"ok"), ("launch.png", TINY_PNG)):
             (local / name).write_bytes(data)
         (local / "studio-smoke.json").write_text(
             json.dumps({"status": "passed", "source_included": False, "provider_api_called": False}),
@@ -644,6 +679,26 @@ class CommittedCleanVmBundleAdversarialTests(_CommittedRepoCase):
             with self.subTest(guest_os=guest_os):
                 self._edit_proof(guest_os=guest_os)
                 self.assertTrue(status_mod.read_status().clean_vm_verified)
+
+    def test_the_install_log_and_screenshot_must_hold_evidence(self) -> None:
+        # Codex round 9: an empty install log, or a screenshot that is not an
+        # image (empty, or the smoke JSON copied in), still verified.
+        smoke = (self.bundle / "studio-smoke.json").read_bytes()
+        for name, data in (("install.log", b""), ("launch.png", b""), ("launch.png", smoke), ("launch.png", b"fake image")):
+            with self.subTest(name=name, size=len(data)):
+                original = (self.bundle / name).read_bytes()
+                (self.bundle / name).write_bytes(data)
+                status_mod._write_manifest(self.bundle)
+                self._assert_unverified()
+                (self.bundle / name).write_bytes(original)
+                status_mod._write_manifest(self.bundle)
+
+    def test_a_png_with_zero_size_does_not_count(self) -> None:
+        zero = bytearray(TINY_PNG)
+        zero[16:20] = b"\x00\x00\x00\x00"
+        (self.bundle / "launch.png").write_bytes(bytes(zero))
+        status_mod._write_manifest(self.bundle)
+        self._assert_unverified()
 
     def test_vm_tool_type_identifiers_are_out_of_contract(self) -> None:
         # Codex round 8: the recorder takes the guest's own systeminfo OS name.

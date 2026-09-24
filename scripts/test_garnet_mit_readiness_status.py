@@ -1064,6 +1064,12 @@ def _write_repo_with_promo_embed(repo: Path) -> None:
     )
 
 
+# A real 1x1 PNG, so screenshot fixtures pass the reader's PNG check.
+TINY_PNG = bytes.fromhex(
+    "89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4890000000a494441"
+    "54789c63000100000500010d0a2db40000000049454e44ae426082"
+)
+
 class GarnetMitReadinessStatusTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -1760,7 +1766,7 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
-            screenshot.write_bytes(b"fake png")
+            screenshot.write_bytes(TINY_PNG)
             clean_vm_record = clean_vm_mod.build_proof_record(
                 mode="clean-vm",
                 installer=installer,
