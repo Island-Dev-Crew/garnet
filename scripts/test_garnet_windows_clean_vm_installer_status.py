@@ -486,6 +486,61 @@ class CommittedCleanVmBundleAdversarialTests(_CommittedRepoCase):
         with mock.patch.object(status_mod, name, verify_then_add):
             self._assert_unverified()
 
+    def _swap_before_first_evidence_read(self, names: set[str], swap: object) -> None:
+        """Run `swap` once, just before the reader first reads one of `names`:
+        after every metadata check, before the bytes are taken."""
+        done: list[bool] = []
+        bundle = self.bundle
+
+        def maybe_swap(target: object) -> None:
+            path = Path(os.fsdecode(target))
+            if not done and path.parent == bundle and path.name in names:
+                done.append(True)
+                swap()
+
+        real_read_bytes = Path.read_bytes
+        real_open = os.open
+
+        def read_bytes(path_self: Path) -> bytes:
+            maybe_swap(path_self)
+            return real_read_bytes(path_self)
+
+        def os_open(target: object, *args: object, **kwargs: object) -> int:
+            maybe_swap(target)
+            return real_open(target, *args, **kwargs)
+
+        for patcher in (mock.patch.object(Path, "read_bytes", read_bytes), mock.patch("os.open", os_open)):
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def test_evidence_swapped_for_hard_links_after_the_checks_does_not_count(self) -> None:
+        # Codex round 5: three distinct same-content files pass the metadata
+        # checks, then become hard links to one file before the reads.
+        smoke_bytes = (self.bundle / "studio-smoke.json").read_bytes()
+        for name in ("install.log", "launch.png"):
+            (self.bundle / name).write_bytes(smoke_bytes)
+        status_mod._write_manifest(self.bundle)
+
+        def swap() -> None:
+            for name in ("install.log", "launch.png"):
+                (self.bundle / name).unlink()
+                os.link(self.bundle / "studio-smoke.json", self.bundle / name)
+
+        self._swap_before_first_evidence_read({"install.log", "launch.png", "studio-smoke.json"}, swap)
+        self._assert_unverified()
+
+    def test_a_record_swapped_for_an_outside_link_after_the_checks_does_not_count(self) -> None:
+        record = self.bundle / status_mod.PROOF_FILE
+        outside = Path(self._temp.name) / "outside-record.json"
+        outside.write_bytes(record.read_bytes())
+
+        def swap() -> None:
+            record.unlink()
+            record.symlink_to(outside)
+
+        self._swap_before_first_evidence_read({status_mod.PROOF_FILE}, swap)
+        self._assert_unverified()
+
     def test_evidence_files_must_not_be_hard_links(self) -> None:
         # Codex round 4: two names for one file let one smoke record fill every
         # role. Git never checks out hard links, so a bundle file has one link.
