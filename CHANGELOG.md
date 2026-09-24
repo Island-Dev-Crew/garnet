@@ -64,12 +64,16 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   - each required gate appears once and passes, and the guest identity,
     installer path and claim boundary behind those gates are present;
   - the guest is x64;
-  - the install log, smoke record and screenshot are three different files,
-    each named exactly as one of the files the manifest verified, so an NTFS
-    alternate stream or a case or short-name alias does not count;
+  - the install log, smoke record and screenshot are three different files
+    (no bundle file may have a second hard link), each named exactly as one of
+    the files the manifest verified, so an NTFS alternate stream or a case or
+    short-name alias does not count;
+  - the record and the evidence are read only from the bytes the manifest
+    check hashed, so a file that appears later is never evidence;
   - the evidence files sit inside the bundle, with no link anywhere from the
     repository down, and every directory on the way is a real, readable
-    directory (only a missing path means there is no committed evidence).
+    directory. A missing path, or a proof root with no timestamp-named entry,
+    means there is no committed evidence.
   A failing, relinked or record-less newest bundle is reported, never replaced
   by an older one.
 - **Playground rebuild (X-9).** The browser Wasm package is rebuilt with
