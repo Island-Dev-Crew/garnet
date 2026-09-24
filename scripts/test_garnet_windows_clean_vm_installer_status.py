@@ -335,6 +335,18 @@ class CommittedCleanVmBundleAdversarialTests(_CommittedRepoCase):
         self._link_dir(root, outside)
         self._assert_unverified()
 
+    def test_a_recorded_path_must_name_the_bundle_directly(self) -> None:
+        # Round 2: a recorded path through a link (or a detour) must not count,
+        # even when it resolves back into the bundle.
+        bundle_rel = (BUNDLES_REL / self.bundle.name).as_posix()
+        self._edit_proof(install_log=f"{bundle_rel}/../{self.bundle.name}/install.log")
+        self._assert_unverified()
+
+    def test_a_link_inside_a_recorded_path_does_not_count(self) -> None:
+        self._link_dir(self.repo / "evidence-alias", self.bundle)
+        self._edit_proof(install_log="evidence-alias/install.log")
+        self._assert_unverified()
+
     def test_the_fresh_guest_identity_is_checked_not_its_gate_label(self) -> None:
         self._edit_proof(guest_os="", vm_name="")
         self._assert_unverified()
