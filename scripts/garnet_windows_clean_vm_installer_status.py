@@ -423,6 +423,10 @@ def _committed_bundle_problem(bundle: Path, repo: Path, proof: ProofRecord) -> s
     missing_claims = [claim for claim in forbidden_claims() if claim not in proof.forbidden_claims]
     if missing_claims:
         return f"the claim boundary is missing {missing_claims[0]!r}"
+    # Each recorded path must name the bundle directly: proofs/windows/
+    # studio-clean-vm/<bundle>/<file>. The bundle path is already link-free
+    # (_confinement_problem), so no link can sit anywhere along the path.
+    bundle_parts = (COMMITTED_BUNDLES_REL / bundle.name).parts
     bundle_dir = bundle.resolve()
     for field, text in (
         ("install_log", proof.install_log),
@@ -434,11 +438,12 @@ def _committed_bundle_problem(bundle: Path, repo: Path, proof: ProofRecord) -> s
         if (
             not text
             or relative.is_absolute()
-            or candidate.is_symlink()
+            or relative.parts[:-1] != bundle_parts
+            or _is_link(candidate)
             or not candidate.is_file()
             or candidate.resolve().parent != bundle_dir
         ):
-            return f"{field} must be a repo-relative file inside the bundle"
+            return f"{field} must name a file directly inside {'/'.join(bundle_parts)}"
     smoke = _load_smoke_json(str(repo / Path(proof.studio_smoke_json.replace("\\", "/"))))
     if not (
         smoke.get("status") == "passed"
