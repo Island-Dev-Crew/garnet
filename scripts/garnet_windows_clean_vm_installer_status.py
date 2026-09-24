@@ -22,6 +22,7 @@ import json
 import os
 import re
 import stat
+import struct
 import sys
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime, timezone
@@ -43,6 +44,31 @@ WINDOWS_GUEST_OS = re.compile(
     r"(?:Microsoft )?Windows (?:10|11|Server (?:2016|2019|2022|2025))(?:\b.*)?", re.IGNORECASE
 )
 NON_WINDOWS_GUEST_OS = re.compile(r"linux|bsd|darwin|mac ?os|ubuntu|debian|fedora|android|subsystem", re.IGNORECASE)
+
+
+PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
+
+
+def is_png_screenshot(data: bytes) -> bool:
+    """A launch screenshot is a PNG whose IHDR header gives a nonzero size."""
+    if len(data) < 24 or not data.startswith(PNG_SIGNATURE) or data[12:16] != b"IHDR":
+        return False
+    width, height = struct.unpack(">II", data[16:24])
+    return width > 0 and height > 0
+
+
+def _content_gate(path_text: str, label: str, accepts: object, requirement: str) -> SmokeGate:
+    """A recorder gate that checks the file's bytes, not only that it exists."""
+    gate = _path_status(path_text, label)
+    if gate.status != "pass":
+        return gate
+    try:
+        data = Path(path_text).read_bytes()
+    except OSError as error:
+        return SmokeGate(label, gate.label, "blocked", f"unreadable: {error}")
+    if not accepts(data):
+        return SmokeGate(label, gate.label, "blocked", f"{path_text}: {requirement}")
+    return gate
 
 
 def is_windows_guest_os(text: str) -> bool:
@@ -285,7 +311,9 @@ def build_proof_record(
         "pass" if mode == "clean-vm" and is_windows_guest_os(guest_os) and guest_arch else "blocked",
         f"mode={mode}; vm={vm_name or '(missing)'}; os={guest_os or '(missing)'}; arch={guest_arch or '(missing)'}",
     )
-    install_log_gate = _path_status(install_log_path, "install-log")
+    install_log_gate = _content_gate(
+        install_log_path, "install-log", lambda data: bool(data.strip()), "the install log is empty"
+    )
     smoke_passed = (
         smoke.get("status") == "passed"
         and smoke.get("source_included") is False
@@ -297,7 +325,9 @@ def build_proof_record(
         "pass" if smoke_passed else "blocked",
         smoke_path or "missing studio-smoke.json",
     )
-    screenshot_gate = _path_status(screenshot_path, "launch-screenshot")
+    screenshot_gate = _content_gate(
+        screenshot_path, "launch-screenshot", is_png_screenshot, "the screenshot is not a PNG image with a nonzero size"
+    )
     claim_gate = SmokeGate(
         "claim-boundary",
         "Claim Boundary",
@@ -536,6 +566,11 @@ def _committed_bundle_problem(
     for name in names:
         if not EVIDENCE_NAME.fullmatch(name) or name not in inventory:
             return f"{name!r} is not a verified evidence file of the bundle"
+    log_name, _, screenshot_name = names
+    if not verified[log_name].strip():
+        return "the install log is empty"
+    if not is_png_screenshot(verified[screenshot_name]):
+        return "the screenshot is not a PNG image with a nonzero size"
     for field, text in (
         ("install_log", proof.install_log),
         ("studio_smoke_json", proof.studio_smoke_json),
