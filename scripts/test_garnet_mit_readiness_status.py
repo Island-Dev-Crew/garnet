@@ -1930,6 +1930,8 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertNotIn("public-site embedding and review", promo_lane.blocked_by)
         self.assertIn("human/aesthetic acceptance review", promo_lane.blocked_by)
         self.assertLess(status.completion_percent, 100.0)
+        rendered = status_mod.render_markdown(status)
+        self.assertEqual(1, rendered.count("human/aesthetic acceptance review"))
 
     def test_markdown_is_human_readable_and_honest(self) -> None:
         rendered = subprocess.check_output(
