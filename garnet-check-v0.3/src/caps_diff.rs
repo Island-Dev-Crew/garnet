@@ -238,6 +238,91 @@ mod tests {
         assert!(d.authority_expanded());
     }
 
+    // ── T5a C1-01: module-qualified names and duplicate keys ──────────────
+
+    fn surface_of(src: &str) -> CapabilitySurface {
+        crate::capability_surface(&garnet_parser::parse_source(src).expect("parses"))
+    }
+
+    const TWO_HELPERS_OLD: &str = "module Alpha {\n  @caps()\n  def helper() -> int { 0 }\n}\nmodule Beta {\n  @caps()\n  def helper() -> int { 0 }\n}\n";
+    const TWO_HELPERS_NEW: &str = "module Alpha {\n  @caps(fs)\n  def helper() -> int { 0 }\n}\nmodule Beta {\n  @caps()\n  def helper() -> int { 0 }\n}\n";
+
+    #[test]
+    fn gain_in_first_module_is_reported_under_its_qualified_name() {
+        let d = diff_caps(&surface_of(TWO_HELPERS_OLD), &surface_of(TWO_HELPERS_NEW));
+        assert_eq!(
+            d.functions_caps_expanded,
+            vec![("Alpha::helper".to_string(), vec!["fs".to_string()])]
+        );
+    }
+
+    #[test]
+    fn gain_is_reported_whatever_the_declaration_order() {
+        let old = "module Beta {\n  @caps()\n  def helper() -> int { 0 }\n}\nmodule Alpha {\n  @caps()\n  def helper() -> int { 0 }\n}\n";
+        let new = "module Beta {\n  @caps()\n  def helper() -> int { 0 }\n}\nmodule Alpha {\n  @caps(fs)\n  def helper() -> int { 0 }\n}\n";
+        let d = diff_caps(&surface_of(old), &surface_of(new));
+        assert_eq!(
+            d.functions_caps_expanded,
+            vec![("Alpha::helper".to_string(), vec!["fs".to_string()])]
+        );
+    }
+
+    #[test]
+    fn an_unchanged_capability_is_not_misattributed_as_gained() {
+        // Beta::helper keeps @caps(net); only Alpha::helper gains fs. Before the
+        // fix the last-declared entry won and this printed `helper gained: net`.
+        let old = "module Alpha {\n  @caps()\n  def helper() -> int { 0 }\n}\nmodule Beta {\n  @caps(net)\n  def helper() -> int { 0 }\n}\n";
+        let new = "module Alpha {\n  @caps(fs)\n  def helper() -> int { 0 }\n}\nmodule Beta {\n  @caps(net)\n  def helper() -> int { 0 }\n}\n";
+        let d = diff_caps(&surface_of(old), &surface_of(new));
+        assert_eq!(
+            d.functions_caps_expanded,
+            vec![("Alpha::helper".to_string(), vec!["fs".to_string()])]
+        );
+    }
+
+    #[test]
+    fn same_named_impl_types_in_two_modules_do_not_collide() {
+        let old = "module a {\n  struct Foo {}\n  impl Foo {\n    @caps()\n    def run(self) -> int { 0 }\n  }\n}\nmodule b {\n  struct Foo {}\n  impl Foo {\n    @caps()\n    def run(self) -> int { 0 }\n  }\n}\n";
+        let new = "module a {\n  struct Foo {}\n  impl Foo {\n    @caps(fs)\n    def run(self) -> int { 0 }\n  }\n}\nmodule b {\n  struct Foo {}\n  impl Foo {\n    @caps()\n    def run(self) -> int { 0 }\n  }\n}\n";
+        let d = diff_caps(&surface_of(old), &surface_of(new));
+        assert_eq!(
+            d.functions_caps_expanded,
+            vec![("a::Foo::run".to_string(), vec!["fs".to_string()])]
+        );
+    }
+
+    #[test]
+    fn a_duplicate_name_fails_toward_review_with_every_new_capability() {
+        // A name that still appears twice (a duplicate top-level def, or two
+        // files merged under one name) cannot be matched one-to-one. The diff
+        // must never let the last entry win: it reports the name with every
+        // capability its new entries declare.
+        let d = diff_caps(
+            &surf(&["fs"], &[("f", &["fs"]), ("f", &[])], false),
+            &surf(&["fs", "net"], &[("f", &["fs"]), ("f", &["net"])], false),
+        );
+        assert_eq!(
+            d.functions_caps_expanded,
+            vec![(
+                "f".to_string(),
+                vec!["fs".to_string(), "net".to_string()]
+            )]
+        );
+    }
+
+    #[test]
+    fn a_name_duplicated_only_in_new_fails_toward_review() {
+        let d = diff_caps(
+            &surf(&["fs"], &[("f", &[]), ("main", &["fs"])], false),
+            &surf(&["fs"], &[("f", &["fs"]), ("f", &[]), ("main", &["fs"])], false),
+        );
+        assert_eq!(
+            d.functions_caps_expanded,
+            vec![("f".to_string(), vec!["fs".to_string()])]
+        );
+        assert!(!d.authority_expanded(), "aggregate unchanged");
+    }
+
     // ── RB-1 permanent reference suite ─────────────────────────────────
     //
     // `reference_diff_caps` is the pre-RB-1 set-difference implementation,

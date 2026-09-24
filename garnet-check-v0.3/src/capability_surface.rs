@@ -186,6 +186,43 @@ mod tests {
         assert_eq!(surface(src), surface(src));
     }
 
+    // ── T5a C1-01: per-function names carry their module and impl path ──
+
+    #[test]
+    fn functions_in_modules_are_qualified_by_module_path() {
+        let s = surface(
+            "module a {\n  @caps(fs)\n  def f() -> int { 0 }\n}\nmodule b {\n  @caps(net)\n  def f() -> int { 0 }\n}\n",
+        );
+        assert_eq!(
+            s.per_function,
+            vec![
+                ("a::f".to_string(), vec!["fs".to_string()]),
+                ("b::f".to_string(), vec!["net".to_string()]),
+            ],
+            "same-named functions in two modules must not collide"
+        );
+    }
+
+    #[test]
+    fn nested_modules_and_impl_methods_carry_the_full_path() {
+        let s = surface(
+            "module a {\n  module b {\n    @caps(env)\n    def g() -> int { 0 }\n  }\n  struct R {}\n  impl R {\n    @caps(fs)\n    def m(self) -> int { 0 }\n  }\n}\n",
+        );
+        let names: Vec<&str> = s.per_function.iter().map(|(n, _)| n.as_str()).collect();
+        assert_eq!(names, vec!["a::R::m", "a::b::g"]);
+    }
+
+    #[test]
+    fn top_level_names_stay_bare() {
+        // Single-module programs keep byte-identical names: committed fixtures,
+        // manifests and seals of top-level-only programs do not change.
+        let s = surface(
+            "struct R {}\nimpl R {\n  @caps(fs)\n  def m(self) -> int { 0 }\n}\n@caps(net)\ndef f() -> int { 0 }\n",
+        );
+        let names: Vec<&str> = s.per_function.iter().map(|(n, _)| n.as_str()).collect();
+        assert_eq!(names, vec!["R::m", "f"]);
+    }
+
     // ── A1 (element 6, surface side): surface == the enforceable-by-declaration set ──
 
     /// `collect_cap_fns` must descend EXACTLY the `Item` variants that can host a
