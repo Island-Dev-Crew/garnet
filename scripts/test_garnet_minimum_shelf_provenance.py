@@ -249,5 +249,41 @@ class SquashDurableContentProvenanceTests(unittest.TestCase):
         )
 
 
+
+class FlagshipSealClaimTests(unittest.TestCase):
+    """T5a (Codex review of #598): the shelf reporter checks the seal/v2 claim
+    language, the fixed cosign note and signed:false, and rejects retired forms."""
+
+    ROOT = Path(__file__).resolve().parents[1]
+
+    def _seal(self, **predicate_fields: object) -> dict:
+        predicate = {"tooling": {"cosign": shelf.EXPECTED_COSIGN_NOTE}, "signed": False}
+        predicate.update(predicate_fields)
+        return {"predicate": predicate}
+
+    def test_the_committed_flagship_seal_passes(self) -> None:
+        import json
+
+        seal = json.loads((self.ROOT / "examples/minimum-shelf-flagship/tool.seal.json").read_text(encoding="utf-8"))
+        self.assertEqual([], shelf.seal_claim_findings(seal))
+
+    def test_the_note_matches_the_cli_constant(self) -> None:
+        seal_rs = (self.ROOT / "garnet-cli/src/seal.rs").read_text(encoding="utf-8")
+        self.assertIn(f'"{shelf.EXPECTED_COSIGN_NOTE}"', seal_rs)
+
+    def test_the_retired_note_is_rejected(self) -> None:
+        retired = "not installed — predicate emitted UNSIGNED; install cosign to attest"
+        self.assertTrue(shelf.seal_claim_findings(self._seal(tooling={"cosign": retired})))
+
+    def test_signed_must_be_the_literal_false(self) -> None:
+        for value in (True, "false", 0, None):
+            with self.subTest(value=value):
+                self.assertTrue(shelf.seal_claim_findings(self._seal(signed=value)))
+        self.assertTrue(shelf.seal_claim_findings({"predicate": {"tooling": {"cosign": shelf.EXPECTED_COSIGN_NOTE}}}))
+
+    def test_a_well_formed_unsigned_claim_passes(self) -> None:
+        self.assertEqual([], shelf.seal_claim_findings(self._seal()))
+
+
 if __name__ == "__main__":
     unittest.main()
