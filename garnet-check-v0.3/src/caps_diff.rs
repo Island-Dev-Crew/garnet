@@ -98,14 +98,6 @@ fn group_by_name(per_function: &[(String, Vec<String>)]) -> BTreeMap<&String, Ve
     map
 }
 
-/// A name's entries as an order-free multiset, to tell a repeated name that
-/// changed from one that did not.
-fn sorted_entries<'a>(entries: &[&'a Vec<String>]) -> Vec<&'a Vec<String>> {
-    let mut sorted = entries.to_vec();
-    sorted.sort();
-    sorted
-}
-
 /// Compute the capability diff from `old` to `new`. Input surfaces are already
 /// sorted (S35); every output list preserves sorted order. RB-1: the delta
 /// over the closed capability set is XOR on [`CapSet`] bitsets; unknown
@@ -120,8 +112,10 @@ pub fn diff_caps(old: &CapabilitySurface, new: &CapabilitySurface) -> CapsDiff {
 
     // T5a (C1-01): group entries by name. A name can still repeat — a duplicate
     // top-level def, or merged sources — and a repeated name cannot be matched
-    // one-to-one. Never let the last entry win: a repeated name whose entries
-    // changed fails toward review with every capability its new entries declare.
+    // one-to-one. Its entries keep declaration order (the surface sort is
+    // stable), and the last definition is the one that runs, so the entries are
+    // compared in order: any change, a reordering included, fails toward review
+    // with every capability the new entries declare.
     let old_fns = group_by_name(&old.per_function);
     let new_fns = group_by_name(&new.per_function);
 
@@ -147,7 +141,7 @@ pub fn diff_caps(old: &CapabilitySurface, new: &CapabilitySurface) -> CapsDiff {
                 let fn_delta = fn_old_known.delta(fn_new_known);
                 delta_side(fn_delta, fn_new_known, &fn_new_unknown, &fn_old_unknown)
             }
-            _ if sorted_entries(old_entries) == sorted_entries(new_entries) => Vec::new(),
+            _ if old_entries == new_entries => Vec::new(),
             _ => new_entries
                 .iter()
                 .flat_map(|caps| caps.iter().cloned())

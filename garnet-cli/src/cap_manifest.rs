@@ -172,7 +172,7 @@ fn surface_from_targets(path: &Path, targets: &[PathBuf]) -> Result<CapabilitySu
             .map_err(|e| format!("parse error in {}: {e}", target.display()))?;
         let surface = capability_surface(&module);
         surfaces.push(if qualify_by_file {
-            file_qualified(surface, &file_label(path, target))
+            file_qualified(surface, &file_label(path, target)?)
         } else {
             surface
         });
@@ -190,12 +190,22 @@ fn surface_from_targets(path: &Path, targets: &[PathBuf]) -> Result<CapabilitySu
 /// The label a directory-mode surface gives one file: its path relative to the
 /// scanned directory, with `/` separators on every OS and the `.garnet` suffix
 /// kept, so a file label can never be mistaken for a module path.
-fn file_label(root: &Path, target: &Path) -> String {
+///
+/// A path that is not valid UTF-8 is an error, not a lossy label: two such
+/// files could otherwise share one label and merge their functions' names.
+fn file_label(root: &Path, target: &Path) -> Result<String, String> {
     let rel = target.strip_prefix(root).unwrap_or(target);
     rel.components()
-        .map(|c| c.as_os_str().to_string_lossy().into_owned())
-        .collect::<Vec<_>>()
-        .join("/")
+        .map(|c| {
+            c.as_os_str().to_str().map(str::to_owned).ok_or_else(|| {
+                format!(
+                    "{}: path is not valid UTF-8, so it cannot be named in a capability surface",
+                    target.display()
+                )
+            })
+        })
+        .collect::<Result<Vec<_>, _>>()
+        .map(|parts| parts.join("/"))
 }
 
 /// A copy of `surface` whose per-function names are prefixed `<label>::`.
