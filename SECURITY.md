@@ -88,8 +88,11 @@ Security-specific tests were added across four historical hardening layers (v3.3
   IPv4-translated (`::ffff:0:a.b.c.d`) or Teredo (`2001::/32`) addresses, and
   it does not treat site-local `fec0::/10` as internal. A probe on 2026-09-23
   showed the policy allowing all four and the OS attempting the connection.
-  Reaching an internal host this way needs a translator or relay on the
-  network, and the `@caps(net)` gate is unaffected. Network-specific NAT64
+  The NAT64, IPv4-translated and Teredo forms reach an internal host only
+  through a translator or relay on the network. A site-local `fec0::/10`
+  address can reach a host directly wherever a site still routes it
+  (site-local addressing is deprecated by RFC 3879). The `@caps(net)` gate is
+  unaffected. Network-specific NAT64
   prefixes cannot be caught by address classification at all. The code fix is
   planned for 0.8.3.
 

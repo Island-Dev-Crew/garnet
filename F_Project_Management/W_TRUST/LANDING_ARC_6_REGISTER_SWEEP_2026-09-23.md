@@ -30,6 +30,8 @@ takes the newest dated status for each id.
 
 ## Status transitions
 
+Merge dates below are UTC, from the GitHub API.
+
 | Id | Finding | Last dated status | Now | Landing |
 |---|---|---|---|---|
 | U-75 | Rolling gate stalls locally with no credential once a record and PR bind | open (`LANDING_ARC_REGISTER_SWEEP_2026-08-31.md:33`) | cured for the local traversal; residual open | `b2ac33a4` (#585, merged 2026-09-15): one batched `git cat-file` reader per repository. The CHANGELOG measures 5,162 git processes and about 60 s before, 38 and 0.62 s after. |
@@ -57,7 +59,7 @@ takes the newest dated status for each id.
 
 - **U-120 names the wrong landing PR.** `LANDING_ARC_5_…` says the reseal was "cured for
   0.8.2 in #550". #550 closed unmerged. The reseal landed in `040f8177` (#568, merged
-  2026-09-10), which re-created #563, itself a re-creation of #550. The coupling U-120
+  2026-09-11 UTC), which re-created #563, itself a re-creation of #550. The coupling U-120
   names still stands: the Minimum Shelf trust root is pinned to `CARGO_PKG_VERSION`, and
   #592 changed the seal format, so the #568 reseal recipe no longer applies as written.
 
@@ -91,8 +93,10 @@ takes the newest dated status for each id.
   executable and green. This records the deviation; #568's record is not edited.
 - **Approve-then-re-run on #585, #589, #591, #592 and #593.** CI attempt 2 on each was
   triggered by `IDC-Trust-Review` (runs `35023225987`, `35380170456`, `35393141899`,
-  `35478715760`, `35697335756`). Each record states the practice under its venue limits.
-  Whether it is recorded as an accepted interim practice is a pending ruling (C7-46).
+  `35478715760`, `35697335756`). The #585, #589, #591 and #593 records state the practice
+  under their venue limits, and the #593 record says Jon accepted it on 2026-09-13. The
+  two #592 records do not mention it. Whether `AGENTS.md` records it as a disclosed
+  interim practice is the pending C7-46 ruling.
 - **#575 has no rule-3 attribution line.** It was merged 2026-09-11T18:47:58Z by
   `IslandDevCrew`, and its merge commit, body, reviews and comments carry no attribution line.
   The merge actor stays unconfirmed until the maintainer states who merged it.
