@@ -26,8 +26,11 @@ PROOF_FILE = "windows-clean-vm-installer-proof.json"
 # dogfood root is only a local fallback when the repo carries no bundle.
 COMMITTED_BUNDLES_REL = Path("proofs/windows/studio-clean-vm")
 X64_GUEST_ARCHES = frozenset({"x64", "x86_64", "amd64"})
-# Committed bundles are named <YYYYMMDD-HHMM>-<host>; the newest name decides.
+# Committed bundles are named <YYYYMMDD-HHMM>-<host>. Any entry whose name
+# starts with a timestamp is a candidate; the newest decides, and it must carry
+# the full name or it is reported (fail closed), never skipped.
 BUNDLE_NAME = re.compile(r"^[0-9]{8}-[0-9]{4}")
+BUNDLE_FULL_NAME = re.compile(r"[0-9]{8}-[0-9]{4}-[A-Za-z0-9][A-Za-z0-9._-]*")
 REQUIRED_GATE_IDS = frozenset(
     {"installer-artifact", "fresh-guest", "install-log", "studio-smoke", "launch-screenshot", "claim-boundary"}
 )
@@ -521,6 +524,8 @@ def latest_committed_proof(repo: Path | None = None) -> tuple[ProofRecord, str] 
         source = f"committed:{(COMMITTED_BUNDLES_REL / bundle.name).as_posix()}"
         if _is_link(bundle) or not bundle.is_dir():
             return _broken_proof("the newest bundle entry is not a directory"), source
+        if not BUNDLE_FULL_NAME.fullmatch(bundle.name):
+            return _broken_proof("the newest bundle is not named <YYYYMMDD-HHMM>-<host>"), source
         problem = _confinement_problem(repo, bundle)
         if problem:
             return _broken_proof(problem), source
