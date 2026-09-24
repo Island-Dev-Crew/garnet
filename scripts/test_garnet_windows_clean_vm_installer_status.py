@@ -191,9 +191,8 @@ def _record_committed_bundle(
     return bundle
 
 
-class CommittedCleanVmBundleTests(unittest.TestCase):
-    """T5a, Jon's path (a): a clean-VM proof committed to the repo is read on any
-    host, and only after its manifest and gates check out."""
+class _CommittedRepoCase(unittest.TestCase):
+    """A temporary repo as the reporter's ROOT, with no local Desktop proof."""
 
     def setUp(self) -> None:
         self._temp = tempfile.TemporaryDirectory()
@@ -211,6 +210,11 @@ class CommittedCleanVmBundleTests(unittest.TestCase):
         ):
             patcher.start()
             self.addCleanup(patcher.stop)
+
+
+class CommittedCleanVmBundleTests(_CommittedRepoCase):
+    """T5a, Jon's path (a): a clean-VM proof committed to the repo is read on any
+    host, and only after its manifest and gates check out."""
 
     def test_committed_bundle_is_read_when_no_root_is_given(self) -> None:
         _record_committed_bundle(self.repo, "20260924-1200-nuc")
@@ -272,6 +276,85 @@ class CommittedCleanVmBundleTests(unittest.TestCase):
 
         self.assertFalse(status.clean_vm_verified)
         self.assertEqual("none", status.proof_source)
+
+
+
+class CommittedCleanVmBundleAdversarialTests(_CommittedRepoCase):
+    """T5a (Codex review of #598): a committed bundle that is malformed, relinked
+    or stripped of its guest identity never counts as verified, and never
+    raises. Each case refreshes the manifest, so only the named defect remains."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.bundle = _record_committed_bundle(self.repo, "20260924-1200-nuc")
+
+    def _edit_proof(self, **fields: object) -> None:
+        path = self.bundle / status_mod.PROOF_FILE
+        data = json.loads(path.read_text(encoding="utf-8"))
+        data.update(fields)
+        path.write_text(json.dumps(data), encoding="utf-8")
+        status_mod._write_manifest(self.bundle)
+
+    def _assert_unverified(self) -> None:
+        status = status_mod.read_status()
+        self.assertFalse(status.clean_vm_verified, status.proof_source)
+        self.assertIn("committed clean-VM bundle integrity", status.blocked_by)
+
+    def test_the_unedited_fixture_verifies(self) -> None:
+        self.assertTrue(status_mod.read_status().clean_vm_verified)
+
+    def test_verified_must_be_the_literal_true(self) -> None:
+        for value in ("false", [False], 1, "true"):
+            with self.subTest(value=value):
+                self._edit_proof(verified=value)
+                self._assert_unverified()
+
+    def test_a_missing_newest_proof_cannot_bring_back_an_older_bundle(self) -> None:
+        newer = _record_committed_bundle(self.repo, "20260925-0900-nuc")
+        (newer / status_mod.PROOF_FILE).unlink()
+        self._assert_unverified()
+
+    def test_a_symlinked_bundle_outside_the_repo_does_not_count(self) -> None:
+        outside = Path(self._temp.name) / "outside"
+        self.bundle.rename(outside)
+        self.bundle.symlink_to(outside, target_is_directory=True)
+        self._assert_unverified()
+
+    def test_a_symlinked_proof_root_does_not_count(self) -> None:
+        root = self.repo / BUNDLES_REL
+        outside = Path(self._temp.name) / "outside-root"
+        root.rename(outside)
+        root.symlink_to(outside, target_is_directory=True)
+        self._assert_unverified()
+
+    def test_the_fresh_guest_identity_is_checked_not_its_gate_label(self) -> None:
+        self._edit_proof(guest_os="", vm_name="")
+        self._assert_unverified()
+
+    def test_the_claim_boundary_cannot_be_removed(self) -> None:
+        self._edit_proof(forbidden_claims=[])
+        self._assert_unverified()
+
+    def test_a_gate_listed_twice_does_not_count(self) -> None:
+        data = json.loads((self.bundle / status_mod.PROOF_FILE).read_text(encoding="utf-8"))
+        self._edit_proof(gates=[*data["gates"], data["gates"][0]])
+        self._assert_unverified()
+
+    def test_a_non_string_architecture_is_unverified_not_an_exception(self) -> None:
+        self._edit_proof(guest_arch=64)
+        self._assert_unverified()
+
+    def test_an_array_smoke_record_is_unverified_not_an_exception(self) -> None:
+        (self.bundle / "studio-smoke.json").write_text("[]", encoding="utf-8")
+        status_mod._write_manifest(self.bundle)
+        self._assert_unverified()
+
+    def test_windows_separators_in_recorded_paths_still_verify(self) -> None:
+        data = json.loads((self.bundle / status_mod.PROOF_FILE).read_text(encoding="utf-8"))
+        self._edit_proof(
+            **{field: data[field].replace("/", "\\") for field in ("install_log", "studio_smoke_json", "screenshot")}
+        )
+        self.assertTrue(status_mod.read_status().clean_vm_verified)
 
 
 if __name__ == "__main__":
