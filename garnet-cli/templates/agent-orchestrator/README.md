@@ -46,8 +46,8 @@ a memory declaration is store construction under the `mem` capability (ADR
 the load traps before any store is built unless `main` declares `mem`. The
 program touches no file, network, process or clock authority. If you extend it
 to read or write fact files, annotate the I/O function with `@caps(fs)` and
-declare `fs` on `main` too: `garnet check` reports a `main` whose named,
-acyclic calls reach `fs` without declaring it, and at run time the file
+declare `fs` on `main` too: `garnet check` reports a `main` whose named
+call chain (cycles included) reaches `fs` without declaring it, and at run time the file
 primitives trap unless `main` declares it. Nothing reads the `[caps]` list yet;
 update it by hand so it documents the budget.
 

@@ -86,7 +86,7 @@ with measured outcomes from Stages 2–4.</p>
 <p>Garnet’s research contribution is partly the language and partly the
 <em>engineering process</em> by which the language was built. This paper
 documents the implementation ladder — the seven rungs from a parsed
-grammar to a deterministically-built signed binary — and the tooling
+grammar to a deterministically-built binary with a signed build manifest — and the tooling
 that makes the ladder accessible to working developers. The thesis is
 that <strong>language design and toolchain design are co-equal
 first-order concerns</strong>: a beautifully designed language with
@@ -183,7 +183,7 @@ the agentic and dual-mode aspects.</p>
 <td>7</td>
 <td>Cross-platform installer + signing</td>
 <td>Mini-Spec §16; ManifestSig (v3.4)</td>
-<td>⏳ Signed CLI binaries (.deb/.rpm/darwin tarballs) ship with v0.8.1; MSI/.pkg installers pending</td>
+<td>⏳ CLI binaries (.deb/.rpm/darwin tarballs) ship with v0.8.1; they are not code-signed, and their checksums are in a GPG-signed SHA256SUMS; MSI/.pkg installers pending</td>
 </tr>
 </tbody>
 </table>

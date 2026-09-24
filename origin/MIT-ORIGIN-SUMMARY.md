@@ -75,7 +75,7 @@ Garnet is dual-licensed under Apache License 2.0 and MIT License, matching Rust'
 - **Source code**: https://github.com/Island-Dev-Crew/garnet (public since 2026)
 - **Website**: https://garnet-lang.org
 - **Installer**: https://garnet-lang.org/install.sh (Windows: install.ps1)
-- **Releases**: signed binaries at https://github.com/Island-Dev-Crew/garnet/releases (v0.8.2 as of 2026-09-11)
+- **Releases**: CLI binaries at https://github.com/Island-Dev-Crew/garnet/releases (v0.8.2 as of 2026-09-11); not code-signed; checksums in a GPG-signed SHA256SUMS
 
 ## 8. Acknowledgments
 

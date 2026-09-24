@@ -70,3 +70,8 @@ or using Garnet.
 | [0008](0008-no-personal-payment-handles.md) | Sponsorship is paid to the maintaining entity; no personal payment handle on a Garnet surface | Accepted 2026-09-15 |
 | [0009](0009-contact-door-role-address.md) | The public contact door is a role address, then a form | Accepted 2026-09-15 |
 | [0010](0010-grant-sequence.md) | Apply to no grant until the authority-review action ships | Accepted 2026-09-15 |
+| [0011](0011-memory-gets-its-own-capability-kind.md) | Memory tiers get their own capability kind | Accepted 2026-09-17 |
+| [0012](0012-what-a-memory-tier-promises.md) | What a memory tier promises | Accepted 2026-09-17 |
+| [0013](0013-what-the-mode-boundary-refuses.md) | What the mode boundary refuses, and what it records | Accepted 2026-09-17 |
+| [0014](0014-what-an-actor-promises-when-it-dies.md) | An actor promises nothing when it dies | Accepted 2026-09-17 |
+| [0015](0015-in-process-actors-are-the-concurrency-story.md) | In-process actors are the language's concurrency story | Accepted 2026-09-17 |

@@ -1,6 +1,6 @@
 # ADR 0015 — In-process actors are the language's concurrency story
 
-**Status.** Accepted (2026-09-17). Documentation change pending.
+**Status.** Accepted (2026-09-17). Documentation change landed with the T6-docs gap-0 PR (see CHANGELOG Unreleased).
 
 ## Context
 

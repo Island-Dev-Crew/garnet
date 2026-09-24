@@ -1,6 +1,6 @@
 # ADR 0014 — An actor promises nothing when it dies
 
-**Status.** Accepted (2026-09-17). Documentation change pending.
+**Status.** Accepted (2026-09-17). Documentation change landed with the T6-docs gap-0 PR (see CHANGELOG Unreleased).
 
 ## Context
 

@@ -110,7 +110,7 @@ blind — the defect was solely in the surface derivation.)
 The enforced ceilings in scope are: the diff-caps widening gate, the agent-loop
 acceptance gate, the runtime `@caps` host-authority trap (fs/net/env/proc), the
 `@max_depth` per-function-name recursion trap, the static `check` caps-coverage
-**within its U-91 bounds** (named, acyclic call edges from an annotated function —
+**within its U-91 bounds** (named call edges from an annotated function, cycles included —
 `GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md`), and
 (Linux) the applied seccomp policy. The original impl-method HIGH and the two
 independent-re-verification HIGHs (load-time `let`/`const` `@caps` bypass;

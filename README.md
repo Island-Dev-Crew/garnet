@@ -105,7 +105,7 @@ and aimed at agent-authored code:
   [capability enforcement scope table](C_Language_Specification/GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md).
 - **An enforced kernel** — `@caps` and `@max_depth` trap identically on both execution backends,
   with cross-OS trap parity recorded as evidence, not asserted.
-- **The seal** — `garnet build --deterministic --sign` emits a byte-identical manifest plus an
+- **The manifest** — `garnet build --deterministic --sign` emits a byte-identical manifest plus an
   Ed25519 signature; releases ship a CycloneDX SBOM and GPG-signed checksums.
 - **Agent-native memory** — `memory working|episodic|semantic|procedural` as language keywords,
   so the runtime knows which kind it's allocating.

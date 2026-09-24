@@ -10,7 +10,8 @@ opposite of an implicit escape hatch.
 
 1. **No implicit FFI.** A function that performs (or transitively wraps) a native
    call must declare `@caps(ffi)`. That declaration is surfaced wherever the
-   checker can build a named, acyclic call edge from an annotated function; it
+   checker can build a named call chain from an annotated function (cycles
+   included); it
    builds no edge through a function value, a closure body, or the body of an
    unannotated function, and `ffi` has no runtime gate at all — it is
    declared-only, no bridge (`GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md`). The

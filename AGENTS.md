@@ -482,3 +482,12 @@ iframe behavior, and first-online-install then offline run/check/diff. Include
 all browser dependencies in the versioned service-worker precache and preserve
 other applications' caches. Browser proof and readiness gates bind these bytes;
 UI success alone does not certify language completeness or merge policy.
+
+The landing page `docs/index.html` and `docs/service-worker.js` are among those
+runtime inputs (`BROWSER_RUNTIME_INPUTS` in `scripts/garnet_wasm_readiness.py`).
+A copy edit to either one fails the required `garnet_wasm_readiness.py --gate`
+until the proof is re-recorded, so the same PR must commit the edit, re-run
+`node scripts/smoke_garnet_playground_browser.mjs`, and commit the refreshed
+`F_Project_Management/LAUNCH/W_PLAY_BROWSER_PROOF.json` and its screenshot. That
+re-record is not a WASM package rebuild. Do not remove either file from the
+runtime inputs; the proof would go stale against the page it tests.

@@ -28,7 +28,8 @@ exceptions) feels like Ruby; safe mode (\fI@safe\fR, \fIfn\fR, ownership and
 The mode boundary bridges errors and ownership automatically.
 .PP
 Functions declare the OS authority they need with \fI@caps(...)\fR, and the
-checker verifies those declarations transitively across named, acyclic calls.
+checker verifies those declarations transitively along named call chains,
+cycles included.
 The trust-spine subcommands (\fBcaps\fR, \fBdiff\-caps\fR, \fBseal\fR,
 \fBcaps\-log\fR, \fBagent\-loop\fR and the \fBverify\fR acceptance gate) turn
 that capability surface into manifests, diffs, attestations, a transparency
@@ -64,7 +65,8 @@ Parse \fIFILE\fR and print a structural summary.
 .B check \fR[\fB\-\-suggest\fR] [\fB\-\-format\fR \fBhuman\fR|\fBjson\fR] \fIFILE\fR
 Run the safe-mode checker.
 Its CapCaps propagator reports an annotated function whose declared
-\fI@caps(...)\fR does not cover what its named, acyclic calls reach; see
+\fI@caps(...)\fR does not cover what its named call chains reach, cycles
+included; see
 CAPABILITY MODEL for the limits.
 \fB\-\-format json\fR emits structured diagnostics.
 
@@ -125,6 +127,11 @@ proof.
 .B agent\-loop \-\-baseline \fIOLD\fR \fB\-\-proposal\fR \fINEW\fR
 Accept agent-authored code only when diff-caps and enforced-kernel evidence
 support it, then seal it.
+The kernel stage executes the unaccepted proposal on the host with
+\fBgarnet run\fR, in the current directory, before any acceptance or seal, with
+up to the program-wide authority the baseline declares.
+No OS sandbox is applied.
+Run \fBagent\-loop\fR in a throwaway directory.
 
 .TP
 .B verify \fIPATH\fR \fR[\fB\-\-external\-band\fR \fI1\-5\fR] [\fB\-\-caps\-baseline\fR \fIOLD\fR]

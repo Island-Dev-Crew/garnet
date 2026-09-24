@@ -1221,7 +1221,7 @@ def main() {
   <span class="k">try</span> {
     std::json::parse(
       fs::read_file(path))
-  } <span class="k">rescue</span> e: FileNotFound {
+  } <span class="k">rescue</span> e: String {
     <span class="k">nil</span>
   }
 }</pre></div>
@@ -1397,7 +1397,7 @@ def main() {
         </div>
         <div class="row">
           <div class="tag">@caps(net)</div>
-          <div class="desc">Outbound TCP (<code>net::tcp_connect</code>, gated at run time) under a strict default policy that denies RFC1918, loopback, link-local and cloud-metadata addresses. Listen and UDP are declared, not bridged.</div>
+          <div class="desc">Outbound TCP (<code>net::tcp_connect</code>, gated at run time) under a strict default policy that denies RFC1918, loopback, link-local and cloud-metadata addresses, including their IPv4-mapped, IPv4-compatible, well-known NAT64 and 6to4 spellings. Four rarer IPv6 forms and network-specific NAT64 prefixes are not caught yet (<a href="https://github.com/Island-Dev-Crew/garnet/blob/main/SECURITY.md#known-limitations">known limitations</a>). Listen and UDP are declared, not bridged.</div>
         </div>
         <div class="row">
           <div class="tag">@caps(time)</div>
@@ -1446,7 +1446,7 @@ def main() {
     [k.strip, v.strip]
   <span class="k">end</span>.to_h
 <span class="k">end</span></pre></div>
-      <div class="code-col garnet"><div class="head"><div class="swatch"></div>GARNET — converted</div>
+      <div class="code-col garnet"><div class="head"><div class="swatch"></div>GARNET — converted, then reviewer-finished</div>
 <pre><span class="a">@sandbox</span>
 <span class="a">@caps()</span>
 <span class="k">module</span> Config {
@@ -1464,6 +1464,7 @@ def main() {
 
 }</pre></div>
     </div>
+    <p class="evidence-note">The right pane is reviewer-finished, not raw tool output. <code>garnet convert</code> copies the Ruby <code>do |line| … end</code> block unchanged and leaves two migration to-dos; a reviewer rewrote the block as the <code>for</code> loop shown. The <code>@sandbox</code> line is the tool's, and with it removed this file passes <code>garnet check</code>.</p>
 
     <div class="lang-badges">
       <div class="lang-badge">Active conversion: Rust · Ruby · Python · Go</div>
@@ -1682,7 +1683,7 @@ garnet run src/main.garnet</pre>
       <li>release status &amp; the agentic dogfood matrix</li>
     </ul>
     <p class="lead" style="font-size:15px;">In Codex Desktop, a <strong>Codex Run</strong> action wires <code>script/build_and_run.sh</code> to build SwiftPM, stage <code>dist/Garnet Studio.app</code>, and launch it.</p>
-    <p class="lead">The Windows/Linux lane now has a separate Tauri v2 shell scaffold under <code>apps/garnet-studio</code>. Windows local proof covers the Vite frontend build, Tauri backend tests, release executable, unsigned NSIS bundle, <code>--studio-smoke</code> Desktop evidence, a Release / Readiness panel wired to the repo-native v0.5 reporters, verified x64 clean-VM installer proof, WSL package/window portability evidence, Studio Domain Proof Matrix shell output, and Release / Readiness shell reporter output. It is still not signed MSI, winget, clean/non-WSL Linux desktop GUI launch, live Release / Readiness GUI screenshot proof, Windows ARM64 proof, or completed cross-platform package proof.</p>
+    <p class="lead">The Windows/Linux lane now has a separate Tauri v2 shell scaffold under <code>apps/garnet-studio</code>. Windows local proof covers the Vite frontend build, Tauri backend tests, release executable, unsigned NSIS bundle, <code>--studio-smoke</code> Desktop evidence, a Release / Readiness panel wired to the repo-native v0.5 reporters, verified x64 clean-VM installer proof, WSL package/window portability evidence, Studio Domain Proof Matrix shell output, and Release / Readiness shell reporter output. Native (non-WSL) Debian ARM64 has a build, install and headless launch proof (<code>proofs/linux/studio/utm-native-20260701</code>). It is still not signed MSI, winget, Linux x64 or desktop-session GUI launch proof, live Release / Readiness GUI screenshot proof, Windows ARM64 proof, or completed cross-platform package proof.</p>
 
     <div class="features">
       <div class="feature">
@@ -1693,7 +1694,7 @@ garnet run src/main.garnet</pre>
       <div class="feature">
         <div class="icon">Assist</div>
         <h4>Migration Planning</h4>
-        <p>Studio exposes <code>Assist Plan</code>, <code>Advisory Bundle</code>, <code>Advisory Review</code>, and <code>Advisory Handoff</code> for TypeScript, JavaScript, Swift, Java, C, C++, C#, Perl, Kotlin, Shell, SQL, and Other as local planning, review, and source-free handoff evidence under <code>~/Desktop/dogfood/</code>, not active conversion.</p>
+        <p>Studio exposes <code>Assist Plan</code>, <code>Advisory Bundle</code>, <code>Advisory Review</code>, and <code>Advisory Handoff</code> for TypeScript, JavaScript, Swift, Java, C, C++, C#, Perl, Kotlin, Shell, SQL, and Other as local planning, review, and source-free handoff evidence written to a local evidence folder, not active conversion.</p>
       </div>
       <div class="feature">
         <div class="icon">Pulse</div>

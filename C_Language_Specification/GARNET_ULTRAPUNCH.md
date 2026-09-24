@@ -27,6 +27,10 @@ A proposal is ACCEPTED only if it passes three gated stages, in order:
    never sealed (**Rule 2: widening hard-fails**).
 2. **the enforced kernel (S99 `@max_depth` + S100 `@caps` traps)** — the proposal
    must run without tripping an enforced ceiling. A trap REFUSES it; no seal.
+   The run is real: `garnet run` executes the unaccepted proposal on the host, in
+   the current working directory, before any acceptance or seal, with up to the
+   program-wide authority the baseline declares. No OS sandbox is applied
+   (declared-not-enforced). Run `agent-loop` in a throwaway directory.
 3. **seal (S38)** — an accepted proposal is attested, recording the autonomous
    acceptance + agent/model/gate-version provenance (S65/S66; **Rule 3**).
 

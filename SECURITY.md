@@ -79,6 +79,20 @@ Past security advisories are published at [github.com/Island-Dev-Crew/garnet/sec
 
 Security-specific tests were added across four historical hardening layers (v3.3 Layer 1 through v4.0 Layer 4). No current count of those tests is published here: `docs/truth.json` (`omissions.security_test_count`) records that no trusted derivation exists for the historical "136 security tests" figure, so this document does not restate it. The original threat model is documented in [GARNET_v3_3_SECURITY_THREAT_MODEL.md](F_Project_Management/GARNET_v3_3_SECURITY_THREAT_MODEL.md) — a roadmap of 15 hardening patterns, two of which address Garnet-specific threat classes (strategy-miner adversarial training, `Box<dyn Any>` hot-reload type confusion).
 
+## Known limitations
+
+- **Network policy: four IPv6 spellings of internal hosts are not caught.**
+  The strict network policy judges the IPv4 address carried by IPv4-mapped,
+  IPv4-compatible, well-known NAT64 (`64:ff9b::/96`) and 6to4 (`2002::/16`)
+  addresses. It does not yet recognize NAT64 local-use (`64:ff9b:1::/48`),
+  IPv4-translated (`::ffff:0:a.b.c.d`) or Teredo (`2001::/32`) addresses, and
+  it does not treat site-local `fec0::/10` as internal. A probe on 2026-09-23
+  showed the policy allowing all four and the OS attempting the connection.
+  Reaching an internal host this way needs a translator or relay on the
+  network, and the `@caps(net)` gate is unaffected. Network-specific NAT64
+  prefixes cannot be caught by address classification at all. The code fix is
+  planned for 0.8.3.
+
 ## Cryptographic primitives
 
 - **Ed25519** via `ed25519-dalek 2.2.0` (per `Cargo.lock`) for: manifest signing (ManifestSig, v3.4.1) and signed hot-reload (ReloadKey, v3.5).

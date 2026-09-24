@@ -9,6 +9,53 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ## [Unreleased]
 
+### Public truth: gap-0 docs pass (T6-docs)
+
+- Public pages and docs no longer say "signed binaries". Release binaries are
+  not code-signed; their checksums are in a GPG-signed `SHA256SUMS`. The
+  installers check integrity against `SHA256SUMS` but do not check its
+  signature, and the install pages now say so. The omarchy page says
+  `garnet seal` never signs; it only detects cosign.
+- "Named, acyclic" call-chain wording now reads "named call chain, cycles
+  included" in the man page, template README, specs and site pages, matching
+  the U-117 cure.
+- The FAQ and getting-started page say Garnet is on no package registry, that
+  `garnet` and `garnet-cli` there belong to unrelated projects, and that other
+  install instructions for Garnet are untrusted.
+- Correction: the 2026-09-11 landing-sample fix was incomplete. The
+  error-handling sample kept `rescue e: FileNotFound`, which never matches the
+  string an io error raises, so the sample re-raised. It now reads
+  `rescue e: String`, and a probe on main prints `nil`.
+- Security disclosure: the strict network policy does not yet catch NAT64
+  local-use, IPv4-translated, Teredo or site-local `fec0::/10` spellings of
+  internal hosts, and cannot catch network-specific NAT64 prefixes. `SECURITY.md`
+  gains a known-limitations section and the landing row is qualified. The code
+  fix is planned for 0.8.3.
+- The landing converter pane is labelled reviewer-finished: `garnet convert`
+  copies the Ruby block unchanged and leaves two to-dos.
+- `garnet agent-loop` docs (man page, `GARNET_ULTRAPUNCH.md`) say the kernel
+  stage runs the unaccepted proposal on the host, in the current directory,
+  with no OS sandbox. README calls `build --deterministic --sign` output the
+  manifest, not the seal.
+- Actors: the orchestrator example, `CURRENT_STATE.md`, the concurrency
+  contract and the `garnet-actor-runtime` and `garnet-suggest-llm` crate docs
+  say the threaded runtime and the LLM tier are staging crates that nothing
+  links (ADR 0015, D-42). The contract adds ADR 0014: an actor promises nothing
+  when it dies. ADR 0014 and 0015 are marked documented.
+- Studio: native (non-WSL) Debian ARM64 build, install and headless launch
+  proof is cited on the landing and status pages; Linux x64 and a desktop
+  session stay open. The maintainer-local evidence path is gone from the
+  landing page.
+- Orientation: `CLAUDE.md` points at live sources and marks the June plan,
+  handoff and ledger historical; the remotes line matches same-repo PRs since
+  #571. The ADR index lists 0011-0015, ADR 0001 names its `pull_request_target`
+  trigger, `GOVERNANCE.md` points at ADR 0001, `CONTRIBUTING.md` links the real
+  Mini-Spec path, and `AGENTS.md` names `docs/index.html` and
+  `docs/service-worker.js` as W-PLAY runtime inputs. `docs/releases.xml` gains
+  v0.8.0, v0.8.1 and v0.8.2.
+- `docs/index.html` changed, so `W_PLAY_BROWSER_PROOF.json` is re-recorded. The
+  Wasm package is not rebuilt.
+
 ### Playground Phase 1
 
 - Added readable results with raw JSON, declared-function capabilities, conservative
@@ -18,7 +65,11 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   when S37's program-wide aggregate is unchanged. Adapter traps are displayed;
   share hash changes restore without running, and Tab preserves selected text.
 
-### Checked source seals and capability acceptance (T3, 2026-09-18)
+### Checked source seals and capability acceptance (T3 acceptance slice, partial, 2026-09-18)
+
+- Partial: this is the T3 acceptance slice only (#592). Runtime budgets
+  (`@bounded`), per-host network enforcement, converter work and T4 are not in
+  it, and there is no test yet for an edit that stays inside declared authority.
 
 - `seal/v2` subjects bind LF-normalized source, including capability edits
   (U-118). Sealing now refuses checker-fatal source before writing output;
