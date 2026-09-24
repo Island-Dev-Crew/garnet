@@ -85,9 +85,14 @@ a tag autonomously.
   restate the claim wider than that file does.
 - **Four integrity rules:** (1) a PR may not modify the gate it merges under
   (CI / dogfood skill / diff-caps thresholds / capability-manifest standard
-  / `scripts/garnet_github_*` changes are **human-merge-only**); (2) a capability-surface widening must fail
-  the gate and block merge; (3) every autonomous merge records agent / model /
-  gate-version; (4) the release **tag stays Jon's**.
+  / `scripts/garnet_github_*` changes are **human-merge-only**); (2) **authority
+  widening is gated, never guessed**: a change that widens the program-wide
+  declared capability surface, or introduces a wildcard, fails the gate and
+  cannot merge without a human ruling; a function-level gain is shown to the
+  reviewer for review; the gate reads declared authority only and never claims
+  undeclared authority is absent (Jon's wording, 2026-09-23); (3) every
+  autonomous merge records agent / model / gate-version; (4) the release **tag
+  stays Jon's**.
 - Update docs / conformance / dogfood / CHANGELOG ledgers when readiness changes.
 - Copy durable evidence to `/Users/IDC2.5/Desktop/dogfood/` and reseal manifests
   when a dogfood bundle is part of the deliverable; do not leave it only in
