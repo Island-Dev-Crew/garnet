@@ -13,7 +13,9 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
+import stat
 import sys
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime, timezone
@@ -31,6 +33,12 @@ X64_GUEST_ARCHES = frozenset({"x64", "x86_64", "amd64"})
 # the full name or it is reported (fail closed), never skipped.
 BUNDLE_NAME = re.compile(r"^[0-9]{8}-[0-9]{4}")
 BUNDLE_FULL_NAME = re.compile(r"[0-9]{8}-[0-9]{4}-[A-Za-z0-9][A-Za-z0-9._-]*")
+# An evidence file name: plain segments joined by dots. No colon (an NTFS
+# alternate stream), no trailing dot or space (a Win32 alias), no separator.
+EVIDENCE_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]*(?:\.[A-Za-z0-9_-]+)*")
+RECORDER_OUTPUTS = frozenset(
+    {PROOF_FILE, "MANIFEST.sha256", "windows-clean-vm-installer-status.json", "windows-clean-vm-installer-status.md"}
+)
 REQUIRED_GATE_IDS = frozenset(
     {"installer-artifact", "fresh-guest", "install-log", "studio-smoke", "launch-screenshot", "claim-boundary"}
 )
@@ -438,6 +446,15 @@ def _committed_bundle_problem(bundle: Path, repo: Path, proof: ProofRecord) -> s
     # (_confinement_problem), so no link can sit anywhere along the path.
     bundle_parts = (COMMITTED_BUNDLES_REL / bundle.name).parts
     bundle_dir = bundle.resolve()
+    # Only files the manifest just verified can be evidence, named exactly as
+    # the directory lists them: no stream, case or short-name alias.
+    inventory = {path.name for path in bundle.iterdir()} - RECORDER_OUTPUTS
+    names = [Path(text.replace("\\", "/")).name for text in (proof.install_log, proof.studio_smoke_json, proof.screenshot)]
+    if len(set(names)) != len(names):
+        return "the install log, smoke record and screenshot must be three different files"
+    for name in names:
+        if not EVIDENCE_NAME.fullmatch(name) or name not in inventory:
+            return f"{name!r} is not a verified evidence file of the bundle"
     for field, text in (
         ("install_log", proof.install_log),
         ("studio_smoke_json", proof.studio_smoke_json),
@@ -508,15 +525,20 @@ def latest_committed_proof(repo: Path | None = None) -> tuple[ProofRecord, str] 
     root = repo / COMMITTED_BUNDLES_REL
     root_source = f"committed:{COMMITTED_BUNDLES_REL.as_posix()}"
     try:
+        # Walk every ancestor with lstat, which reports errors instead of
+        # hiding them: only a missing path means "no committed evidence".
         current = repo
         for part in COMMITTED_BUNDLES_REL.parts:
             current = current / part
-            if _is_link(current):
-                return _broken_proof(f"{current.relative_to(repo).as_posix()} is a link"), root_source
-        if not root.exists():
-            return None
-        if not root.is_dir():
-            return _broken_proof(f"{COMMITTED_BUNDLES_REL.as_posix()} is not a directory"), root_source
+            try:
+                info = os.lstat(current)
+            except FileNotFoundError:
+                return None
+            label = current.relative_to(repo).as_posix()
+            if stat.S_ISLNK(info.st_mode) or _is_link(current):
+                return _broken_proof(f"{label} is a link"), root_source
+            if not stat.S_ISDIR(info.st_mode):
+                return _broken_proof(f"{label} is not a directory"), root_source
         entries = sorted(path for path in root.iterdir() if BUNDLE_NAME.match(path.name))
         if not entries:
             return None
