@@ -107,21 +107,24 @@ impl CapabilityManifest {
 }
 
 /// Merge per-program surfaces into a single package surface: union aggregate,
-/// sorted + deduplicated `(name, caps)` functions, OR-ed wildcard.
+/// every function entry sorted stably by name, OR-ed wildcard.
+///
+/// T5a (Codex round 2): entries are not deduplicated or sorted by their caps.
+/// A repeated name keeps its multiplicity and declaration order, because the
+/// last definition is the one that runs and `diff-caps` compares in order.
 pub fn merge_surfaces(surfaces: Vec<CapabilitySurface>) -> CapabilitySurface {
     let mut aggregate: BTreeSet<String> = BTreeSet::new();
-    let mut functions: BTreeSet<(String, Vec<String>)> = BTreeSet::new();
+    let mut per_function: Vec<(String, Vec<String>)> = Vec::new();
     let mut has_wildcard = false;
     for surface in surfaces {
         aggregate.extend(surface.aggregate);
-        for entry in surface.per_function {
-            functions.insert(entry);
-        }
+        per_function.extend(surface.per_function);
         has_wildcard |= surface.has_wildcard;
     }
+    per_function.sort_by(|a, b| a.0.cmp(&b.0));
     CapabilitySurface {
         aggregate: aggregate.into_iter().collect(),
-        per_function: functions.into_iter().collect(),
+        per_function,
         has_wildcard,
     }
 }
