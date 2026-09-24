@@ -70,13 +70,18 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
     short-name alias does not count;
   - the record and the evidence are read only from the bytes the manifest
     check hashed, each checked on the open handle it is read from, so a file
-    that appears or is swapped later is never evidence;
-  - the evidence files sit inside the bundle, with no link anywhere from the
-    repository down, and every directory on the way is a real directory the
-    reader can list. A missing path, or a proof root with no timestamp-named entry,
-    means there is no committed evidence.
+    that appears after the check is never evidence;
+  - each file has a stable identity (a nonzero inode), or the bundle is
+    reported unverified;
+  - the evidence files sit inside the bundle, the committed tree has no link
+    from the repository down, and every directory on the way is a real
+    directory the reader can list. A missing path, or a proof root with no
+    timestamp-named entry, means there is no committed evidence.
   A failing, relinked or record-less newest bundle is reported, never replaced
-  by an older one.
+  by an older one. These checks cover what is committed. They do not defend
+  against a process that can write the checkout while the reporter runs: such
+  a process could write a consistent bundle outright, because the manifest is
+  an unsigned list of hashes. Who committed a bundle is settled by review.
 - **Playground rebuild (X-9).** The browser Wasm package is rebuilt with
   the pinned toolchain (Rust 1.95.0, Node v22.22.2, wasm-pack 0.15.0, esbuild
   0.25.12); two builds matched byte for byte. The W-PLAY browser proof is
