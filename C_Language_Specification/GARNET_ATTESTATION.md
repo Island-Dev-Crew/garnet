@@ -108,7 +108,8 @@ returns nonzero before stdout or an output file is written. An existing output
 file is left unchanged on that rejection; callers must honor the exit status.
 Advisories are printed on stderr and do not prevent sealing.
 
-The current predicate type is `https://garnet-lang.org/attestation/seal/v2`.
+On `main` (unreleased), the predicate type is `https://garnet-lang.org/attestation/seal/v2`;
+the v0.8.2 release emits seal/v1.
 Its `subject[0].digest.blake3` is `build_manifest.source_hash`, and its predicate
 records `subject_identity: "garnet-source-lf-blake3-v1"`. Source identity uses
 UTF-8 source after CRLF-to-LF normalization, with no other whitespace or comment

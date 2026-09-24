@@ -333,7 +333,7 @@ The uninstall is fully reversible by re-running the install command — no linge
 | Milestone | Deliverable | Target |
 |---|---|---|
 | M1 (post-Rung 3) | `garnet` CLI with `build`, `run`, `test`, `fmt`, `doc`, `repl` | Q3 2026 |
-| M2 | `garnetup` toolchain manager (Linux x86_64 only) | Q4 2026 |
+| M2 | `garnetup` toolchain manager (Linux x86_64 only) | unscheduled (originally Q4 2026) |
 | M3 | Registry backend + publishing flow | Q1 2027 |
 | M4 | Tier 1 platforms complete (macOS, Windows, aarch64) | Q2 2027 |
 | M5 | Tier 2 platforms + offline bundles + IDE extensions | Q3 2027 |

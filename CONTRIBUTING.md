@@ -66,7 +66,7 @@ inter-crate deps to the shared version), not drift.
 
 ### The Language Spec
 
-The normative specification is `spec/GARNET_v1_0_Mini_Spec.md`. This is the source of truth for the grammar, semantics, mode boundaries, actor protocols, and type system. All crates implement against this spec.
+The normative specification is `C_Language_Specification/GARNET_v1_0_Mini_Spec.md`. This is the source of truth for the grammar, semantics, mode boundaries, actor protocols, and type system. All crates implement against this spec.
 
 ### Research Papers
 
@@ -159,7 +159,7 @@ Examples:
 - [ ] `cargo clippy --workspace -- -D warnings` passes clean
 - [ ] Commit messages follow the convention above
 - [ ] Breaking changes documented in PR description
-- [ ] If the spec changed, `spec/GARNET_v1_0_Mini_Spec.md` is updated
+- [ ] If the spec changed, `C_Language_Specification/GARNET_v1_0_Mini_Spec.md` is updated
 
 ## Good First Contributions
 
@@ -201,7 +201,7 @@ Feature requests should include:
 
 ## License
 
-By contributing to Garnet, you agree that your contributions will be licensed under both the Apache License, Version 2.0 and the MIT License (the same dual license as the project itself). All contributions are made under the DCO 1.1 (Developer Certificate of Origin).
+By contributing to Garnet, you agree that your contributions will be licensed under both the Apache License, Version 2.0 and the MIT License (the same dual license as the project itself).
 
 ---
 

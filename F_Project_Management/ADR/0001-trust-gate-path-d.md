@@ -13,8 +13,9 @@ convention and by a human-merge-only path list, not by the hosting platform.
 
 The Base-controlled composite workflow was the attempt to carry them
 mechanically. It has been red on effectively every run since it landed, because
-it runs on push and nothing re-runs it after an approval, and it has never
-changed the outcome of a merge. Making it a required check in that state would
+it runs on `pull_request_target` when a pull request opens or updates and
+nothing re-runs it after an approval. It has never changed the outcome of a
+merge. Making it a required check in that state would
 stop every pull request, including correct ones. A check that is always red
 teaches reviewers to ignore it, which is worse than no check.
 

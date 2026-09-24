@@ -22,7 +22,7 @@ Evidence:
 - v0.8.1 release readiness reporter green (binary-strict)
 - red-team static contract green (report, HIGH fix, regressions)
 - evidence-integrity bundles ok (38/38)
-- MIT productization lane active-partial (93.1%)
+- MIT productization lane active-partial (93.0%)
 
 Blockers:
 - evidence base `1011bc4` is unmeasured; re-measure with `cargo run -p xtask -- truth --with-tests` on a clean tree
@@ -57,7 +57,7 @@ Evidence:
 State: **partial**
 
 Evidence:
-- 3 recorded examples, claim markers present
+- 8 recorded examples, claim markers present
 
 Blockers:
 - static gallery only; live execution is the W-PLAY workstream
@@ -75,7 +75,7 @@ Evidence:
 State: **manual-deferred**
 
 Evidence:
-- stdlib registry: 80 primitives, 100.0% explicit stability
+- stdlib registry: 84 primitives, 100.0% explicit stability
 
 Blockers:
 - no reporter covers the shelf in Truth Lock; this is an explicit manual fence, never reporter-derived machine truth
@@ -85,7 +85,7 @@ Blockers:
 State: **pending-human**
 
 Evidence:
-- promo reporter status: public-site-embedded (95.0%)
+- promo reporter status: website-export-ready (90.0%)
 
 Blockers:
 - human render/QA decision outside this reporter

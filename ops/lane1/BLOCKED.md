@@ -21,6 +21,12 @@
 - WV-6: `partial`, correctly pending a native-Windows acceptance manifest at
   the verdict-approved exact head.
 
+## Parked (2026-09-23)
+
+WV-6 ships as a disclosed `partial` in the CHANGELOG and the 0.8.3 release
+body. The acts 2-5 succession target is parked, and no restoration run happens
+before the R2 launch decision.
+
 ## Blocker
 
 `ops/lane1/review/11-request.md` awaits the independent verdict. No NUC

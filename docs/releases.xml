@@ -5,8 +5,32 @@
   <link href="https://garnet-lang.org/releases.xml" rel="self"/>
   <link href="https://github.com/Island-Dev-Crew/garnet/releases"/>
   <id>https://garnet-lang.org/releases.xml</id>
-  <updated>2026-05-20T14:19:59Z</updated>
+  <updated>2026-09-11T18:24:02Z</updated>
   <author><name>Island Development Crew</name></author>
+  <entry>
+    <title>Garnet v0.8.2</title>
+    <id>https://github.com/Island-Dev-Crew/garnet/releases/tag/v0.8.2</id>
+    <link href="https://github.com/Island-Dev-Crew/garnet/releases/tag/v0.8.2"/>
+    <updated>2026-09-11T18:24:02Z</updated>
+    <published>2026-09-11T18:24:02Z</published>
+    <summary>v0.8.2 — CLI binaries for Linux x86_64 and ARM64 (.deb, .rpm, tarballs; glibc 2.39+), macOS Apple-Silicon and Intel tarballs and a Windows x86_64 zip, plus a CycloneDX SBOM, host-native VSIX assets, SHA256SUMS and its GPG signature SHA256SUMS.asc. The binaries are not code-signed. The strict network policy judges IPv4 carried inside IPv6. Research-grade prototype, not production-complete.</summary>
+  </entry>
+  <entry>
+    <title>Garnet v0.8.1</title>
+    <id>https://github.com/Island-Dev-Crew/garnet/releases/tag/v0.8.1</id>
+    <link href="https://github.com/Island-Dev-Crew/garnet/releases/tag/v0.8.1"/>
+    <updated>2026-06-07T07:55:45Z</updated>
+    <published>2026-06-07T07:55:45Z</published>
+    <summary>v0.8.1 — CLI binaries for Linux x86_64 (.deb, .rpm) and macOS Apple-Silicon and Intel tarballs, plus a CycloneDX SBOM, SHA256SUMS and its GPG signature SHA256SUMS.asc, the first signed checksums. The binaries are not code-signed. Carries the trust-kernel work (@caps and @max_depth traps on both backends). Research-grade prototype, not production-complete.</summary>
+  </entry>
+  <entry>
+    <title>Garnet v0.8.0</title>
+    <id>https://github.com/Island-Dev-Crew/garnet/releases/tag/v0.8.0</id>
+    <link href="https://github.com/Island-Dev-Crew/garnet/releases/tag/v0.8.0"/>
+    <updated>2026-05-31T20:55:58Z</updated>
+    <published>2026-05-31T20:55:58Z</published>
+    <summary>v0.8.0 — the tag for the S30-S80 run. Its assets are the garnet-0.5.0 build (garnet-0.5.0-* tarballs, garnet_0.5.0-1_amd64.deb and the .rpm), not a 0.8.0 build, with SHA256SUMS unsigned and VSIX assets from 0.5.0 to 0.7.0. Research-grade prototype, not production-complete.</summary>
+  </entry>
   <entry>
     <title>Garnet v0.5.0</title>
     <id>https://github.com/Island-Dev-Crew/garnet/releases/tag/v0.5.0</id>

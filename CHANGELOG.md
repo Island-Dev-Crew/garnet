@@ -9,6 +9,67 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ## [Unreleased]
 
+### Public truth: gap-0 docs pass (T6-docs)
+
+- Public pages and docs no longer say "signed binaries". Release binaries are
+  not code-signed; their checksums are in a GPG-signed `SHA256SUMS`. The
+  installers check integrity against `SHA256SUMS` but do not check its
+  signature, and the install pages now say so. The omarchy page says
+  `garnet seal` never signs; it only detects cosign.
+- "Named, acyclic" call-chain wording now reads "named call chain, cycles
+  included" in the man page, template README, specs and site pages, matching
+  the U-117 cure.
+- The FAQ and getting-started page say Garnet is on no package registry, that
+  `garnet` and `garnet-cli` there belong to unrelated projects, and that other
+  install instructions for Garnet are untrusted.
+- Correction: the 2026-09-11 landing-sample fix was incomplete. The
+  error-handling sample kept `rescue e: FileNotFound`, which never matches the
+  string an io error raises, so the sample re-raised. It now reads
+  `rescue e: String`, and a probe on main prints `nil`.
+- Security disclosure: the strict network policy does not yet catch NAT64
+  local-use, IPv4-translated, Teredo or site-local `fec0::/10` spellings of
+  internal hosts, and cannot catch network-specific NAT64 prefixes. `SECURITY.md`
+  gains a known-limitations section and the landing row is qualified. The code
+  fix is planned for 0.8.3.
+- The landing converter pane is labelled reviewer-finished: `garnet convert`
+  copies the Ruby block unchanged and leaves two to-dos.
+- `garnet agent-loop` docs (man page, `GARNET_ULTRAPUNCH.md`) say the kernel
+  stage runs the unaccepted proposal on the host, in the current directory,
+  with no OS sandbox. README calls `build --deterministic --sign` output the
+  manifest, not the seal.
+- Actors: the orchestrator example, `CURRENT_STATE.md`, the concurrency
+  contract and the `garnet-actor-runtime` and `garnet-suggest-llm` crate docs
+  say the threaded runtime and the LLM tier are staging crates that nothing
+  links (ADR 0015, D-42). The contract adds ADR 0014: an actor promises nothing
+  when it dies. ADR 0014 and 0015 are marked documented.
+- Studio: native (non-WSL) Debian ARM64 build, install and headless launch
+  proof is cited on the landing and status pages; Linux x64 and a desktop
+  session stay open. The maintainer-local evidence path is gone from the
+  landing page.
+- Orientation: `CLAUDE.md` points at live sources and marks the June plan,
+  handoff and ledger historical; the remotes line matches same-repo PRs since
+  #571. The ADR index lists 0011-0015, ADR 0001 names its `pull_request_target`
+  trigger, `GOVERNANCE.md` points at ADR 0001, `CONTRIBUTING.md` links the real
+  Mini-Spec path, and `AGENTS.md` names `docs/index.html` and
+  `docs/service-worker.js` as W-PLAY runtime inputs. `docs/releases.xml` gains
+  v0.8.0, v0.8.1 and v0.8.2.
+- `docs/index.html` changed, so `W_PLAY_BROWSER_PROOF.json` is re-recorded. The
+  Wasm package is not rebuilt.
+- WV-6 (native-Windows acceptance) stays `partial` and ships as a disclosed
+  partial. The L1 acts 2-5 succession target is parked, and no restoration run
+  happens before the R2 launch decision.
+- Actors in the README: "Typed actors" becomes "Actors" and claims only what is
+  checked (`@nonsendable` payloads at protocol and handler declarations;
+  1024-message mailboxes unless `Actor.spawn(capacity)` sets a size, with a
+  `tell` to a full mailbox failing, probed on main).
+- Pages that describe `main` say the v0.8.2 binary gates 15 primitives, has no
+  `mem` capability and emits seal/v1. These labels come off when 0.8.3 ships.
+- Contributors: the DCO sentence is removed (no check exists and no commit is
+  signed off), the Code of Conduct cites Contributor Covenant 1.4 to match its
+  text and names the single maintainer at `hello@garnet-lang.org`, and the PR
+  template's evidence line no longer names a maintainer's home path.
+- `AGENTS.md` records approve-then-re-run as a disclosed interim practice.
+
 ### Playground Phase 1
 
 - Added readable results with raw JSON, declared-function capabilities, conservative
@@ -18,7 +79,11 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   when S37's program-wide aggregate is unchanged. Adapter traps are displayed;
   share hash changes restore without running, and Tab preserves selected text.
 
-### Checked source seals and capability acceptance (T3, 2026-09-18)
+### Checked source seals and capability acceptance (T3 acceptance slice, partial, 2026-09-18)
+
+- Partial: this is the T3 acceptance slice only (#592). Runtime budgets
+  (`@bounded`), per-host network enforcement, converter work and T4 are not in
+  it, and there is no test yet for an edit that stays inside declared authority.
 
 - `seal/v2` subjects bind LF-normalized source, including capability edits
   (U-118). Sealing now refuses checker-fatal source before writing output;
@@ -39,6 +104,26 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   duplicate keys before running. The S97 reporter recognizes v2; public
   attestation copy and the U-118 row match the new source identity.
   Regression coverage: `checked_seal_acceptance` and `agent_loop`.
+
+### Installer — a binary that cannot run fails the install (T6-docs PR-C, 2026-09-23)
+
+- `install.sh` printed "install complete" and exited 0 even when the installed
+  binary could not run, because it piped `garnet --version` into `head` and
+  reported head's status. It now keeps the real status. A failed package-manager
+  step or version check makes `release_install_for_format` return non-zero, so
+  auto mode falls through to the source build instead of stopping on a binary
+  that does not run. Probe: a tarball whose `garnet` exits 1 gave rc 0 before
+  and rc 1 after, in release mode.
+- On Linux hosts that report glibc older than 2.39 (for example Debian 12 or
+  Ubuntu 22.04), the installer skips the release assets with a message and, in
+  auto mode, builds from source. musl and unknown hosts are not judged.
+- The installer header says it checks integrity against `SHA256SUMS` but does
+  not verify `SHA256SUMS.asc`, and that `GARNET_BASE_URL` and
+  `GARNET_CHECKSUM_URL` move the asset and checksum sources together.
+- The `install.ps1` source-build hint pins the release tag:
+  `cargo install --git … --tag v$version --locked garnet-cli`, matching the
+  POSIX installer's pinned-tag policy.
+- `docs/install.sh` stays byte-identical to `installer/sh.garnet-lang.org/install.sh`.
 
 
 ### Checker — `caps coverage` names the primitive, not the hop (2026-09-18)
@@ -468,6 +553,10 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 ## [0.8.2] — 2026-09-11 (tag `v0.8.2` → `f25ffb5`; the workspace moved to 0.8.2 on 2026-09-02)
 
 ### Released 0.8.2 — signed binaries for every desktop platform (2026-09-11)
+
+> Annotation, 2026-09-23: this dated heading is kept as history. "Signed"
+> here means the GPG-signed `SHA256SUMS`; the binaries themselves are not
+> code-signed.
 
 - **Released:** the `v0.8.2` GitHub Release carries nine binary assets
   (Linux x86_64 and ARM64 `.deb`, `.rpm` and tarballs; macOS arm64 and

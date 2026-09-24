@@ -121,7 +121,8 @@ RAII-unwound). Since U-91 every gated primitive is `Guard::GateEntry`
 only when an active frame declares the capability **and** the program-entry
 frame's own budget covers it — a helper's declaration no longer satisfies it for
 an entry point that declared nothing. The static caps-graph propagates caps only
-across the named, acyclic call edges it can build from an annotated function, so
+across the named call edges it can build from an annotated function (cycles
+included), so
 passing `garnet check` is not proof that a program declares every capability it
 reaches (`GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md`).
 

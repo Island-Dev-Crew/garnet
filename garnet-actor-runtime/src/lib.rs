@@ -1,4 +1,10 @@
-//! # Garnet Actor Runtime (v0.4.0)
+//! # Garnet Actor Runtime (v0.4.0) — staging crate
+//!
+//! **Staging (D-42, ADR 0015).** Nothing in the workspace links this crate: it
+//! is a workspace member with no dependents, so no `garnet` command reaches
+//! it. Garnet programs run in-process actors in the interpreter. No public
+//! page may present this runtime as shipped until a release links it and a
+//! test proves it from the binary. Review by 2026-12-31: link it, or remove it.
 //!
 //! Rung 6 concurrent execution surface. Each actor runs on a dedicated OS
 //! thread, receives messages over an `mpsc::Sender`, and returns replies on
@@ -7,8 +13,8 @@
 //! production work-stealing runtime (that's a separable extension).
 //!
 //! The runtime is independent of the interpreter — it shuffles user-defined
-//! payloads, not Garnet `Value` instances. The interpreter wraps it through
-//! the `garnet-actor-runtime-bridge` adapter (future work).
+//! payloads, not Garnet `Value` instances. No adapter connects it to the
+//! interpreter today.
 //!
 //! ## Usage
 //!

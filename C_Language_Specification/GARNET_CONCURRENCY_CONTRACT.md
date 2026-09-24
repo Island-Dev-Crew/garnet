@@ -4,6 +4,13 @@ Status: codifies the concurrency model **as built** in `garnet-actor-runtime` an
 Mini-Spec §9. This document is descriptive of the shipped runtime — it does not
 introduce new semantics. Deferred items are labelled explicitly.
 
+> **Which runtime this describes (ADR 0015).** Sections 1, 2 and 7 describe
+> `garnet-actor-runtime`, a staging crate that nothing in the workspace links;
+> no `garnet` command reaches it. Programs that `garnet run` executes use
+> in-process actors in the interpreter, with bounded mailboxes (capacity 1024).
+> Read the OS-thread and hot-reload statements below as the staging crate's
+> design, not as shipped behaviour.
+
 Garnet's concurrency model is **actors**, not async/await. (`async` is a reserved
 word in a future edition only — see S32 / `garnet_parser::Edition`; there is no
 `async`/`await` surface in v0.8.)
@@ -84,6 +91,8 @@ This is a runtime capability of the actor runtime, surfaced for completeness.
 
 - **No async/await.** Concurrency is actor-based; `async` is reserved for a
   future edition only.
+- **An actor promises nothing when it dies (ADR 0014).** There is no restart,
+  no supervisor and no delivery guarantee for messages in flight.
 - **`@nonsendable` enforcement is deferred** — the annotation is recorded; static
   rejection of cross-boundary sends needs type-flow analysis (a later slice).
 - **Resource-bound ENFORCEMENT is deferred** — `@bounded`/`@fan_out`/ceilings are
