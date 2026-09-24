@@ -69,10 +69,11 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
     the files the manifest verified, so an NTFS alternate stream or a case or
     short-name alias does not count;
   - the record and the evidence are read only from the bytes the manifest
-    check hashed, so a file that appears later is never evidence;
+    check hashed, each checked on the open handle it is read from, so a file
+    that appears or is swapped later is never evidence;
   - the evidence files sit inside the bundle, with no link anywhere from the
-    repository down, and every directory on the way is a real, readable
-    directory. A missing path, or a proof root with no timestamp-named entry,
+    repository down, and every directory on the way is a real directory the
+    reader can list. A missing path, or a proof root with no timestamp-named entry,
     means there is no committed evidence.
   A failing, relinked or record-less newest bundle is reported, never replaced
   by an older one.
