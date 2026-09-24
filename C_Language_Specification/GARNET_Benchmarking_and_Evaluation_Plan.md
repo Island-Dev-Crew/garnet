@@ -276,6 +276,9 @@ This fallback still beats every other mainstream language's reproducibility guar
 
 ## 10. Execution Timeline
 
+> **Status, 2026-09-23:** the timelines below are the original plan, not a schedule.
+> None of these dates is committed.
+
 | Phase | Benchmarks | Dependency | Timeline |
 |---|---|---|---|
 | Pilot | §3 (compilation perf, synthetic) | Rung 3 parser + partial interpreter | Q3 2026 |
@@ -293,7 +296,7 @@ This fallback still beats every other mainstream language's reproducibility guar
 
 ## 11. Open-Sourcing Commitments
 
-All benchmarks, datasets, and methodology will be open-sourced under MIT license at the time of Paper VI submission (October 2026):
+All benchmarks, datasets, and methodology will be open-sourced under MIT license at the time of Paper VI submission (originally planned for October 2026; not scheduled):
 
 - `garnet-bench/` — the benchmark harness and synthetic corpus generator
 - `garnet-llm-tasks/` — the 500-task LLM evaluation set

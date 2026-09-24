@@ -172,7 +172,7 @@ production-complete** — and this README will never tell you otherwise.
 The full ledger lives in [CURRENT_STATE.md](CURRENT_STATE.md); the readiness detail lives on
 [the status page](https://garnet-lang.org/status.html). The evidence scorecard for the research
 claims: 4 supported, 2 partial, 0 refuted, 1 pending-infra
-([seven papers](A_Research_Papers/)).
+([seven papers](A_Research_Papers/)). The measured results for experiments 2–6 cannot be reproduced from this repository: experiments 2, 4, 5 and 6 have no committed harness, and the experiment 3 harness does not include the measured run.
 
 ## Learn more
 

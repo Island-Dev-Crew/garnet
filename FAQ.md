@@ -46,7 +46,7 @@ Swift and Kotlin do interop between two paradigms in one language; Garnet's pitc
 
 For pure-computational workloads the tree-walk interpreter remains the conservative runtime path. v0.5.0 added the S2 bytecode VM scaffold and benchmark harness, and the v0.8 line brought the VM to enforcement parity (`@caps` + `@max_depth` trap identically on both backends), but production VM performance is not claimed yet. The proof/benchmark reporter still labels fresh measured benchmark runs, mechanized proof, and empirical study data as open gates. See [Paper VII — Implementation Ladder and Tooling](A_Research_Papers/Paper_VII_Implementation_Ladder_and_Tooling.md) for the staged roadmap.
 
-Memory: Paper VI Experiment 4 measured 21% peak RSS reduction on the multi-agent MVP workload by using kind-aware allocation (`memory working|episodic|semantic|procedural` keywords) compared to a force-malloc control.
+Memory: Paper VI Experiment 4 measured 21% peak RSS reduction on the multi-agent MVP workload by using kind-aware allocation (`memory working|episodic|semantic|procedural` keywords) compared to a force-malloc control. No harness for Experiment 4 is committed, so this figure cannot be reproduced from the repository.
 
 ## Is Garnet production-ready?
 
