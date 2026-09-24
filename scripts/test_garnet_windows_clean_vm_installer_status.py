@@ -541,6 +541,22 @@ class CommittedCleanVmBundleAdversarialTests(_CommittedRepoCase):
         self._swap_before_first_evidence_read({status_mod.PROOF_FILE}, swap)
         self._assert_unverified()
 
+    def test_a_filesystem_without_stable_file_identity_fails_closed(self) -> None:
+        # Codex round 6: Python promises inode uniqueness only when st_ino is
+        # nonzero. With st_ino 0 the identity checks prove nothing, so the
+        # reader must report the bundle unverified, not skip them.
+        real_lstat, real_fstat = os.lstat, os.fstat
+
+        def zero_ino(result: os.stat_result) -> os.stat_result:
+            fields = list(result[:10])
+            fields[1] = 0
+            return os.stat_result(fields)
+
+        with mock.patch("os.lstat", lambda *a, **k: zero_ino(real_lstat(*a, **k))), mock.patch(
+            "os.fstat", lambda *a, **k: zero_ino(real_fstat(*a, **k))
+        ):
+            self._assert_unverified()
+
     def test_evidence_files_must_not_be_hard_links(self) -> None:
         # Codex round 4: two names for one file let one smoke record fill every
         # role. Git never checks out hard links, so a bundle file has one link.
