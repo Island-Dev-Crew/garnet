@@ -1,0 +1,4 @@
+parsed /root/gw4-20260924-1247/examples/mvp_05_web_app.garnet (3 items, safe=false)
+  - fn/def route_weight (1 args)
+  - fn/def dispatch_score (1 args)
+  - fn/def main (0 args)

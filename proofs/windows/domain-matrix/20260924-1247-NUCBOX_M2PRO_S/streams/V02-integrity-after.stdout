@@ -1,0 +1,8 @@
+{
+  "schema": "garnet.evidence_integrity/v1",
+  "bundles_total": 40,
+  "bundles_ok": 40,
+  "bundles_failed": 0,
+  "failed": [],
+  "ok": true
+}

@@ -1,0 +1,4 @@
+parsed C:\gw4-20260924-1247\examples\mvp_08_distributed_kv.garnet (3 items, safe=false)
+  - fn/def max_int (2 args)
+  - fn/def merge_clock (3 args)
+  - fn/def main (0 args)

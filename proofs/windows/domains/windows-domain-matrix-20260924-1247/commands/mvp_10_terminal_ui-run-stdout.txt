@@ -1,0 +1,2 @@
+mvp_10_terminal_ui score: 560
+=> 560

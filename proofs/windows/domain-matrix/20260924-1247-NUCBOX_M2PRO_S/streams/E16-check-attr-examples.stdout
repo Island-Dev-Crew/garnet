@@ -1,0 +1,4 @@
+examples/multi_agent_builder.garnet: text: set
+examples/multi_agent_builder.garnet: eol: lf
+examples/agentic_log_analyzer.garnet: text: set
+examples/agentic_log_analyzer.garnet: eol: lf

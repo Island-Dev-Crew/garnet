@@ -1,0 +1,5 @@
+parsed /root/gw4-20260924-1247/examples/mvp_06_multi_agent.garnet (4 items, safe=false)
+  - fn/def researcher (1 args)
+  - fn/def synthesizer (1 args)
+  - fn/def reviewer (1 args)
+  - fn/def main (0 args)

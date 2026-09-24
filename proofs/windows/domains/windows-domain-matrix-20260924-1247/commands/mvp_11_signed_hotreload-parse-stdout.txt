@@ -1,0 +1,2 @@
+parsed C:\gw4-20260924-1247\examples\mvp_11_signed_hotreload.garnet (1 items, safe=false)
+  - fn/def main (0 args)
