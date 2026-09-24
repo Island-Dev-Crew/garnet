@@ -68,6 +68,8 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
     optionally prefixed `Microsoft`. Another system, a subsystem (Android,
     Linux) or a hypervisor guest-type identifier does not count, and the
     recorder's fresh-guest gate applies the same rule;
+  - the install log is not empty and the screenshot is a PNG with a nonzero
+    width and height (the recorder's gates check the same);
   - the install log, smoke record and screenshot are three different files
     (no bundle file may have a second hard link), each named exactly as one of
     the files the manifest verified, so an NTFS alternate stream or a case or

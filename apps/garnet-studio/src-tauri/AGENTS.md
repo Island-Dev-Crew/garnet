@@ -50,7 +50,9 @@ checker, parser, or macOS SwiftUI Studio implementation.
     prefixed `Microsoft`. A hypervisor guest-type identifier is out of
     contract, and the recorder's fresh-guest gate applies the same rule;
   - the three evidence files are distinct, manifest-verified files named
-    directly inside the bundle;
+    directly inside the bundle; the install log is not empty, and the
+    screenshot is a PNG with a nonzero width and height, checked by both the
+    recorder and the reader;
   - no directory on the way is a link, and each one can be listed.
 
   A failing newest bundle is reported, never replaced by an older one.
