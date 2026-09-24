@@ -49,15 +49,15 @@ _CONTENT_SPEC.loader.exec_module(content_provenance)
 
 EXPECTED_FILE_SHA256 = {
     ".gitattributes": "b2a14050a850391f8ed1c788f9a6a66155a423ebceb3bb4722478dcaec97dd1b",
-    "examples/minimum-shelf-flagship/SHELF_PACKAGE.json": "a3c6cc2306a041c8dc094e1ebc546ab0ae257629d880f34fb969747268110e3a",
+    "examples/minimum-shelf-flagship/SHELF_PACKAGE.json": "fc2b3678bd05ebf443e5701457425b158e0c91805a48592485b4eefb7fd4940e",
     "examples/minimum-shelf-flagship/tool.garnet": "25ebd3dc02c8ab7d17e343c867e6becda9918c84a567f56f5b14ba4aba08a967",
-    "examples/minimum-shelf-flagship/tool.seal.json": "ec5763fa02ad19ca0466ae469cc15937066d5452d3fbfcabe9a8cb18729f4dd3",
+    "examples/minimum-shelf-flagship/tool.seal.json": "b3578595bf3ad4cd342265d6f797ad9d1321f451abbfffafc9fc6e205b615139",
     "garnet-interp-v0.3/src/prelude.rs": "784864f2ccf16eb5494a39e42c5c4bf15b6ac0e09b7f729ca8ecc0e23ad81c62",
     "ops/lane2b/evidence/10-f1-canonical-reseal-green.txt": "02a948c903fec3f02a79f831f9e086a7ed11d8bb48976ed09ef512971fa0a6a7",
 }
 EXPECTED_INPUT_SHA256 = "2328d55497368e0a351cfbd0e5421ab46c3826abf4f313c1a497e95a9fbfd769"
 EXPECTED_OUTPUT_SHA256 = "dac0eea7138d0f58865eecefc8db0c64490605068b956f757f420d6b284ba15f"
-EXPECTED_SEAL_BLAKE3 = "543e22925d0f2013d7ad6d83c4f29449a22109f4a75c7f5bba5f5506a94a1f57"
+EXPECTED_SEAL_BLAKE3 = "78ba05bbb5a4f0b8bf18f50760232ebf330eda8f4331a6ed483fea3a3ee3f392"
 EXPECTED_PRELUDE_BLAKE3 = "df4f1648cf79ea77d0842fd1cb8725aba82be1b2631d5a906952640f9a25cc6d"
 EXPECTED_SCOPE = [
     "one Garnet-owned local package",
