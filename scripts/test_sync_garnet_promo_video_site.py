@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Regression checks for syncing the verified promo export into the docs site."""
+"""Regression checks for the promo export sync script.
+
+The script's sync contract is kept, but the public page no longer carries
+the promo embed it synced: #566 replaced it with the #demonstration video.
+"""
 from __future__ import annotations
 
 import subprocess
@@ -30,24 +34,18 @@ class GarnetPromoSiteSyncTests(unittest.TestCase):
         self.assertIn("promo-site-sync-data.json", result.stdout)
         self.assertIn("MANIFEST.sha256", result.stdout)
 
-    def test_public_site_embeds_video_with_current_boundaries(self) -> None:
+    def test_retired_promo_embed_is_not_claimed_on_the_page(self) -> None:
+        # The May garnet-promo embed this script synced (3b21759d) was retired
+        # by #566, which replaced it with the #demonstration section and
+        # garnet-demonstration.mp4. The page must not claim the retired embed,
+        # and the promo snapshot records that no promo embed is present.
         site = SITE.read_text(encoding="utf-8")
-
-        self.assertIn('id="promo"', site)
-        self.assertIn('class="promo-video"', site)
-        self.assertIn('poster="assets/garnet-promo-poster.png"', site)
-        self.assertIn('src="assets/garnet-promo.webm"', site)
-        self.assertIn('src="assets/garnet-promo.mp4"', site)
-        self.assertIn("Public-site embedded", site)
-        self.assertIn("human/aesthetic acceptance", site)
-        self.assertIn("not full MIT/productization completion", site)
-
-    def test_service_worker_caches_promo_site_assets(self) -> None:
         worker = SERVICE_WORKER.read_text(encoding="utf-8")
 
-        self.assertIn("assets/garnet-promo.mp4", worker)
-        self.assertIn("assets/garnet-promo.webm", worker)
-        self.assertIn("assets/garnet-promo-poster.png", worker)
+        self.assertNotIn('id="promo"', site)
+        self.assertNotIn("assets/garnet-promo.mp4", site)
+        self.assertNotIn("assets/garnet-promo.mp4", worker)
+        self.assertIn('id="demonstration"', site)
 
     def test_script_copies_media_assets_and_manifested_evidence(self) -> None:
         source = SCRIPT.read_text(encoding="utf-8")
