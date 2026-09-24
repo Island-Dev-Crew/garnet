@@ -592,6 +592,20 @@ class CommittedCleanVmBundleAdversarialTests(_CommittedRepoCase):
         self._link_dir(self.bundle / "extra", Path(self._temp.name))
         self._assert_unverified()
 
+    def test_the_guest_must_be_windows(self) -> None:
+        # Codex round 7: a committed bundle whose guest reads Ubuntu, macOS or
+        # FreeBSD still verified as a Windows clean-VM proof.
+        for guest_os in ("Ubuntu 24.04 LTS", "macOS 15.4", "FreeBSD 14.2", "Windows Subsystem for Linux (Ubuntu)"):
+            with self.subTest(guest_os=guest_os):
+                self._edit_proof(guest_os=guest_os)
+                self._assert_unverified()
+
+    def test_windows_guest_names_verify(self) -> None:
+        for guest_os in ("Windows 11 Pro 26100", "Microsoft Windows 11 Enterprise 10.0.26100", "Windows Server 2025"):
+            with self.subTest(guest_os=guest_os):
+                self._edit_proof(guest_os=guest_os)
+                self.assertTrue(status_mod.read_status().clean_vm_verified)
+
     def test_the_fresh_guest_identity_is_checked_not_its_gate_label(self) -> None:
         self._edit_proof(guest_os="", vm_name="")
         self._assert_unverified()
