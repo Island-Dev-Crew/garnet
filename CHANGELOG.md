@@ -9,6 +9,22 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ## [Unreleased]
 
+### Integrity rule 2 restated (Jon's wording, 2026-09-23)
+
+- `CLAUDE.md` rule 2 now reads: authority widening is gated, never guessed. A
+  change that widens the program-wide declared capability surface, or
+  introduces a wildcard, fails the gate and cannot merge without a human
+  ruling. A function-level gain is shown to the reviewer for review. The gate
+  reads declared authority only and never claims undeclared authority is
+  absent. This matches what `diff-caps` does on main (S37 option b): a
+  program-wide widening or a new `@caps(*)` exits 1; a per-function gain or a
+  new function under the existing surface exits 0 and is listed.
+- README, the landing page and `GARNET_ULTRAPUNCH.md` say "program-wide
+  declared" where they describe the gate.
+- Known gap, cured in T5a (C1-01): for functions inside modules, a
+  per-function gain can be reported under the wrong name, and a new function
+  is listed without its capabilities.
+
 ### Public truth: gap-0 docs pass (T6-docs)
 
 - Public pages and docs no longer say "signed binaries". Release binaries are

@@ -91,7 +91,8 @@ SLSA each do a piece well. **Garnet's bet is the integration**, enforced at the 
 and aimed at agent-authored code:
 
 - **`diff-caps`** — the capability-surface diff as an acceptance gate. When a dependency or an
-  agent's PR changes what the code *can do*, you review the authority delta, not every line.
+  agent's PR changes what the code *can do*, you review the program-wide declared authority delta,
+  not every line; a per-function gain inside that surface is shown for review, not failed.
 - **`@caps(...)`** — functions declare their OS-authority budget; the CapCaps propagator checks
   declared budgets transitively at check time **across named call chains**, and the entry point
   must declare its budget. Reached instead through a function value, a closure, an actor handler,

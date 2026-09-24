@@ -22,9 +22,11 @@ to a proof) lives in `F_Project_Management/GARNET_ULTRAPUNCH_DOSSIER.md` (S115).
 
 A proposal is ACCEPTED only if it passes three gated stages, in order:
 
-1. **diff-caps (S37)** — the declared capability surface must **not widen**. A
-   widening exits non-zero (`band 2/5`); the loop REFUSES it — it never runs and is
-   never sealed (**Rule 2: widening hard-fails**).
+1. **diff-caps (S37)** — the program-wide declared capability surface must **not
+   widen**, and no wildcard may appear. A widening exits non-zero (`band 2/5`); the
+   loop REFUSES it — it never runs and is never sealed (**Rule 2: a program-wide
+   declared widening hard-fails**). A function-level gain inside the existing
+   surface does not fail this stage; `diff-caps` shows it for review.
 2. **the enforced kernel (S99 `@max_depth` + S100 `@caps` traps)** — the proposal
    must run without tripping an enforced ceiling. A trap REFUSES it; no seal.
    The run is real: `garnet run` executes the unaccepted proposal on the host, in
