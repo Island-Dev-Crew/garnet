@@ -123,8 +123,8 @@
             Get-Asset "$baseUrl/SHA256SUMS" $sums
         } catch {
             Fail ("could not download SHA256SUMS for v$version from $baseUrl ($($_.Exception.Message)). " +
-                  'Windows release assets are published starting with v0.8.2; if that release is not out yet, ' +
-                  "build the development branch from source (requires Rust): cargo install --git https://github.com/$repo --locked garnet-cli")
+                  'Windows release assets are published starting with v0.8.2. ' +
+                  "To build this version from source instead (requires Rust): cargo install --git https://github.com/$repo --tag v$version --locked garnet-cli")
         }
 
         # sha256sum format: 64 hex digits, a space, a mode character (space or
