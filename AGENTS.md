@@ -389,6 +389,14 @@ dispatch, close/reopen, new-run, or third-attempt path is equivalent. Until the
 carrier exists and `r2_role_separation_v1` is executable and green, the
 exception is contract law but is ineligible for activation.
 
+Interim practice, disclosed rather than enforced: since 2026-09-13 the
+maintainer has accepted approve-then-re-run, in which `IDC-Trust-Review`
+approves the exact record-containing head and then triggers one re-run
+(#585, #589, #591, #592, #593). The approving account is also the carrier, so
+this does not satisfy `r2_role_separation_v1`, and no gate checks it. Each
+review record states it under its venue limits. It stays in force until S-R1
+supersedes U-59, and it is never described as enforced.
+
 Attempt 2 treats the replayed event payload as stale coordinates, never current
 authority. It uses fresh bounded transport for the PR, base, commits, reviews,
 selected review, attempt-1 artifact, workflow-run object, both attempt-specific

@@ -42,7 +42,7 @@
   <div class="top"><a href="/index.html">← garnet-lang.org</a> &nbsp;·&nbsp; <a href="getting-started.html">Getting Started</a> &nbsp;·&nbsp; <a href="minispec.html">Mini-Spec</a> &nbsp;·&nbsp; <a href="https://github.com/Island-Dev-Crew/garnet/blob/main/garnet-stdlib/src/registry.rs" target="_blank" rel="noopener noreferrer">Source ↗</a></div>
 
   <h1>Stdlib Primitive Registry</h1>
-  <p class="sub">The current registry exposes 84 primitive entries. Pure helpers need no capability; time, filesystem, network, environment, process and memory-tier primitives declare one. The 24 entry-gated rows are refused at run time when the program entry does not declare their capability; unbridged rows have no interpreter binding.</p>
+  <p class="sub">The current registry exposes 84 primitive entries. Pure helpers need no capability; time, filesystem, network, environment, process and memory-tier primitives declare one. On <code>main</code>, the 24 entry-gated rows are refused at run time when the program entry does not declare their capability (the v0.8.2 release gates 15 and has no <code>mem</code> rows); unbridged rows have no interpreter binding.</p>
   <p class="note">This is a registry reference, not a promise of a mature standard library. Higher-level HTTP, package, async, and data APIs remain future library work.</p>
 
   <div class="grid">

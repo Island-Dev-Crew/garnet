@@ -201,7 +201,7 @@ Feature requests should include:
 
 ## License
 
-By contributing to Garnet, you agree that your contributions will be licensed under both the Apache License, Version 2.0 and the MIT License (the same dual license as the project itself). All contributions are made under the DCO 1.1 (Developer Certificate of Origin).
+By contributing to Garnet, you agree that your contributions will be licensed under both the Apache License, Version 2.0 and the MIT License (the same dual license as the project itself).
 
 ---
 

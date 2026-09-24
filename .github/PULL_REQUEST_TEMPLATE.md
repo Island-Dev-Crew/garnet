@@ -68,9 +68,9 @@ release readiness unless the production path was actually proven.
 
 - [ ] Draft PR checks are green or remaining failures are explained below.
 
-### Desktop dogfood bundle
+### Evidence bundle
 
-- [ ] `/Users/idc2.0/Desktop/dogfood/<bundle-name>` contains PR metadata, logs, and verified manifest.
+- [ ] The evidence bundle (any location) contains PR metadata, logs, and a verified manifest.
 - [ ] Bundle includes `readiness-slice-status.md` when this PR changes readiness evidence or implementation-plan status.
 
 ### Deferred / out of scope

@@ -20,6 +20,8 @@ built for the code agents write and humans accept.</strong></p>
 
 <p align="center"><sub>Source on <code>main</code> is <!-- truth:version -->0.8.2<!-- /truth -->; the last release is <!-- truth:latest_tag -->v0.8.2<!-- /truth -->.</sub></p>
 
+<p align="center"><sub>The v0.8.2 binary lags <code>main</code>: it gates 15 host primitives, has no <code>mem</code> capability and emits seal/v1. The 24-row gate, <code>mem</code> and seal/v2 described below are on <code>main</code> and not yet in a release.</sub></p>
+
 ---
 
 ## Why Garnet
@@ -95,8 +97,8 @@ and aimed at agent-authored code:
   must declare its budget. Reached instead through a function value, a closure, an actor handler,
   a top-level initializer, a string interpolation or `method_missing`, a call contributes no edge
   and the checker stays silent (finding U-91). A cycle in the call graph is followed: every function
-  in it inherits the cycle's requirements (U-117, cured 2026-09). `garnet run` does not invoke the checker. Under the `garnet` CLI the 24
-  gated host-authority primitives (fs, net, proc, env, time, log-to-file, and the four `memory::*`
+  in it inherits the cycle's requirements (U-117, cured 2026-09). `garnet run` does not invoke the checker. Under the `garnet` CLI on `main`
+  (the v0.8.2 binary gates 15 and has no `mem`) the 24 gated host-authority primitives (fs, net, proc, env, time, log-to-file, and the four `memory::*`
   tiers under `mem`) additionally trap at run time
   unless the **program entry's** own declared budget covers the capability, whichever call edge
   reached them. The other 60 of the 84 registry rows carry no runtime gate, and they are not one group:
@@ -109,9 +111,12 @@ and aimed at agent-authored code:
   Ed25519 signature; releases ship a CycloneDX SBOM and GPG-signed checksums.
 - **Agent-native memory** — `memory working|episodic|semantic|procedural` as language keywords,
   so the runtime knows which kind it's allocating.
-- **Typed actors** — compiler-checked protocols and bounded mailboxes in the interpreter the CLI
-  runs. Ed25519-signed hot-reload with BLAKE3 schema fingerprints is in the separate Rust actor
-  runtime (`garnet-actor-runtime`), which the `garnet` binary does not include.
+- **Actors** — in-process actors in the interpreter the CLI runs. `garnet check` rejects a
+  protocol or handler that declares a `@nonsendable` payload type. Mailboxes hold 1024 messages
+  unless `Actor.spawn(capacity)` sets another size, and a `tell` to a full mailbox fails. An actor
+  promises nothing when it dies: no restart, no supervisor (ADR 0014). Ed25519-signed hot-reload
+  with BLAKE3 schema fingerprints is in the separate Rust actor runtime (`garnet-actor-runtime`),
+  a staging crate the `garnet` binary does not include (ADR 0015).
 
 [GitHub's language bar](https://api.github.com/repos/Island-Dev-Crew/garnet/languages) counted this repository as **38.7% Python** at the 2026-08-31 `f6d3285` main snapshot because the trust and verification harness is Python; the product compiler and runtime are Rust.
 
@@ -125,6 +130,7 @@ Release-first, source-fallback. <!-- truth:latest_tag -->v0.8.2<!-- /truth --> s
 `.deb` / `.rpm` packages and tarballs for Linux (x86_64, ARM64), macOS tarballs and a Windows
 zip, with a GPG-signed `SHA256SUMS`; verify per [docs/release-signing.md](docs/release-signing.md).
 The GPG signature covers `SHA256SUMS`, not the binaries.
+The v0.8.2 binary predates `main`'s 24-row runtime gate, the `mem` capability and seal/v2.
 The Linux assets need glibc 2.39+ (Ubuntu 24.04+, Debian 13+, Fedora 40+).
 On Windows, run `irm https://garnet-lang.org/install.ps1 | iex` in PowerShell. No matching
 package for your platform? The installer builds from source (Rust 1.95+; CI also tracks current stable — per

@@ -55,6 +55,20 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   v0.8.0, v0.8.1 and v0.8.2.
 - `docs/index.html` changed, so `W_PLAY_BROWSER_PROOF.json` is re-recorded. The
   Wasm package is not rebuilt.
+- WV-6 (native-Windows acceptance) stays `partial` and ships as a disclosed
+  partial. The L1 acts 2-5 succession target is parked, and no restoration run
+  happens before the R2 launch decision.
+- Actors in the README: "Typed actors" becomes "Actors" and claims only what is
+  checked (`@nonsendable` payloads at protocol and handler declarations;
+  1024-message mailboxes unless `Actor.spawn(capacity)` sets a size, with a
+  `tell` to a full mailbox failing, probed on main).
+- Pages that describe `main` say the v0.8.2 binary gates 15 primitives, has no
+  `mem` capability and emits seal/v1. These labels come off when 0.8.3 ships.
+- Contributors: the DCO sentence is removed (no check exists and no commit is
+  signed off), the Code of Conduct cites Contributor Covenant 1.4 to match its
+  text and names the single maintainer at `hello@garnet-lang.org`, and the PR
+  template's evidence line no longer names a maintainer's home path.
+- `AGENTS.md` records approve-then-re-run as a disclosed interim practice.
 
 ### Playground Phase 1
 
@@ -519,6 +533,10 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 ## [0.8.2] — 2026-09-11 (tag `v0.8.2` → `f25ffb5`; the workspace moved to 0.8.2 on 2026-09-02)
 
 ### Released 0.8.2 — signed binaries for every desktop platform (2026-09-11)
+
+> Annotation, 2026-09-23: this dated heading is kept as history. "Signed"
+> here means the GPG-signed `SHA256SUMS`; the binaries themselves are not
+> code-signed.
 
 - **Released:** the `v0.8.2` GitHub Release carries nine binary assets
   (Linux x86_64 and ARM64 `.deb`, `.rpm` and tarballs; macOS arm64 and
