@@ -25,8 +25,9 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   `verify --caps-baseline` on a directory use `<relative path>::<name>`, with `/`
   on every OS and the `.garnet` suffix kept. A path that is not valid UTF-8 is
   an error rather than a lossy label, so two files never share one label.
-  Merging the files' surfaces keeps every entry in declaration order instead of
-  deduplicating `(name, caps)` pairs.
+  Merging the files' surfaces keeps every entry instead of deduplicating
+  `(name, caps)` pairs, sorts by name, and keeps declaration order among entries
+  that share a name.
   Capability-manifest entries and seal/v2 capability bytes change for programs
   that use modules or directory scans.
 - **A repeated name fails toward review.** The checker accepts two definitions
@@ -55,8 +56,8 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   machine ran it, so "verified" depended on the host. With no explicit root it
   now reads the newest bundle under `proofs/windows/studio-clean-vm/`. It
   counts the bundle only when all of these hold:
-  - it is named `<YYYYMMDD-HHMM>-<host>`, the newest such name decides, and it
-    holds only regular files;
+  - the newest entry whose name starts with a timestamp decides, and it must be
+    a directory named `<YYYYMMDD-HHMM>-<host>` that holds only regular files;
   - its manifest lists each file exactly once and matches the files;
   - its JSON is strict UTF-8 with no repeated key, the record's fields have
     their JSON types, and `verified` is the literal `true`;
