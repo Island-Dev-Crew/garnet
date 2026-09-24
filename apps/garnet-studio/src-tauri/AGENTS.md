@@ -34,16 +34,21 @@ checker, parser, or macOS SwiftUI Studio implementation.
 - **Committed clean-VM proof (T5a, path (a)).**
   `scripts/garnet_windows_clean_vm_installer_status.py` reads the newest
   committed bundle under `proofs/windows/studio-clean-vm/`. The Desktop root
-  is only a fallback when no bundle is committed, and an explicit root or
-  `GARNET_WINDOWS_CLEAN_VM_EVIDENCE_ROOT` wins over both. A bundle counts only
-  when all of these hold:
+  is only a fallback when no bundle is committed. An explicit root wins over
+  both: `--evidence-root` for the standalone reporter, which is what the
+  Studio installer-status command runs. `GARNET_WINDOWS_CLEAN_VM_EVIDENCE_ROOT`
+  is read only by the aggregate `scripts/garnet_windows_linux_studio_status.py`.
+  A bundle counts only when all of these hold:
   - its name is `<YYYYMMDD-HHMM>-<host>`;
   - it holds only regular files, each with one link and a nonzero inode, and
     each read from the handle it was checked on;
   - `MANIFEST.sha256` lists every file once and matches;
   - its JSON is strict, and `verified` is the literal `true`;
   - every gate passes, and the facts behind the gates are present;
-  - the guest is Windows and x64;
+  - the guest is x64 and its OS name is the guest's own `systeminfo` OS name:
+    Windows 10, Windows 11 or Windows Server 2016/2019/2022/2025, optionally
+    prefixed `Microsoft`. A hypervisor guest-type identifier is out of
+    contract, and the recorder's fresh-guest gate applies the same rule;
   - the three evidence files are distinct, manifest-verified files named
     directly inside the bundle;
   - no directory on the way is a link, and each one can be listed.
