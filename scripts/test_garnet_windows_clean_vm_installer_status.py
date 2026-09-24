@@ -121,6 +121,33 @@ class GarnetWindowsCleanVmInstallerStatusTests(unittest.TestCase):
             self.assertEqual("clean-vm-proof-verified", status.status)
             self.assertFalse(status.blocked_by)
 
+    def test_the_recorder_blocks_a_non_windows_guest(self) -> None:
+        # Codex round 8: recorder and reader apply one guest-OS rule, so a wrong
+        # name shows as a blocked fresh-guest gate at record time.
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            for name, data in (("setup.exe", b"x"), ("install.log", b"ok"), ("launch.png", b"png")):
+                (root / name).write_bytes(data)
+            (root / "studio-smoke.json").write_text(
+                json.dumps({"status": "passed", "source_included": False, "provider_api_called": False}),
+                encoding="utf-8",
+            )
+            for guest_os in ("Ubuntu 24.04 LTS", "Windows Subsystem for Android", "windows11_64Guest"):
+                with self.subTest(guest_os=guest_os):
+                    record = status_mod.build_proof_record(
+                        mode="clean-vm",
+                        installer=root / "setup.exe",
+                        vm_name="vm",
+                        guest_os=guest_os,
+                        guest_arch="x64",
+                        install_log=root / "install.log",
+                        studio_smoke_json=root / "studio-smoke.json",
+                        screenshot=root / "launch.png",
+                    )
+                    gates = {gate.id: gate for gate in record.gates}
+                    self.assertEqual("blocked", gates["fresh-guest"].status)
+                    self.assertFalse(record.verified)
+
     def test_cli_json_and_markdown_are_honest_without_evidence(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             json_output = subprocess.check_output(
@@ -595,16 +622,37 @@ class CommittedCleanVmBundleAdversarialTests(_CommittedRepoCase):
     def test_the_guest_must_be_windows(self) -> None:
         # Codex round 7: a committed bundle whose guest reads Ubuntu, macOS or
         # FreeBSD still verified as a Windows clean-VM proof.
-        for guest_os in ("Ubuntu 24.04 LTS", "macOS 15.4", "FreeBSD 14.2", "Windows Subsystem for Linux (Ubuntu)"):
+        for guest_os in (
+            "Ubuntu 24.04 LTS",
+            "macOS 15.4",
+            "FreeBSD 14.2",
+            "Windows Subsystem for Linux (Ubuntu)",
+            "Windows Subsystem for Android",  # Codex round 8
+        ):
             with self.subTest(guest_os=guest_os):
                 self._edit_proof(guest_os=guest_os)
                 self._assert_unverified()
 
     def test_windows_guest_names_verify(self) -> None:
-        for guest_os in ("Windows 11 Pro 26100", "Microsoft Windows 11 Enterprise 10.0.26100", "Windows Server 2025"):
+        for guest_os in (
+            "Windows 11 Pro 26100",
+            "Microsoft Windows 11 Enterprise 10.0.26100",
+            "Windows 10 Pro 19045",
+            "Windows Server 2025",
+            "Microsoft Windows Server 2022 Datacenter",
+        ):
             with self.subTest(guest_os=guest_os):
                 self._edit_proof(guest_os=guest_os)
                 self.assertTrue(status_mod.read_status().clean_vm_verified)
+
+    def test_vm_tool_type_identifiers_are_out_of_contract(self) -> None:
+        # Codex round 8: the recorder takes the guest's own systeminfo OS name.
+        # A hypervisor's guest-type identifier is not that name, so it fails
+        # closed rather than being mapped.
+        for guest_os in ("windows11_64Guest", "Windows11_64"):
+            with self.subTest(guest_os=guest_os):
+                self._edit_proof(guest_os=guest_os)
+                self._assert_unverified()
 
     def test_the_fresh_guest_identity_is_checked_not_its_gate_label(self) -> None:
         self._edit_proof(guest_os="", vm_name="")
