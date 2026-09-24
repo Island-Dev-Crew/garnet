@@ -1027,6 +1027,43 @@ def _write_committed_linux_wsl_xvfb_bundle(repo_root: Path) -> Path:
     return summary
 
 
+def _write_promo_desktop_evidence(desktop: Path) -> None:
+    """Desktop evidence through the site-sync record, as the reporter reads it."""
+    artifact_dir = desktop / "garnet-promo-video"
+    artifact_dir.mkdir(parents=True)
+    (artifact_dir / "garnet-promo.mp4").write_bytes(b"fake-mp4")
+    (artifact_dir / "garnet-promo.webm").write_bytes(b"fake-webm")
+    for folder, name, status in (
+        ("garnet-promo-video-visual-qa", "promo-visual-qa-data.json", "visual-qa-ready"),
+        ("garnet-promo-video-website-export", "promo-website-export-data.json", "website-export-ready"),
+        ("garnet-promo-video-site-sync", "promo-site-sync-data.json", "public-site-embedded"),
+    ):
+        (desktop / folder).mkdir()
+        (desktop / folder / name).write_text(
+            json.dumps({"status": status, "verdict": "pass", "checks": [{"passed": True}]}),
+            encoding="utf-8",
+        )
+
+
+def _write_repo_with_promo_embed(repo: Path) -> None:
+    """A fixture repo whose front door carries the promo embed the reporter requires."""
+    assets = repo / "docs" / "assets"
+    assets.mkdir(parents=True)
+    for name in ("garnet-promo.mp4", "garnet-promo.webm", "garnet-promo-poster.png"):
+        (assets / name).write_bytes(b"fixture")
+    (repo / "docs" / "index.html").write_text(
+        '<section id="promo"><video class="promo-video" poster="assets/garnet-promo-poster.png">'
+        '<source src="assets/garnet-promo.webm"><source src="assets/garnet-promo.mp4"></video>'
+        "<p>Public-site embedded. The human/aesthetic acceptance review is still open; "
+        "this is not full MIT/productization completion.</p></section>\n",
+        encoding="utf-8",
+    )
+    (repo / "docs" / "service-worker.js").write_text(
+        'const PROMO = ["assets/garnet-promo.mp4", "assets/garnet-promo.webm", "assets/garnet-promo-poster.png"];\n',
+        encoding="utf-8",
+    )
+
+
 class GarnetMitReadinessStatusTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -1870,6 +1907,28 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertEqual("website-export-ready", promo_lane.status)
         self.assertEqual(90.0, promo_lane.completion_percent)
         self.assertIn("public-site embedding and review", promo_lane.blocked_by)
+        self.assertLess(status.completion_percent, 100.0)
+
+    def test_repo_site_embed_updates_objective_blockers_without_full_completion(self) -> None:
+        # T5a (Codex review of #598): kept as a positive test on a fixture repo
+        # that carries the embed, so the promotion branch stays covered.
+        promo_mod = status_mod.garnet_promo_video_status
+        with tempfile.TemporaryDirectory() as temp:
+            desktop = Path(temp) / "desktop"
+            repo = Path(temp) / "repo"
+            _write_promo_desktop_evidence(desktop)
+            _write_repo_with_promo_embed(repo)
+            with mock.patch.dict(os.environ, {"GARNET_PROMO_VIDEO_DESKTOP_DIR": str(desktop)}), mock.patch.object(
+                promo_mod, "ROOT", repo
+            ):
+                status = status_mod.read_status()
+        lanes = {lane.id: lane for lane in status.lanes}
+        promo_lane = lanes["promo_video"]
+
+        self.assertEqual("public-site-embedded", promo_lane.status)
+        self.assertEqual(95.0, promo_lane.completion_percent)
+        self.assertNotIn("public-site embedding and review", promo_lane.blocked_by)
+        self.assertIn("human/aesthetic acceptance review", promo_lane.blocked_by)
         self.assertLess(status.completion_percent, 100.0)
 
     def test_markdown_is_human_readable_and_honest(self) -> None:

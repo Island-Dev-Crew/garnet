@@ -38,6 +38,43 @@ def _current_dogfood_probe_count() -> int:
     return len(probes)
 
 
+def _write_promo_desktop_evidence(desktop: Path) -> None:
+    """Desktop evidence through the site-sync record, as the reporter reads it."""
+    artifact_dir = desktop / "garnet-promo-video"
+    artifact_dir.mkdir(parents=True)
+    (artifact_dir / "garnet-promo.mp4").write_bytes(b"fake-mp4")
+    (artifact_dir / "garnet-promo.webm").write_bytes(b"fake-webm")
+    for folder, name, status in (
+        ("garnet-promo-video-visual-qa", "promo-visual-qa-data.json", "visual-qa-ready"),
+        ("garnet-promo-video-website-export", "promo-website-export-data.json", "website-export-ready"),
+        ("garnet-promo-video-site-sync", "promo-site-sync-data.json", "public-site-embedded"),
+    ):
+        (desktop / folder).mkdir()
+        (desktop / folder / name).write_text(
+            json.dumps({"status": status, "verdict": "pass", "checks": [{"passed": True}]}),
+            encoding="utf-8",
+        )
+
+
+def _write_repo_with_promo_embed(repo: Path) -> None:
+    """A fixture repo whose front door carries the promo embed the reporter requires."""
+    assets = repo / "docs" / "assets"
+    assets.mkdir(parents=True)
+    for name in ("garnet-promo.mp4", "garnet-promo.webm", "garnet-promo-poster.png"):
+        (assets / name).write_bytes(b"fixture")
+    (repo / "docs" / "index.html").write_text(
+        '<section id="promo"><video class="promo-video" poster="assets/garnet-promo-poster.png">'
+        '<source src="assets/garnet-promo.webm"><source src="assets/garnet-promo.mp4"></video>'
+        "<p>Public-site embedded. The human/aesthetic acceptance review is still open; "
+        "this is not full MIT/productization completion.</p></section>\n",
+        encoding="utf-8",
+    )
+    (repo / "docs" / "service-worker.js").write_text(
+        'const PROMO = ["assets/garnet-promo.mp4", "assets/garnet-promo.webm", "assets/garnet-promo-poster.png"];\n',
+        encoding="utf-8",
+    )
+
+
 class GarnetPromoVideoStatusTests(unittest.TestCase):
     @classmethod
     def tearDownClass(cls) -> None:
@@ -189,6 +226,27 @@ class GarnetPromoVideoStatusTests(unittest.TestCase):
         self.assertTrue(contract.website_export_present)
         self.assertFalse(contract.public_site_embed_present)
         self.assertIn("repo/site copy check for overclaims", contract.open_gates)
+        self.assertIn("human/aesthetic acceptance", contract.open_gates)
+        self.assertIn("Do not claim full MIT/productization completion.", contract.forbidden_claims)
+
+    def test_repo_site_embed_promotes_public_site_status_without_claiming_final_acceptance(self) -> None:
+        # T5a (Codex review of #598): the live front door no longer carries the
+        # embed, but the reporter still has the promotion branch, so it keeps a
+        # positive test on a fixture repo that does carry it.
+        with tempfile.TemporaryDirectory() as temp:
+            desktop = Path(temp) / "desktop"
+            repo = Path(temp) / "repo"
+            _write_promo_desktop_evidence(desktop)
+            _write_repo_with_promo_embed(repo)
+            with mock.patch.dict(os.environ, {"GARNET_PROMO_VIDEO_DESKTOP_DIR": str(desktop)}), mock.patch.object(
+                promo, "ROOT", repo
+            ):
+                contract = promo.read_status()
+
+        self.assertEqual("public-site-embedded", contract.status)
+        self.assertEqual(95.0, contract.completion_percent)
+        self.assertTrue(contract.public_site_embed_present)
+        self.assertIn("repo/site copy check for overclaims", contract.completed_gates)
         self.assertIn("human/aesthetic acceptance", contract.open_gates)
         self.assertIn("Do not claim full MIT/productization completion.", contract.forbidden_claims)
 
