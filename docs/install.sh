@@ -6,8 +6,16 @@
 #
 # The script detects the host OS and architecture, prefers the matching native
 # package from GitHub Releases, verifies it against SHA256SUMS, installs it, and
-# runs `garnet --version`. If the requested release asset is unavailable, auto
-# mode falls back to a source install through `cargo install --path ... --locked`.
+# runs `garnet --version`, failing if the installed binary does not run. If the
+# requested release asset is unavailable, does not run on this host, or the host
+# glibc is older than the 2.39 the Linux assets need, auto mode falls back to a
+# source install through `cargo install --path ... --locked`.
+#
+# Integrity, not authenticity: the asset is checked against SHA256SUMS, but
+# SHA256SUMS.asc (the GPG signature over it) is not verified here. To check
+# authenticity, follow docs/release-signing.md. GARNET_BASE_URL and
+# GARNET_CHECKSUM_URL move the asset source and the checksum source together;
+# point them only at a mirror you trust.
 
 set -eu
 
@@ -285,14 +293,40 @@ install_tar() {
 
 run_version_check() {
     if [ -n "$GARNET_INSTALLED_BIN" ] && [ -x "$GARNET_INSTALLED_BIN" ]; then
-        say "install complete"
-        "$GARNET_INSTALLED_BIN" --version | head -10
+        _bin="$GARNET_INSTALLED_BIN"
     elif command -v garnet >/dev/null 2>&1; then
-        say "install complete"
-        garnet --version | head -10
+        _bin="garnet"
     else
         warn "installer completed but 'garnet' is not on PATH; open a new shell"
+        return 0
     fi
+
+    # Keep the exit status of `garnet --version` itself. Piping it straight
+    # into `head` reported head's status and hid a binary that cannot run.
+    _rc=0
+    _out="$("$_bin" --version 2>&1)" || _rc=$?
+    if [ "$_rc" -ne 0 ]; then
+        printf '%s\n' "$_out" | head -10 >&2
+        warn "'$_bin --version' failed (exit $_rc); the installed binary does not run on this host"
+        return "$_rc"
+    fi
+    say "install complete"
+    printf '%s\n' "$_out" | head -10
+}
+
+glibc_too_old() {
+    # Succeeds only when the host is Linux, reports a glibc version, and that
+    # version is older than 2.39. musl and unknown hosts are not judged here.
+    [ "$(uname -s 2>/dev/null || printf unknown)" = "Linux" ] || return 1
+    _glibc="$(getconf GNU_LIBC_VERSION 2>/dev/null | awk '{print $2}')"
+    [ -n "$_glibc" ] || return 1
+    _glibc_major="${_glibc%%.*}"
+    _glibc_rest="${_glibc#*.}"
+    _glibc_minor="${_glibc_rest%%.*}"
+    case "${_glibc_major}${_glibc_minor}" in
+        ''|*[!0-9]*) return 1 ;;
+    esac
+    [ "$_glibc_major" -lt 2 ] || { [ "$_glibc_major" -eq 2 ] && [ "$_glibc_minor" -lt 39 ]; }
 }
 
 source_install() {
@@ -359,15 +393,16 @@ release_install_for_format() {
     try_download "$_url" "$_dest" || return 1
     verify_sha256 "$_dest" "$_expected_sha"
 
+    # A caller's `if` suspends errexit, so failures are returned explicitly.
     case "$_format" in
-        deb) install_deb "$_dest" ;;
-        rpm) install_rpm "$_dest" ;;
-        pkg) install_pkg "$_dest" ;;
-        tar) install_tar "$_dest" ;;
+        deb) install_deb "$_dest" || return 1 ;;
+        rpm) install_rpm "$_dest" || return 1 ;;
+        pkg) install_pkg "$_dest" || return 1 ;;
+        tar) install_tar "$_dest" || return 1 ;;
         *) err "unknown package format: $_format" ;;
     esac
 
-    run_version_check
+    run_version_check || return 1
 }
 
 release_install() {
@@ -375,6 +410,11 @@ release_install() {
     # errexit, so a detection failure is returned explicitly.
     _triple="$(detect_triple)" || return 1
     _format="$(detect_format)" || return 1
+
+    if glibc_too_old; then
+        warn "host glibc ${_glibc} is older than 2.39, which the Linux release assets need; skipping them"
+        return 1
+    fi
 
     if release_install_for_format "$_triple" "$_format"; then
         return

@@ -40,6 +40,26 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   attestation copy and the U-118 row match the new source identity.
   Regression coverage: `checked_seal_acceptance` and `agent_loop`.
 
+### Installer — a binary that cannot run fails the install (T6-docs PR-C, 2026-09-23)
+
+- `install.sh` printed "install complete" and exited 0 even when the installed
+  binary could not run, because it piped `garnet --version` into `head` and
+  reported head's status. It now keeps the real status. A failed package-manager
+  step or version check makes `release_install_for_format` return non-zero, so
+  auto mode falls through to the source build instead of stopping on a binary
+  that does not run. Probe: a tarball whose `garnet` exits 1 gave rc 0 before
+  and rc 1 after, in release mode.
+- On Linux hosts that report glibc older than 2.39 (for example Debian 12 or
+  Ubuntu 22.04), the installer skips the release assets with a message and, in
+  auto mode, builds from source. musl and unknown hosts are not judged.
+- The installer header says it checks integrity against `SHA256SUMS` but does
+  not verify `SHA256SUMS.asc`, and that `GARNET_BASE_URL` and
+  `GARNET_CHECKSUM_URL` move the asset and checksum sources together.
+- The `install.ps1` source-build hint pins the release tag:
+  `cargo install --git … --tag v$version --locked garnet-cli`, matching the
+  POSIX installer's pinned-tag policy.
+- `docs/install.sh` stays byte-identical to `installer/sh.garnet-lang.org/install.sh`.
+
 
 ### Checker — `caps coverage` names the primitive, not the hop (2026-09-18)
 
