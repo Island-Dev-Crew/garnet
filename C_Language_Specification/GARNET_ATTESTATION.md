@@ -125,14 +125,18 @@ that broader reproducibility claim is required.
 
 `garnet verify app.garnet seal.json` resolves the edition, rechecks the source,
 and independently regenerates the complete seal binding: source identity,
-build fields, declared capabilities and any provenance chain. Producer tooling
-availability and self-declared authorship/attestation are preserved metadata;
-verification does not execute cosign or prove their truth. Verification accepts
+build fields, declared capabilities and any provenance chain. On main, the
+`tooling.cosign` field is a fixed note that does not depend on whether cosign is
+installed, and every predicate carries `"signed": false`. Self-declared
+authorship/attestation is preserved metadata; verification does not execute
+cosign or prove its truth. Verification accepts
 only the exact compact producer serialization with at most one final LF.
 Reformatted, duplicate-key, unknown-field, unsupported-version and tampered
 seals fail. Generic seal/v1 input is rejected; recreate it from checked source
-with the current producer. Minimum Shelf retains its independently byte-pinned
-historical flagship v1 predicate, with no change to its archived evidence.
+with the current producer. On main, the Minimum Shelf flagship seal is seal/v2:
+the shelf accepts only the statement it regenerates, taking just the parser and
+interpreter versions from the committed seal, and pins the seal and manifest
+bytes. Earlier archived evidence files are unchanged.
 
 The two-argument command also accepts existing `garnet-manifest-v1` deterministic
 manifests, discriminated by their distinct format. Those retain their previous
