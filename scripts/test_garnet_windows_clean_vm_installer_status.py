@@ -411,6 +411,52 @@ class CommittedCleanVmBundleAdversarialTests(_CommittedRepoCase):
         (self.bundle / "MANIFEST.sha256").write_bytes(b"\xff\n")
         self._assert_unverified()
 
+    def test_a_proof_path_ancestor_that_is_a_file_does_not_fall_back(self) -> None:
+        # Codex round 3: a regular file in place of proofs/ or proofs/windows/
+        # made the root look absent and let local evidence verify.
+        self._write_verified_local_proof()
+        for ancestor in ("proofs/windows", "proofs"):
+            with self.subTest(ancestor=ancestor):
+                target = self.repo / ancestor
+                moved = Path(self._temp.name) / f"moved-{ancestor.replace('/', '-')}"
+                target.rename(moved)
+                target.write_text("not a directory", encoding="utf-8")
+                self._assert_unverified()
+                target.unlink()
+                moved.rename(target)
+
+    def test_an_unreadable_proof_path_does_not_fall_back(self) -> None:
+        if os.name != "posix" or os.geteuid() == 0:
+            self.skipTest("needs a non-root POSIX host to make a directory unreadable")
+        self._write_verified_local_proof()
+        proofs = self.repo / "proofs"
+        proofs.chmod(0)
+        self.addCleanup(proofs.chmod, 0o755)
+        self._assert_unverified()
+
+    def test_an_evidence_name_must_be_a_verified_file_of_the_bundle(self) -> None:
+        # Codex round 3: on NTFS, 'studio-smoke.json:passed' names a stream the
+        # manifest never hashes. Case and alias variants must not count either.
+        bundle_rel = (BUNDLES_REL / self.bundle.name).as_posix()
+        for variant in (f"{bundle_rel}/studio-smoke.json:passed", f"{bundle_rel}/STUDIO-SMOKE.JSON"):
+            with self.subTest(variant=variant):
+                stream_like = self.repo / variant
+                if variant.endswith(":passed"):
+                    stream_like.write_text(
+                        json.dumps({"status": "passed", "source_included": False, "provider_api_called": False}),
+                        encoding="utf-8",
+                    )
+                self._edit_proof(studio_smoke_json=variant)
+                self._assert_unverified()
+                if variant.endswith(":passed"):
+                    stream_like.unlink()
+                    status_mod._write_manifest(self.bundle)
+
+    def test_the_three_evidence_files_are_distinct(self) -> None:
+        data = json.loads((self.bundle / status_mod.PROOF_FILE).read_text(encoding="utf-8"))
+        self._edit_proof(screenshot=data["install_log"])
+        self._assert_unverified()
+
     def test_the_newest_bundle_must_be_named_timestamp_dash_host(self) -> None:
         # Codex round 3: a name with only the timestamp, or a malformed tail,
         # is reported (fail closed), not accepted and not skipped.
