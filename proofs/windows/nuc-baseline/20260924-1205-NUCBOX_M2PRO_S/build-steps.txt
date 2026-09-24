@@ -1,0 +1,206 @@
+# Build, test and post-run steps (the test log itself is cargo-test.log)
+bundle: proofs/windows/nuc-baseline/20260924-1205-NUCBOX_M2PRO_S/
+host: NUCBOX_M2PRO_S (%COMPUTERNAME%; `hostname` prints the DNS casing, see E01)
+main: dfb9b7c619b0f356bf7905a7542080f679fb9bd9
+stamp: 20260924-1205 (UTC)
+harness: harness/nuc_capture.py, sha256 85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040; every step below ran from this one
+  invocation (nuc_capture.py all --stamp 20260924-1205), 2026-09-24T12:05:48.205222Z to 2026-09-24T12:10:46.666642Z.
+python: every step except E09/E10 ran with Python312 first on PATH. E09/E10 deliberately use the
+  machine's default PATH, where python resolves to an unrelated 3.11.15 virtualenv. python3 is not
+  pinned; E11 shows where it resolves.
+powershell: PowerShell steps run powershell.exe (Windows PowerShell 5.1, see E23) with -NoProfile
+  -NonInteractive -ExecutionPolicy Bypass -EncodedCommand. With its output redirected, powershell.exe
+  writes error, progress and information records to stderr as CLIXML ('#< CLIXML'); M04 and M06 print
+  decoded views of the error text. The raw streams are authoritative.
+fetches: L01, L07 and L08 are companion fetches made next to the installer runs; they are not the
+  bytes the installers themselves downloaded.
+captures: stdout and stderr are the raw child-process bytes, unedited; see encoding-census.txt.
+
+==============================================================================
+[B01] Build garnet-cli
+$ cargo build --locked -p garnet-cli
+exit_code=0 expected=0 timed_out=False started=2026-09-24T12:06:11.816410Z duration_s=46.906 path=pinned
+--- stdout (streams/B01-cargo-build.stdout, 0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stdout
+--- stderr (streams/B01-cargo-build.stderr, 4914 bytes, sha256 91c0c5e9d38dc923776e52ad9b02dd98a99f6da88a24f5e4eff2708600913fa8)
+   Compiling proc-macro2 v1.0.106
+   Compiling unicode-ident v1.0.24
+   Compiling quote v1.0.45
+   Compiling cfg-if v1.0.4
+   Compiling version_check v0.9.5
+   Compiling serde_core v1.0.228
+   Compiling windows-link v0.2.1
+   Compiling find-msvc-tools v0.1.9
+   Compiling typenum v1.19.0
+   Compiling zerocopy v0.8.48
+   Compiling shlex v1.3.0
+   Compiling memchr v2.8.0
+   Compiling windows-sys v0.61.2
+   Compiling generic-array v0.14.7
+   Compiling cc v1.2.60
+   Compiling syn v2.0.117
+   Compiling serde v1.0.228
+   Compiling subtle v2.6.1
+   Compiling getrandom v0.2.17
+   Compiling arrayvec v0.7.6
+   Compiling crypto-common v0.1.7
+   Compiling block-buffer v0.10.4
+   Compiling cpufeatures v0.2.17
+   Compiling unicode-width v0.2.2
+   Compiling digest v0.10.7
+   Compiling zmij v1.0.21
+   Compiling thiserror v2.0.18
+   Compiling blake3 v1.8.4
+   Compiling arrayref v0.3.9
+   Compiling cpufeatures v0.3.0
+   Compiling owo-colors v4.3.0
+   Compiling constant_time_eq v0.4.2
+   Compiling rustc-demangle v0.1.27
+   Compiling backtrace v0.3.76
+   Compiling rand_core v0.6.4
+   Compiling ahash v0.8.12
+   Compiling unicode-linebreak v0.1.5
+   Compiling is_ci v1.2.0
+   Compiling serde_json v1.0.149
+   Compiling supports-color v3.0.2
+   Compiling textwrap v0.16.2
+   Compiling backtrace-ext v0.2.1
+   Compiling terminal_size v0.4.4
+   Compiling aho-corasick v1.1.4
+   Compiling once_cell v1.21.4
+   Compiling supports-unicode v3.0.0
+   Compiling windows_x86_64_msvc v0.52.6
+   Compiling ppv-lite86 v0.2.21
+   Compiling unicode-width v0.1.14
+   Compiling supports-hyperlinks v3.2.0
+   Compiling regex-syntax v0.8.10
+   Compiling itoa v1.0.18
+   Compiling rand_chacha v0.3.1
+   Compiling sha2 v0.10.9
+   Compiling winapi v0.3.9
+   Compiling smallvec v1.15.1
+   Compiling autocfg v1.5.0
+   Compiling unicode-segmentation v1.13.3
+   Compiling semver v1.0.28
+   Compiling parking_lot_core v0.9.12
+   Compiling serde_derive v1.0.228
+   Compiling thiserror-impl v2.0.18
+   Compiling miette-derive v7.6.0
+   Compiling num-traits v0.2.19
+   Compiling convert_case v0.10.0
+   Compiling rustc_version v0.4.1
+   Compiling regex-automata v0.4.14
+   Compiling rand v0.8.6
+   Compiling hashbrown v0.14.5
+   Compiling miette v7.6.0
+   Compiling sha1 v0.10.6
+   Compiling hmac v0.12.1
+   Compiling vcpkg v0.2.15
+   Compiling scopeguard v1.2.0
+   Compiling pkg-config v0.3.33
+   Compiling windows-targets v0.52.6
+   Compiling lock_api v0.4.14
+   Compiling curve25519-dalek v4.1.3
+   Compiling garnet-parser v0.3.0 (C:\gw1c-20260924\garnet-parser-v0.3)
+   Compiling derive_more-impl v2.1.1
+   Compiling libsqlite3-sys v0.30.1
+   Compiling regex v1.12.3
+   Compiling garnet-stdlib v0.4.0 (C:\gw1c-20260924\garnet-stdlib)
+   Compiling bitflags v2.11.1
+   Compiling hashbrown v0.17.0
+   Compiling heck v0.5.0
+   Compiling litrs v1.0.0
+   Compiling equivalent v1.0.2
+   Compiling ref-cast v1.0.25
+   Compiling strum_macros v0.27.2
+   Compiling indexmap v2.14.0
+   Compiling crossterm_winapi v0.9.1
+   Compiling document-features v0.2.12
+   Compiling toml_datetime v0.6.11
+   Compiling serde_spanned v0.6.9
+   Compiling parking_lot v0.12.5
+   Compiling derive_more v2.1.1
+   Compiling windows-sys v0.59.0
+   Compiling garnet-prim-macros v0.1.0 (C:\gw1c-20260924\garnet-prim-macros)
+   Compiling curve25519-dalek-derive v0.1.1
+   Compiling ref-cast-impl v1.0.25
+   Compiling garnet-memory v0.3.0 (C:\gw1c-20260924\garnet-memory-v0.3)
+   Compiling vte v0.14.1
+   Compiling rustc-hash v1.1.0
+   Compiling either v1.15.0
+   Compiling countme v3.0.1
+   Compiling signature v2.2.0
+   Compiling toml_write v0.1.2
+   Compiling text-size v1.1.1
+   Compiling zeroize v1.8.2
+   Compiling winnow v0.7.15
+   Compiling itertools v0.13.0
+   Compiling rowan v0.16.1
+   Compiling garnet-interp v0.3.0 (C:\gw1c-20260924\garnet-interp-v0.3)
+   Compiling ed25519 v2.2.3
+   Compiling strum v0.27.2
+   Compiling strip-ansi-escapes v0.2.1
+   Compiling fd-lock v4.0.4
+   Compiling chrono v0.4.45
+   Compiling crossterm v0.29.0
+   Compiling garnet-check v0.3.0 (C:\gw1c-20260924\garnet-check-v0.3)
+   Compiling hashlink v0.9.1
+   Compiling toml_edit v0.22.27
+   Compiling nu-ansi-term v0.50.3
+   Compiling winapi-util v0.1.11
+   Compiling unicase v2.9.0
+   Compiling fallible-streaming-iterator v0.1.9
+   Compiling borrow-or-share v0.2.4
+   Compiling fallible-iterator v0.3.0
+   Compiling fluent-uri v0.4.1
+   Compiling reedline v0.48.0
+   Compiling rusqlite v0.32.1
+   Compiling garnet-vm v0.5.0 (C:\gw1c-20260924\garnet-vm)
+   Compiling same-file v1.0.6
+   Compiling ed25519-dalek v2.2.0
+   Compiling toml v0.8.23
+   Compiling garnet-cst v0.1.0 (C:\gw1c-20260924\garnet-cst)
+   Compiling garnet-registry-stub v0.5.0 (C:\gw1c-20260924\garnet-registry-stub)
+   Compiling garnet-convert v0.4.0 (C:\gw1c-20260924\garnet-convert)
+   Compiling garnet-cli v0.8.2 (C:\gw1c-20260924\garnet-cli)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 46.83s
+--- end stderr
+
+==============================================================================
+[T01] Workspace tests (stdout+stderr merged into cargo-test.log)
+$ cargo test --locked --workspace --no-fail-fast
+exit_code=0 expected=0 timed_out=False started=2026-09-24T12:06:58.732882Z duration_s=227.187 path=pinned
+--- stdout+stderr: not repeated here; see cargo-test.log (171575 bytes, sha256 cca8a5a24e81596fd6aff54de7964214d911bbd175343ef312ac714ff168d25a)
+
+==============================================================================
+[P01] Worktree status after every step
+$ git status --short --branch
+exit_code=0 expected=0 timed_out=False started=2026-09-24T12:10:45.947211Z duration_s=0.078 path=pinned
+--- stdout (streams/P01-status-after.stdout, 22 bytes, sha256 5fbcb2990ad25e368c12219bf3ddca36e464d044e7acac16696fa8cd54159185)
+## main...origin/main
+--- end stdout
+--- stderr (streams/P01-status-after.stderr, 0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+
+==============================================================================
+[P02] Remote readback of main after every step (no credential)
+$ git -c credential.helper= ls-remote origin refs/heads/main
+exit_code=0 expected=0 timed_out=False started=2026-09-24T12:10:46.026443Z duration_s=0.391 path=pinned
+--- stdout (streams/P02-remote-main-after.stdout, 57 bytes, sha256 2b918ea50b9dd6ac79bdbb157e7e6bd3939f958a087e289d5a0ef32a07ae05ce)
+dfb9b7c619b0f356bf7905a7542080f679fb9bd9	refs/heads/main
+--- end stdout
+--- stderr (streams/P02-remote-main-after.stderr, 0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+
+==============================================================================
+[P03] Process count after every step
+$ "process_count=$((Get-Process).Count)"
+exit_code=0 expected=0 timed_out=False started=2026-09-24T12:10:46.414732Z duration_s=0.25 path=pinned
+--- stdout (streams/P03-processes-after.stdout, 19 bytes, sha256 a5ae2c31ed61ad6647286ca7894c799dbc8fff9b9b79ace0c6460803625480be)
+process_count=400
+--- end stdout
+--- stderr (streams/P03-processes-after.stderr, 392 bytes, sha256 a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f)
+#< CLIXML
+<Objs Version="1.1.0.1" xmlns="http://schemas.microsoft.com/powershell/2004/04"><Obj S="progress" RefId="0"><TN RefId="0"><T>System.Management.Automation.PSCustomObject</T><T>System.Object</T></TN><MS><I64 N="SourceId">1</I64><PR N="Record"><AV>Preparing modules for first use.</AV><AI>0</AI><Nil /><PI>-1</PI><PC>-1</PC><T>Completed</T><SR>-1</SR><SD> </SD></PR></MS></Obj></Objs>
+[no trailing newline in the captured stream]
+--- end stderr

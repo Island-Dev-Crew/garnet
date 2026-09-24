@@ -1,0 +1,8 @@
+BuildVersion=10.0.26100.9444
+CLRVersion=4.0.30319.42000
+PSCompatibleVersions=1.0,2.0,3.0,4.0,5.0,5.1.26100.9444
+PSEdition=Desktop
+PSRemotingProtocolVersion=2.3
+PSVersion=5.1.26100.9444
+SerializationVersion=1.1.0.1
+WSManStackVersion=3.0

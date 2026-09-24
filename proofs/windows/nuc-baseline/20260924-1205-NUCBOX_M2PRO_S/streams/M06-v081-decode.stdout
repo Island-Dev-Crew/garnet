@@ -1,0 +1,10 @@
+streams=M05-installer-main-v081.stderr,M05-installer-main-v081.stdout
+contains 'lists no garnet-0.8.1-x86_64-pc-windows-msvc.zip': True
+--- decoded view of the CLIXML error records in the stderr stream (derived; the raw stream is authoritative)
+garnet-install: error: SHA256SUMS for v0.8.1 lists no garnet-0.8.1-x86_64-pc-windows-msvc.zip
+At line:32 char:39
++ ... on Fail([string]$Message) { throw "garnet-install: error: $Message" }
++                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (garnet-install:...indows-msvc.zip:String) [], RuntimeException
+    + FullyQualifiedErrorId : garnet-install: error: SHA256SUMS for v0.8.1 lists no garnet-0.8.1-x86_64-pc-windows-msv 
+   c.zip

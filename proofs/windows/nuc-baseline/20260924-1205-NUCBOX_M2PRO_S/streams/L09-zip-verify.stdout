@@ -1,0 +1,7 @@
+zip_sha256=69517252aab8d513228aacc4b36e83245f4b16fd1e51487ddeb1324ecf5c0019 bytes=3637799 (the zip is kept outside the bundle)
+SHA256SUMS_entry=69517252aab8d513228aacc4b36e83245f4b16fd1e51487ddeb1324ecf5c0019
+zip_matches_SHA256SUMS=True
+entry garnet.exe size=8242688
+entry LICENSE size=2561
+entry README.md size=10774
+zip_garnet_exe_sha256=2c43c90924046ba27c2b8d9ab5a8b0736e3098872535cdea8112e6a6b8107ced

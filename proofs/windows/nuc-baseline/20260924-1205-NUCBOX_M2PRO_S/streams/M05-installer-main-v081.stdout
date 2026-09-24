@@ -1,0 +1,3 @@
+garnet-install: version  = 0.8.1
+garnet-install: release  = https://github.com/Island-Dev-Crew/garnet/releases/download/v0.8.1
+garnet-install: asset    = garnet-0.8.1-x86_64-pc-windows-msvc.zip
