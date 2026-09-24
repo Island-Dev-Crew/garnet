@@ -394,36 +394,51 @@ def _proof_from_data(data: dict) -> ProofRecord:
     )
 
 
-def _manifest_problem(bundle: Path) -> str | None:
+def _verified_manifest(bundle: Path) -> tuple[str | None, dict[str, bytes]]:
+    """Verify MANIFEST.sha256 against the bundle in one read.
+
+    Returns (problem, contents). On success, contents maps each listed name to
+    the exact bytes that were hashed, so every later check reads only verified
+    bytes and a file that appears afterwards is never evidence. Every entry is
+    a regular file with exactly one link (git never checks out a hard link).
+    """
     manifest = bundle / "MANIFEST.sha256"
-    if not manifest.is_file() or manifest.is_symlink():
-        return "MANIFEST.sha256 is missing"
+    if _is_link(manifest) or not manifest.is_file():
+        return "MANIFEST.sha256 is missing", {}
     listed: dict[str, str] = {}
     for line in manifest.read_bytes().decode("utf-8").splitlines():
         digest, sep, name = line.partition("  ")
         if not sep or not re.fullmatch(r"[0-9a-f]{64}", digest) or "/" in name or "\\" in name:
-            return f"malformed manifest line: {line!r}"
+            return f"malformed manifest line: {line!r}", {}
         if name in listed:
-            return f"the manifest lists {name} twice"
+            return f"the manifest lists {name} twice", {}
         listed[name] = digest
-    for path in bundle.iterdir():
-        if _is_link(path) or not path.is_file():
-            return f"{path.name} is not a regular file; a bundle holds only regular files"
-    present = {path.name for path in bundle.iterdir() if path.name != "MANIFEST.sha256"}
+    entries = list(bundle.iterdir())
+    for path in entries:
+        info = os.lstat(path)
+        if _is_link(path) or not stat.S_ISREG(info.st_mode):
+            return f"{path.name} is not a regular file; a bundle holds only regular files", {}
+        if info.st_nlink != 1:
+            return f"{path.name} has {info.st_nlink} links; a bundle file has exactly one", {}
+    present = {path.name for path in entries if path.name != "MANIFEST.sha256"}
     if set(listed) != present:
-        return f"manifest lists {sorted(listed)} but the bundle holds {sorted(present)}"
+        return f"manifest lists {sorted(listed)} but the bundle holds {sorted(present)}", {}
+    contents: dict[str, bytes] = {}
     for name, digest in listed.items():
-        path = bundle / name
-        if path.is_symlink() or hashlib.sha256(path.read_bytes()).hexdigest() != digest:
-            return f"{name} does not match its manifest digest"
-    return None
+        data = (bundle / name).read_bytes()
+        if hashlib.sha256(data).hexdigest() != digest:
+            return f"{name} does not match its manifest digest", {}
+        contents[name] = data
+    return None, contents
 
 
-def _committed_bundle_problem(bundle: Path, repo: Path, proof: ProofRecord) -> str | None:
-    """Return why a committed bundle cannot back the claim, or None if it can."""
-    problem = _manifest_problem(bundle)
-    if problem:
-        return problem
+def _committed_bundle_problem(
+    bundle: Path, repo: Path, proof: ProofRecord, verified: dict[str, bytes]
+) -> str | None:
+    """Return why a committed bundle cannot back the claim, or None if it can.
+
+    `verified` is the manifest-verified content of the bundle (_verified_manifest).
+    """
     if proof.schema != SCHEMA or proof.mode != "clean-vm" or not proof.verified:
         return "the proof is not a verified clean-vm record of the current schema"
     if proof.guest_arch.lower() not in X64_GUEST_ARCHES:
@@ -446,9 +461,10 @@ def _committed_bundle_problem(bundle: Path, repo: Path, proof: ProofRecord) -> s
     # (_confinement_problem), so no link can sit anywhere along the path.
     bundle_parts = (COMMITTED_BUNDLES_REL / bundle.name).parts
     bundle_dir = bundle.resolve()
-    # Only files the manifest just verified can be evidence, named exactly as
-    # the directory lists them: no stream, case or short-name alias.
-    inventory = {path.name for path in bundle.iterdir()} - RECORDER_OUTPUTS
+    # Only files the manifest verified can be evidence, named exactly as the
+    # directory listed them: no stream, case or short-name alias, and nothing
+    # that appeared after verification.
+    inventory = set(verified) - RECORDER_OUTPUTS
     names = [Path(text.replace("\\", "/")).name for text in (proof.install_log, proof.studio_smoke_json, proof.screenshot)]
     if len(set(names)) != len(names):
         return "the install log, smoke record and screenshot must be three different files"
@@ -471,7 +487,7 @@ def _committed_bundle_problem(bundle: Path, repo: Path, proof: ProofRecord) -> s
             or candidate.resolve().parent != bundle_dir
         ):
             return f"{field} must name a file directly inside {'/'.join(bundle_parts)}"
-    smoke = _strict_json(repo / Path(proof.studio_smoke_json.replace("\\", "/")))
+    smoke = _strict_json_bytes(verified[Path(proof.studio_smoke_json.replace("\\", "/")).name])
     if not isinstance(smoke, dict) or not (
         smoke.get("status") == "passed"
         and smoke.get("source_included") is False
@@ -508,9 +524,9 @@ def _reject_duplicate_keys(pairs: list[tuple[str, object]]) -> dict:
     return dict(pairs)
 
 
-def _strict_json(path: Path) -> object:
+def _strict_json_bytes(data: bytes) -> object:
     """Committed evidence JSON: strict UTF-8, and no key may repeat."""
-    return json.loads(path.read_bytes().decode("utf-8"), object_pairs_hook=_reject_duplicate_keys)
+    return json.loads(data.decode("utf-8"), object_pairs_hook=_reject_duplicate_keys)
 
 
 def latest_committed_proof(repo: Path | None = None) -> tuple[ProofRecord, str] | None:
@@ -539,6 +555,8 @@ def latest_committed_proof(repo: Path | None = None) -> tuple[ProofRecord, str] 
                 return _broken_proof(f"{label} is a link"), root_source
             if not stat.S_ISDIR(info.st_mode):
                 return _broken_proof(f"{label} is not a directory"), root_source
+            if not os.access(current, os.R_OK | os.X_OK):
+                return _broken_proof(f"{label} is not a readable directory"), root_source
         entries = sorted(path for path in root.iterdir() if BUNDLE_NAME.match(path.name))
         if not entries:
             return None
@@ -551,15 +569,19 @@ def latest_committed_proof(repo: Path | None = None) -> tuple[ProofRecord, str] 
         problem = _confinement_problem(repo, bundle)
         if problem:
             return _broken_proof(problem), source
-        record = bundle / PROOF_FILE
-        if _is_link(record) or not record.is_file():
+        # Verify the manifest first; the record and the evidence are then read
+        # only from the bytes it verified.
+        problem, verified = _verified_manifest(bundle)
+        if problem:
+            return _broken_proof(problem), source
+        if PROOF_FILE not in verified:
             return _broken_proof("the newest bundle has no proof record"), source
-        data = _strict_json(record)
+        data = _strict_json_bytes(verified[PROOF_FILE])
         problem = _committed_record_problem(data)
         if problem:
             return _broken_proof(problem), source
         proof = _proof_from_data(data)
-        problem = _committed_bundle_problem(bundle, repo, proof)
+        problem = _committed_bundle_problem(bundle, repo, proof, verified)
     except (OSError, UnicodeError, ValueError, TypeError) as error:
         return _broken_proof(f"unreadable committed evidence: {error}"), root_source
     if problem:
