@@ -37,6 +37,10 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   bump alone no longer refuses the package; source, AST, capabilities, tooling
   note and `signed:false` are still pinned. The flagship is resealed as v2 and
   its hash pins are updated (`ops/lane2b/evidence/22-t5a-v2-reseal.txt`).
+- **Playground rebuild (X-9).** The browser Wasm package is rebuilt once with
+  the pinned toolchain (Rust 1.95.0, Node v22.22.2, wasm-pack 0.15.0, esbuild
+  0.25.12); two builds matched byte for byte. The W-PLAY browser proof is
+  re-recorded against it.
 - **Riders.**
   - The rulesets README says the Base-controlled workflow runs but is not
     required (C4-01).
