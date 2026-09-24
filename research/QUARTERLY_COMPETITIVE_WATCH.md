@@ -10,7 +10,7 @@ First due: 2026-09-30
 
 Report directory: `research/competitive-watch/`
 
-Status: standing slice activated; the first report is planned and has not run.
+Status: standing slice active; the 2026 Q3 report is `research/competitive-watch/2026-Q3.md` (searched 2026-09-23).
 
 ## Purpose and claim boundary
 
