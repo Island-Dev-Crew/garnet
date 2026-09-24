@@ -411,6 +411,17 @@ class CommittedCleanVmBundleAdversarialTests(_CommittedRepoCase):
         (self.bundle / "MANIFEST.sha256").write_bytes(b"\xff\n")
         self._assert_unverified()
 
+    def test_the_newest_bundle_must_be_named_timestamp_dash_host(self) -> None:
+        # Codex round 3: a name with only the timestamp, or a malformed tail,
+        # is reported (fail closed), not accepted and not skipped.
+        for name in ("20260925-0900", "20260925-0900malformed"):
+            with self.subTest(name=name):
+                bundle = _record_committed_bundle(self.repo, name)
+                self._assert_unverified()
+                for path in bundle.iterdir():
+                    path.unlink()
+                bundle.rmdir()
+
     def test_a_bundle_holds_only_regular_files(self) -> None:
         # A link or a subdirectory inside the bundle, even one no field names,
         # breaks "no link anywhere from the repository down".
