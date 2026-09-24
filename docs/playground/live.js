@@ -67,19 +67,28 @@ function diffCurrentSourceImpl() {
   const result = diff(baseline.value, source.value);
   const machine = machineVerdictFromDiff(result);
   publicState.lastDiff = result; publicState.lastMachineVerdict = machine;
-  const human = machine.verdict === "expanded" ? "Authority expanded" : machine.verdict === "not_expanded" ? "No authority expansion" : "Diff unavailable";
-  setVerdict(ui["diff-verdict"], human, machine.verdict === "not_expanded" ? "ok" : "denied");
-  renderJson(ui["machine-verdict"], machine); renderJson(ui["diff-json"], result);
-  ui["diff-result"].textContent = result.ok ? `Added: ${result.aggregate_added.join(", ") || "none"}\nRemoved: ${result.aggregate_removed.join(", ") || "none"}\n${result.functions_caps_expanded.map(fn => `${fn.name} gained ${fn.gained.join(", ")}`).join("\n")}` : `Cannot compare: ${result.parse_error?.diagnostic?.message || "invalid source"}`;
-  renderAuthority(result);
   // Diff only parses; independently check BOTH revisions before illustrating
   // any lane. The adapter has no complete-coverage assertion: unchanged is
   // deliberately unknown, never permission or a green policy verdict.
   const checks = {baseline:check(baseline.value), current:check(source.value)};
-  if (!result.ok || !checks.baseline.ok || !checks.current.ok) {
+  const bothChecked = checks.baseline.ok && checks.current.ok;
+  const human = machine.verdict === "expanded" ? "Authority expanded" : machine.verdict === "not_expanded" ? "No authority expansion" : "Diff unavailable";
+  // T5a (C5-08): the diff label is green only when both revisions also check.
+  setVerdict(ui["diff-verdict"], human, machine.verdict === "not_expanded" ? (bothChecked ? "ok" : "neutral") : "denied");
+  renderJson(ui["machine-verdict"], machine); renderJson(ui["diff-json"], result);
+  ui["diff-result"].textContent = result.ok ? `Added: ${result.aggregate_added.join(", ") || "none"}\nRemoved: ${result.aggregate_removed.join(", ") || "none"}\n${result.functions_caps_expanded.map(fn => `${fn.name} gained ${fn.gained.join(", ")}`).join("\n")}` : `Cannot compare: ${result.parse_error?.diagnostic?.message || "invalid source"}`;
+  renderAuthority(result);
+  // T5a (C5-08): a function added with declared capabilities is a declared
+  // gain too, even when the program-wide aggregate is unchanged.
+  const declared = new Map((result.new_surface?.per_function || []).map(fn => [fn.name, fn.caps]));
+  const addedWithCaps = result.ok ? result.functions_added.filter(name => (declared.get(name) || []).length > 0) : [];
+  if (!result.ok || !bothChecked) {
     setVerdict(ui["lane-card"], "Blocked: a source failed parsing or checking. Resolve its diagnostics before policy review.", "blocked");
-  } else if (result.authority_expanded || result.functions_caps_expanded.length > 0) {
-    const gained = result.functions_caps_expanded.map(fn => `${fn.name} gained ${fn.gained.join(", ")}`).join("; ");
+  } else if (result.authority_expanded || result.functions_caps_expanded.length > 0 || addedWithCaps.length > 0) {
+    const gained = [
+      ...result.functions_caps_expanded.map(fn => `${fn.name} gained ${fn.gained.join(", ")}`),
+      ...addedWithCaps.map(name => `${name} added with ${declared.get(name).join(", ")}`),
+    ].join("; ");
     setVerdict(ui["lane-card"], `${gained || "Declared capabilities expanded"}. A human reviews this change.`, "review");
   } else {
     setVerdict(ui["lane-card"], "No program-wide declared capability added. Eligible for further policy checks; this is not merge approval. Complete checker coverage is unknown; tests, path policy and bound base/head evidence are still required.", "unknown");
