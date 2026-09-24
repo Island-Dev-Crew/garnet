@@ -26,6 +26,8 @@ PROOF_FILE = "windows-clean-vm-installer-proof.json"
 # dogfood root is only a local fallback when the repo carries no bundle.
 COMMITTED_BUNDLES_REL = Path("proofs/windows/studio-clean-vm")
 X64_GUEST_ARCHES = frozenset({"x64", "x86_64", "amd64"})
+# Committed bundles are named <YYYYMMDD-HHMM>-<host>; the newest name decides.
+BUNDLE_NAME = re.compile(r"^[0-9]{8}-[0-9]{4}")
 REQUIRED_GATE_IDS = frozenset(
     {"installer-artifact", "fresh-guest", "install-log", "studio-smoke", "launch-screenshot", "claim-boundary"}
 )
@@ -386,12 +388,17 @@ def _manifest_problem(bundle: Path) -> str | None:
     if not manifest.is_file() or manifest.is_symlink():
         return "MANIFEST.sha256 is missing"
     listed: dict[str, str] = {}
-    for line in manifest.read_text(encoding="utf-8").splitlines():
+    for line in manifest.read_bytes().decode("utf-8").splitlines():
         digest, sep, name = line.partition("  ")
         if not sep or not re.fullmatch(r"[0-9a-f]{64}", digest) or "/" in name or "\\" in name:
             return f"malformed manifest line: {line!r}"
+        if name in listed:
+            return f"the manifest lists {name} twice"
         listed[name] = digest
-    present = {path.name for path in bundle.iterdir() if path.is_file() and path.name != "MANIFEST.sha256"}
+    for path in bundle.iterdir():
+        if _is_link(path) or not path.is_file():
+            return f"{path.name} is not a regular file; a bundle holds only regular files"
+    present = {path.name for path in bundle.iterdir() if path.name != "MANIFEST.sha256"}
     if set(listed) != present:
         return f"manifest lists {sorted(listed)} but the bundle holds {sorted(present)}"
     for name, digest in listed.items():
@@ -444,8 +451,8 @@ def _committed_bundle_problem(bundle: Path, repo: Path, proof: ProofRecord) -> s
             or candidate.resolve().parent != bundle_dir
         ):
             return f"{field} must name a file directly inside {'/'.join(bundle_parts)}"
-    smoke = _load_smoke_json(str(repo / Path(proof.studio_smoke_json.replace("\\", "/"))))
-    if not (
+    smoke = _strict_json(repo / Path(proof.studio_smoke_json.replace("\\", "/")))
+    if not isinstance(smoke, dict) or not (
         smoke.get("status") == "passed"
         and smoke.get("source_included") is False
         and smoke.get("provider_api_called") is False
@@ -474,41 +481,60 @@ def _broken_proof(problem: str) -> ProofRecord:
     return replace(_empty_proof(), gates=[_integrity_gate(problem)])
 
 
-def latest_committed_proof(repo: Path | None = None) -> tuple[ProofRecord, str] | None:
-    """Read the newest committed bundle directory (by name), checked in full.
+def _reject_duplicate_keys(pairs: list[tuple[str, object]]) -> dict:
+    keys = [key for key, _ in pairs]
+    if len(keys) != len(set(keys)):
+        raise ValueError("duplicate JSON key")
+    return dict(pairs)
 
-    The newest bundle directory decides: if it is missing its record, is a
-    link, or fails any check, it is reported unverified, and an older bundle
-    never stands in for it.
+
+def _strict_json(path: Path) -> object:
+    """Committed evidence JSON: strict UTF-8, and no key may repeat."""
+    return json.loads(path.read_bytes().decode("utf-8"), object_pairs_hook=_reject_duplicate_keys)
+
+
+def latest_committed_proof(repo: Path | None = None) -> tuple[ProofRecord, str] | None:
+    """Read the newest committed bundle (by its <YYYYMMDD-HHMM>-<host> name), checked in full.
+
+    Links on the path to the proof root are refused before the root's absence
+    is trusted. The newest bundle entry decides: if it is not a real directory,
+    lacks its record, or fails any check, it is reported unverified, and neither
+    an older bundle nor local Desktop evidence stands in for it.
     """
     repo = repo or ROOT
     root = repo / COMMITTED_BUNDLES_REL
-    if not (root.exists() or _is_link(root)):
-        return None
     root_source = f"committed:{COMMITTED_BUNDLES_REL.as_posix()}"
-    problem = _confinement_problem(repo, root)
-    if problem:
-        return _broken_proof(problem), root_source
-    bundles = sorted(path for path in root.iterdir() if path.is_dir() or _is_link(path))
-    if not bundles:
-        return None
-    bundle = bundles[-1]
-    source = f"committed:{(COMMITTED_BUNDLES_REL / bundle.name).as_posix()}"
-    problem = _confinement_problem(repo, bundle)
-    if problem:
-        return _broken_proof(problem), source
-    record = bundle / PROOF_FILE
-    if _is_link(record) or not record.is_file():
-        return _broken_proof("the newest bundle has no proof record"), source
     try:
-        data = json.loads(record.read_text(encoding="utf-8"))
-    except (OSError, ValueError) as error:
-        return _broken_proof(f"unreadable proof: {error}"), source
-    problem = _committed_record_problem(data)
-    if problem:
-        return _broken_proof(problem), source
-    proof = _proof_from_data(data)
-    problem = _committed_bundle_problem(bundle, repo, proof)
+        current = repo
+        for part in COMMITTED_BUNDLES_REL.parts:
+            current = current / part
+            if _is_link(current):
+                return _broken_proof(f"{current.relative_to(repo).as_posix()} is a link"), root_source
+        if not root.exists():
+            return None
+        if not root.is_dir():
+            return _broken_proof(f"{COMMITTED_BUNDLES_REL.as_posix()} is not a directory"), root_source
+        entries = sorted(path for path in root.iterdir() if BUNDLE_NAME.match(path.name))
+        if not entries:
+            return None
+        bundle = entries[-1]
+        source = f"committed:{(COMMITTED_BUNDLES_REL / bundle.name).as_posix()}"
+        if _is_link(bundle) or not bundle.is_dir():
+            return _broken_proof("the newest bundle entry is not a directory"), source
+        problem = _confinement_problem(repo, bundle)
+        if problem:
+            return _broken_proof(problem), source
+        record = bundle / PROOF_FILE
+        if _is_link(record) or not record.is_file():
+            return _broken_proof("the newest bundle has no proof record"), source
+        data = _strict_json(record)
+        problem = _committed_record_problem(data)
+        if problem:
+            return _broken_proof(problem), source
+        proof = _proof_from_data(data)
+        problem = _committed_bundle_problem(bundle, repo, proof)
+    except (OSError, UnicodeError, ValueError, TypeError) as error:
+        return _broken_proof(f"unreadable committed evidence: {error}"), root_source
     if problem:
         proof = replace(proof, verified=False, gates=[*proof.gates, _integrity_gate(problem)])
     return proof, source
