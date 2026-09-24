@@ -374,6 +374,65 @@ mod tests {
     use super::*;
     use serde_json::json;
 
+    // ── T5a (C3-03): the shelf pins source, AST and capability surface, not the
+    // CLI version, and accepts seal/v2 ────────────────────────────────────────
+
+    fn flagship_source() -> String {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../examples/minimum-shelf-flagship")
+            .join(PACKAGE_SOURCE);
+        fs::read_to_string(path).expect("flagship source")
+    }
+
+    fn build_and_caps(source: &str) -> (Manifest, CapabilityManifest) {
+        let module = garnet_parser::parse_source(source).expect("parses");
+        (
+            Manifest::build(source, &module),
+            CapabilityManifest::from_surface(capability_surface(&module)),
+        )
+    }
+
+    /// A v2 seal of the flagship as the current producer writes it.
+    fn v2_seal_of_flagship() -> String {
+        let (build, caps) = build_and_caps(&flagship_source());
+        crate::seal::statement_json("tool", &build, &caps)
+    }
+
+    #[test]
+    fn a_version_only_bump_still_verifies_the_v2_seal() {
+        let seal = v2_seal_of_flagship();
+        let (mut build, caps) = build_and_caps(&flagship_source());
+        build.parser_version = "0.8.3".to_string();
+        build.interp_version = "0.8.3".to_string();
+        assert_eq!(
+            verify_seal(seal.as_bytes(), &build, &caps),
+            Ok(()),
+            "a CLI version bump alone must not refuse the flagship"
+        );
+    }
+
+    #[test]
+    fn a_changed_capability_surface_is_still_rejected() {
+        let seal = v2_seal_of_flagship();
+        let (build, _) = build_and_caps(&flagship_source());
+        let (_, widened) = build_and_caps("@caps(fs)\ndef main(value) { value * 2 }\n");
+        assert!(verify_seal(seal.as_bytes(), &build, &widened).is_err());
+    }
+
+    #[test]
+    fn a_changed_ast_is_still_rejected() {
+        let seal = v2_seal_of_flagship();
+        let (other_build, caps) = build_and_caps("@caps()\ndef main(value) { value * 3 }\n");
+        assert!(verify_seal(seal.as_bytes(), &other_build, &caps).is_err());
+    }
+
+    #[test]
+    fn a_seal_claiming_to_be_signed_is_rejected() {
+        let seal = v2_seal_of_flagship().replace("\"signed\":false", "\"signed\":true");
+        let (build, caps) = build_and_caps(&flagship_source());
+        assert!(verify_seal(seal.as_bytes(), &build, &caps).is_err());
+    }
+
     #[test]
     fn minimum_shelf_tier1_tool_invokes_garnet_in_process() {
         let source = "@caps()\ndef main(value) { value * 2 }\n";

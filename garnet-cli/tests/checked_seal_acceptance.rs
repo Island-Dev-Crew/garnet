@@ -163,7 +163,7 @@ fn verify_rechecks_even_a_structurally_matching_seal() {
     let dest = dir.path().join("seal.json");
     fs::write(
         &dest,
-        garnet_cli::seal::statement_json("app", &build, &caps, false),
+        garnet_cli::seal::statement_json("app", &build, &caps),
     )
     .unwrap();
     assert!(!run(&["verify", path(&p), path(&dest)]).status.success());

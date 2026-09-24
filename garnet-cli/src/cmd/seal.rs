@@ -2,8 +2,10 @@
 //! attestation (S38; `--out` added S51).
 //!
 //! Wrap, don't rebuild: produces the in-toto predicate over the deterministic
-//! build manifest + the capability manifest; `cosign` signs it (detected, not
-//! required). The capability manifest is the native SBOM-equivalent.
+//! build manifest + the capability manifest. Garnet never signs the predicate:
+//! it is always UNSIGNED, and its bytes do not depend on whether `cosign` is
+//! installed (T5a, C2-07). Sign it externally with `cosign attest`. The
+//! capability manifest is the native SBOM-equivalent.
 //!
 //! `--out <path>` writes the predicate to a file so it can be fed straight to
 //! `cosign attest --predicate <path>` (S51 signed-release lanes): without it the
@@ -147,7 +149,6 @@ pub fn run(args: &[String]) -> ExitCode {
         program,
         &build,
         &caps,
-        cosign,
         authored_by.as_deref(),
         &attestation,
         chain.as_ref(),
@@ -165,15 +166,17 @@ pub fn run(args: &[String]) -> ExitCode {
         "<output>".to_string()
     };
 
+    // T5a (C2-07): every machine prints UNSIGNED; cosign presence changes only
+    // the hint, never the seal bytes.
     if cosign {
         eprintln!(
-            "garnet seal: cosign available — sign this predicate with: \
-             cosign attest --predicate {predicate_ref} --type custom"
+            "garnet seal: in-toto predicate emitted UNSIGNED (Garnet never signs); \
+             cosign is installed — to sign it: cosign attest --predicate {predicate_ref} --type custom"
         );
     } else {
         eprintln!(
-            "garnet seal: cosign not installed — in-toto predicate emitted UNSIGNED \
-             (wrap-don't-rebuild: install cosign to attest; Garnet does not sign supply-chain itself)"
+            "garnet seal: in-toto predicate emitted UNSIGNED (Garnet never signs); \
+             install cosign to sign it (wrap-don't-rebuild)"
         );
     }
     ExitCode::SUCCESS

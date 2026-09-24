@@ -36,8 +36,13 @@ pub struct SealProvenanceChain {
     pub chain_blake3: String,
 }
 
-/// Whether `cosign` is available on `PATH` — the supply-chain signer this seal
-/// predicate is meant to be attested with. Detected, never required.
+/// The fixed `tooling.cosign` note in every seal. Garnet never signs, so the
+/// seal bytes must not depend on whether cosign is installed (T5a, C2-07).
+pub const COSIGN_NOTE: &str =
+    "not used by garnet seal; this predicate is UNSIGNED. To sign it: cosign attest --predicate <file> --type custom";
+
+/// Whether `cosign` is available on `PATH`. Used only for the stderr hint in
+/// `garnet seal`; it never changes the seal bytes.
 pub fn cosign_available() -> bool {
     Command::new("cosign")
         .arg("version")
@@ -48,13 +53,8 @@ pub fn cosign_available() -> bool {
 
 /// Build the deterministic in-toto Statement JSON for a sealed program. The
 /// build + capability manifests are embedded as nested JSON in the predicate.
-pub fn statement_json(
-    program: &str,
-    build: &Manifest,
-    caps: &CapabilityManifest,
-    cosign: bool,
-) -> String {
-    statement_json_with_authorship(program, build, caps, cosign, None)
+pub fn statement_json(program: &str, build: &Manifest, caps: &CapabilityManifest) -> String {
+    statement_json_with_authorship(program, build, caps, None)
 }
 
 /// As [`statement_json`], but optionally records an **AI-authorship provenance**
@@ -66,10 +66,9 @@ pub fn statement_json_with_authorship(
     program: &str,
     build: &Manifest,
     caps: &CapabilityManifest,
-    cosign: bool,
     authorship: Option<&str>,
 ) -> String {
-    statement_json_full(program, build, caps, cosign, authorship, &[])
+    statement_json_full(program, build, caps, authorship, &[])
 }
 
 /// As [`statement_json_with_authorship`], but also records a structured
@@ -82,11 +81,10 @@ pub fn statement_json_full(
     program: &str,
     build: &Manifest,
     caps: &CapabilityManifest,
-    cosign: bool,
     authorship: Option<&str>,
     attestation: &[(String, String)],
 ) -> String {
-    statement_json_with_chain(program, build, caps, cosign, authorship, attestation, None)
+    statement_json_with_chain(program, build, caps, authorship, attestation, None)
 }
 
 /// As [`statement_json_full`], but also records an S97 provenance chain. The
@@ -96,16 +94,11 @@ pub fn statement_json_with_chain(
     program: &str,
     build: &Manifest,
     caps: &CapabilityManifest,
-    cosign: bool,
     authorship: Option<&str>,
     attestation: &[(String, String)],
     provenance_chain: Option<&SealProvenanceChain>,
 ) -> String {
-    let cosign_note = if cosign {
-        "available — sign with: cosign attest --predicate <file> --type custom"
-    } else {
-        "not installed — predicate emitted UNSIGNED; install cosign to attest"
-    };
+    let cosign_note = COSIGN_NOTE;
     let sbom_note = "garnet-capability-manifest (native SBOM-equivalent; CycloneDX/SPDX via syft/cyclonedx when present)";
     let authorship_field = match authorship {
         Some(a) => format!(",\"authorship\":\"{}\"", json_escape(a)),
@@ -132,6 +125,7 @@ pub fn statement_json_with_chain(
          \"predicateType\":\"{ptype}\",\
          \"predicate\":{{\
          \"subject_identity\":\"{identity}\",\
+         \"signed\":false,\
          \"source_blake3\":\"{src}\",\
          \"build_manifest\":{build_json},\
          \"capability_manifest\":{caps_json},\
@@ -195,21 +189,18 @@ pub fn verify_statement(
     } else {
         None
     };
-    // Tool availability is producer metadata; verification must never depend on
-    // whether cosign is installed on the verifying machine or invoke it.
-    for cosign in [false, true] {
-        let expected = statement_json_with_chain(
-            program,
-            build,
-            caps,
-            cosign,
-            authorship,
-            &attestation,
-            chain.as_ref(),
-        );
-        if input.strip_suffix('\n').unwrap_or(input) == expected {
-            return Ok(());
-        }
+    // T5a (C2-07): the bytes no longer depend on whether cosign was installed
+    // on the producing machine, so there is exactly one expected form.
+    let expected = statement_json_with_chain(
+        program,
+        build,
+        caps,
+        authorship,
+        &attestation,
+        chain.as_ref(),
+    );
+    if input.strip_suffix('\n').unwrap_or(input) == expected {
+        return Ok(());
     }
     Err("seal content/binding mismatch or noncanonical fields/bytes".into())
 }
@@ -335,7 +326,7 @@ mod tests {
     #[test]
     fn statement_is_in_toto_shaped() {
         let (build, caps) = build_for("@caps(fs)\ndef main() { 1 }\n");
-        let json = statement_json("demo", &build, &caps, false);
+        let json = statement_json("demo", &build, &caps);
         assert!(
             json.contains(r#""_type":"https://in-toto.io/Statement/v1""#),
             "{json}"
@@ -353,18 +344,19 @@ mod tests {
     }
 
     #[test]
-    fn cosign_flag_is_reflected_in_tooling() {
+    fn tooling_note_is_a_constant_and_the_predicate_says_unsigned() {
         let (build, caps) = build_for("@caps()\ndef main() { 1 }\n");
-        assert!(statement_json("d", &build, &caps, false).contains("not installed"));
-        assert!(statement_json("d", &build, &caps, true).contains("cosign attest"));
+        let json = statement_json("d", &build, &caps);
+        assert!(json.contains(COSIGN_NOTE), "{json}");
+        assert!(json.contains(r#""signed":false"#), "{json}");
     }
 
     #[test]
     fn statement_is_deterministic() {
         let (build, caps) = build_for("@caps(net)\ndef main() { 1 }\n");
         assert_eq!(
-            statement_json("d", &build, &caps, false),
-            statement_json("d", &build, &caps, false)
+            statement_json("d", &build, &caps),
+            statement_json("d", &build, &caps)
         );
     }
 
