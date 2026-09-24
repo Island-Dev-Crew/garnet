@@ -452,6 +452,39 @@ class CommittedCleanVmBundleAdversarialTests(_CommittedRepoCase):
                     stream_like.unlink()
                     status_mod._write_manifest(self.bundle)
 
+    def test_a_file_added_after_manifest_verification_does_not_count(self) -> None:
+        # Codex round 4: evidence must come from the manifest-verified read, not
+        # from a later directory scan. The hook adds a passing smoke file right
+        # after verification returns, which a later scan would pick up.
+        bundle_rel = (BUNDLES_REL / self.bundle.name).as_posix()
+        self._edit_proof(studio_smoke_json=f"{bundle_rel}/unlisted-smoke.json")
+        name = "_verified_manifest" if hasattr(status_mod, "_verified_manifest") else "_manifest_problem"
+        real = getattr(status_mod, name)
+
+        def verify_then_add(bundle: Path, *args: object, **kwargs: object) -> object:
+            result = real(bundle, *args, **kwargs)
+            (bundle / "unlisted-smoke.json").write_text(
+                json.dumps({"status": "passed", "source_included": False, "provider_api_called": False}),
+                encoding="utf-8",
+            )
+            return result
+
+        with mock.patch.object(status_mod, name, verify_then_add):
+            self._assert_unverified()
+
+    def test_evidence_files_must_not_be_hard_links(self) -> None:
+        # Codex round 4: two names for one file let one smoke record fill every
+        # role. Git never checks out hard links, so a bundle file has one link.
+        smoke = self.bundle / "studio-smoke.json"
+        for name in ("install.log", "launch.png"):
+            (self.bundle / name).unlink()
+            try:
+                os.link(smoke, self.bundle / name)
+            except OSError as error:
+                self.skipTest(f"this host cannot create a hard link: {error}")
+        status_mod._write_manifest(self.bundle)
+        self._assert_unverified()
+
     def test_the_three_evidence_files_are_distinct(self) -> None:
         data = json.loads((self.bundle / status_mod.PROOF_FILE).read_text(encoding="utf-8"))
         self._edit_proof(screenshot=data["install_log"])
