@@ -1,0 +1,15 @@
+streams=M03-installer-main-hint.stderr,M03-installer-main-hint.stdout
+contains '--tag v0.8.2': True
+--- decoded view of the CLIXML error records in the stderr stream (derived; the raw stream is authoritative)
+garnet-install: error: could not download SHA256SUMS for v0.8.2 from file:///C:/gw1-stage/empty-release-dir (Cannot 
+find path 'C:\gw1-stage\empty-release-dir\SHA256SUMS' because it does not exist.). Windows release assets are 
+published starting with v0.8.2. To build this version from source instead (requires Rust): cargo install --git 
+https://github.com/Island-Dev-Crew/garnet --tag v0.8.2 --locked garnet-cli
+At line:32 char:39
++ ... on Fail([string]$Message) { throw "garnet-install: error: $Message" }
++                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (garnet-install:...cked garnet-cli:String) [], RuntimeException
+    + FullyQualifiedErrorId : garnet-install: error: could not download SHA256SUMS for v0.8.2 from file:///C:/gw1-stag 
+   e/empty-release-dir (Cannot find path 'C:\gw1-stage\empty-release-dir\SHA256SUMS' because it does not exist.). Win  
+  dows release assets are published starting with v0.8.2. To build this version from source instead (requires Rust):   
+  cargo install --git https://github.com/Island-Dev-Crew/garnet --tag v0.8.2 --locked garnet-cli

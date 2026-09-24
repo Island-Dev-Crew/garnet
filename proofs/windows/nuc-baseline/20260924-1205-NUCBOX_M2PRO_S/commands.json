@@ -1,0 +1,2375 @@
+{
+  "run": {
+    "argv": [
+      "C:\\gw1-stage\\nuc_capture.py",
+      "all",
+      "--stamp",
+      "20260924-1205"
+    ],
+    "clone": "C:\\gw1c-20260924",
+    "ended_utc": "2026-09-24T12:10:46.666642Z",
+    "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+    "host": "NUCBOX_M2PRO_S",
+    "phases": [
+      "clone",
+      "env",
+      "installers",
+      "build",
+      "test",
+      "post"
+    ],
+    "python": "C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "python_version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+    "stage": "C:\\gw1-stage\\20260924-1205-NUCBOX_M2PRO_S",
+    "started_utc": "2026-09-24T12:05:48.205222Z",
+    "stopped_at": null,
+    "unexpected_exits": []
+  },
+  "steps": [
+    {
+      "argv": [
+        "C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-I",
+        "-c",
+        "import os, sys\nclone = r'C:\\gw1c-20260924'\nbad = os.path.exists(clone)\nprint(f'{clone} exists={bad}')\nfor s in ('garnet-nuc-install-test', 'garnet-nuc-install-test-main', 'garnet-nuc-install-test-hint', 'garnet-nuc-install-test-v081', 'garnet-nuc-install-test-mode-source'):\n    p = os.path.join(os.environ['TEMP'], s); e = os.path.exists(p); bad |= e\n    print(f'{p} exists={e}')\nd = r'C:\\gw1-stage\\empty-release-dir'\nentries = sorted(os.listdir(d)) if os.path.isdir(d) else None\nprint(f'{d} isdir={os.path.isdir(d)} entries={entries}')\nbad |= entries != []\nsys.exit(1 if bad else 0)\n"
+      ],
+      "cwd": "C:\\",
+      "display": "python -I -c <precheck>",
+      "duration_s": 0.218,
+      "ended_utc": "2026-09-24T12:05:48.428333Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "fetched": [],
+      "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+      "id": "C00",
+      "merged": false,
+      "path_mode": "pinned",
+      "phase": "clone",
+      "ps_script": null,
+      "resolved_exe": "C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+      "section": "env",
+      "started_utc": "2026-09-24T12:05:48.205222Z",
+      "stem": "precheck",
+      "streams": [
+        {
+          "bytes": 487,
+          "file": "streams/C00-precheck.stdout",
+          "kind": "stdout",
+          "sha256": "1060816a0df0946a26730d10a89d32084c0fa6358220da07ed025eab395bd6b3"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/C00-precheck.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Clone directory and throwaway install prefixes absent; empty release dir empty"
+    },
+    {
+      "argv": [
+        "C:\\Program Files\\Git\\cmd\\git.EXE",
+        "-c",
+        "credential.helper=",
+        "ls-remote",
+        "https://github.com/Island-Dev-Crew/garnet.git",
+        "refs/heads/main"
+      ],
+      "cwd": "C:\\",
+      "display": "git -c credential.helper= ls-remote https://github.com/Island-Dev-Crew/garnet.git refs/heads/main",
+      "duration_s": 0.907,
+      "ended_utc": "2026-09-24T12:05:49.371686Z",
+      "env_overrides": {
+        "GIT_TERMINAL_PROMPT": "0"
+      },
+      "exit_code": 0,
+      "expect_exit": 0,
+      "fetched": [],
+      "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+      "id": "C01",
+      "merged": false,
+      "path_mode": "pinned",
+      "phase": "clone",
+      "ps_script": null,
+      "resolved_exe": "C:\\Program Files\\Git\\cmd\\git.EXE",
+      "section": "env",
+      "started_utc": "2026-09-24T12:05:48.472337Z",
+      "stem": "remote-main",
+      "streams": [
+        {
+          "bytes": 57,
+          "file": "streams/C01-remote-main.stdout",
+          "kind": "stdout",
+          "sha256": "2b918ea50b9dd6ac79bdbb157e7e6bd3939f958a087e289d5a0ef32a07ae05ce"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/C01-remote-main.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Remote readback of main before cloning (no credential)"
+    },
+    {
+      "argv": [
+        "C:\\Program Files\\Git\\cmd\\git.EXE",
+        "-c",
+        "credential.helper=",
+        "clone",
+        "-c",
+        "core.autocrlf=false",
+        "https://github.com/Island-Dev-Crew/garnet.git",
+        "C:\\gw1c-20260924"
+      ],
+      "cwd": "C:\\",
+      "display": "git clone -c core.autocrlf=false https://github.com/Island-Dev-Crew/garnet.git C:\\gw1c-20260924",
+      "duration_s": 4.875,
+      "ended_utc": "2026-09-24T12:05:54.297245Z",
+      "env_overrides": {
+        "GIT_TERMINAL_PROMPT": "0"
+      },
+      "exit_code": 0,
+      "expect_exit": 0,
+      "fetched": [],
+      "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+      "id": "C02",
+      "merged": false,
+      "path_mode": "pinned",
+      "phase": "clone",
+      "ps_script": null,
+      "resolved_exe": "C:\\Program Files\\Git\\cmd\\git.EXE",
+      "section": "env",
+      "started_utc": "2026-09-24T12:05:49.418543Z",
+      "stem": "clone",
+      "streams": [
+        {
+          "bytes": 0,
+          "file": "streams/C02-clone.stdout",
+          "kind": "stdout",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "bytes": 2187,
+          "file": "streams/C02-clone.stderr",
+          "kind": "stderr",
+          "sha256": "20a12b3ed55d0b2ceaa2520c5fed4d972bc54fa58eac3b2396931e7bd6e0a36e"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 1800,
+      "title": "Fresh clone with core.autocrlf=false set before checkout"
+    },
+    {
+      "argv": [
+        "C:\\Program Files\\Git\\cmd\\git.EXE",
+        "-C",
+        "C:\\gw1c-20260924",
+        "config",
+        "user.name",
+        "Jon Isaac"
+      ],
+      "cwd": "C:\\gw1c-20260924",
+      "display": "git config user.name \"Jon Isaac\"",
+      "duration_s": 0.047,
+      "ended_utc": "2026-09-24T12:05:54.365457Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "fetched": [],
+      "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+      "id": "C03",
+      "merged": false,
+      "path_mode": "pinned",
+      "phase": "clone",
+      "ps_script": null,
+      "resolved_exe": "C:\\Program Files\\Git\\cmd\\git.EXE",
+      "section": "env",
+      "started_utc": "2026-09-24T12:05:54.320537Z",
+      "stem": "user-name",
+      "streams": [
+        {
+          "bytes": 0,
+          "file": "streams/C03-user-name.stdout",
+          "kind": "stdout",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/C03-user-name.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Commit identity for this clone: name"
+    },
+    {
+      "argv": [
+        "C:\\Program Files\\Git\\cmd\\git.EXE",
+        "-C",
+        "C:\\gw1c-20260924",
+        "config",
+        "user.email",
+        "275140286+IslandDevCrew@users.noreply.github.com"
+      ],
+      "cwd": "C:\\gw1c-20260924",
+      "display": "git config user.email \"275140286+IslandDevCrew@users.noreply.github.com\"",
+      "duration_s": 0.062,
+      "ended_utc": "2026-09-24T12:05:54.425836Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "fetched": [],
+      "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+      "id": "C04",
+      "merged": false,
+      "path_mode": "pinned",
+      "phase": "clone",
+      "ps_script": null,
+      "resolved_exe": "C:\\Program Files\\Git\\cmd\\git.EXE",
+      "section": "env",
+      "started_utc": "2026-09-24T12:05:54.365457Z",
+      "stem": "user-email",
+      "streams": [
+        {
+          "bytes": 0,
+          "file": "streams/C04-user-email.stdout",
+          "kind": "stdout",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/C04-user-email.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Commit identity for this clone: noreply address"
+    },
+    {
+      "argv": [
+        "C:\\windows\\system32\\hostname.EXE"
+      ],
+      "cwd": "C:\\gw1c-20260924",
+      "display": "hostname",
+      "duration_s": 0.032,
+      "ended_utc": "2026-09-24T12:05:54.456811Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "fetched": [],
+      "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+      "id": "E01",
+      "merged": false,
+      "path_mode": "pinned",
+      "phase": "env",
+      "ps_script": null,
+      "resolved_exe": "C:\\windows\\system32\\hostname.EXE",
+      "section": "env",
+      "started_utc": "2026-09-24T12:05:54.432365Z",
+      "stem": "hostname",
+      "streams": [
+        {
+          "bytes": 16,
+          "file": "streams/E01-hostname.stdout",
+          "kind": "stdout",
+          "sha256": "17394d5f57b3858fabc726caf419e0c6df2a7babc2cf6becb6874e2d1de5ae42"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/E01-hostname.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Hostname"
+    },
+    {
+      "argv": [
+        "C:\\windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+        "-NoProfile",
+        "-NonInteractive",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-EncodedCommand",
+        "cwB5AHMAdABlAG0AaQBuAGYAbwAgAHwAIABmAGkAbgBkAHMAdAByACAALwBCACAALwBDADoAIgBPAFMAIABOAGEAbQBlACIAIAAvAEMAOgAiAE8AUwAgAFYAZQByAHMAaQBvAG4AIgAgAC8AQwA6ACIAUwB5AHMAdABlAG0AIABUAHkAcABlACIA"
+      ],
+      "cwd": "C:\\gw1c-20260924",
+      "display": "systeminfo | findstr /B /C:\"OS Name\" /C:\"OS Version\" /C:\"System Type\"",
+      "duration_s": 3.265,
+      "ended_utc": "2026-09-24T12:05:57.720656Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "fetched": [],
+      "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+      "id": "E02",
+      "merged": false,
+      "path_mode": "pinned",
+      "phase": "env",
+      "ps_script": "systeminfo | findstr /B /C:\"OS Name\" /C:\"OS Version\" /C:\"System Type\"",
+      "resolved_exe": "C:\\windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+      "section": "env",
+      "started_utc": "2026-09-24T12:05:54.458819Z",
+      "stem": "systeminfo",
+      "streams": [
+        {
+          "bytes": 161,
+          "file": "streams/E02-systeminfo.stdout",
+          "kind": "stdout",
+          "sha256": "9caffa4c160c5c2067d959aca18ad76f80563530b438211e124918c6895e7ac0"
+        },
+        {
+          "bytes": 392,
+          "file": "streams/E02-systeminfo.stderr",
+          "kind": "stderr",
+          "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "OS name, version and system type"
+    },
+    {
+      "argv": [
+        "C:\\Users\\IslandDevCrew\\.cargo\\bin\\rustc.EXE",
+        "-Vv"
+      ],
+      "cwd": "C:\\gw1c-20260924",
+      "display": "rustc -Vv",
+      "duration_s": 0.062,
+      "ended_utc": "2026-09-24T12:05:57.821671Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "fetched": [],
+      "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+      "id": "E03",
+      "merged": false,
+      "path_mode": "pinned",
+      "phase": "env",
+      "ps_script": null,
+      "resolved_exe": "C:\\Users\\IslandDevCrew\\.cargo\\bin\\rustc.EXE",
+      "section": "env",
+      "started_utc": "2026-09-24T12:05:57.757632Z",
+      "stem": "rustc",
+      "streams": [
+        {
+          "bytes": 194,
+          "file": "streams/E03-rustc.stdout",
+          "kind": "stdout",
+          "sha256": "185aa337caf524a621d7b1ce7b21a4d6f92f3ea592d009e481fea0e00e0d0434"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/E03-rustc.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Rust compiler"
+    },
+    {
+      "argv": [
+        "C:\\Users\\IslandDevCrew\\.cargo\\bin\\cargo.EXE",
+        "-V"
+      ],
+      "cwd": "C:\\gw1c-20260924",
+      "display": "cargo -V",
+      "duration_s": 0.062,
+      "ended_utc": "2026-09-24T12:05:57.901322Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "fetched": [],
+      "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+      "id": "E04",
+      "merged": false,
+      "path_mode": "pinned",
+      "phase": "env",
+      "ps_script": null,
+      "resolved_exe": "C:\\Users\\IslandDevCrew\\.cargo\\bin\\cargo.EXE",
+      "section": "env",
+      "started_utc": "2026-09-24T12:05:57.837842Z",
+      "stem": "cargo",
+      "streams": [
+        {
+          "bytes": 36,
+          "file": "streams/E04-cargo.stdout",
+          "kind": "stdout",
+          "sha256": "c10ec31b8c6e6e2693cf65fc1971b41edbc3da1ae7db6f9f3f36c4823f8dcab5"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/E04-cargo.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Cargo"
+    },
+    {
+      "argv": [
+        "C:\\Users\\IslandDevCrew\\.cargo\\bin\\rustup.EXE",
+        "show",
+        "active-toolchain"
+      ],
+      "cwd": "C:\\gw1c-20260924",
+      "display": "rustup show active-toolchain",
+      "duration_s": 0.031,
+      "ended_utc": "2026-09-24T12:05:57.947676Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "fetched": [],
+      "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+      "id": "E05",
+      "merged": false,
+      "path_mode": "pinned",
+      "phase": "env",
+      "ps_script": null,
+      "resolved_exe": "C:\\Users\\IslandDevCrew\\.cargo\\bin\\rustup.EXE",
+      "section": "env",
+      "started_utc": "2026-09-24T12:05:57.914542Z",
+      "stem": "rustup-active",
+      "streams": [
+        {
+          "bytes": 40,
+          "file": "streams/E05-rustup-active.stdout",
+          "kind": "stdout",
+          "sha256": "cf7e28cb2ba4d3f9a0d2d635cd73f915213b595f6399da0b55817a6e3c5aa1d1"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/E05-rustup-active.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Active rustup toolchain"
+    },
+    {
+      "argv": [
+        "C:\\Program Files\\nodejs\\node.EXE",
+        "-v"
+      ],
+      "cwd": "C:\\gw1c-20260924",
+      "display": "node -v",
+      "duration_s": 0.032,
+      "ended_utc": "2026-09-24T12:05:58.001609Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "fetched": [],
+      "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+      "id": "E06",
+      "merged": false,
+      "path_mode": "pinned",
+      "phase": "env",
+      "ps_script": null,
+      "resolved_exe": "C:\\Program Files\\nodejs\\node.EXE",
+      "section": "env",
+      "started_utc": "2026-09-24T12:05:57.965859Z",
+      "stem": "node",
+      "streams": [
+        {
+          "bytes": 10,
+          "file": "streams/E06-node.stdout",
+          "kind": "stdout",
+          "sha256": "99149e35f76aa1efc846f029c3d2733b3541fe76ac97b74d33883481c0ce8dd9"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/E06-node.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Node.js"
+    },
+    {
+      "argv": [
+        "C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.EXE",
+        "--version"
+      ],
+      "cwd": "C:\\gw1c-20260924",
+      "display": "python --version",
+      "duration_s": 0.016,
+      "ended_utc": "2026-09-24T12:05:58.034801Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "fetched": [],
+      "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+      "id": "E07",
+      "merged": false,
+      "path_mode": "pinned",
+      "phase": "env",
+      "ps_script": null,
+      "resolved_exe": "C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.EXE",
+      "section": "env",
+      "started_utc": "2026-09-24T12:05:58.016304Z",
+      "stem": "python-pinned",
+      "streams": [
+        {
+          "bytes": 16,
+          "file": "streams/E07-python-pinned.stdout",
+          "kind": "stdout",
+          "sha256": "6a5d9f6462ca5dfc6788cfd216ba579fffd7875776ab9d9b35659be78858f73a"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/E07-python-pinned.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "python with Python312 first on PATH (every other step uses this PATH)"
+    },
+    {
+      "argv": [
+        "C:\\windows\\system32\\where.exe",
+        "python"
+      ],
+      "cwd": "C:\\gw1c-20260924",
+      "display": "where.exe python",
+      "duration_s": 0.14,
+      "ended_utc": "2026-09-24T12:05:58.175356Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "fetched": [],
+      "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+      "id": "E08",
+      "merged": false,
+      "path_mode": "pinned",
+      "phase": "env",
+      "ps_script": null,
+      "resolved_exe": "C:\\windows\\system32\\where.exe",
+      "section": "env",
+      "started_utc": "2026-09-24T12:05:58.041673Z",
+      "stem": "where-python-pinned",
+      "streams": [
+        {
+          "bytes": 288,
+          "file": "streams/E08-where-python-pinned.stdout",
+          "kind": "stdout",
+          "sha256": "35100f10333c5c37b32117cc1d57dc1e538572ce84fea4caeaacb1fafbe387b6"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/E08-where-python-pinned.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Where python resolves on the pinned PATH"
+    },
+    {
+      "argv": [
+        "C:\\Users\\IslandDevCrew\\AppData\\Local\\hermes\\hermes-agent\\venv\\Scripts\\python.EXE",
+        "--version"
+      ],
+      "cwd": "C:\\gw1c-20260924",
+      "display": "python --version",
+      "duration_s": 0.063,
+      "ended_utc": "2026-09-24T12:05:58.245495Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "fetched": [],
+      "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+      "id": "E09",
+      "merged": false,
+      "path_mode": "default",
+      "phase": "env",
+      "ps_script": null,
+      "resolved_exe": "C:\\Users\\IslandDevCrew\\AppData\\Local\\hermes\\hermes-agent\\venv\\Scripts\\python.EXE",
+      "section": "env",
+      "started_utc": "2026-09-24T12:05:58.198327Z",
+      "stem": "python-default",
+      "streams": [
+        {
+          "bytes": 16,
+          "file": "streams/E09-python-default.stdout",
+          "kind": "stdout",
+          "sha256": "d901007b84bfc7eb172ba21b077c642df7d6285ca37e9634f913f8dfb8f7b898"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/E09-python-default.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "python on the machine's default PATH (disclosure: not the pinned interpreter)"
+    },
+    {
+      "argv": [
+        "C:\\windows\\system32\\where.exe",
+        "python"
+      ],
+      "cwd": "C:\\gw1c-20260924",
+      "display": "where.exe python",
+      "duration_s": 0.125,
+      "ended_utc": "2026-09-24T12:05:58.382751Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "fetched": [],
+      "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+      "id": "E10",
+      "merged": false,
+      "path_mode": "default",
+      "phase": "env",
+      "ps_script": null,
+      "resolved_exe": "C:\\windows\\system32\\where.exe",
+      "section": "env",
+      "started_utc": "2026-09-24T12:05:58.251734Z",
+      "stem": "where-python-default",
+      "streams": [
+        {
+          "bytes": 288,
+          "file": "streams/E10-where-python-default.stdout",
+          "kind": "stdout",
+          "sha256": "04d3e683a771bbcacabdea476f2317b1fde8d24292447239e70d2cb8a73869cc"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/E10-where-python-default.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Where python resolves on the machine's default PATH"
+    },
+    {
+      "argv": [
+        "C:\\windows\\system32\\where.exe",
+        "python3"
+      ],
+      "cwd": "C:\\gw1c-20260924",
+      "display": "where.exe python3",
+      "duration_s": 0.11,
+      "ended_utc": "2026-09-24T12:05:58.497590Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "fetched": [],
+      "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+      "id": "E11",
+      "merged": false,
+      "path_mode": "pinned",
+      "phase": "env",
+      "ps_script": null,
+      "resolved_exe": "C:\\windows\\system32\\where.exe",
+      "section": "env",
+      "started_utc": "2026-09-24T12:05:58.397577Z",
+      "stem": "where-python3-pinned",
+      "streams": [
+        {
+          "bytes": 133,
+          "file": "streams/E11-where-python3-pinned.stdout",
+          "kind": "stdout",
+          "sha256": "6ae8d0b4e227724f8149704789bbc1a23015aec02070b7313e01873b5e8613b5"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/E11-where-python3-pinned.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Where python3 resolves on the pinned PATH (python3 is not pinned)"
+    },
+    {
+      "argv": [
+        "C:\\Program Files\\Git\\cmd\\git.EXE",
+        "--version"
+      ],
+      "cwd": "C:\\gw1c-20260924",
+      "display": "git --version",
+      "duration_s": 0.031,
+      "ended_utc": "2026-09-24T12:05:58.556171Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "fetched": [],
+      "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+      "id": "E12",
+      "merged": false,
+      "path_mode": "pinned",
+      "phase": "env",
+      "ps_script": null,
+      "resolved_exe": "C:\\Program Files\\Git\\cmd\\git.EXE",
+      "section": "env",
+      "started_utc": "2026-09-24T12:05:58.517361Z",
+      "stem": "git",
+      "streams": [
+        {
+          "bytes": 29,
+          "file": "streams/E12-git.stdout",
+          "kind": "stdout",
+          "sha256": "9d9d8a49f3de42d6e7b569bf28bd8db3ea3384c44386d6f2de4655e4ca41ff26"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/E12-git.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Git"
+    },
+    {
+      "argv": [
+        "C:\\Program Files\\GitHub CLI\\gh.EXE",
+        "auth",
+        "status"
+      ],
+      "cwd": "C:\\gw1c-20260924",
+      "display": "gh auth status",
+      "duration_s": 0.531,
+      "ended_utc": "2026-09-24T12:05:59.103390Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "fetched": [],
+      "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+      "id": "E13",
+      "merged": false,
+      "path_mode": "pinned",
+      "phase": "env",
+      "ps_script": null,
+      "resolved_exe": "C:\\Program Files\\GitHub CLI\\gh.EXE",
+      "section": "env",
+      "started_utc": "2026-09-24T12:05:58.567246Z",
+      "stem": "gh-auth",
+      "streams": [
+        {
+          "bytes": 471,
+          "file": "streams/E13-gh-auth.stdout",
+          "kind": "stdout",
+          "sha256": "d136e3aea16530287cd598777591d1cf1f01557557919c019c88193597e73d23"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/E13-gh-auth.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "GitHub CLI auth status (tokens are masked by gh)"
+    },
+    {
+      "argv": [
+        "C:\\Program Files\\Git\\cmd\\git.EXE",
+        "-C",
+        "C:\\gw1c-20260924",
+        "rev-parse",
+        "HEAD"
+      ],
+      "cwd": "C:\\gw1c-20260924",
+      "display": "git rev-parse HEAD",
+      "duration_s": 0.047,
+      "ended_utc": "2026-09-24T12:05:59.155863Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "fetched": [],
+      "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+      "id": "E14",
+      "merged": false,
+      "path_mode": "pinned",
+      "phase": "env",
+      "ps_script": null,
+      "resolved_exe": "C:\\Program Files\\Git\\cmd\\git.EXE",
+      "section": "env",
+      "started_utc": "2026-09-24T12:05:59.113341Z",
+      "stem": "head",
+      "streams": [
+        {
+          "bytes": 41,
+          "file": "streams/E14-head.stdout",
+          "kind": "stdout",
+          "sha256": "809749c9b84344bbf0a5e5766aeba9d70e6f5dd2f9c13b59b013ff2efcc83594"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/E14-head.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Clone HEAD"
+    },
+    {
+      "argv": [
+        "C:\\Program Files\\Git\\cmd\\git.EXE",
+        "-C",
+        "C:\\gw1c-20260924",
+        "log",
+        "--oneline",
+        "-6"
+      ],
+      "cwd": "C:\\gw1c-20260924",
+      "display": "git log --oneline -6",
+      "duration_s": 0.047,
+      "ended_utc": "2026-09-24T12:05:59.207944Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "fetched": [],
+      "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+      "id": "E15",
+      "merged": false,
+      "path_mode": "pinned",
+      "phase": "env",
+      "ps_script": null,
+      "resolved_exe": "C:\\Program Files\\Git\\cmd\\git.EXE",
+      "section": "env",
+      "started_utc": "2026-09-24T12:05:59.155863Z",
+      "stem": "log",
+      "streams": [
+        {
+          "bytes": 505,
+          "file": "streams/E15-log.stdout",
+          "kind": "stdout",
+          "sha256": "ccc626e08e75f86ecc4462530cb474e93c053975a13134cf15302a5307d3127d"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/E15-log.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Recent history"
+    },
+    {
+      "argv": [
+        "C:\\Program Files\\Git\\cmd\\git.EXE",
+        "-C",
+        "C:\\gw1c-20260924",
+        "status",
+        "--short",
+        "--branch"
+      ],
+      "cwd": "C:\\gw1c-20260924",
+      "display": "git status --short --branch",
+      "duration_s": 0.125,
+      "ended_utc": "2026-09-24T12:05:59.333778Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "fetched": [],
+      "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+      "id": "E16",
+      "merged": false,
+      "path_mode": "pinned",
+      "phase": "env",
+      "ps_script": null,
+      "resolved_exe": "C:\\Program Files\\Git\\cmd\\git.EXE",
+      "section": "env",
+      "started_utc": "2026-09-24T12:05:59.214716Z",
+      "stem": "status",
+      "streams": [
+        {
+          "bytes": 22,
+          "file": "streams/E16-status.stdout",
+          "kind": "stdout",
+          "sha256": "5fbcb2990ad25e368c12219bf3ddca36e464d044e7acac16696fa8cd54159185"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/E16-status.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Worktree status (must be clean)"
+    },
+    {
+      "argv": [
+        "C:\\Program Files\\Git\\cmd\\git.EXE",
+        "-C",
+        "C:\\gw1c-20260924",
+        "config",
+        "--show-origin",
+        "--get-all",
+        "core.autocrlf"
+      ],
+      "cwd": "C:\\gw1c-20260924",
+      "display": "git config --show-origin --get-all core.autocrlf",
+      "duration_s": 0.032,
+      "ended_utc": "2026-09-24T12:05:59.381882Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "fetched": [],
+      "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+      "id": "E17",
+      "merged": false,
+      "path_mode": "pinned",
+      "phase": "env",
+      "ps_script": null,
+      "resolved_exe": "C:\\Program Files\\Git\\cmd\\git.EXE",
+      "section": "env",
+      "started_utc": "2026-09-24T12:05:59.340717Z",
+      "stem": "autocrlf",
+      "streams": [
+        {
+          "bytes": 113,
+          "file": "streams/E17-autocrlf.stdout",
+          "kind": "stdout",
+          "sha256": "9f0300089a7631a01df46be5af7b4e4e3926cac2f1fe4e07eda1553086360893"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/E17-autocrlf.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "core.autocrlf at every config level"
+    },
+    {
+      "argv": [
+        "C:\\Program Files\\Git\\cmd\\git.EXE",
+        "-C",
+        "C:\\gw1c-20260924",
+        "config",
+        "--local",
+        "--get-regexp",
+        "^user\\."
+      ],
+      "cwd": "C:\\gw1c-20260924",
+      "display": "git config --local --get-regexp ^user\\.",
+      "duration_s": 0.047,
+      "ended_utc": "2026-09-24T12:05:59.448162Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "fetched": [],
+      "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+      "id": "E18",
+      "merged": false,
+      "path_mode": "pinned",
+      "phase": "env",
+      "ps_script": null,
+      "resolved_exe": "C:\\Program Files\\Git\\cmd\\git.EXE",
+      "section": "env",
+      "started_utc": "2026-09-24T12:05:59.402413Z",
+      "stem": "identity",
+      "streams": [
+        {
+          "bytes": 80,
+          "file": "streams/E18-identity.stdout",
+          "kind": "stdout",
+          "sha256": "650c491b8c84c4a7e81ab000f7c2e6bdf185ff197d718dc59f012df2c6d59acd"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/E18-identity.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Commit identity in this clone"
+    },
+    {
+      "argv": [
+        "C:\\Program Files\\Git\\cmd\\git.EXE",
+        "-C",
+        "C:\\gw1c-20260924",
+        "check-attr",
+        "text",
+        "eol",
+        "--",
+        "garnet-interp-v0.3/src/prelude.rs"
+      ],
+      "cwd": "C:\\gw1c-20260924",
+      "display": "git check-attr text eol -- garnet-interp-v0.3/src/prelude.rs",
+      "duration_s": 0.047,
+      "ended_utc": "2026-09-24T12:05:59.498943Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "fetched": [],
+      "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+      "id": "E19",
+      "merged": false,
+      "path_mode": "pinned",
+      "phase": "env",
+      "ps_script": null,
+      "resolved_exe": "C:\\Program Files\\Git\\cmd\\git.EXE",
+      "section": "env",
+      "started_utc": "2026-09-24T12:05:59.456096Z",
+      "stem": "check-attr-prelude",
+      "streams": [
+        {
+          "bytes": 88,
+          "file": "streams/E19-check-attr-prelude.stdout",
+          "kind": "stdout",
+          "sha256": "b011655f37b4c4ec648eb9e2f86c20b4239c7b55ea2759df743ed698b43a1597"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/E19-check-attr-prelude.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Checkout attributes for the seal-sensitive prelude"
+    },
+    {
+      "argv": [
+        "C:\\windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+        "-NoProfile",
+        "-NonInteractive",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-EncodedCommand",
+        "JABwACAAPQAgAEcAZQB0AC0AUAByAG8AYwBlAHMAcwAKACIAcAByAG8AYwBlAHMAcwBfAGMAbwB1AG4AdAA9ACQAKAAkAHAALgBDAG8AdQBuAHQAKQAiAAoAJABwACAAfAAgAFcAaABlAHIAZQAtAE8AYgBqAGUAYwB0ACAAewAgACQAXwAuAFAAcgBvAGMAZQBzAHMATgBhAG0AZQAgAC0AbABpAGsAZQAgACcAKgBPAG4AZQBEAHIAaQB2AGUAKgAnACAAfQAgAHwAIABTAG8AcgB0AC0ATwBiAGoAZQBjAHQAIABJAGQAIAB8ACAARgBvAHIARQBhAGMAaAAtAE8AYgBqAGUAYwB0ACAAewAgACIAbwBuAGUAZAByAGkAdgBlAF8AcAByAG8AYwBlAHMAcwA9ACQAKAAkAF8ALgBQAHIAbwBjAGUAcwBzAE4AYQBtAGUAKQAgAHAAaQBkAD0AJAAoACQAXwAuAEkAZAApACIAIAB9AAoA"
+      ],
+      "cwd": "C:\\gw1c-20260924",
+      "display": "$p = Get-Process\n\"process_count=$($p.Count)\"\n$p | Where-Object { $_.ProcessName -like '*OneDrive*' } | Sort-Object Id | ForEach-Object { \"onedrive_process=$($_.ProcessName) pid=$($_.Id)\" }\n",
+      "duration_s": 0.312,
+      "ended_utc": "2026-09-24T12:05:59.809773Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "fetched": [],
+      "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+      "id": "E20",
+      "merged": false,
+      "path_mode": "pinned",
+      "phase": "env",
+      "ps_script": "$p = Get-Process\n\"process_count=$($p.Count)\"\n$p | Where-Object { $_.ProcessName -like '*OneDrive*' } | Sort-Object Id | ForEach-Object { \"onedrive_process=$($_.ProcessName) pid=$($_.Id)\" }\n",
+      "resolved_exe": "C:\\windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+      "section": "env",
+      "started_utc": "2026-09-24T12:05:59.498943Z",
+      "stem": "processes",
+      "streams": [
+        {
+          "bytes": 105,
+          "file": "streams/E20-processes.stdout",
+          "kind": "stdout",
+          "sha256": "4a866b24dc6d3f2c11341dbeeed7a9708cd1bd9c712dee95b9cdd75d08d5920a"
+        },
+        {
+          "bytes": 616,
+          "file": "streams/E20-processes.stderr",
+          "kind": "stderr",
+          "sha256": "2ce70d6c8c9ad6726c794690c8b14a2b83673648cac88edf4ff1acc50ec46348"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Process count and OneDrive processes"
+    },
+    {
+      "argv": [
+        "C:\\windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+        "-NoProfile",
+        "-NonInteractive",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-EncodedCommand",
+        "RwBlAHQALQBDAGgAaQBsAGQASQB0AGUAbQAgAGUAbgB2ADoAIAB8ACAAVwBoAGUAcgBlAC0ATwBiAGoAZQBjAHQAIAB7ACAAJABfAC4ATgBhAG0AZQAgAC0AbQBhAHQAYwBoACAAJwBeACgARwBBAFIATgBFAFQAfABDAEEAUgBHAE8AfABSAFUAUwBUAFUAUAB8AFIAVQBTAFQAQwB8AFIAVQBTAFQARgBMAEEARwBTAHwAUgBVAFMAVABfAHwAUABZAFQASABPAE4AfABHAEkAVABfAHwARwBIAF8AKQAnACAAfQAgAHwAIABTAG8AcgB0AC0ATwBiAGoAZQBjAHQAIABOAGEAbQBlACAAfAAgAEYAbwByAEUAYQBjAGgALQBPAGIAagBlAGMAdAAgAHsAIAAiACQAKAAkAF8ALgBOAGEAbQBlACkAPQAkACgAJABfAC4AVgBhAGwAdQBlACkAIgAgAH0ACgAiACgAZQBuAGQAIABvAGYAIABHAEEAUgBOAEUAVAAvAEMAQQBSAEcATwAvAFIAVQBTAFQALwBQAFkAVABIAE8ATgAvAEcASQBUAC8ARwBIACAAdgBhAHIAaQBhAGIAbABlAHMAKQAiAAoA"
+      ],
+      "cwd": "C:\\gw1c-20260924",
+      "display": "Get-ChildItem env: | Where-Object { $_.Name -match '^(GARNET|CARGO|RUSTUP|RUSTC|RUSTFLAGS|RUST_|PYTHON|GIT_|GH_)' } | Sort-Object Name | ForEach-Object { \"$($_.Name)=$($_.Value)\" }\n\"(end of GARNET/CARGO/RUST/PYTHON/GIT/GH variables)\"\n",
+      "duration_s": 0.313,
+      "ended_utc": "2026-09-24T12:06:00.131893Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "fetched": [],
+      "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+      "id": "E21",
+      "merged": false,
+      "path_mode": "pinned",
+      "phase": "env",
+      "ps_script": "Get-ChildItem env: | Where-Object { $_.Name -match '^(GARNET|CARGO|RUSTUP|RUSTC|RUSTFLAGS|RUST_|PYTHON|GIT_|GH_)' } | Sort-Object Name | ForEach-Object { \"$($_.Name)=$($_.Value)\" }\n\"(end of GARNET/CARGO/RUST/PYTHON/GIT/GH variables)\"\n",
+      "resolved_exe": "C:\\windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+      "section": "env",
+      "started_utc": "2026-09-24T12:05:59.822910Z",
+      "stem": "env-vars",
+      "streams": [
+        {
+          "bytes": 146,
+          "file": "streams/E21-env-vars.stdout",
+          "kind": "stdout",
+          "sha256": "8f0de808c57b7ec1e43e8be28ea3d7d5014afc5a4cac63b1f371354954691327"
+        },
+        {
+          "bytes": 616,
+          "file": "streams/E21-env-vars.stderr",
+          "kind": "stderr",
+          "sha256": "2ce70d6c8c9ad6726c794690c8b14a2b83673648cac88edf4ff1acc50ec46348"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Toolchain-relevant environment variables inherited by every step"
+    },
+    {
+      "argv": [
+        "C:\\windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+        "-NoProfile",
+        "-NonInteractive",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-EncodedCommand",
+        "dwBzAGwALgBlAHgAZQAgAC0AbAAgAC0AdgAgAHwAIABPAHUAdAAtAFMAdAByAGkAbgBnACAAfAAgAEYAbwByAEUAYQBjAGgALQBPAGIAagBlAGMAdAAgAHsAIAAkAF8AIAAtAHIAZQBwAGwAYQBjAGUAIAAiAGAAMAAiACwAIAAnACcAIAB9AAoA"
+      ],
+      "cwd": "C:\\gw1c-20260924",
+      "display": "wsl.exe -l -v | Out-String | ForEach-Object { $_ -replace \"`0\", '' }\n",
+      "duration_s": 0.328,
+      "ended_utc": "2026-09-24T12:06:00.468352Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "fetched": [],
+      "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+      "id": "E22",
+      "merged": false,
+      "path_mode": "pinned",
+      "phase": "env",
+      "ps_script": "wsl.exe -l -v | Out-String | ForEach-Object { $_ -replace \"`0\", '' }\n",
+      "resolved_exe": "C:\\windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+      "section": "env",
+      "started_utc": "2026-09-24T12:06:00.142576Z",
+      "stem": "wsl",
+      "streams": [
+        {
+          "bytes": 174,
+          "file": "streams/E22-wsl.stdout",
+          "kind": "stdout",
+          "sha256": "98f0a20d4124e6e61bb11409f9508231c5514b61a18add630ddc70eec0f53980"
+        },
+        {
+          "bytes": 392,
+          "file": "streams/E22-wsl.stderr",
+          "kind": "stderr",
+          "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "WSL distributions (context only; nothing in this bundle runs in WSL)"
+    },
+    {
+      "argv": [
+        "C:\\windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+        "-NoProfile",
+        "-NonInteractive",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-EncodedCommand",
+        "JABQAFMAVgBlAHIAcwBpAG8AbgBUAGEAYgBsAGUALgBHAGUAdABFAG4AdQBtAGUAcgBhAHQAbwByACgAKQAgAHwAIABTAG8AcgB0AC0ATwBiAGoAZQBjAHQAIABOAGEAbQBlACAAfAAgAEYAbwByAEUAYQBjAGgALQBPAGIAagBlAGMAdAAgAHsAIAAiACQAKAAkAF8ALgBOAGEAbQBlACkAPQAkACgAJABfAC4AVgBhAGwAdQBlACAALQBqAG8AaQBuACAAJwAsACcAKQAiACAAfQAKAA=="
+      ],
+      "cwd": "C:\\gw1c-20260924",
+      "display": "$PSVersionTable.GetEnumerator() | Sort-Object Name | ForEach-Object { \"$($_.Name)=$($_.Value -join ',')\" }\n",
+      "duration_s": 0.266,
+      "ended_utc": "2026-09-24T12:06:00.731405Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "fetched": [],
+      "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+      "id": "E23",
+      "merged": false,
+      "path_mode": "pinned",
+      "phase": "env",
+      "ps_script": "$PSVersionTable.GetEnumerator() | Sort-Object Name | ForEach-Object { \"$($_.Name)=$($_.Value -join ',')\" }\n",
+      "resolved_exe": "C:\\windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+      "section": "env",
+      "started_utc": "2026-09-24T12:06:00.471778Z",
+      "stem": "ps-host",
+      "streams": [
+        {
+          "bytes": 244,
+          "file": "streams/E23-ps-host.stdout",
+          "kind": "stdout",
+          "sha256": "2c11ab7d5f1dc2e07ce8efb199e6d5c88b51c140abdf329fb6c16fe02ec22a8c"
+        },
+        {
+          "bytes": 392,
+          "file": "streams/E23-ps-host.stderr",
+          "kind": "stderr",
+          "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "PowerShell host used by every PowerShell step (powershell.exe)"
+    },
+    {
+      "argv": [
+        "C:\\windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+        "-NoProfile",
+        "-NonInteractive",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-EncodedCommand",
+        "JAB1ACAAPQAgAFsARQBuAHYAaQByAG8AbgBtAGUAbgB0AF0AOgA6AEcAZQB0AEUAbgB2AGkAcgBvAG4AbQBlAG4AdABWAGEAcgBpAGEAYgBsAGUAKAAnAFAAYQB0AGgAJwAsACAAJwBVAHMAZQByACcAKQAKACQAYgAgAD0AIABbAFQAZQB4AHQALgBFAG4AYwBvAGQAaQBuAGcAXQA6ADoAVQBUAEYAOAAuAEcAZQB0AEIAeQB0AGUAcwAoAFsAcwB0AHIAaQBuAGcAXQAkAHUAKQAKACQAaAAgAD0AIABbAEIAaQB0AEMAbwBuAHYAZQByAHQAZQByAF0AOgA6AFQAbwBTAHQAcgBpAG4AZwAoAFsAUwBlAGMAdQByAGkAdAB5AC4AQwByAHkAcAB0AG8AZwByAGEAcABoAHkALgBTAEgAQQAyADUANgBdADoAOgBDAHIAZQBhAHQAZQAoACkALgBDAG8AbQBwAHUAdABlAEgAYQBzAGgAKAAkAGIAKQApAC4AUgBlAHAAbABhAGMAZQAoACcALQAnACwAIAAnACcAKQAuAFQAbwBMAG8AdwBlAHIAKAApAAoAIgB1AHMAZQByAF8AcABhAHQAaABfAHMAaABhADIANQA2AD0AJABoACIACgAiAHUAcwBlAHIAXwBwAGEAdABoAF8AZQBuAHQAcgBpAGUAcwA9ACQAKABAACgAJAB1ACAALQBzAHAAbABpAHQAIAAnADsAJwAgAHwAIABXAGgAZQByAGUALQBPAGIAagBlAGMAdAAgAHsAIAAkAF8AIAB9ACkALgBDAG8AdQBuAHQAKQAiAAoAIgB1AHMAZQByAF8AcABhAHQAaABfAG0AZQBuAHQAaQBvAG4AcwBfAGcAYQByAG4AZQB0AF8AbgB1AGMAXwBpAG4AcwB0AGEAbABsAF8AdABlAHMAdAA9ACQAKABbAGIAbwBvAGwAXQAoACQAdQAgAC0AbQBhAHQAYwBoACAAJwBnAGEAcgBuAGUAdAAtAG4AdQBjAC0AaQBuAHMAdABhAGwAbAAtAHQAZQBzAHQAJwApACkAIgAKAA=="
+      ],
+      "cwd": "C:\\gw1c-20260924",
+      "display": "$u = [Environment]::GetEnvironmentVariable('Path', 'User')\n$b = [Text.Encoding]::UTF8.GetBytes([string]$u)\n$h = [BitConverter]::ToString([Security.Cryptography.SHA256]::Create().ComputeHash($b)).Replace('-', '').ToLower()\n\"user_path_sha256=$h\"\n\"user_path_entries=$(@($u -split ';' | Where-Object { $_ }).Count)\"\n\"user_path_mentions_garnet_nuc_install_test=$([bool]($u -match 'garnet-nuc-install-test'))\"\n",
+      "duration_s": 0.25,
+      "ended_utc": "2026-09-24T12:06:00.990876Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "fetched": [],
+      "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+      "id": "L00",
+      "merged": false,
+      "path_mode": "pinned",
+      "phase": "installers",
+      "ps_script": "$u = [Environment]::GetEnvironmentVariable('Path', 'User')\n$b = [Text.Encoding]::UTF8.GetBytes([string]$u)\n$h = [BitConverter]::ToString([Security.Cryptography.SHA256]::Create().ComputeHash($b)).Replace('-', '').ToLower()\n\"user_path_sha256=$h\"\n\"user_path_entries=$(@($u -split ';' | Where-Object { $_ }).Count)\"\n\"user_path_mentions_garnet_nuc_install_test=$([bool]($u -match 'garnet-nuc-install-test'))\"\n",
+      "resolved_exe": "C:\\windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+      "section": "live",
+      "started_utc": "2026-09-24T12:06:00.734746Z",
+      "stem": "user-path-before",
+      "streams": [
+        {
+          "bytes": 155,
+          "file": "streams/L00-user-path-before.stdout",
+          "kind": "stdout",
+          "sha256": "9535dda89a96884dba6be285ebbe44a558dae6447ad064d7408214b980f2bff4"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/L00-user-path-before.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "User PATH fingerprint before any installer run"
+    },
+    {
+      "argv": [
+        "C:\\windows\\system32\\curl.exe",
+        "-sS",
+        "-L",
+        "--proto",
+        "=https",
+        "--proto-redir",
+        "=https",
+        "--create-dirs",
+        "-o",
+        "C:\\gw1-stage\\20260924-1205-NUCBOX_M2PRO_S\\streams\\L01-install.ps1.live",
+        "-w",
+        "http_code=%{http_code} size=%{size_download} redirects=%{num_redirects}\\n",
+        "https://garnet-lang.org/install.ps1"
+      ],
+      "cwd": "C:\\gw1c-20260924",
+      "display": "curl.exe -sS -L --proto =https -o streams/L01-install.ps1.live https://garnet-lang.org/install.ps1",
+      "duration_s": 0.25,
+      "ended_utc": "2026-09-24T12:06:01.236143Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "fetched": [
+        {
+          "bytes": 8725,
+          "file": "streams/L01-install.ps1.live",
+          "in_bundle": true,
+          "sha256": "c0f017f762a737feb3e7a4887346006891f3893a92e97a765c2c70399f6cc566"
+        }
+      ],
+      "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+      "id": "L01",
+      "merged": false,
+      "path_mode": "pinned",
+      "phase": "installers",
+      "ps_script": null,
+      "resolved_exe": "C:\\windows\\system32\\curl.exe",
+      "section": "live",
+      "started_utc": "2026-09-24T12:06:00.995552Z",
+      "stem": "fetch-live-installer",
+      "streams": [
+        {
+          "bytes": 37,
+          "file": "streams/L01-fetch-live-installer.stdout",
+          "kind": "stdout",
+          "sha256": "7534b6a2d7346ee352e516cc3db96a5c58a58ddfb405b5a69d55d7387f442385"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/L01-fetch-live-installer.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Companion fetch of the live installer bytes, for hashing (not executed)"
+    },
+    {
+      "argv": [
+        "C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-I",
+        "-c",
+        "import hashlib, sys\nlive = open(r'C:\\gw1-stage\\20260924-1205-NUCBOX_M2PRO_S\\streams\\L01-install.ps1.live', 'rb').read()\nmain = open(r'C:\\gw1c-20260924\\docs\\install.ps1', 'rb').read()\nprint('live  sha256=' + hashlib.sha256(live).hexdigest() + f' bytes={len(live)}')\nprint('main  sha256=' + hashlib.sha256(main).hexdigest() + f' bytes={len(main)}')\nprint('byte_identical=' + str(live == main))\nsys.exit(0 if live == main else 1)\n"
+      ],
+      "cwd": "C:\\gw1c-20260924",
+      "display": "python -I -c <sha256 live vs main; exit 1 unless identical>",
+      "duration_s": 0.078,
+      "ended_utc": "2026-09-24T12:06:01.369366Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "fetched": [],
+      "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+      "id": "L02",
+      "merged": false,
+      "path_mode": "pinned",
+      "phase": "installers",
+      "ps_script": null,
+      "resolved_exe": "C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+      "section": "live",
+      "started_utc": "2026-09-24T12:06:01.279977Z",
+      "stem": "compare-live-main",
+      "streams": [
+        {
+          "bytes": 201,
+          "file": "streams/L02-compare-live-main.stdout",
+          "kind": "stdout",
+          "sha256": "f600ac3008b95f8ea9872e028a855870b54ca8d0ef7e8e9b299ecd1340fdf6f1"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/L02-compare-live-main.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Gate: live installer bytes must equal docs/install.ps1 at main before any run"
+    },
+    {
+      "argv": [
+        "C:\\Program Files\\Git\\cmd\\git.EXE",
+        "-C",
+        "C:\\gw1c-20260924",
+        "hash-object",
+        "--no-filters",
+        "C:\\gw1-stage\\20260924-1205-NUCBOX_M2PRO_S\\streams\\L01-install.ps1.live"
+      ],
+      "cwd": "C:\\gw1c-20260924",
+      "display": "git hash-object --no-filters streams/L01-install.ps1.live",
+      "duration_s": 0.062,
+      "ended_utc": "2026-09-24T12:06:01.426747Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "fetched": [],
+      "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+      "id": "L03",
+      "merged": false,
+      "path_mode": "pinned",
+      "phase": "installers",
+      "ps_script": null,
+      "resolved_exe": "C:\\Program Files\\Git\\cmd\\git.EXE",
+      "section": "live",
+      "started_utc": "2026-09-24T12:06:01.369366Z",
+      "stem": "live-blob",
+      "streams": [
+        {
+          "bytes": 41,
+          "file": "streams/L03-live-blob.stdout",
+          "kind": "stdout",
+          "sha256": "1a28c0083c61e69b15bb35045908bf2f7a02d9a038afa9607c7d8e6cdcdd98f2"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/L03-live-blob.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "git blob id of the fetched live installer bytes"
+    },
+    {
+      "argv": [
+        "C:\\Program Files\\Git\\cmd\\git.EXE",
+        "-C",
+        "C:\\gw1c-20260924",
+        "rev-parse",
+        "HEAD:docs/install.ps1"
+      ],
+      "cwd": "C:\\gw1c-20260924",
+      "display": "git rev-parse HEAD:docs/install.ps1",
+      "duration_s": 0.047,
+      "ended_utc": "2026-09-24T12:06:01.490243Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "fetched": [],
+      "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+      "id": "L04",
+      "merged": false,
+      "path_mode": "pinned",
+      "phase": "installers",
+      "ps_script": null,
+      "resolved_exe": "C:\\Program Files\\Git\\cmd\\git.EXE",
+      "section": "live",
+      "started_utc": "2026-09-24T12:06:01.438759Z",
+      "stem": "main-blob",
+      "streams": [
+        {
+          "bytes": 41,
+          "file": "streams/L04-main-blob.stdout",
+          "kind": "stdout",
+          "sha256": "1a28c0083c61e69b15bb35045908bf2f7a02d9a038afa9607c7d8e6cdcdd98f2"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/L04-main-blob.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "git blob id of docs/install.ps1 at main"
+    },
+    {
+      "argv": [
+        "C:\\windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+        "-NoProfile",
+        "-NonInteractive",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-EncodedCommand",
+        "JABlAG4AdgA6AEcAQQBSAE4ARQBUAF8AUABSAEUARgBJAFgAIAA9ACAAIgAkAGUAbgB2ADoAVABFAE0AUABcAGcAYQByAG4AZQB0AC0AbgB1AGMALQBpAG4AcwB0AGEAbABsAC0AdABlAHMAdAAiAAoAJABlAG4AdgA6AEcAQQBSAE4ARQBUAF8ATgBPAF8ATQBPAEQASQBGAFkAXwBQAEEAVABIACAAPQAgACIAMQAiAAoAaQByAG0AIABoAHQAdABwAHMAOgAvAC8AZwBhAHIAbgBlAHQALQBsAGEAbgBnAC4AbwByAGcALwBpAG4AcwB0AGEAbABsAC4AcABzADEAIAB8ACAAaQBlAHgACgAmACAAIgAkAGUAbgB2ADoARwBBAFIATgBFAFQAXwBQAFIARQBGAEkAWABcAGIAaQBuAFwAZwBhAHIAbgBlAHQALgBlAHgAZQAiACAALQAtAHYAZQByAHMAaQBvAG4ACgA="
+      ],
+      "cwd": "C:\\gw1c-20260924",
+      "display": "$env:GARNET_PREFIX = \"$env:TEMP\\garnet-nuc-install-test\"\n$env:GARNET_NO_MODIFY_PATH = \"1\"\nirm https://garnet-lang.org/install.ps1 | iex\n& \"$env:GARNET_PREFIX\\bin\\garnet.exe\" --version\n",
+      "duration_s": 2.156,
+      "ended_utc": "2026-09-24T12:06:03.647335Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "fetched": [],
+      "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+      "id": "L05",
+      "merged": false,
+      "path_mode": "pinned",
+      "phase": "installers",
+      "ps_script": "$env:GARNET_PREFIX = \"$env:TEMP\\garnet-nuc-install-test\"\n$env:GARNET_NO_MODIFY_PATH = \"1\"\nirm https://garnet-lang.org/install.ps1 | iex\n& \"$env:GARNET_PREFIX\\bin\\garnet.exe\" --version\n",
+      "resolved_exe": "C:\\windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+      "section": "live",
+      "started_utc": "2026-09-24T12:06:01.490243Z",
+      "stem": "installer-live",
+      "streams": [
+        {
+          "bytes": 2904,
+          "file": "streams/L05-installer-live.stdout",
+          "kind": "stdout",
+          "sha256": "54ad81acf191452b2b86fdc38deeaaacfc9141562990742ca2d4af0245c73b4f"
+        },
+        {
+          "bytes": 6597,
+          "file": "streams/L05-installer-live.stderr",
+          "kind": "stderr",
+          "sha256": "25cc34ae19805c465133645a7c9e68aaf252f4763ca4d9cb4f747211538dd805"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Live installer: the README.md:136 one-liner with a throwaway prefix and GARNET_NO_MODIFY_PATH=1, then --version"
+    },
+    {
+      "argv": [
+        "C:\\windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+        "-NoProfile",
+        "-NonInteractive",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-EncodedCommand",
+        "JAB1ACAAPQAgAFsARQBuAHYAaQByAG8AbgBtAGUAbgB0AF0AOgA6AEcAZQB0AEUAbgB2AGkAcgBvAG4AbQBlAG4AdABWAGEAcgBpAGEAYgBsAGUAKAAnAFAAYQB0AGgAJwAsACAAJwBVAHMAZQByACcAKQAKACQAYgAgAD0AIABbAFQAZQB4AHQALgBFAG4AYwBvAGQAaQBuAGcAXQA6ADoAVQBUAEYAOAAuAEcAZQB0AEIAeQB0AGUAcwAoAFsAcwB0AHIAaQBuAGcAXQAkAHUAKQAKACQAaAAgAD0AIABbAEIAaQB0AEMAbwBuAHYAZQByAHQAZQByAF0AOgA6AFQAbwBTAHQAcgBpAG4AZwAoAFsAUwBlAGMAdQByAGkAdAB5AC4AQwByAHkAcAB0AG8AZwByAGEAcABoAHkALgBTAEgAQQAyADUANgBdADoAOgBDAHIAZQBhAHQAZQAoACkALgBDAG8AbQBwAHUAdABlAEgAYQBzAGgAKAAkAGIAKQApAC4AUgBlAHAAbABhAGMAZQAoACcALQAnACwAIAAnACcAKQAuAFQAbwBMAG8AdwBlAHIAKAApAAoAIgB1AHMAZQByAF8AcABhAHQAaABfAHMAaABhADIANQA2AD0AJABoACIACgAiAHUAcwBlAHIAXwBwAGEAdABoAF8AZQBuAHQAcgBpAGUAcwA9ACQAKABAACgAJAB1ACAALQBzAHAAbABpAHQAIAAnADsAJwAgAHwAIABXAGgAZQByAGUALQBPAGIAagBlAGMAdAAgAHsAIAAkAF8AIAB9ACkALgBDAG8AdQBuAHQAKQAiAAoAIgB1AHMAZQByAF8AcABhAHQAaABfAG0AZQBuAHQAaQBvAG4AcwBfAGcAYQByAG4AZQB0AF8AbgB1AGMAXwBpAG4AcwB0AGEAbABsAF8AdABlAHMAdAA9ACQAKABbAGIAbwBvAGwAXQAoACQAdQAgAC0AbQBhAHQAYwBoACAAJwBnAGEAcgBuAGUAdAAtAG4AdQBjAC0AaQBuAHMAdABhAGwAbAAtAHQAZQBzAHQAJwApACkAIgAKAA=="
+      ],
+      "cwd": "C:\\gw1c-20260924",
+      "display": "$u = [Environment]::GetEnvironmentVariable('Path', 'User')\n$b = [Text.Encoding]::UTF8.GetBytes([string]$u)\n$h = [BitConverter]::ToString([Security.Cryptography.SHA256]::Create().ComputeHash($b)).Replace('-', '').ToLower()\n\"user_path_sha256=$h\"\n\"user_path_entries=$(@($u -split ';' | Where-Object { $_ }).Count)\"\n\"user_path_mentions_garnet_nuc_install_test=$([bool]($u -match 'garnet-nuc-install-test'))\"\n",
+      "duration_s": 0.25,
+      "ended_utc": "2026-09-24T12:06:03.912190Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "fetched": [],
+      "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+      "id": "L06",
+      "merged": false,
+      "path_mode": "pinned",
+      "phase": "installers",
+      "ps_script": "$u = [Environment]::GetEnvironmentVariable('Path', 'User')\n$b = [Text.Encoding]::UTF8.GetBytes([string]$u)\n$h = [BitConverter]::ToString([Security.Cryptography.SHA256]::Create().ComputeHash($b)).Replace('-', '').ToLower()\n\"user_path_sha256=$h\"\n\"user_path_entries=$(@($u -split ';' | Where-Object { $_ }).Count)\"\n\"user_path_mentions_garnet_nuc_install_test=$([bool]($u -match 'garnet-nuc-install-test'))\"\n",
+      "resolved_exe": "C:\\windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+      "section": "live",
+      "started_utc": "2026-09-24T12:06:03.665500Z",
+      "stem": "user-path-after-live",
+      "streams": [
+        {
+          "bytes": 155,
+          "file": "streams/L06-user-path-after-live.stdout",
+          "kind": "stdout",
+          "sha256": "9535dda89a96884dba6be285ebbe44a558dae6447ad064d7408214b980f2bff4"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/L06-user-path-after-live.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "User PATH fingerprint after the live installer"
+    },
+    {
+      "argv": [
+        "C:\\windows\\system32\\curl.exe",
+        "-sS",
+        "-L",
+        "--proto",
+        "=https",
+        "--proto-redir",
+        "=https",
+        "--create-dirs",
+        "-o",
+        "C:\\gw1-stage\\20260924-1205-NUCBOX_M2PRO_S\\streams\\L07-SHA256SUMS.v0.8.2",
+        "-w",
+        "http_code=%{http_code} size=%{size_download} redirects=%{num_redirects}\\n",
+        "https://github.com/Island-Dev-Crew/garnet/releases/download/v0.8.2/SHA256SUMS"
+      ],
+      "cwd": "C:\\gw1c-20260924",
+      "display": "curl.exe -sS -L --proto =https -o streams/L07-SHA256SUMS.v0.8.2 https://github.com/Island-Dev-Crew/garnet/releases/download/v0.8.2/SHA256SUMS",
+      "duration_s": 0.235,
+      "ended_utc": "2026-09-24T12:06:04.167079Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "fetched": [
+        {
+          "bytes": 1001,
+          "file": "streams/L07-SHA256SUMS.v0.8.2",
+          "in_bundle": true,
+          "sha256": "52cef5caf0f0eae05775e3ac8cb66d2cfcd51bbafd294990cb5511a395ea2ad0"
+        }
+      ],
+      "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+      "id": "L07",
+      "merged": false,
+      "path_mode": "pinned",
+      "phase": "installers",
+      "ps_script": null,
+      "resolved_exe": "C:\\windows\\system32\\curl.exe",
+      "section": "live",
+      "started_utc": "2026-09-24T12:06:03.921468Z",
+      "stem": "fetch-sums",
+      "streams": [
+        {
+          "bytes": 37,
+          "file": "streams/L07-fetch-sums.stdout",
+          "kind": "stdout",
+          "sha256": "d3741268fca30e50b4eb3a89bfaacdc8ad115c7d40e3ae2cb12c7795b9e0b2f7"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/L07-fetch-sums.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Companion fetch of the v0.8.2 SHA256SUMS"
+    },
+    {
+      "argv": [
+        "C:\\windows\\system32\\curl.exe",
+        "-sS",
+        "-L",
+        "--proto",
+        "=https",
+        "--proto-redir",
+        "=https",
+        "--create-dirs",
+        "-o",
+        "C:\\gw1-stage\\scratch\\garnet-0.8.2-x86_64-pc-windows-msvc.zip",
+        "-w",
+        "http_code=%{http_code} size=%{size_download} redirects=%{num_redirects}\\n",
+        "https://github.com/Island-Dev-Crew/garnet/releases/download/v0.8.2/garnet-0.8.2-x86_64-pc-windows-msvc.zip"
+      ],
+      "cwd": "C:\\gw1c-20260924",
+      "display": "curl.exe -sS -L --proto =https -o <scratch>/garnet-0.8.2-x86_64-pc-windows-msvc.zip https://github.com/Island-Dev-Crew/garnet/releases/download/v0.8.2/garnet-0.8.2-x86_64-pc-windows-msvc.zip",
+      "duration_s": 0.391,
+      "ended_utc": "2026-09-24T12:06:04.571674Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "fetched": [
+        {
+          "bytes": 3637799,
+          "file": "C:\\gw1-stage\\scratch\\garnet-0.8.2-x86_64-pc-windows-msvc.zip",
+          "in_bundle": false,
+          "sha256": "69517252aab8d513228aacc4b36e83245f4b16fd1e51487ddeb1324ecf5c0019"
+        }
+      ],
+      "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+      "id": "L08",
+      "merged": false,
+      "path_mode": "pinned",
+      "phase": "installers",
+      "ps_script": null,
+      "resolved_exe": "C:\\windows\\system32\\curl.exe",
+      "section": "live",
+      "started_utc": "2026-09-24T12:06:04.177954Z",
+      "stem": "fetch-zip",
+      "streams": [
+        {
+          "bytes": 40,
+          "file": "streams/L08-fetch-zip.stdout",
+          "kind": "stdout",
+          "sha256": "890dacac57fd52fb06b5251ab4bdf29aba69e1e1553579156dfa5f1d8310e82d"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/L08-fetch-zip.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Companion fetch of the v0.8.2 Windows zip (kept outside the bundle)"
+    },
+    {
+      "argv": [
+        "C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-I",
+        "-c",
+        "import hashlib, os, zipfile\nz = r'C:\\gw1-stage\\scratch\\garnet-0.8.2-x86_64-pc-windows-msvc.zip'\ndata = open(z, 'rb').read()\nprint('zip_sha256=' + hashlib.sha256(data).hexdigest() + f' bytes={len(data)} (the zip is kept outside the bundle)')\nwant = [l.split()[0].decode() for l in open(r'C:\\gw1-stage\\20260924-1205-NUCBOX_M2PRO_S\\streams\\L07-SHA256SUMS.v0.8.2', 'rb').read().splitlines() if l.endswith(b'garnet-0.8.2-x86_64-pc-windows-msvc.zip')]\nprint('SHA256SUMS_entry=' + (want[0] if want else 'ABSENT'))\nprint('zip_matches_SHA256SUMS=' + str(bool(want) and want[0] == hashlib.sha256(data).hexdigest()))\nwith zipfile.ZipFile(z) as zf:\n    for i in zf.infolist(): print(f'entry {i.filename} size={i.file_size}')\n    exe = zf.read('garnet.exe')\nprint('zip_garnet_exe_sha256=' + hashlib.sha256(exe).hexdigest())\n"
+      ],
+      "cwd": "C:\\gw1c-20260924",
+      "display": "python -I -c <hash zip, compare SHA256SUMS, list entries>",
+      "duration_s": 0.188,
+      "ended_utc": "2026-09-24T12:06:04.782493Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "fetched": [],
+      "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+      "id": "L09",
+      "merged": false,
+      "path_mode": "pinned",
+      "phase": "installers",
+      "ps_script": null,
+      "resolved_exe": "C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+      "section": "live",
+      "started_utc": "2026-09-24T12:06:04.595422Z",
+      "stem": "zip-verify",
+      "streams": [
+        {
+          "bytes": 412,
+          "file": "streams/L09-zip-verify.stdout",
+          "kind": "stdout",
+          "sha256": "0cf48b3c47bc383759aa31fa0abbeee7aaf93e24dc86b54c3ee0cf375b79f775"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/L09-zip-verify.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Zip sha256 vs its SHA256SUMS line; zip entries; sha256 of the zip's garnet.exe"
+    },
+    {
+      "argv": [
+        "C:\\windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+        "-NoProfile",
+        "-NonInteractive",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-EncodedCommand",
+        "JABlAG4AdgA6AEcAQQBSAE4ARQBUAF8AUABSAEUARgBJAFgAIAA9ACAAIgAkAGUAbgB2ADoAVABFAE0AUABcAGcAYQByAG4AZQB0AC0AbgB1AGMALQBpAG4AcwB0AGEAbABsAC0AdABlAHMAdAAtAG0AYQBpAG4AIgAKACQAZQBuAHYAOgBHAEEAUgBOAEUAVABfAE4ATwBfAE0ATwBEAEkARgBZAF8AUABBAFQASAAgAD0AIAAiADEAIgAKAEcAZQB0AC0AQwBvAG4AdABlAG4AdAAgAC0AUgBhAHcAIAAtAEwAaQB0AGUAcgBhAGwAUABhAHQAaAAgACcAQwA6AFwAZwB3ADEAYwAtADIAMAAyADYAMAA5ADIANABcAGQAbwBjAHMAXABpAG4AcwB0AGEAbABsAC4AcABzADEAJwAgAHwAIABpAGUAeAAKACYAIAAiACQAZQBuAHYAOgBHAEEAUgBOAEUAVABfAFAAUgBFAEYASQBYAFwAYgBpAG4AXABnAGEAcgBuAGUAdAAuAGUAeABlACIAIAAtAC0AdgBlAHIAcwBpAG8AbgAKAA=="
+      ],
+      "cwd": "C:\\gw1c-20260924",
+      "display": "$env:GARNET_PREFIX = \"$env:TEMP\\garnet-nuc-install-test-main\"\n$env:GARNET_NO_MODIFY_PATH = \"1\"\nGet-Content -Raw -LiteralPath 'C:\\gw1c-20260924\\docs\\install.ps1' | iex\n& \"$env:GARNET_PREFIX\\bin\\garnet.exe\" --version\n",
+      "duration_s": 1.515,
+      "ended_utc": "2026-09-24T12:06:06.308195Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "fetched": [],
+      "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+      "id": "M01",
+      "merged": false,
+      "path_mode": "pinned",
+      "phase": "installers",
+      "ps_script": "$env:GARNET_PREFIX = \"$env:TEMP\\garnet-nuc-install-test-main\"\n$env:GARNET_NO_MODIFY_PATH = \"1\"\nGet-Content -Raw -LiteralPath 'C:\\gw1c-20260924\\docs\\install.ps1' | iex\n& \"$env:GARNET_PREFIX\\bin\\garnet.exe\" --version\n",
+      "resolved_exe": "C:\\windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+      "section": "main",
+      "started_utc": "2026-09-24T12:06:04.782493Z",
+      "stem": "installer-main",
+      "streams": [
+        {
+          "bytes": 2909,
+          "file": "streams/M01-installer-main.stdout",
+          "kind": "stdout",
+          "sha256": "2929ffcc88ff58de5e0466799838d3176c8c16963fe03c5c06a038a4dcfc5dfe"
+        },
+        {
+          "bytes": 6837,
+          "file": "streams/M01-installer-main.stderr",
+          "kind": "stderr",
+          "sha256": "360f3a34e91808707da6092bc5abb44d230eee5c230113d706d4448a623d4451"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "docs/install.ps1 from main, same steps (happy path; own prefix)"
+    },
+    {
+      "argv": [
+        "C:\\windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+        "-NoProfile",
+        "-NonInteractive",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-EncodedCommand",
+        "RwBlAHQALQBDAGgAaQBsAGQASQB0AGUAbQAgAC0ARgBvAHIAYwBlACAALQBMAGkAdABlAHIAYQBsAFAAYQB0AGgAIAAnAEMAOgBcAGcAdwAxAC0AcwB0AGEAZwBlAFwAZQBtAHAAdAB5AC0AcgBlAGwAZQBhAHMAZQAtAGQAaQByACcAIAB8ACAATQBlAGEAcwB1AHIAZQAtAE8AYgBqAGUAYwB0ACAAfAAgAEYAbwByAEUAYQBjAGgALQBPAGIAagBlAGMAdAAgAHsAIAAiAGUAbgB0AHIAaQBlAHMAPQAkACgAJABfAC4AQwBvAHUAbgB0ACkAIgAgAH0ACgA="
+      ],
+      "cwd": "C:\\gw1c-20260924",
+      "display": "Get-ChildItem -Force -LiteralPath 'C:\\gw1-stage\\empty-release-dir' | Measure-Object | ForEach-Object { \"entries=$($_.Count)\" }\n",
+      "duration_s": 0.297,
+      "ended_utc": "2026-09-24T12:06:06.635171Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "fetched": [],
+      "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+      "id": "M02",
+      "merged": false,
+      "path_mode": "pinned",
+      "phase": "installers",
+      "ps_script": "Get-ChildItem -Force -LiteralPath 'C:\\gw1-stage\\empty-release-dir' | Measure-Object | ForEach-Object { \"entries=$($_.Count)\" }\n",
+      "resolved_exe": "C:\\windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+      "section": "main",
+      "started_utc": "2026-09-24T12:06:06.330446Z",
+      "stem": "empty-release-dir",
+      "streams": [
+        {
+          "bytes": 11,
+          "file": "streams/M02-empty-release-dir.stdout",
+          "kind": "stdout",
+          "sha256": "71069c824578cd995e6818e8ef68c374ca5b75a920740b0274a8cb4f894258a5"
+        },
+        {
+          "bytes": 616,
+          "file": "streams/M02-empty-release-dir.stderr",
+          "kind": "stderr",
+          "sha256": "2ce70d6c8c9ad6726c794690c8b14a2b83673648cac88edf4ff1acc50ec46348"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "The file:/// release dir used to make SHA256SUMS unreachable"
+    },
+    {
+      "argv": [
+        "C:\\windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+        "-NoProfile",
+        "-NonInteractive",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-EncodedCommand",
+        "JABlAG4AdgA6AEcAQQBSAE4ARQBUAF8AUABSAEUARgBJAFgAIAA9ACAAIgAkAGUAbgB2ADoAVABFAE0AUABcAGcAYQByAG4AZQB0AC0AbgB1AGMALQBpAG4AcwB0AGEAbABsAC0AdABlAHMAdAAtAGgAaQBuAHQAIgAKACQAZQBuAHYAOgBHAEEAUgBOAEUAVABfAE4ATwBfAE0ATwBEAEkARgBZAF8AUABBAFQASAAgAD0AIAAiADEAIgAKACQAZQBuAHYAOgBHAEEAUgBOAEUAVABfAEIAQQBTAEUAXwBVAFIATAAgAD0AIAAiAGYAaQBsAGUAOgAvAC8ALwBDADoALwBnAHcAMQAtAHMAdABhAGcAZQAvAGUAbQBwAHQAeQAtAHIAZQBsAGUAYQBzAGUALQBkAGkAcgAiAAoARwBlAHQALQBDAG8AbgB0AGUAbgB0ACAALQBSAGEAdwAgAC0ATABpAHQAZQByAGEAbABQAGEAdABoACAAJwBDADoAXABnAHcAMQBjAC0AMgAwADIANgAwADkAMgA0AFwAZABvAGMAcwBcAGkAbgBzAHQAYQBsAGwALgBwAHMAMQAnACAAfAAgAGkAZQB4AAoA"
+      ],
+      "cwd": "C:\\gw1c-20260924",
+      "display": "$env:GARNET_PREFIX = \"$env:TEMP\\garnet-nuc-install-test-hint\"\n$env:GARNET_NO_MODIFY_PATH = \"1\"\n$env:GARNET_BASE_URL = \"file:///C:/gw1-stage/empty-release-dir\"\nGet-Content -Raw -LiteralPath 'C:\\gw1c-20260924\\docs\\install.ps1' | iex\n",
+      "duration_s": 0.578,
+      "ended_utc": "2026-09-24T12:06:07.203795Z",
+      "env_overrides": {},
+      "exit_code": 1,
+      "expect_exit": 1,
+      "fetched": [],
+      "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+      "id": "M03",
+      "merged": false,
+      "path_mode": "pinned",
+      "phase": "installers",
+      "ps_script": "$env:GARNET_PREFIX = \"$env:TEMP\\garnet-nuc-install-test-hint\"\n$env:GARNET_NO_MODIFY_PATH = \"1\"\n$env:GARNET_BASE_URL = \"file:///C:/gw1-stage/empty-release-dir\"\nGet-Content -Raw -LiteralPath 'C:\\gw1c-20260924\\docs\\install.ps1' | iex\n",
+      "resolved_exe": "C:\\windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+      "section": "main",
+      "started_utc": "2026-09-24T12:06:06.635171Z",
+      "stem": "installer-main-hint",
+      "streams": [
+        {
+          "bytes": 166,
+          "file": "streams/M03-installer-main-hint.stdout",
+          "kind": "stdout",
+          "sha256": "3308bf0ce7e1e1a4b8048d714c3b52886272230bbbe4c796bd41f054774e516e"
+        },
+        {
+          "bytes": 4843,
+          "file": "streams/M03-installer-main-hint.stderr",
+          "kind": "stderr",
+          "sha256": "1b353f89517dc11964e4ae866d1c3e01c2b58e3b9ddca54c9d658e124f883f7b"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "docs/install.ps1 from main with no reachable release (SHA256SUMS unreachable)"
+    },
+    {
+      "argv": [
+        "C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-I",
+        "-c",
+        "import glob, html, re, sys\npaths = sorted(glob.glob(r'C:\\gw1-stage\\20260924-1205-NUCBOX_M2PRO_S\\streams\\M03-installer-main-hint.*'))\nraw = b''.join(open(p, 'rb').read() for p in paths)\nerr = open(r'C:\\gw1-stage\\20260924-1205-NUCBOX_M2PRO_S\\streams\\M03-installer-main-hint.stderr', 'rb').read().decode('utf-8', 'replace')\ntext = html.unescape(''.join(re.findall(r'<S S=\"Error\">(.*?)</S>', err, re.S))).replace('_x000D__x000A_', '\\n')\nneedle = '--tag v0.8.2'\nfound = needle.encode() in raw or needle in text.replace('\\n', '')\nprint('streams=' + ','.join(p.rsplit(chr(92), 1)[-1] for p in paths))\nprint(f'contains {needle!r}: {found}')\nprint('--- decoded view of the CLIXML error records in the stderr stream (derived; the raw stream is authoritative)')\nprint(text.rstrip())\nsys.exit(0 if found else 1)\n"
+      ],
+      "cwd": "C:\\gw1c-20260924",
+      "display": "python -I -c <decode M03 CLIXML error text; exit 1 unless it contains --tag v0.8.2>",
+      "duration_s": 0.094,
+      "ended_utc": "2026-09-24T12:06:07.330599Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "fetched": [],
+      "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+      "id": "M04",
+      "merged": false,
+      "path_mode": "pinned",
+      "phase": "installers",
+      "ps_script": null,
+      "resolved_exe": "C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+      "section": "main",
+      "started_utc": "2026-09-24T12:06:07.235896Z",
+      "stem": "hint-decode",
+      "streams": [
+        {
+          "bytes": 1377,
+          "file": "streams/M04-hint-decode.stdout",
+          "kind": "stdout",
+          "sha256": "b622fa4563a9cbd5f31c0cc8a398e556040160a0c4075e21f7cd4fa2ea829bff"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/M04-hint-decode.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Does M03's message contain --tag v0.8.2? (decoded view of its error text)"
+    },
+    {
+      "argv": [
+        "C:\\windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+        "-NoProfile",
+        "-NonInteractive",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-EncodedCommand",
+        "JABlAG4AdgA6AEcAQQBSAE4ARQBUAF8AUABSAEUARgBJAFgAIAA9ACAAIgAkAGUAbgB2ADoAVABFAE0AUABcAGcAYQByAG4AZQB0AC0AbgB1AGMALQBpAG4AcwB0AGEAbABsAC0AdABlAHMAdAAtAHYAMAA4ADEAIgAKACQAZQBuAHYAOgBHAEEAUgBOAEUAVABfAE4ATwBfAE0ATwBEAEkARgBZAF8AUABBAFQASAAgAD0AIAAiADEAIgAKACQAZQBuAHYAOgBHAEEAUgBOAEUAVABfAFYARQBSAFMASQBPAE4AIAA9ACAAIgAwAC4AOAAuADEAIgAKAEcAZQB0AC0AQwBvAG4AdABlAG4AdAAgAC0AUgBhAHcAIAAtAEwAaQB0AGUAcgBhAGwAUABhAHQAaAAgACcAQwA6AFwAZwB3ADEAYwAtADIAMAAyADYAMAA5ADIANABcAGQAbwBjAHMAXABpAG4AcwB0AGEAbABsAC4AcABzADEAJwAgAHwAIABpAGUAeAAKAA=="
+      ],
+      "cwd": "C:\\gw1c-20260924",
+      "display": "$env:GARNET_PREFIX = \"$env:TEMP\\garnet-nuc-install-test-v081\"\n$env:GARNET_NO_MODIFY_PATH = \"1\"\n$env:GARNET_VERSION = \"0.8.1\"\nGet-Content -Raw -LiteralPath 'C:\\gw1c-20260924\\docs\\install.ps1' | iex\n",
+      "duration_s": 0.813,
+      "ended_utc": "2026-09-24T12:06:08.160685Z",
+      "env_overrides": {},
+      "exit_code": 1,
+      "expect_exit": 1,
+      "fetched": [],
+      "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+      "id": "M05",
+      "merged": false,
+      "path_mode": "pinned",
+      "phase": "installers",
+      "ps_script": "$env:GARNET_PREFIX = \"$env:TEMP\\garnet-nuc-install-test-v081\"\n$env:GARNET_NO_MODIFY_PATH = \"1\"\n$env:GARNET_VERSION = \"0.8.1\"\nGet-Content -Raw -LiteralPath 'C:\\gw1c-20260924\\docs\\install.ps1' | iex\n",
+      "resolved_exe": "C:\\windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+      "section": "main",
+      "started_utc": "2026-09-24T12:06:07.343245Z",
+      "stem": "installer-main-v081",
+      "streams": [
+        {
+          "bytes": 194,
+          "file": "streams/M05-installer-main-v081.stdout",
+          "kind": "stdout",
+          "sha256": "1c9393c7d424da7c579af67599278aa8bc79f4921a2c2e17480ce190e72eabee"
+        },
+        {
+          "bytes": 4128,
+          "file": "streams/M05-installer-main-v081.stderr",
+          "kind": "stderr",
+          "sha256": "d98091a873a67167a1dfc17891ba7c98de8daa87ae85845287d312652a1bfce0"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "docs/install.ps1 from main for v0.8.1, a published release with no Windows asset"
+    },
+    {
+      "argv": [
+        "C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-I",
+        "-c",
+        "import glob, html, re, sys\npaths = sorted(glob.glob(r'C:\\gw1-stage\\20260924-1205-NUCBOX_M2PRO_S\\streams\\M05-installer-main-v081.*'))\nraw = b''.join(open(p, 'rb').read() for p in paths)\nerr = open(r'C:\\gw1-stage\\20260924-1205-NUCBOX_M2PRO_S\\streams\\M05-installer-main-v081.stderr', 'rb').read().decode('utf-8', 'replace')\ntext = html.unescape(''.join(re.findall(r'<S S=\"Error\">(.*?)</S>', err, re.S))).replace('_x000D__x000A_', '\\n')\nneedle = 'lists no garnet-0.8.1-x86_64-pc-windows-msvc.zip'\nfound = needle.encode() in raw or needle in text.replace('\\n', '')\nprint('streams=' + ','.join(p.rsplit(chr(92), 1)[-1] for p in paths))\nprint(f'contains {needle!r}: {found}')\nprint('--- decoded view of the CLIXML error records in the stderr stream (derived; the raw stream is authoritative)')\nprint(text.rstrip())\nsys.exit(0 if found else 1)\n"
+      ],
+      "cwd": "C:\\gw1c-20260924",
+      "display": "python -I -c <decode M05 CLIXML error text>",
+      "duration_s": 0.094,
+      "ended_utc": "2026-09-24T12:06:08.292927Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "fetched": [],
+      "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+      "id": "M06",
+      "merged": false,
+      "path_mode": "pinned",
+      "phase": "installers",
+      "ps_script": null,
+      "resolved_exe": "C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+      "section": "main",
+      "started_utc": "2026-09-24T12:06:08.189751Z",
+      "stem": "v081-decode",
+      "streams": [
+        {
+          "bytes": 759,
+          "file": "streams/M06-v081-decode.stdout",
+          "kind": "stdout",
+          "sha256": "1cff0eaf3a36317b5f1551a757a29e284eb634cdf3811300a9786869d5d2b74b"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/M06-v081-decode.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Decoded view of M05's error text"
+    },
+    {
+      "argv": [
+        "C:\\windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+        "-NoProfile",
+        "-NonInteractive",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-EncodedCommand",
+        "JABlAG4AdgA6AEcAQQBSAE4ARQBUAF8AUABSAEUARgBJAFgAIAA9ACAAIgAkAGUAbgB2ADoAVABFAE0AUABcAGcAYQByAG4AZQB0AC0AbgB1AGMALQBpAG4AcwB0AGEAbABsAC0AdABlAHMAdAAtAG0AbwBkAGUALQBzAG8AdQByAGMAZQAiAAoAJABlAG4AdgA6AEcAQQBSAE4ARQBUAF8ATgBPAF8ATQBPAEQASQBGAFkAXwBQAEEAVABIACAAPQAgACIAMQAiAAoAJABlAG4AdgA6AEcAQQBSAE4ARQBUAF8ASQBOAFMAVABBAEwATABfAE0ATwBEAEUAIAA9ACAAIgBzAG8AdQByAGMAZQAiAAoARwBlAHQALQBDAG8AbgB0AGUAbgB0ACAALQBSAGEAdwAgAC0ATABpAHQAZQByAGEAbABQAGEAdABoACAAJwBDADoAXABnAHcAMQBjAC0AMgAwADIANgAwADkAMgA0AFwAZABvAGMAcwBcAGkAbgBzAHQAYQBsAGwALgBwAHMAMQAnACAAfAAgAGkAZQB4AAoAJgAgACIAJABlAG4AdgA6AEcAQQBSAE4ARQBUAF8AUABSAEUARgBJAFgAXABiAGkAbgBcAGcAYQByAG4AZQB0AC4AZQB4AGUAIgAgAC0ALQB2AGUAcgBzAGkAbwBuAAoA"
+      ],
+      "cwd": "C:\\gw1c-20260924",
+      "display": "$env:GARNET_PREFIX = \"$env:TEMP\\garnet-nuc-install-test-mode-source\"\n$env:GARNET_NO_MODIFY_PATH = \"1\"\n$env:GARNET_INSTALL_MODE = \"source\"\nGet-Content -Raw -LiteralPath 'C:\\gw1c-20260924\\docs\\install.ps1' | iex\n& \"$env:GARNET_PREFIX\\bin\\garnet.exe\" --version\n",
+      "duration_s": 1.985,
+      "ended_utc": "2026-09-24T12:06:10.285812Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "fetched": [],
+      "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+      "id": "M07",
+      "merged": false,
+      "path_mode": "pinned",
+      "phase": "installers",
+      "ps_script": "$env:GARNET_PREFIX = \"$env:TEMP\\garnet-nuc-install-test-mode-source\"\n$env:GARNET_NO_MODIFY_PATH = \"1\"\n$env:GARNET_INSTALL_MODE = \"source\"\nGet-Content -Raw -LiteralPath 'C:\\gw1c-20260924\\docs\\install.ps1' | iex\n& \"$env:GARNET_PREFIX\\bin\\garnet.exe\" --version\n",
+      "resolved_exe": "C:\\windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+      "section": "main",
+      "started_utc": "2026-09-24T12:06:08.297275Z",
+      "stem": "installer-main-mode-source",
+      "streams": [
+        {
+          "bytes": 2916,
+          "file": "streams/M07-installer-main-mode-source.stdout",
+          "kind": "stdout",
+          "sha256": "95e02ba9131509df6a2e330732ece0973ac56edfe52a2a04cd2016de8c36a3b2"
+        },
+        {
+          "bytes": 6855,
+          "file": "streams/M07-installer-main-mode-source.stderr",
+          "kind": "stderr",
+          "sha256": "306da436b6250bd6eeafbfee256866c268e007d74d76d3772a2a0242c53521a1"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "docs/install.ps1 from main with GARNET_INSTALL_MODE=source (the variable FAQ.md:91 names)"
+    },
+    {
+      "argv": [
+        "C:\\windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+        "-NoProfile",
+        "-NonInteractive",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-EncodedCommand",
+        "ZgBvAHIAZQBhAGMAaAAgACgAJABzACAAaQBuACAAJwBnAGEAcgBuAGUAdAAtAG4AdQBjAC0AaQBuAHMAdABhAGwAbAAtAHQAZQBzAHQAJwAsACAAJwBnAGEAcgBuAGUAdAAtAG4AdQBjAC0AaQBuAHMAdABhAGwAbAAtAHQAZQBzAHQALQBtAGEAaQBuACcALAAgACcAZwBhAHIAbgBlAHQALQBuAHUAYwAtAGkAbgBzAHQAYQBsAGwALQB0AGUAcwB0AC0AaABpAG4AdAAnACwAIAAnAGcAYQByAG4AZQB0AC0AbgB1AGMALQBpAG4AcwB0AGEAbABsAC0AdABlAHMAdAAtAHYAMAA4ADEAJwAsACAAJwBnAGEAcgBuAGUAdAAtAG4AdQBjAC0AaQBuAHMAdABhAGwAbAAtAHQAZQBzAHQALQBtAG8AZABlAC0AcwBvAHUAcgBjAGUAJwApACAAewAKACAAIAAgACAAJABlAHgAZQAgAD0AIABKAG8AaQBuAC0AUABhAHQAaAAgACQAZQBuAHYAOgBUAEUATQBQACAAIgAkAHMAXABiAGkAbgBcAGcAYQByAG4AZQB0AC4AZQB4AGUAIgAKACAAIAAgACAAaQBmACAAKABUAGUAcwB0AC0AUABhAHQAaAAgAC0ATABpAHQAZQByAGEAbABQAGEAdABoACAAJABlAHgAZQApACAAewAKACAAIAAgACAAIAAgACAAIAAkAGgAIAA9ACAAKABHAGUAdAAtAEYAaQBsAGUASABhAHMAaAAgAC0AQQBsAGcAbwByAGkAdABoAG0AIABTAEgAQQAyADUANgAgAC0ATABpAHQAZQByAGEAbABQAGEAdABoACAAJABlAHgAZQApAC4ASABhAHMAaAAuAFQAbwBMAG8AdwBlAHIAKAApAAoAIAAgACAAIAAgACAAIAAgACQAcwBpAGcAIAA9ACAAKABHAGUAdAAtAEEAdQB0AGgAZQBuAHQAaQBjAG8AZABlAFMAaQBnAG4AYQB0AHUAcgBlACAALQBMAGkAdABlAHIAYQBsAFAAYQB0AGgAIAAkAGUAeABlACkALgBTAHQAYQB0AHUAcwAKACAAIAAgACAAIAAgACAAIAAiACQAcwAgAGcAYQByAG4AZQB0AC4AZQB4AGUAIABzAGgAYQAyADUANgA9ACQAaAAgAGIAeQB0AGUAcwA9ACQAKAAoAEcAZQB0AC0ASQB0AGUAbQAgAC0ATABpAHQAZQByAGEAbABQAGEAdABoACAAJABlAHgAZQApAC4ATABlAG4AZwB0AGgAKQAgAGEAdQB0AGgAZQBuAHQAaQBjAG8AZABlAD0AJABzAGkAZwAiAAoAIAAgACAAIAB9ACAAZQBsAHMAZQAgAHsACgAgACAAIAAgACAAIAAgACAAIgAkAHMAIABnAGEAcgBuAGUAdAAuAGUAeABlACAAYQBiAHMAZQBuAHQAIgAKACAAIAAgACAAfQAKAH0ACgA="
+      ],
+      "cwd": "C:\\gw1c-20260924",
+      "display": "foreach ($s in 'garnet-nuc-install-test', 'garnet-nuc-install-test-main', 'garnet-nuc-install-test-hint', 'garnet-nuc-install-test-v081', 'garnet-nuc-install-test-mode-source') {\n    $exe = Join-Path $env:TEMP \"$s\\bin\\garnet.exe\"\n    if (Test-Path -LiteralPath $exe) {\n        $h = (Get-FileHash -Algorithm SHA256 -LiteralPath $exe).Hash.ToLower()\n        $sig = (Get-AuthenticodeSignature -LiteralPath $exe).Status\n        \"$s garnet.exe sha256=$h bytes=$((Get-Item -LiteralPath $exe).Length) authenticode=$sig\"\n    } else {\n        \"$s garnet.exe absent\"\n    }\n}\n",
+      "duration_s": 1.235,
+      "ended_utc": "2026-09-24T12:06:11.540342Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "fetched": [],
+      "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+      "id": "M08",
+      "merged": false,
+      "path_mode": "pinned",
+      "phase": "installers",
+      "ps_script": "foreach ($s in 'garnet-nuc-install-test', 'garnet-nuc-install-test-main', 'garnet-nuc-install-test-hint', 'garnet-nuc-install-test-v081', 'garnet-nuc-install-test-mode-source') {\n    $exe = Join-Path $env:TEMP \"$s\\bin\\garnet.exe\"\n    if (Test-Path -LiteralPath $exe) {\n        $h = (Get-FileHash -Algorithm SHA256 -LiteralPath $exe).Hash.ToLower()\n        $sig = (Get-AuthenticodeSignature -LiteralPath $exe).Status\n        \"$s garnet.exe sha256=$h bytes=$((Get-Item -LiteralPath $exe).Length) authenticode=$sig\"\n    } else {\n        \"$s garnet.exe absent\"\n    }\n}\n",
+      "resolved_exe": "C:\\windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+      "section": "main",
+      "started_utc": "2026-09-24T12:06:10.304449Z",
+      "stem": "installed-exes",
+      "streams": [
+        {
+          "bytes": 548,
+          "file": "streams/M08-installed-exes.stdout",
+          "kind": "stdout",
+          "sha256": "83763895fd492960baf185fd94a9048c6ca82d7069db455c86e1edf34989aa3b"
+        },
+        {
+          "bytes": 840,
+          "file": "streams/M08-installed-exes.stderr",
+          "kind": "stderr",
+          "sha256": "018966bf53cb60e3be45739d0b615e36ec0cd64fb2dc331e24320ce44f76ddff"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Every throwaway prefix: installed garnet.exe sha256 and signature status"
+    },
+    {
+      "argv": [
+        "C:\\windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+        "-NoProfile",
+        "-NonInteractive",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-EncodedCommand",
+        "JAB1ACAAPQAgAFsARQBuAHYAaQByAG8AbgBtAGUAbgB0AF0AOgA6AEcAZQB0AEUAbgB2AGkAcgBvAG4AbQBlAG4AdABWAGEAcgBpAGEAYgBsAGUAKAAnAFAAYQB0AGgAJwAsACAAJwBVAHMAZQByACcAKQAKACQAYgAgAD0AIABbAFQAZQB4AHQALgBFAG4AYwBvAGQAaQBuAGcAXQA6ADoAVQBUAEYAOAAuAEcAZQB0AEIAeQB0AGUAcwAoAFsAcwB0AHIAaQBuAGcAXQAkAHUAKQAKACQAaAAgAD0AIABbAEIAaQB0AEMAbwBuAHYAZQByAHQAZQByAF0AOgA6AFQAbwBTAHQAcgBpAG4AZwAoAFsAUwBlAGMAdQByAGkAdAB5AC4AQwByAHkAcAB0AG8AZwByAGEAcABoAHkALgBTAEgAQQAyADUANgBdADoAOgBDAHIAZQBhAHQAZQAoACkALgBDAG8AbQBwAHUAdABlAEgAYQBzAGgAKAAkAGIAKQApAC4AUgBlAHAAbABhAGMAZQAoACcALQAnACwAIAAnACcAKQAuAFQAbwBMAG8AdwBlAHIAKAApAAoAIgB1AHMAZQByAF8AcABhAHQAaABfAHMAaABhADIANQA2AD0AJABoACIACgAiAHUAcwBlAHIAXwBwAGEAdABoAF8AZQBuAHQAcgBpAGUAcwA9ACQAKABAACgAJAB1ACAALQBzAHAAbABpAHQAIAAnADsAJwAgAHwAIABXAGgAZQByAGUALQBPAGIAagBlAGMAdAAgAHsAIAAkAF8AIAB9ACkALgBDAG8AdQBuAHQAKQAiAAoAIgB1AHMAZQByAF8AcABhAHQAaABfAG0AZQBuAHQAaQBvAG4AcwBfAGcAYQByAG4AZQB0AF8AbgB1AGMAXwBpAG4AcwB0AGEAbABsAF8AdABlAHMAdAA9ACQAKABbAGIAbwBvAGwAXQAoACQAdQAgAC0AbQBhAHQAYwBoACAAJwBnAGEAcgBuAGUAdAAtAG4AdQBjAC0AaQBuAHMAdABhAGwAbAAtAHQAZQBzAHQAJwApACkAIgAKAA=="
+      ],
+      "cwd": "C:\\gw1c-20260924",
+      "display": "$u = [Environment]::GetEnvironmentVariable('Path', 'User')\n$b = [Text.Encoding]::UTF8.GetBytes([string]$u)\n$h = [BitConverter]::ToString([Security.Cryptography.SHA256]::Create().ComputeHash($b)).Replace('-', '').ToLower()\n\"user_path_sha256=$h\"\n\"user_path_entries=$(@($u -split ';' | Where-Object { $_ }).Count)\"\n\"user_path_mentions_garnet_nuc_install_test=$([bool]($u -match 'garnet-nuc-install-test'))\"\n",
+      "duration_s": 0.265,
+      "ended_utc": "2026-09-24T12:06:11.795041Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "fetched": [],
+      "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+      "id": "M09",
+      "merged": false,
+      "path_mode": "pinned",
+      "phase": "installers",
+      "ps_script": "$u = [Environment]::GetEnvironmentVariable('Path', 'User')\n$b = [Text.Encoding]::UTF8.GetBytes([string]$u)\n$h = [BitConverter]::ToString([Security.Cryptography.SHA256]::Create().ComputeHash($b)).Replace('-', '').ToLower()\n\"user_path_sha256=$h\"\n\"user_path_entries=$(@($u -split ';' | Where-Object { $_ }).Count)\"\n\"user_path_mentions_garnet_nuc_install_test=$([bool]($u -match 'garnet-nuc-install-test'))\"\n",
+      "resolved_exe": "C:\\windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+      "section": "main",
+      "started_utc": "2026-09-24T12:06:11.542122Z",
+      "stem": "user-path-after",
+      "streams": [
+        {
+          "bytes": 155,
+          "file": "streams/M09-user-path-after.stdout",
+          "kind": "stdout",
+          "sha256": "9535dda89a96884dba6be285ebbe44a558dae6447ad064d7408214b980f2bff4"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/M09-user-path-after.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "User PATH fingerprint after all installer runs"
+    },
+    {
+      "argv": [
+        "C:\\Users\\IslandDevCrew\\.cargo\\bin\\cargo.EXE",
+        "build",
+        "--locked",
+        "-p",
+        "garnet-cli"
+      ],
+      "cwd": "C:\\gw1c-20260924",
+      "display": "cargo build --locked -p garnet-cli",
+      "duration_s": 46.906,
+      "ended_utc": "2026-09-24T12:06:58.717582Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "fetched": [],
+      "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+      "id": "B01",
+      "merged": false,
+      "path_mode": "pinned",
+      "phase": "build",
+      "ps_script": null,
+      "resolved_exe": "C:\\Users\\IslandDevCrew\\.cargo\\bin\\cargo.EXE",
+      "section": "build",
+      "started_utc": "2026-09-24T12:06:11.816410Z",
+      "stem": "cargo-build",
+      "streams": [
+        {
+          "bytes": 0,
+          "file": "streams/B01-cargo-build.stdout",
+          "kind": "stdout",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "bytes": 4914,
+          "file": "streams/B01-cargo-build.stderr",
+          "kind": "stderr",
+          "sha256": "91c0c5e9d38dc923776e52ad9b02dd98a99f6da88a24f5e4eff2708600913fa8"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 5400,
+      "title": "Build garnet-cli"
+    },
+    {
+      "argv": [
+        "C:\\Users\\IslandDevCrew\\.cargo\\bin\\cargo.EXE",
+        "test",
+        "--locked",
+        "--workspace",
+        "--no-fail-fast"
+      ],
+      "cwd": "C:\\gw1c-20260924",
+      "display": "cargo test --locked --workspace --no-fail-fast",
+      "duration_s": 227.187,
+      "ended_utc": "2026-09-24T12:10:45.930916Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "fetched": [],
+      "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+      "id": "T01",
+      "merged": true,
+      "path_mode": "pinned",
+      "phase": "test",
+      "ps_script": null,
+      "resolved_exe": "C:\\Users\\IslandDevCrew\\.cargo\\bin\\cargo.EXE",
+      "section": "test",
+      "started_utc": "2026-09-24T12:06:58.732882Z",
+      "stem": "cargo-test",
+      "streams": [
+        {
+          "bytes": 171575,
+          "file": "cargo-test.log",
+          "kind": "stdout+stderr",
+          "sha256": "cca8a5a24e81596fd6aff54de7964214d911bbd175343ef312ac714ff168d25a"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 14400,
+      "title": "Workspace tests (stdout+stderr merged into cargo-test.log)"
+    },
+    {
+      "argv": [
+        "C:\\Program Files\\Git\\cmd\\git.EXE",
+        "-C",
+        "C:\\gw1c-20260924",
+        "status",
+        "--short",
+        "--branch"
+      ],
+      "cwd": "C:\\gw1c-20260924",
+      "display": "git status --short --branch",
+      "duration_s": 0.078,
+      "ended_utc": "2026-09-24T12:10:46.020209Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "fetched": [],
+      "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+      "id": "P01",
+      "merged": false,
+      "path_mode": "pinned",
+      "phase": "post",
+      "ps_script": null,
+      "resolved_exe": "C:\\Program Files\\Git\\cmd\\git.EXE",
+      "section": "post",
+      "started_utc": "2026-09-24T12:10:45.947211Z",
+      "stem": "status-after",
+      "streams": [
+        {
+          "bytes": 22,
+          "file": "streams/P01-status-after.stdout",
+          "kind": "stdout",
+          "sha256": "5fbcb2990ad25e368c12219bf3ddca36e464d044e7acac16696fa8cd54159185"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/P01-status-after.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Worktree status after every step"
+    },
+    {
+      "argv": [
+        "C:\\Program Files\\Git\\cmd\\git.EXE",
+        "-C",
+        "C:\\gw1c-20260924",
+        "-c",
+        "credential.helper=",
+        "ls-remote",
+        "origin",
+        "refs/heads/main"
+      ],
+      "cwd": "C:\\gw1c-20260924",
+      "display": "git -c credential.helper= ls-remote origin refs/heads/main",
+      "duration_s": 0.391,
+      "ended_utc": "2026-09-24T12:10:46.413069Z",
+      "env_overrides": {
+        "GIT_TERMINAL_PROMPT": "0"
+      },
+      "exit_code": 0,
+      "expect_exit": 0,
+      "fetched": [],
+      "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+      "id": "P02",
+      "merged": false,
+      "path_mode": "pinned",
+      "phase": "post",
+      "ps_script": null,
+      "resolved_exe": "C:\\Program Files\\Git\\cmd\\git.EXE",
+      "section": "post",
+      "started_utc": "2026-09-24T12:10:46.026443Z",
+      "stem": "remote-main-after",
+      "streams": [
+        {
+          "bytes": 57,
+          "file": "streams/P02-remote-main-after.stdout",
+          "kind": "stdout",
+          "sha256": "2b918ea50b9dd6ac79bdbb157e7e6bd3939f958a087e289d5a0ef32a07ae05ce"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/P02-remote-main-after.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Remote readback of main after every step (no credential)"
+    },
+    {
+      "argv": [
+        "C:\\windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+        "-NoProfile",
+        "-NonInteractive",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-EncodedCommand",
+        "IgBwAHIAbwBjAGUAcwBzAF8AYwBvAHUAbgB0AD0AJAAoACgARwBlAHQALQBQAHIAbwBjAGUAcwBzACkALgBDAG8AdQBuAHQAKQAiAAoA"
+      ],
+      "cwd": "C:\\gw1c-20260924",
+      "display": "\"process_count=$((Get-Process).Count)\"\n",
+      "duration_s": 0.25,
+      "ended_utc": "2026-09-24T12:10:46.660268Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "fetched": [],
+      "harness_sha256": "85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040",
+      "id": "P03",
+      "merged": false,
+      "path_mode": "pinned",
+      "phase": "post",
+      "ps_script": "\"process_count=$((Get-Process).Count)\"\n",
+      "resolved_exe": "C:\\windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+      "section": "post",
+      "started_utc": "2026-09-24T12:10:46.414732Z",
+      "stem": "processes-after",
+      "streams": [
+        {
+          "bytes": 19,
+          "file": "streams/P03-processes-after.stdout",
+          "kind": "stdout",
+          "sha256": "a5ae2c31ed61ad6647286ca7894c799dbc8fff9b9b79ace0c6460803625480be"
+        },
+        {
+          "bytes": 392,
+          "file": "streams/P03-processes-after.stderr",
+          "kind": "stderr",
+          "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Process count after every step"
+    }
+  ]
+}

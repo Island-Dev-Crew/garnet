@@ -1,0 +1,5 @@
+garnet-nuc-install-test garnet.exe sha256=2c43c90924046ba27c2b8d9ab5a8b0736e3098872535cdea8112e6a6b8107ced bytes=8242688 authenticode=NotSigned
+garnet-nuc-install-test-main garnet.exe sha256=2c43c90924046ba27c2b8d9ab5a8b0736e3098872535cdea8112e6a6b8107ced bytes=8242688 authenticode=NotSigned
+garnet-nuc-install-test-hint garnet.exe absent
+garnet-nuc-install-test-v081 garnet.exe absent
+garnet-nuc-install-test-mode-source garnet.exe sha256=2c43c90924046ba27c2b8d9ab5a8b0736e3098872535cdea8112e6a6b8107ced bytes=8242688 authenticode=NotSigned
