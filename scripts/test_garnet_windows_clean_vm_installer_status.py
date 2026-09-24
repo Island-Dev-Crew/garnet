@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 SCRIPT = Path(__file__).with_name("garnet_windows_clean_vm_installer_status.py")
 SPEC = importlib.util.spec_from_file_location("garnet_windows_clean_vm_installer_status", SCRIPT)
@@ -143,6 +145,133 @@ class GarnetWindowsCleanVmInstallerStatusTests(unittest.TestCase):
             )
             self.assertIn("Clean VM verified: `false`", markdown)
             self.assertIn("Windows 32-bit remains deferred", markdown)
+
+
+BUNDLES_REL = Path("proofs/windows/studio-clean-vm")
+
+
+def _record_committed_bundle(
+    repo: Path,
+    name: str,
+    *,
+    guest_arch: str = "x64",
+    log_inside_bundle: bool = True,
+) -> Path:
+    """Record a bundle the way the W2 handoff does: from the repo root, with
+    repo-relative paths, into proofs/windows/studio-clean-vm/<name>/."""
+    bundle_rel = BUNDLES_REL / name
+    bundle = repo / bundle_rel
+    bundle.mkdir(parents=True)
+    (repo / "target").mkdir(exist_ok=True)
+    (repo / "target" / "Garnet-Studio-setup.exe").write_bytes(b"fake installer")
+    (bundle / "commands.txt").write_text("recorded by the test\n", encoding="utf-8")
+    log_rel = bundle_rel / "install.log" if log_inside_bundle else Path("install.log")
+    (repo / log_rel).write_text("exit_code=0\n", encoding="utf-8")
+    (bundle / "studio-smoke.json").write_text(
+        json.dumps({"status": "passed", "source_included": False, "provider_api_called": False}),
+        encoding="utf-8",
+    )
+    (bundle / "launch.png").write_bytes(b"fake image")
+    previous = Path.cwd()
+    os.chdir(repo)
+    try:
+        record = status_mod.build_proof_record(
+            mode="clean-vm",
+            installer=Path("target/Garnet-Studio-setup.exe"),
+            vm_name="Windows Sandbox",
+            guest_os="Windows 11 Pro 26100",
+            guest_arch=guest_arch,
+            install_log=log_rel,
+            studio_smoke_json=bundle_rel / "studio-smoke.json",
+            screenshot=bundle_rel / "launch.png",
+        )
+        status_mod.write_proof(record, bundle_rel)
+    finally:
+        os.chdir(previous)
+    return bundle
+
+
+class CommittedCleanVmBundleTests(unittest.TestCase):
+    """T5a, Jon's path (a): a clean-VM proof committed to the repo is read on any
+    host, and only after its manifest and gates check out."""
+
+    def setUp(self) -> None:
+        self._temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._temp.cleanup)
+        self.repo = Path(self._temp.name) / "repo"
+        self.repo.mkdir()
+        empty_home = Path(self._temp.name) / "home"
+        for patcher in (
+            mock.patch.object(status_mod, "ROOT", self.repo),
+            mock.patch.object(
+                status_mod,
+                "default_evidence_root",
+                lambda home=None: empty_home / "Desktop" / "dogfood" / "garnet-studio-windows-clean-vm",
+            ),
+        ):
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def test_committed_bundle_is_read_when_no_root_is_given(self) -> None:
+        _record_committed_bundle(self.repo, "20260924-1200-nuc")
+
+        status = status_mod.read_status()
+
+        self.assertTrue(status.clean_vm_verified)
+        self.assertEqual("clean-vm-proof-verified", status.status)
+        self.assertEqual("committed:proofs/windows/studio-clean-vm/20260924-1200-nuc", status.proof_source)
+        self.assertFalse(status.blocked_by)
+
+    def test_tampered_committed_bundle_is_not_verified(self) -> None:
+        bundle = _record_committed_bundle(self.repo, "20260924-1200-nuc")
+        (bundle / "install.log").write_text("exit_code=1\n", encoding="utf-8")
+
+        status = status_mod.read_status()
+
+        self.assertFalse(status.clean_vm_verified)
+        self.assertIn("committed clean-VM bundle integrity", status.blocked_by)
+
+    def test_committed_bundle_evidence_must_sit_inside_the_bundle(self) -> None:
+        _record_committed_bundle(self.repo, "20260924-1200-nuc", log_inside_bundle=False)
+
+        status = status_mod.read_status()
+
+        self.assertFalse(status.clean_vm_verified)
+        self.assertIn("committed clean-VM bundle integrity", status.blocked_by)
+
+    def test_committed_bundle_must_be_an_x64_guest(self) -> None:
+        _record_committed_bundle(self.repo, "20260924-1200-nuc", guest_arch="arm64")
+
+        status = status_mod.read_status()
+
+        self.assertFalse(status.clean_vm_verified)
+
+    def test_newest_committed_bundle_decides_without_falling_back(self) -> None:
+        _record_committed_bundle(self.repo, "20260924-1200-nuc")
+        newer = _record_committed_bundle(self.repo, "20260925-0900-nuc")
+        (newer / "launch.png").write_bytes(b"swapped image")
+
+        status = status_mod.read_status()
+
+        self.assertFalse(status.clean_vm_verified)
+        self.assertEqual("committed:proofs/windows/studio-clean-vm/20260925-0900-nuc", status.proof_source)
+
+    def test_unreadable_committed_proof_is_not_verified(self) -> None:
+        bundle = _record_committed_bundle(self.repo, "20260924-1200-nuc")
+        (bundle / "windows-clean-vm-installer-proof.json").write_text("{not json", encoding="utf-8")
+
+        status = status_mod.read_status()
+
+        self.assertFalse(status.clean_vm_verified)
+        self.assertIn("committed clean-VM bundle integrity", status.blocked_by)
+
+    def test_explicit_evidence_root_still_wins(self) -> None:
+        _record_committed_bundle(self.repo, "20260924-1200-nuc")
+
+        status = status_mod.read_status(Path(self._temp.name) / "missing-root")
+
+        self.assertFalse(status.clean_vm_verified)
+        self.assertEqual("none", status.proof_source)
 
 
 if __name__ == "__main__":
