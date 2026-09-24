@@ -59,6 +59,10 @@ EXPECTED_INPUT_SHA256 = "2328d55497368e0a351cfbd0e5421ab46c3826abf4f313c1a497e95
 EXPECTED_OUTPUT_SHA256 = "dac0eea7138d0f58865eecefc8db0c64490605068b956f757f420d6b284ba15f"
 EXPECTED_SEAL_BLAKE3 = "78ba05bbb5a4f0b8bf18f50760232ebf330eda8f4331a6ed483fea3a3ee3f392"
 EXPECTED_PRELUDE_BLAKE3 = "df4f1648cf79ea77d0842fd1cb8725aba82be1b2631d5a906952640f9a25cc6d"
+# garnet-cli's seal::COSIGN_NOTE (T5a, C2-07): the fixed, cosign-independent note.
+EXPECTED_COSIGN_NOTE = (
+    "not used by garnet seal; this predicate is UNSIGNED. To sign it: cosign attest --predicate <file> --type custom"
+)
 EXPECTED_SCOPE = [
     "one Garnet-owned local package",
     "Core Ring Tier 1 only",
@@ -102,6 +106,20 @@ class MinimumShelfStatus:
     findings: list[str] = field(default_factory=list)
     ok: bool = False
 
+
+
+def seal_claim_findings(seal: object) -> list[str]:
+    """The flagship seal must make the seal/v2 unsigned claim exactly."""
+    predicate = seal.get("predicate") if isinstance(seal, dict) else None
+    if not isinstance(predicate, dict):
+        return ["seal has no predicate object"]
+    findings = []
+    tooling = predicate.get("tooling")
+    if not isinstance(tooling, dict) or tooling.get("cosign") != EXPECTED_COSIGN_NOTE:
+        findings.append("UNSIGNED predicate claim language changed")
+    if predicate.get("signed") is not False:
+        findings.append("seal predicate does not carry signed:false")
+    return findings
 
 def _reject_duplicates(pairs: list[tuple[str, object]]) -> dict[str, object]:
     result: dict[str, object] = {}
@@ -462,9 +480,7 @@ def read_status(root: Path = ROOT) -> MinimumShelfStatus:
         seal = _read_json("examples/minimum-shelf-flagship/tool.seal.json")
         if seal.get("predicate", {}).get("build_manifest", {}).get("prelude_hash") != EXPECTED_PRELUDE_BLAKE3:
             findings.append("seal does not bind the canonical prelude")
-        cosign = seal.get("predicate", {}).get("tooling", {}).get("cosign")
-        if cosign != "not installed — predicate emitted UNSIGNED; install cosign to attest":
-            findings.append("UNSIGNED predicate claim language changed")
+        findings.extend(seal_claim_findings(seal))
     except (UnicodeError, ValueError, AttributeError) as exc:
         findings.append(str(exc))
 
