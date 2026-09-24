@@ -1,0 +1,1 @@
+bec9410c9f1aba97d3e81e0eca2b655fd5544b42 2026-09-18T13:51:59-05:00 caps(check+runtime): SCC-exact propagation (U-117); safe enum construction (D-107/D-107b); time and mem trap at run time (D-02/D-04/D-04b) (#589)-J

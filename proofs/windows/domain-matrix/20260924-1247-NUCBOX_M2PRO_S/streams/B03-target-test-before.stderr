@@ -1,0 +1,13 @@
+F
+======================================================================
+FAIL: test_status_distinguishes_plan_completion_from_goal_completion (__main__.GarnetMitReadinessStatusTests.test_status_distinguishes_plan_completion_from_goal_completion)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\gw4-20260924-1247\scripts\test_garnet_mit_readiness_status.py", line 1149, in test_status_distinguishes_plan_completion_from_goal_completion
+    self.assertIn("Committed Windows bundle", lanes["windows_linux_domain_proof_matrix"].evidence)
+AssertionError: 'Committed Windows bundle' not found in '`scripts/smoke_garnet_studio_domain_matrix.py --suite all` has a verified manifest-backed parse/check/run bundle for 20 current examples: 10 canonical MVP domains, signed hot-reload success, expected BLAKE3 mismatch rejection, five agent toolbelt programs, and three agentic design programs. Verified bundle: `C:\\Users\\ISLAND~1\\AppData\\Local\\Temp\\tmphct7_3ws\\garnet-studio-domain-matrix-test\\garnet-studio-domain-matrix.json`.'
+
+----------------------------------------------------------------------
+Ran 1 test in 1.864s
+
+FAILED (failures=1)
