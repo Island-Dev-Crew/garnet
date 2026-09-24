@@ -151,7 +151,12 @@ class GarnetPromoVideoStatusTests(unittest.TestCase):
             self.assertNotIn("website-ready export", contract.open_gates)
             self.assertIn("repo/site copy check for overclaims", contract.open_gates)
 
-    def test_repo_site_embed_promotes_public_site_status_without_claiming_final_acceptance(self) -> None:
+    def test_sync_record_alone_does_not_claim_a_public_site_embed(self) -> None:
+        # T5a: this test used to assert that a site-sync record promotes the
+        # lane to public-site-embedded. #566 retired the promo embed from
+        # docs/index.html (the #demonstration video replaced it), and the
+        # reporter requires the repo page itself to carry the embed. A sync
+        # record alone must therefore NOT claim public-site embedding.
         with tempfile.TemporaryDirectory() as temp:
             artifact_dir = Path(temp) / "garnet-promo-video"
             artifact_dir.mkdir()
@@ -179,11 +184,11 @@ class GarnetPromoVideoStatusTests(unittest.TestCase):
             with mock.patch.dict(os.environ, {"GARNET_PROMO_VIDEO_DESKTOP_DIR": temp}):
                 contract = promo.read_status()
 
-        self.assertEqual("public-site-embedded", contract.status)
-        self.assertEqual(95.0, contract.completion_percent)
+        self.assertEqual("website-export-ready", contract.status)
+        self.assertEqual(90.0, contract.completion_percent)
         self.assertTrue(contract.website_export_present)
-        self.assertTrue(contract.public_site_embed_present)
-        self.assertIn("repo/site copy check for overclaims", contract.completed_gates)
+        self.assertFalse(contract.public_site_embed_present)
+        self.assertIn("repo/site copy check for overclaims", contract.open_gates)
         self.assertIn("human/aesthetic acceptance", contract.open_gates)
         self.assertIn("Do not claim full MIT/productization completion.", contract.forbidden_claims)
 
