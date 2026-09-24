@@ -89,6 +89,23 @@ fn delta_side(
     out.into_iter().collect()
 }
 
+/// Every declared cap list for each function name, in surface order.
+fn group_by_name(per_function: &[(String, Vec<String>)]) -> BTreeMap<&String, Vec<&Vec<String>>> {
+    let mut map: BTreeMap<&String, Vec<&Vec<String>>> = BTreeMap::new();
+    for (name, caps) in per_function {
+        map.entry(name).or_default().push(caps);
+    }
+    map
+}
+
+/// A name's entries as an order-free multiset, to tell a repeated name that
+/// changed from one that did not.
+fn sorted_entries<'a>(entries: &[&'a Vec<String>]) -> Vec<&'a Vec<String>> {
+    let mut sorted = entries.to_vec();
+    sorted.sort();
+    sorted
+}
+
 /// Compute the capability diff from `old` to `new`. Input surfaces are already
 /// sorted (S35); every output list preserves sorted order. RB-1: the delta
 /// over the closed capability set is XOR on [`CapSet`] bitsets; unknown
@@ -101,38 +118,47 @@ pub fn diff_caps(old: &CapabilitySurface, new: &CapabilitySurface) -> CapsDiff {
     let aggregate_added = delta_side(delta, new_known, &new_unknown, &old_unknown);
     let aggregate_removed = delta_side(delta, old_known, &old_unknown, &new_unknown);
 
-    let old_fns: BTreeMap<&String, &Vec<String>> =
-        old.per_function.iter().map(|(n, c)| (n, c)).collect();
-    let new_fns: BTreeMap<&String, &Vec<String>> =
-        new.per_function.iter().map(|(n, c)| (n, c)).collect();
+    // T5a (C1-01): group entries by name. A name can still repeat — a duplicate
+    // top-level def, or merged sources — and a repeated name cannot be matched
+    // one-to-one. Never let the last entry win: a repeated name whose entries
+    // changed fails toward review with every capability its new entries declare.
+    let old_fns = group_by_name(&old.per_function);
+    let new_fns = group_by_name(&new.per_function);
 
-    let mut functions_added: Vec<String> = new
-        .per_function
-        .iter()
-        .filter(|(n, _)| !old_fns.contains_key(n))
-        .map(|(n, _)| n.clone())
+    let functions_added: Vec<String> = new_fns
+        .keys()
+        .filter(|n| !old_fns.contains_key(*n))
+        .map(|n| (*n).clone())
         .collect();
-    let mut functions_removed: Vec<String> = old
-        .per_function
-        .iter()
-        .filter(|(n, _)| !new_fns.contains_key(n))
-        .map(|(n, _)| n.clone())
+    let functions_removed: Vec<String> = old_fns
+        .keys()
+        .filter(|n| !new_fns.contains_key(*n))
+        .map(|n| (*n).clone())
         .collect();
     let mut functions_caps_expanded: Vec<(String, Vec<String>)> = Vec::new();
-    for (name, old_caps) in &old.per_function {
-        if let Some(new_caps) = new_fns.get(name) {
-            let (fn_old_known, fn_old_unknown) = split_caps(old_caps);
-            let (fn_new_known, fn_new_unknown) = split_caps(new_caps);
-            let fn_delta = fn_old_known.delta(fn_new_known);
-            let gained = delta_side(fn_delta, fn_new_known, &fn_new_unknown, &fn_old_unknown);
-            if !gained.is_empty() {
-                functions_caps_expanded.push((name.clone(), gained));
+    for (name, new_entries) in &new_fns {
+        let Some(old_entries) = old_fns.get(name) else {
+            continue;
+        };
+        let gained = match (old_entries.as_slice(), new_entries.as_slice()) {
+            ([old_caps], [new_caps]) => {
+                let (fn_old_known, fn_old_unknown) = split_caps(old_caps);
+                let (fn_new_known, fn_new_unknown) = split_caps(new_caps);
+                let fn_delta = fn_old_known.delta(fn_new_known);
+                delta_side(fn_delta, fn_new_known, &fn_new_unknown, &fn_old_unknown)
             }
+            _ if sorted_entries(old_entries) == sorted_entries(new_entries) => Vec::new(),
+            _ => new_entries
+                .iter()
+                .flat_map(|caps| caps.iter().cloned())
+                .collect::<BTreeSet<String>>()
+                .into_iter()
+                .collect(),
+        };
+        if !gained.is_empty() {
+            functions_caps_expanded.push(((*name).clone(), gained));
         }
     }
-    functions_added.sort();
-    functions_removed.sort();
-    functions_caps_expanded.sort_by(|a, b| a.0.cmp(&b.0));
 
     CapsDiff {
         aggregate_added,
@@ -303,10 +329,7 @@ mod tests {
         );
         assert_eq!(
             d.functions_caps_expanded,
-            vec![(
-                "f".to_string(),
-                vec!["fs".to_string(), "net".to_string()]
-            )]
+            vec![("f".to_string(), vec!["fs".to_string(), "net".to_string()])]
         );
     }
 
@@ -314,7 +337,11 @@ mod tests {
     fn a_name_duplicated_only_in_new_fails_toward_review() {
         let d = diff_caps(
             &surf(&["fs"], &[("f", &[]), ("main", &["fs"])], false),
-            &surf(&["fs"], &[("f", &["fs"]), ("f", &[]), ("main", &["fs"])], false),
+            &surf(
+                &["fs"],
+                &[("f", &["fs"]), ("f", &[]), ("main", &["fs"])],
+                false,
+            ),
         );
         assert_eq!(
             d.functions_caps_expanded,

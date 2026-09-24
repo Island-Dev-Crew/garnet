@@ -16,31 +16,38 @@
 use garnet_parser::ast::{Annotation, Capability, FnDef, Item, Module, TypeExpr};
 use std::collections::BTreeSet;
 
-/// A short label for an impl block's owning type, for per-function names.
+/// The label for an impl block's owning type in per-function names: the type's
+/// full written path (`R`, or `a::R` when the impl names a qualified type), so
+/// two impls whose types share a last segment are not collapsed into one name.
 fn type_label(ty: &TypeExpr) -> String {
     match ty {
-        TypeExpr::Named { path, .. } => path.last().cloned().unwrap_or_else(|| "impl".to_string()),
+        TypeExpr::Named { path, .. } if !path.is_empty() => path.join("::"),
         _ => "impl".to_string(),
     }
 }
 
 /// Collect every capability-bearing function in the module tree — top-level
 /// functions, **impl-block methods**, and functions in nested modules — as
-/// `(display_name, &FnDef)`. S114 closed a hole where impl-method `@caps` was
+/// `(qualified_name, &FnDef)`. S114 closed a hole where impl-method `@caps` was
 /// enforced at runtime (the interpreter installs the guard for any managed `FnDef`)
 /// but invisible here, so a file-/net-reading impl method reported an empty surface
 /// and slipped past `diff-caps`, the seal manifest, and the agent-loop gate.
-fn collect_cap_fns<'a>(items: &'a [Item], out: &mut Vec<(String, &'a FnDef)>) {
+///
+/// T5a (C1-01): names carry their module path, so `module a { def f }` is `a::f`
+/// and an impl method inside it is `a::Type::m`. Top-level names stay bare, so a
+/// program without modules keeps byte-identical names. Before this, same-named
+/// functions in two modules shared one name and `diff-caps` kept only the last.
+fn collect_cap_fns<'a>(items: &'a [Item], prefix: &str, out: &mut Vec<(String, &'a FnDef)>) {
     for item in items {
         match item {
-            Item::Fn(f) => out.push((f.name.clone(), f)),
+            Item::Fn(f) => out.push((format!("{prefix}{}", f.name), f)),
             Item::Impl(block) => {
                 let owner = type_label(&block.target);
                 for m in &block.methods {
-                    out.push((format!("{owner}::{}", m.name), m));
+                    out.push((format!("{prefix}{owner}::{}", m.name), m));
                 }
             }
-            Item::Module(m) => collect_cap_fns(&m.items, out),
+            Item::Module(m) => collect_cap_fns(&m.items, &format!("{prefix}{}::", m.name), out),
             _ => {}
         }
     }
@@ -55,7 +62,8 @@ pub struct CapabilitySurface {
     /// Per-function declared caps: sorted by function name; each cap list sorted
     /// and deduplicated. Only functions that carry an `@caps(...)` appear.
     pub per_function: Vec<(String, Vec<String>)>,
-    /// Whether any `@caps(*)` wildcard appears (debug-only; CI rejects it).
+    /// Whether any `@caps(*)` wildcard appears. The checker accepts a wildcard;
+    /// `diff-caps` treats a newly introduced one as authority expansion.
     pub has_wildcard: bool,
 }
 
@@ -66,7 +74,7 @@ pub fn capability_surface(module: &Module) -> CapabilitySurface {
     let mut has_wildcard = false;
 
     let mut fns: Vec<(String, &FnDef)> = Vec::new();
-    collect_cap_fns(&module.items, &mut fns);
+    collect_cap_fns(&module.items, "", &mut fns);
 
     for (name, f) in fns {
         let mut declared = false;

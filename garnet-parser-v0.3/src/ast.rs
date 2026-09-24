@@ -181,7 +181,8 @@ pub enum Annotation {
     /// Capability annotation (v3.4 CapCaps / Security Layer 2).
     /// `@caps(fs, net)` declares the OS authority a function needs.
     /// Empty list `@caps()` declares "no caps required" — purely
-    /// computational. Wildcard `@caps(*)` is debug-only; CI rejects.
+    /// computational. Wildcard `@caps(*)` is accepted by the checker;
+    /// `diff-caps` treats a newly introduced wildcard as authority expansion.
     Caps(Vec<Capability>, Span),
     /// Mailbox capacity for an actor (v3.4 BoundedMail).
     /// `@mailbox(N)` overrides the default 1024-message cap on send.
