@@ -79,8 +79,12 @@ function diffCurrentSourceImpl() {
   ui["diff-result"].textContent = result.ok ? `Added: ${result.aggregate_added.join(", ") || "none"}\nRemoved: ${result.aggregate_removed.join(", ") || "none"}\n${result.functions_caps_expanded.map(fn => `${fn.name} gained ${fn.gained.join(", ")}`).join("\n")}` : `Cannot compare: ${result.parse_error?.diagnostic?.message || "invalid source"}`;
   renderAuthority(result);
   // T5a (C5-08): a function added with declared capabilities is a declared
-  // gain too, even when the program-wide aggregate is unchanged.
-  const declared = new Map((result.new_surface?.per_function || []).map(fn => [fn.name, fn.caps]));
+  // gain too, even when the program-wide aggregate is unchanged. The checker
+  // accepts a repeated name, so union every entry's capabilities per name.
+  const declared = new Map();
+  for (const fn of result.new_surface?.per_function || []) {
+    declared.set(fn.name, [...new Set([...(declared.get(fn.name) || []), ...fn.caps])].sort());
+  }
   const addedWithCaps = result.ok ? result.functions_added.filter(name => (declared.get(name) || []).length > 0) : [];
   if (!result.ok || !bothChecked) {
     setVerdict(ui["lane-card"], "Blocked: a source failed parsing or checking. Resolve its diagnostics before policy review.", "blocked");
