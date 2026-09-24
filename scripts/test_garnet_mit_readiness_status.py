@@ -1832,7 +1832,12 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertNotIn("website-ready export", promo_lane.blocked_by)
         self.assertIn("public-site embedding and review", promo_lane.blocked_by)
 
-    def test_repo_site_embed_updates_objective_blockers_without_full_completion(self) -> None:
+    def test_sync_data_alone_does_not_promote_without_a_repo_site_embed(self) -> None:
+        # T5a (C5-17): this test used to assert that a site-sync record promotes
+        # the promo lane to public-site-embedded. #566 retired the promo embed
+        # from docs/index.html (the #demonstration video replaced it), and the
+        # reporter requires the repo page itself to carry the embed. So a sync
+        # record alone must NOT promote the lane: that is the guard pinned here.
         with tempfile.TemporaryDirectory() as temp:
             artifact_dir = Path(temp) / "garnet-promo-video"
             artifact_dir.mkdir()
@@ -1862,13 +1867,10 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         lanes = {lane.id: lane for lane in status.lanes}
         promo_lane = lanes["promo_video"]
 
-        self.assertEqual("public-site-embedded", promo_lane.status)
-        self.assertEqual(95.0, promo_lane.completion_percent)
-        self.assertNotIn("public-site embedding and review", promo_lane.blocked_by)
-        self.assertIn("human/aesthetic acceptance review", promo_lane.blocked_by)
+        self.assertEqual("website-export-ready", promo_lane.status)
+        self.assertEqual(90.0, promo_lane.completion_percent)
+        self.assertIn("public-site embedding and review", promo_lane.blocked_by)
         self.assertLess(status.completion_percent, 100.0)
-        rendered = status_mod.render_markdown(status)
-        self.assertEqual(1, rendered.count("human/aesthetic acceptance review"))
 
     def test_markdown_is_human_readable_and_honest(self) -> None:
         rendered = subprocess.check_output(
@@ -1992,7 +1994,10 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         status_site = (docs_dir / "status.html").read_text(encoding="utf-8")
 
         self.assertIn("Objective accounting", site)
-        self.assertIn("MIT/productization objective", site)
+        # T5a (C5-17): #545 replaced the front door and dropped the phrase
+        # "MIT/productization objective" from index.html; the status page
+        # carries the same objective under its "MIT/productization" label.
+        self.assertIn("MIT/productization", status_site)
         # RB-0d: the site percent is stamped from docs/truth.json between
         # truth markers and guarded by `xtask truth --check`. Assert the
         # stamped value matches the LIVE reporter instead of pinning a
@@ -2000,7 +2005,8 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         # the stamp removes. (The retired-snapshot assertNotIn pins below
         # stay: those values must never reappear.)
         live_stamp = "<!-- truth:readiness_pct -->"
-        self.assertIn(live_stamp, site)
+        # T5a (C5-17): #545's front door no longer carries the readiness stamp;
+        # it lives on the status page only. Retired values stay banned on both.
         self.assertNotIn("58.1%", site)
         self.assertNotIn("55.8%", site)
         self.assertNotIn("57.9%", site)
@@ -2012,16 +2018,20 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertNotIn("58.6%", status_site)
         # The tracked-slices figure in the pulse list is marker-stamped too
         # (RB-0d); assert against the live reporter-derived stamp.
-        tracked_stamp = (
-            "<!-- truth:tracked_slices -->87/87<!-- /truth --> tracked slices"
-        )
-        self.assertIn(tracked_stamp, site)
+        # T5a (C5-17): the tracked-slices stamp also moved to the status page
+        # with #545; the front door keeps the plan-completion sentence below.
+        tracked_stamp = "<!-- truth:tracked_slices -->87/87<!-- /truth -->"
+        self.assertIn(tracked_stamp, status_site)
         self.assertIn("tracked implementation plan is complete", site)
         self.assertIn("not full MIT/productization completion", site)
         self.assertIn("notarization", site)
         self.assertIn("machine-readable preflight status reporter", site)
-        self.assertIn("mobile", site)
-        self.assertIn("LLM assist", site)
+        # T5a (C5-17): #545's front door dropped the mobile lane mention; the
+        # status page keeps the "Mobile distribution" row (removing that row is
+        # the optional C6-21 rider, not done here).
+        self.assertIn("Mobile distribution", status_site)
+        # T5a (C5-17): the LLM-assist lane is listed on the status page since #545.
+        self.assertIn("LLM assist", status_site)
         self.assertIn("verified x64 clean-VM installer proof", site)
         self.assertIn("verified x64 clean-VM installer proof", status_site)
         self.assertIn("Studio Domain Proof Matrix shell output", site)
