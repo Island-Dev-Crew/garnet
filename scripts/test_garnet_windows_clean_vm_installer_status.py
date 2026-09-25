@@ -156,6 +156,34 @@ class GarnetWindowsCleanVmInstallerStatusTests(unittest.TestCase):
                     self.assertEqual("blocked", gates["fresh-guest"].status)
                     self.assertFalse(record.verified)
 
+    def test_the_recorder_applies_the_readers_guest_identity_checks(self) -> None:
+        # Codex round 10 (LOW): the recorder passed an empty VM name or an
+        # unknown architecture that committed replay rejects.
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / "setup.exe").write_bytes(b"x")
+            (root / "install.log").write_bytes(b"ok")
+            (root / "launch.png").write_bytes(TINY_PNG)
+            (root / "studio-smoke.json").write_text(
+                json.dumps({"status": "passed", "source_included": False, "provider_api_called": False}),
+                encoding="utf-8",
+            )
+            for vm_name, guest_arch in (("", "x64"), ("Windows Sandbox", "garbage")):
+                with self.subTest(vm_name=vm_name, guest_arch=guest_arch):
+                    record = status_mod.build_proof_record(
+                        mode="clean-vm",
+                        installer=root / "setup.exe",
+                        vm_name=vm_name,
+                        guest_os="Windows 11 Pro 26100",
+                        guest_arch=guest_arch,
+                        install_log=root / "install.log",
+                        studio_smoke_json=root / "studio-smoke.json",
+                        screenshot=root / "launch.png",
+                    )
+                    gates = {gate.id: gate for gate in record.gates}
+                    self.assertEqual("blocked", gates["fresh-guest"].status)
+                    self.assertFalse(record.verified)
+
     def test_the_recorder_blocks_an_empty_log_or_a_non_png_screenshot(self) -> None:
         # Codex round 9: the recorder's gates check the evidence, not only that
         # the files exist.
@@ -722,6 +750,32 @@ class CommittedCleanVmBundleAdversarialTests(_CommittedRepoCase):
         zero = bytearray(TINY_PNG)
         zero[16:20] = b"\x00\x00\x00\x00"
         (self.bundle / "launch.png").write_bytes(bytes(zero))
+        status_mod._write_manifest(self.bundle)
+        self._assert_unverified()
+
+    def test_created_at_must_be_a_time_with_a_zone(self) -> None:
+        # Codex round 10 (LOW): created_at was only checked to be a string.
+        for value in ("", "not-a-date", "2026-09-24T12:00:00"):
+            with self.subTest(created_at=value):
+                self._edit_proof(created_at=value)
+                self._assert_unverified()
+
+    def test_the_bundle_name_must_carry_a_real_time(self) -> None:
+        _record_committed_bundle(self.repo, "99999999-9999-nuc")
+        self._assert_unverified()
+
+    def test_nonfinite_json_constants_do_not_count(self) -> None:
+        # Codex round 10 (LOW): "strict JSON" accepted NaN in an extra field.
+        record = self.bundle / status_mod.PROOF_FILE
+        original = record.read_bytes()
+        record.write_bytes(original.rstrip()[:-1] + b', "extra": NaN}')
+        status_mod._write_manifest(self.bundle)
+        self._assert_unverified()
+        record.write_bytes(original)
+        (self.bundle / "studio-smoke.json").write_text(
+            '{"status": "passed", "source_included": false, "provider_api_called": false, "extra": Infinity}',
+            encoding="utf-8",
+        )
         status_mod._write_manifest(self.bundle)
         self._assert_unverified()
 
