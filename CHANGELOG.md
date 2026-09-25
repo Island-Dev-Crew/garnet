@@ -73,9 +73,12 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   - the install log is not empty, and the screenshot is a complete truecolour
     or greyscale PNG, at most 16384 px a side. It must have valid chunk CRCs, a
     legal critical-chunk layout (`IHDR` once and first, one consecutive `IDAT`
-    run, `IEND` last), a legal colour type and depth, a legal filter on every
-    scanline, and image data that decompresses to the size the header implies.
-    The recorder's gates check the same, and a rejection names its reason;
+    run, `IEND` last), well-formed standard fixed-size ancillary chunks
+    (`gAMA`, `cHRM`, `sRGB`, `pHYs`, `tIME`, `sBIT`, `bKGD`, `tRNS`), a legal
+    colour type and depth, a legal filter on every scanline, and image data
+    that decompresses to the size the header implies. Text and unknown
+    ancillary chunks are not interpreted. The recorder's gates check the same,
+    and a rejection names its reason;
   - the install log, smoke record and screenshot are three different files
     (no bundle file may have a second hard link), each named exactly as one of
     the files the manifest verified, so an NTFS alternate stream or a case or

@@ -56,9 +56,10 @@ checker, parser, or macOS SwiftUI Studio implementation.
     contract, and the recorder's fresh-guest gate applies the same rule;
   - the three evidence files are distinct, manifest-verified files named
     directly inside the bundle; the install log is not empty, and the
-    screenshot is a complete truecolour or greyscale PNG, at most 16384 px a
-    side, that decodes structurally (`is_png_screenshot`), checked by both the
-    recorder and the reader;
+    screenshot is a truecolour or greyscale PNG, at most 16384 px a side, whose
+    critical chunks, standard fixed-size ancillary chunks and image data are
+    well formed (`png_screenshot_problem`; text and unknown ancillary chunks
+    are not interpreted), checked by both the recorder and the reader;
   - no directory on the way is a link, and each one can be listed.
 
   A failing newest bundle is reported, never replaced by an older one.
