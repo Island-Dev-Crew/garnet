@@ -78,6 +78,10 @@ PNG_BEFORE_IDAT = frozenset({b"gAMA", b"cHRM", b"sRGB", b"iCCP", b"sBIT", b"pHYs
 # PNG chunk ordering around a PLTE, when one is present.
 PNG_BEFORE_PLTE = frozenset({b"gAMA", b"cHRM", b"sRGB", b"iCCP", b"sBIT"})
 PNG_AFTER_PLTE = frozenset({b"bKGD", b"tRNS", b"hIST"})
+# With sRGB present, a gAMA or cHRM companion must carry the sRGB values the
+# PNG specification gives (gamma 1/2.2; the sRGB white point and primaries).
+SRGB_GAMA = struct.pack(">I", 45455)
+SRGB_CHRM = struct.pack(">8I", 31270, 32900, 64000, 33000, 30000, 60000, 15000, 6000)
 # The PNG specification limits every four-byte unsigned integer to 2^31-1.
 PNG_MAX_UINT = 0x7FFFFFFF
 MAX_SCREENSHOT_SIDE = 16384
@@ -188,6 +192,12 @@ def _png_ancillary_problem(chunks: list[tuple[bytes, bytes]], colour: int, depth
             _, month, day, hour, minute, second = struct.unpack(">HBBBBB", body)
             if not (1 <= month <= 12 and 1 <= day <= 31 and hour <= 23 and minute <= 59 and second <= 60):
                 return "tIME holds an impossible date or time"
+    if b"sRGB" in kinds:
+        bodies = dict(chunks)
+        if b"gAMA" in bodies and bodies[b"gAMA"] != SRGB_GAMA:
+            return "with sRGB, gAMA must be 45455 (1/2.2)"
+        if b"cHRM" in bodies and bodies[b"cHRM"] != SRGB_CHRM:
+            return "with sRGB, cHRM must hold the standard sRGB chromaticities"
     return None
 
 
