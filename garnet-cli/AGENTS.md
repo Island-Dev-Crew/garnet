@@ -100,9 +100,18 @@ Owns the `garnet` binary, subcommand routing, template embedding, deterministic 
   or unknown fields, unsupported versions, and tampering fail. This verifies
   content binding, not signatures or independent authorship. `--signature`
   remains exclusive to the legacy deterministic-manifest format; that format
-  keeps its existing signature checks. Minimum Shelf alone retains its exact
-  byte-pinned historical v1 predicate; never generalize that compatibility to
-  arbitrary seals or reseal the archived flagship evidence.
+  keeps its existing signature checks. Seal bytes do not depend on whether
+  cosign is installed: `tooling.cosign` is the fixed `seal::COSIGN_NOTE` and
+  every predicate carries `"signed": false` (T5a, C2-07).
+- Minimum Shelf's flagship seal is seal/v2 (resealed in T5a; Jon's ruling,
+  2026-09-24). `minimum_shelf.rs` accepts only the statement it regenerates,
+  taking just `parser_version` and `interp_version` from the committed seal so
+  a CLI version bump alone does not refuse the package. `TRUSTED_SEAL_BLAKE3`,
+  `TRUSTED_MANIFEST_BLAKE3`, `SHELF_PACKAGE.json` `sealBlake3` and the pins in
+  `scripts/smoke_garnet_minimum_shelf.py` move together, and only with a
+  recorded reseal such as `ops/lane2b/evidence/22-t5a-v2-reseal.txt`. Never
+  generalize the shelf's version tolerance to arbitrary seals, and never
+  rewrite earlier archived evidence files.
 - `verify --caps-baseline` is an enforced acceptance condition on both verify
   routes: program-wide declared surface widening (S37) returns nonzero, and unreadable, malformed, checker-invalid,
   source-free directories, or partially walked input cannot become PASS or

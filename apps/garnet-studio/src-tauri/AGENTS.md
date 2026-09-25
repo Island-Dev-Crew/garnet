@@ -31,6 +31,44 @@ checker, parser, or macOS SwiftUI Studio implementation.
   installer proof status, and notarization preflight status. They must not
   upgrade platform, package, provider, proof, or notarization claims without
   separate target-system evidence.
+- **Committed clean-VM proof (T5a, path (a)).**
+  `scripts/garnet_windows_clean_vm_installer_status.py` reads the newest
+  committed bundle under `proofs/windows/studio-clean-vm/`. The Desktop root
+  is only a fallback when no bundle is committed. An explicit root wins over
+  both: `--evidence-root` for the standalone reporter, which is what the
+  Studio installer-status command runs. `GARNET_WINDOWS_CLEAN_VM_EVIDENCE_ROOT`
+  is read only by the aggregate `scripts/garnet_windows_linux_studio_status.py`.
+  A bundle counts only when all of these hold:
+  - its name is `<YYYYMMDD-HHMM>-<host>`;
+  - it holds only regular files, each with one link and a nonzero inode, and
+    each read from the handle it was checked on;
+  - `MANIFEST.sha256` lists every file once and matches;
+  - its JSON is strict (UTF-8, no repeated key, no NaN or Infinity),
+    `verified` is the literal `true`, and `created_at` is a time with a zone;
+  - every gate appears once and passes. Replay checks what it can from
+    committed bytes: the fresh-guest facts and the claim boundary. The
+    installer is recorded only by path and SHA-256, and the `.exe` is not
+    committed, so replay checks the digest's form, not the file. What the
+    install log says and what the screenshot shows are for review;
+  - the guest is x64 and its OS name is the guest's own `systeminfo` OS name:
+    Windows 10, Windows 11 or Windows Server 2016/2019/2022/2025, optionally
+    prefixed `Microsoft`. A hypervisor guest-type identifier is out of
+    contract, and the recorder's fresh-guest gate applies the same rule;
+  - the three evidence files are distinct, manifest-verified files named
+    directly inside the bundle; the install log is not empty, and the
+    screenshot is a truecolour or greyscale PNG, at most 16384 px a side and
+    256 MiB of decoded image data, whose critical chunks, standard ancillary
+    chunks (including their order around `PLTE`) and image data are well
+    formed (`png_screenshot_problem`; other ancillary chunks, such as
+    text, `iCCP`, `sPLT`, `eXIf` and unknown ones, are not interpreted),
+    checked by both the recorder and the reader;
+  - no directory on the way is a link, and each one can be listed.
+
+  A failing newest bundle is reported, never replaced by an older one.
+  **Threat model:** the reader checks committed content. A process that can
+  write the checkout while it runs can write a consistent bundle outright,
+  because the manifest is unsigned, so that process is out of scope; review
+  settles who committed a bundle.
 - `mac_domain_proofs` is the macOS Studio UI wrapper for
   `scripts/smoke_garnet_mac_domain_proofs.py`. It may record local Mac S105
   domain evidence under `target/mac-studio-domain-proofs/`, but it must not
@@ -77,6 +115,7 @@ cargo fmt --manifest-path apps/garnet-studio/src-tauri/Cargo.toml -- --check
 cargo test --manifest-path apps/garnet-studio/src-tauri/Cargo.toml
 python scripts/test_garnet_windows_linux_studio_shell.py
 python scripts/test_garnet_windows_linux_studio_status.py
+python scripts/test_garnet_windows_clean_vm_installer_status.py
 npm --prefix apps/garnet-studio run build
 ```
 

@@ -87,3 +87,98 @@ fn seal_reports_cosign_availability_on_stderr() {
         "stderr should mention cosign: {err}"
     );
 }
+
+// ── T5a (C2-07): the seal never signs, so its bytes never depend on cosign ──
+
+/// A directory holding a stub `cosign` that answers `cosign version`, so
+/// `cosign_available()` is true without a real signer installed.
+#[cfg(unix)]
+fn stub_cosign_dir(tag: &str) -> PathBuf {
+    use std::os::unix::fs::PermissionsExt;
+    let dir = fresh(tag);
+    let stub = dir.join("cosign");
+    std::fs::write(&stub, "#!/bin/sh\necho 'cosign stub v0'\nexit 0\n").unwrap();
+    std::fs::set_permissions(&stub, std::fs::Permissions::from_mode(0o755)).unwrap();
+    dir
+}
+
+#[cfg(unix)]
+fn path_with(first: &Path) -> std::ffi::OsString {
+    let mut dirs = vec![first.to_path_buf()];
+    if let Some(existing) = std::env::var_os("PATH") {
+        dirs.extend(std::env::split_paths(&existing));
+    }
+    std::env::join_paths(dirs).unwrap()
+}
+
+#[cfg(unix)]
+#[test]
+fn seal_bytes_are_identical_with_and_without_cosign() {
+    let dir = fresh("seal_no_cosign_dep");
+    let p = write(dir.as_path(), "app.garnet", "@caps(fs)\ndef main() { 1 }\n");
+    let stub = stub_cosign_dir("seal_cosign_stub");
+    let without = garnet()
+        .arg("seal")
+        .arg(&p)
+        .env("PATH", "/usr/bin:/bin")
+        .output()
+        .unwrap();
+    let with = garnet()
+        .arg("seal")
+        .arg(&p)
+        .env("PATH", path_with(&stub))
+        .output()
+        .unwrap();
+    assert!(without.status.success() && with.status.success());
+    assert_eq!(
+        String::from_utf8(without.stdout).unwrap(),
+        String::from_utf8(with.stdout).unwrap(),
+        "an installed cosign must not change the seal bytes"
+    );
+    let err = String::from_utf8(with.stderr).unwrap();
+    assert!(
+        err.contains("UNSIGNED"),
+        "stderr must say UNSIGNED even when cosign is installed: {err}"
+    );
+}
+
+#[test]
+fn seal_predicate_always_says_it_is_unsigned() {
+    let dir = fresh("seal_signed_false");
+    let p = write(dir.as_path(), "app.garnet", "@caps()\ndef main() { 1 }\n");
+    let out = garnet().arg("seal").arg(&p).output().unwrap();
+    assert!(out.status.success());
+    let s = String::from_utf8(out.stdout).unwrap();
+    assert!(s.contains(r#""signed":false"#), "{s}");
+}
+
+#[test]
+fn verify_rejects_the_retired_cosign_available_variant() {
+    let dir = fresh("seal_old_variant");
+    let p = write(dir.as_path(), "app.garnet", "@caps()\ndef main() { 1 }\n");
+    let out = garnet().arg("seal").arg(&p).output().unwrap();
+    assert!(out.status.success());
+    let sealed = String::from_utf8(out.stdout).unwrap();
+    let start = sealed
+        .find("\"cosign\":\"")
+        .expect("tooling.cosign present")
+        + "\"cosign\":\"".len();
+    let end = start + sealed[start..].find('"').expect("closing quote");
+    let old_variant = format!(
+        "{}{}{}",
+        &sealed[..start],
+        "available — sign with: cosign attest --predicate <file> --type custom",
+        &sealed[end..]
+    );
+    let seal_path = write(dir.as_path(), "app.seal.json", &old_variant);
+    let verify = garnet()
+        .arg("verify")
+        .arg(&p)
+        .arg(&seal_path)
+        .output()
+        .unwrap();
+    assert!(
+        !verify.status.success(),
+        "a seal whose bytes depend on cosign availability must be rejected"
+    );
+}

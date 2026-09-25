@@ -613,3 +613,133 @@ fn explicit_root_that_is_a_link_is_resolved_and_walked() {
     assert!(s.contains("\"aggregate_gained\":[\"fs\",\"net\"]"), "{s}");
     assert!(s.contains("\"skipped_path_count\":0"), "{s}");
 }
+
+// ── T5a (C1-01): module-qualified names and directory-mode file qualification ──
+
+#[test]
+fn nested_module_gain_is_named_with_its_module_path() {
+    let dir = fresh("t5a_nested");
+    let old = write(
+        dir.as_path(),
+        "old.garnet",
+        "module a {\n  @caps()\n  def f() -> int { 0 }\n}\nmodule b {\n  @caps()\n  def f() -> int { 0 }\n}\n@caps(fs)\ndef main() -> int { 0 }\n",
+    );
+    let new = write(
+        dir.as_path(),
+        "new.garnet",
+        "module a {\n  @caps(fs)\n  def f() -> int { 0 }\n}\nmodule b {\n  @caps()\n  def f() -> int { 0 }\n}\n@caps(fs)\ndef main() -> int { 0 }\n",
+    );
+    let human = garnet()
+        .arg("diff-caps")
+        .arg(&old)
+        .arg(&new)
+        .output()
+        .unwrap();
+    let text = String::from_utf8(human.stdout).unwrap();
+    assert!(text.contains("~ a::f gained: fs"), "{text}");
+    assert!(!text.contains("no capability changes"), "{text}");
+    assert_eq!(
+        human.status.code(),
+        Some(0),
+        "fs was already in the aggregate"
+    );
+
+    let machine = garnet()
+        .arg("diff-caps")
+        .arg("--machine")
+        .arg(&old)
+        .arg(&new)
+        .output()
+        .unwrap();
+    let json = String::from_utf8(machine.stdout).unwrap();
+    assert!(
+        json.contains(r#"{"name":"a::f","gained":["fs"]}"#),
+        "{json}"
+    );
+}
+
+#[test]
+fn directory_mode_names_each_function_by_its_file() {
+    let old = fresh("t5a_dir_old");
+    let new = fresh("t5a_dir_new");
+    write(
+        old.as_path(),
+        "a.garnet",
+        "@caps()\ndef helper() -> int { 0 }\n",
+    );
+    write(
+        old.as_path(),
+        "b.garnet",
+        "@caps(net)\ndef helper() -> int { 0 }\n",
+    );
+    write(
+        new.as_path(),
+        "a.garnet",
+        "@caps(fs)\ndef helper() -> int { 0 }\n",
+    );
+    write(
+        new.as_path(),
+        "b.garnet",
+        "@caps(net)\ndef helper() -> int { 0 }\n",
+    );
+    let out = garnet()
+        .arg("diff-caps")
+        .arg(&old)
+        .arg(&new)
+        .output()
+        .unwrap();
+    let text = String::from_utf8(out.stdout).unwrap();
+    assert!(text.contains("~ a.garnet::helper gained: fs"), "{text}");
+    assert!(
+        !text.contains("helper gained: net"),
+        "the unchanged net must not be reported as gained: {text}"
+    );
+}
+
+#[test]
+fn swapping_two_definitions_of_one_name_is_reported() {
+    // T5a (Codex review of #598): the last definition runs, so reversing two
+    // definitions of `f` turns its effective @caps() into @caps(fs).
+    let dir = fresh("t5a_dup_order");
+    let old = write(
+        dir.as_path(),
+        "old.garnet",
+        "@caps(fs)\ndef f() -> int { 0 }\n@caps()\ndef f() -> int { 0 }\n@caps(fs)\ndef main() -> int { 0 }\n",
+    );
+    let new = write(
+        dir.as_path(),
+        "new.garnet",
+        "@caps()\ndef f() -> int { 0 }\n@caps(fs)\ndef f() -> int { 0 }\n@caps(fs)\ndef main() -> int { 0 }\n",
+    );
+    let out = garnet()
+        .arg("diff-caps")
+        .arg(&old)
+        .arg(&new)
+        .output()
+        .unwrap();
+    let text = String::from_utf8(out.stdout).unwrap();
+    assert!(text.contains("~ f gained: fs"), "{text}");
+}
+
+#[test]
+fn directory_mode_reports_reordered_definitions_of_one_name() {
+    // T5a (Codex round 2): with a second file present, merging must not sort or
+    // dedup a.garnet's two definitions of `f` into identical surfaces.
+    let old = fresh("t5a_dir_dup_old");
+    let new = fresh("t5a_dir_dup_new");
+    let fs_first = "@caps(fs)\ndef f() -> int { 0 }\n@caps()\ndef f() -> int { 0 }\n";
+    let fs_last = "@caps()\ndef f() -> int { 0 }\n@caps(fs)\ndef f() -> int { 0 }\n";
+    write(old.as_path(), "a.garnet", fs_first);
+    write(new.as_path(), "a.garnet", fs_last);
+    for dir in [&old, &new] {
+        write(dir.as_path(), "b.garnet", "@caps()\ndef g() -> int { 0 }\n");
+    }
+    let out = garnet()
+        .arg("diff-caps")
+        .arg(&old)
+        .arg(&new)
+        .output()
+        .unwrap();
+    let text = String::from_utf8(out.stdout).unwrap();
+    assert!(text.contains("~ a.garnet::f gained: fs"), "{text}");
+}

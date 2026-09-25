@@ -44,9 +44,9 @@ required context exactly once to an unconditional PR-to-main workflow/job.
 Until that gate lands, producer availability remains an explicit residual risk.
 
 The pre-activation ledger intentionally contains 31 contexts and intentionally
-does **not** include `Base-controlled trust policy`. The separately prepared
-`pull_request_target` workflow is not live or required in this baseline. Once
-bootstrapped on `main`, it executes only policy code from the base checkout; the
+does **not** include `Base-controlled trust policy`. That `pull_request_target`
+workflow runs on pull requests but is not required, and per ADR 0001 its result
+is convention, not a merge gate. It executes only policy code from the base checkout; the
 candidate checkout has no persisted credentials or submodules and is never
 executed. The base validator then checks candidate governance, v2 review-record
 scope/digest, and byte identity of the protected workflow. The candidate cannot
@@ -119,10 +119,12 @@ The `/scripts/garnet_github_* @IslandDevCrew` CODEOWNERS row implements U-16 as
 an explicit procedural owner and future code-owner matrix. It is not presently
 a required GitHub code-owner approval: the checked solo-maintainer ruleset
 intentionally has `require_code_owner_review: false` and zero required
-approvals. Today the mechanical protections are disabled auto-merge, human
-final merge, rolling-review v2, and the base-controlled policy gate; the Jon
-identity requirement remains a covenant action until the documented second-
-reviewer profile is activated. Do not report the CODEOWNERS row itself as an
+approvals. Today the mechanical protections are disabled auto-merge and
+rolling-review v2. Human final merge of trust-kernel changes is convention
+(integrity rule 1), not a platform setting, and the Base-controlled trust
+workflow runs but is not required (ADR 0001:46). The Jon identity requirement
+remains a covenant action until the documented second-reviewer profile is
+activated. Do not report the CODEOWNERS row itself as an
 enforced approval.
 
 ### External Action pin updates

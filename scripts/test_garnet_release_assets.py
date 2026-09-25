@@ -16,7 +16,9 @@ class GarnetReleaseAssetsTests(unittest.TestCase):
     def test_installer_mac_tarball_fallback_names_are_release_assets(self) -> None:
         text = INSTALLER.read_text(encoding="utf-8")
 
-        self.assertIn("Darwin) printf 'pkg'", text)
+        # T5a: no signed .pkg is published, so macOS defaults to the tarball
+        # (GARNET_FORMAT=pkg still requests one).
+        self.assertIn("Darwin) printf 'tar'", text)
         self.assertIn("garnet-%s-%s.tar.gz", text)
         self.assertIn("aarch64-apple-darwin", text)
         self.assertIn("x86_64-apple-darwin", text)
@@ -35,9 +37,23 @@ class GarnetReleaseAssetsTests(unittest.TestCase):
     def test_tag_release_publishes_unified_checksummed_assets(self) -> None:
         text = WORKFLOW.read_text(encoding="utf-8")
 
-        self.assertIn("needs: [smoke-deb, smoke-rpm, macos-cli-tarballs, shellcheck-installer]", text)
+        # T5a: the 0.8.2 matrix widened the release job to nine producers and
+        # a Windows zip plus SBOM under one SHA256SUMS.
+        self.assertIn(
+            "needs:\n"
+            "      - smoke-deb\n"
+            "      - smoke-rpm\n"
+            "      - linux-tarball-x86_64\n"
+            "      - smoke-deb-arm64\n"
+            "      - smoke-rpm-arm64\n"
+            "      - macos-cli-tarballs\n"
+            "      - windows-cli-zip\n"
+            "      - shellcheck-installer\n",
+            text,
+        )
         self.assertIn("pattern: garnet-macos-cli-*", text)
-        self.assertIn("sha256sum *.deb *.rpm *.tar.gz > SHA256SUMS", text)
+        self.assertIn("sha256sum *.deb *.rpm *.tar.gz *.zip *.tgz > SHA256SUMS", text)
+        self.assertIn("release-dist/*.zip", text)
         self.assertIn("release-dist/*.deb", text)
         self.assertIn("release-dist/*.rpm", text)
         self.assertIn("release-dist/*.tar.gz", text)

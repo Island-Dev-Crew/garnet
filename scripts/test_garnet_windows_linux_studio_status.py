@@ -24,6 +24,13 @@ sys.modules["garnet_windows_linux_studio_status"] = status_mod
 SPEC.loader.exec_module(status_mod)
 
 
+# A real 1x1 PNG, so screenshot fixtures pass the reader's PNG check.
+TINY_PNG = bytes.fromhex(
+    "89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4890000000a494441"
+    "54789c63000100000500010d0a2db40000000049454e44ae426082"
+)
+
+
 class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
     @classmethod
     def tearDownClass(cls) -> None:
@@ -259,6 +266,49 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
             self.assertFalse(data["source_included"])
             self.assertIn("garnet-windows-linux-studio-evidence-contract.json", manifest_path.read_text())
 
+    def test_committed_clean_vm_bundle_counts_only_when_its_manifest_holds(self) -> None:
+        # T5a, Jon's path (a): a clean-VM proof committed under
+        # proofs/windows/studio-clean-vm is read on every host, and only after
+        # its manifest, gates and in-bundle evidence check out.
+        cvm = status_mod.garnet_windows_clean_vm_installer_status
+        with tempfile.TemporaryDirectory() as temp:
+            repo = Path(temp)
+            rel = Path("proofs/windows/studio-clean-vm/20260924-1200-nuc")
+            bundle = repo / rel
+            bundle.mkdir(parents=True)
+            (repo / "setup.exe").write_bytes(b"fake installer")
+            (bundle / "install.log").write_text("InstallerExitCode=0\n", encoding="utf-8")
+            (bundle / "studio-smoke.json").write_text(
+                json.dumps({"status": "passed", "source_included": False, "provider_api_called": False}),
+                encoding="utf-8",
+            )
+            (bundle / "launch.png").write_bytes(TINY_PNG)
+            cwd = Path.cwd()
+            os.chdir(repo)
+            try:
+                record = cvm.build_proof_record(
+                    mode="clean-vm",
+                    installer=Path("setup.exe"),
+                    vm_name="WindowsSandbox-123",
+                    guest_os="Windows 11 Enterprise",
+                    guest_arch="AMD64",
+                    install_log=rel / "install.log",
+                    studio_smoke_json=rel / "studio-smoke.json",
+                    screenshot=rel / "launch.png",
+                )
+                cvm.write_proof(record, rel)
+            finally:
+                os.chdir(cwd)
+            with mock.patch.object(cvm, "ROOT", repo):
+                verified, source = cvm.latest_committed_proof()
+                (bundle / "install.log").write_text("InstallerExitCode=1\n", encoding="utf-8")
+                tampered, _ = cvm.latest_committed_proof()
+
+        self.assertTrue(verified.verified)
+        self.assertEqual(f"committed:{rel.as_posix()}", source)
+        self.assertFalse(tampered.verified)
+        self.assertIn("committed clean-VM bundle integrity", cvm.blocked_by(tampered))
+
     def test_clean_vm_proof_updates_unsigned_nsis_gate_without_overclaiming(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
@@ -279,7 +329,7 @@ class GarnetWindowsLinuxStudioStatusTests(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
-            screenshot.write_bytes(b"fake png")
+            screenshot.write_bytes(TINY_PNG)
             clean_vm_record = status_mod.garnet_windows_clean_vm_installer_status.build_proof_record(
                 mode="clean-vm",
                 installer=installer,

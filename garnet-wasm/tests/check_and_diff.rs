@@ -130,3 +130,55 @@ fn json_helpers_preserve_schema_and_verdict_fields() {
     assert_eq!("fs", diff["aggregate_added"][0]);
     assert_eq!(SCOPE, diff["scope"]);
 }
+
+// T5a (C1-01): the browser adapter shares the checker's module-qualified names,
+// so a gain in one of two same-named module functions is named and not dropped.
+#[test]
+fn diff_names_a_gain_in_one_of_two_same_named_module_functions() {
+    let old = "module Alpha {\n  @caps()\n  def helper() -> int { 0 }\n}\nmodule Beta {\n  @caps()\n  def helper() -> int { 0 }\n}\n";
+    let new = "module Alpha {\n  @caps(fs)\n  def helper() -> int { 0 }\n}\nmodule Beta {\n  @caps()\n  def helper() -> int { 0 }\n}\n";
+    let result = diff_caps_source(old, new);
+    assert!(result.ok);
+    assert_eq!(
+        Some(true),
+        result.authority_expanded,
+        "fs is new to the program-wide aggregate"
+    );
+    let names: Vec<(&str, Vec<&str>)> = result
+        .functions_caps_expanded
+        .iter()
+        .map(|f| {
+            (
+                f.name.as_str(),
+                f.gained.iter().map(String::as_str).collect(),
+            )
+        })
+        .collect();
+    assert_eq!(names, vec![("Alpha::helper", vec!["fs"])]);
+}
+
+#[test]
+fn diff_reports_reordered_definitions_of_one_name() {
+    // T5a (Codex review of #598): the last definition of a repeated name runs,
+    // so reversing two definitions turns `f`'s effective @caps() into @caps(fs).
+    let old = "@caps(fs)\ndef f() -> int { 0 }\n@caps()\ndef f() -> int { 0 }\n@caps(fs)\ndef main() -> int { 0 }\n";
+    let new = "@caps()\ndef f() -> int { 0 }\n@caps(fs)\ndef f() -> int { 0 }\n@caps(fs)\ndef main() -> int { 0 }\n";
+    let result = diff_caps_source(old, new);
+    assert!(result.ok);
+    assert_eq!(
+        Some(false),
+        result.authority_expanded,
+        "aggregate unchanged"
+    );
+    let names: Vec<(&str, Vec<&str>)> = result
+        .functions_caps_expanded
+        .iter()
+        .map(|f| {
+            (
+                f.name.as_str(),
+                f.gained.iter().map(String::as_str).collect(),
+            )
+        })
+        .collect();
+    assert_eq!(names, vec![("f", vec!["fs"])]);
+}

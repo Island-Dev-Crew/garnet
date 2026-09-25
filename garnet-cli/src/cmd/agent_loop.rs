@@ -418,8 +418,8 @@ pub fn run(args: &[String]) -> ExitCode {
     println!("agent-loop: stage run({}) -> PASS ({value})", a.backend);
 
     // STAGE 4 — seal (S38): attest the accepted proposal, recording the autonomous
-    // acceptance + agent/model/gate-version provenance (Rule 3). cosign signs it
-    // when present; absent cosign, the predicate is emitted UNSIGNED.
+    // acceptance + agent/model/gate-version provenance (Rule 3). The predicate
+    // is always UNSIGNED: Garnet never signs, with or without cosign.
     let mut seal = Command::new(&exe);
     seal.arg("seal")
         .arg(&a.proposal)

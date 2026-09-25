@@ -1027,6 +1027,49 @@ def _write_committed_linux_wsl_xvfb_bundle(repo_root: Path) -> Path:
     return summary
 
 
+def _write_promo_desktop_evidence(desktop: Path) -> None:
+    """Desktop evidence through the site-sync record, as the reporter reads it."""
+    artifact_dir = desktop / "garnet-promo-video"
+    artifact_dir.mkdir(parents=True)
+    (artifact_dir / "garnet-promo.mp4").write_bytes(b"fake-mp4")
+    (artifact_dir / "garnet-promo.webm").write_bytes(b"fake-webm")
+    for folder, name, status in (
+        ("garnet-promo-video-visual-qa", "promo-visual-qa-data.json", "visual-qa-ready"),
+        ("garnet-promo-video-website-export", "promo-website-export-data.json", "website-export-ready"),
+        ("garnet-promo-video-site-sync", "promo-site-sync-data.json", "public-site-embedded"),
+    ):
+        (desktop / folder).mkdir()
+        (desktop / folder / name).write_text(
+            json.dumps({"status": status, "verdict": "pass", "checks": [{"passed": True}]}),
+            encoding="utf-8",
+        )
+
+
+def _write_repo_with_promo_embed(repo: Path) -> None:
+    """A fixture repo whose front door carries the promo embed the reporter requires."""
+    assets = repo / "docs" / "assets"
+    assets.mkdir(parents=True)
+    for name in ("garnet-promo.mp4", "garnet-promo.webm", "garnet-promo-poster.png"):
+        (assets / name).write_bytes(b"fixture")
+    (repo / "docs" / "index.html").write_text(
+        '<section id="promo"><video class="promo-video" poster="assets/garnet-promo-poster.png">'
+        '<source src="assets/garnet-promo.webm"><source src="assets/garnet-promo.mp4"></video>'
+        "<p>Public-site embedded. The human/aesthetic acceptance review is still open; "
+        "this is not full MIT/productization completion.</p></section>\n",
+        encoding="utf-8",
+    )
+    (repo / "docs" / "service-worker.js").write_text(
+        'const PROMO = ["assets/garnet-promo.mp4", "assets/garnet-promo.webm", "assets/garnet-promo-poster.png"];\n',
+        encoding="utf-8",
+    )
+
+
+# A real 1x1 PNG, so screenshot fixtures pass the reader's PNG check.
+TINY_PNG = bytes.fromhex(
+    "89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4890000000a494441"
+    "54789c63000100000500010d0a2db40000000049454e44ae426082"
+)
+
 class GarnetMitReadinessStatusTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -1723,7 +1766,7 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
-            screenshot.write_bytes(b"fake png")
+            screenshot.write_bytes(TINY_PNG)
             clean_vm_record = clean_vm_mod.build_proof_record(
                 mode="clean-vm",
                 installer=installer,
@@ -1832,7 +1875,12 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertNotIn("website-ready export", promo_lane.blocked_by)
         self.assertIn("public-site embedding and review", promo_lane.blocked_by)
 
-    def test_repo_site_embed_updates_objective_blockers_without_full_completion(self) -> None:
+    def test_sync_data_alone_does_not_promote_without_a_repo_site_embed(self) -> None:
+        # T5a (C5-17): this test used to assert that a site-sync record promotes
+        # the promo lane to public-site-embedded. #566 retired the promo embed
+        # from docs/index.html (the #demonstration video replaced it), and the
+        # reporter requires the repo page itself to carry the embed. So a sync
+        # record alone must NOT promote the lane: that is the guard pinned here.
         with tempfile.TemporaryDirectory() as temp:
             artifact_dir = Path(temp) / "garnet-promo-video"
             artifact_dir.mkdir()
@@ -1858,6 +1906,27 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
             )
 
             with mock.patch.dict(os.environ, {"GARNET_PROMO_VIDEO_DESKTOP_DIR": temp}):
+                status = status_mod.read_status()
+        lanes = {lane.id: lane for lane in status.lanes}
+        promo_lane = lanes["promo_video"]
+
+        self.assertEqual("website-export-ready", promo_lane.status)
+        self.assertEqual(90.0, promo_lane.completion_percent)
+        self.assertIn("public-site embedding and review", promo_lane.blocked_by)
+        self.assertLess(status.completion_percent, 100.0)
+
+    def test_repo_site_embed_updates_objective_blockers_without_full_completion(self) -> None:
+        # T5a (Codex review of #598): kept as a positive test on a fixture repo
+        # that carries the embed, so the promotion branch stays covered.
+        promo_mod = status_mod.garnet_promo_video_status
+        with tempfile.TemporaryDirectory() as temp:
+            desktop = Path(temp) / "desktop"
+            repo = Path(temp) / "repo"
+            _write_promo_desktop_evidence(desktop)
+            _write_repo_with_promo_embed(repo)
+            with mock.patch.dict(os.environ, {"GARNET_PROMO_VIDEO_DESKTOP_DIR": str(desktop)}), mock.patch.object(
+                promo_mod, "ROOT", repo
+            ):
                 status = status_mod.read_status()
         lanes = {lane.id: lane for lane in status.lanes}
         promo_lane = lanes["promo_video"]
@@ -1992,7 +2061,10 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         status_site = (docs_dir / "status.html").read_text(encoding="utf-8")
 
         self.assertIn("Objective accounting", site)
-        self.assertIn("MIT/productization objective", site)
+        # T5a (C5-17): #545 replaced the front door and dropped the phrase
+        # "MIT/productization objective" from index.html; the status page
+        # carries the same objective under its "MIT/productization" label.
+        self.assertIn("MIT/productization", status_site)
         # RB-0d: the site percent is stamped from docs/truth.json between
         # truth markers and guarded by `xtask truth --check`. Assert the
         # stamped value matches the LIVE reporter instead of pinning a
@@ -2000,7 +2072,8 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         # the stamp removes. (The retired-snapshot assertNotIn pins below
         # stay: those values must never reappear.)
         live_stamp = "<!-- truth:readiness_pct -->"
-        self.assertIn(live_stamp, site)
+        # T5a (C5-17): #545's front door no longer carries the readiness stamp;
+        # it lives on the status page only. Retired values stay banned on both.
         self.assertNotIn("58.1%", site)
         self.assertNotIn("55.8%", site)
         self.assertNotIn("57.9%", site)
@@ -2012,16 +2085,20 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         self.assertNotIn("58.6%", status_site)
         # The tracked-slices figure in the pulse list is marker-stamped too
         # (RB-0d); assert against the live reporter-derived stamp.
-        tracked_stamp = (
-            "<!-- truth:tracked_slices -->87/87<!-- /truth --> tracked slices"
-        )
-        self.assertIn(tracked_stamp, site)
+        # T5a (C5-17): the tracked-slices stamp also moved to the status page
+        # with #545; the front door keeps the plan-completion sentence below.
+        tracked_stamp = "<!-- truth:tracked_slices -->87/87<!-- /truth -->"
+        self.assertIn(tracked_stamp, status_site)
         self.assertIn("tracked implementation plan is complete", site)
         self.assertIn("not full MIT/productization completion", site)
         self.assertIn("notarization", site)
         self.assertIn("machine-readable preflight status reporter", site)
-        self.assertIn("mobile", site)
-        self.assertIn("LLM assist", site)
+        # T5a (C5-17): #545's front door dropped the mobile lane mention; the
+        # status page keeps the "Mobile distribution" row (removing that row is
+        # the optional C6-21 rider, not done here).
+        self.assertIn("Mobile distribution", status_site)
+        # T5a (C5-17): the LLM-assist lane is listed on the status page since #545.
+        self.assertIn("LLM assist", status_site)
         self.assertIn("verified x64 clean-VM installer proof", site)
         self.assertIn("verified x64 clean-VM installer proof", status_site)
         self.assertIn("Studio Domain Proof Matrix shell output", site)

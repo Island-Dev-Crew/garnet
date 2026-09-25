@@ -9,6 +9,118 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ## [Unreleased]
 
+### T5a — evidence tools made correct before 0.8.3 freezes seal/v2
+
+- **Per-function names carry their module path (C1-01).** `module a { def f }`
+  is `a::f`, and an impl method inside it is `a::Type::m`. An impl whose type is
+  written with a path (`impl a::R`) now names its methods by that full path
+  (`a::R::m`, where it was `R::m`). Top-level functions and methods of an impl on
+  an unqualified type keep their names, so a single-file program with neither
+  modules nor path-qualified impl types keeps byte-identical capability surfaces
+  and manifests. Its seal bytes still change (see C2-07). Before this,
+  same-named functions in two modules shared one name and `diff-caps` kept only
+  the last, so a real gain was dropped or an unchanged capability was reported
+  as gained.
+- **Directory scans name each function by its file.** `caps`, `diff-caps` and
+  `verify --caps-baseline` on a directory use `<relative path>::<name>`, with `/`
+  on every OS and the `.garnet` suffix kept. A path that is not valid UTF-8 is
+  an error rather than a lossy label, so two files never share one label.
+  Merging the files' surfaces keeps every entry instead of deduplicating
+  `(name, caps)` pairs, sorts by name, and keeps declaration order among entries
+  that share a name.
+  Capability-manifest entries and seal/v2 capability bytes change for programs
+  that use modules or directory scans.
+- **A repeated name fails toward review.** The checker accepts two definitions
+  of one name, and the last one is the one that runs. `diff-caps` compares a
+  repeated name's entries in declaration order: any change, a reordering
+  included, is reported with every capability its new entries declare.
+- **Playground (C5-08).** A new function that declares capabilities goes to
+  human review even when the program-wide aggregate is unchanged, and the diff
+  label is green only when both revisions also pass the check.
+- **Seal (C2-07).** Seal bytes no longer depend on whether cosign is installed:
+  `tooling.cosign` is a fixed note, every predicate carries `"signed": false`,
+  `verify` accepts exactly one form, and `garnet seal` prints UNSIGNED on every
+  machine. This changes the bytes of every seal once, including a single-file
+  program with only `main`, and a seal/v2 predicate made before this no longer
+  verifies; re-seal it.
+- **Minimum Shelf (C3-03, U-120).** The shelf accepts the flagship's seal/v2 and
+  borrows only `parser_version` and `interp_version` from it, so a CLI version
+  bump alone no longer refuses the package; source, AST, capabilities, tooling
+  note and `signed:false` are still pinned. The flagship is resealed as v2 and
+  its hash pins are updated (`ops/lane2b/evidence/22-t5a-v2-reseal.txt`). The
+  shelf smoke reporter checks the fixed note and `signed:false` instead of the
+  retired cosign wording, and `garnet-cli/AGENTS.md` and `GARNET_ATTESTATION.md`
+  describe the seal/v2 shelf boundary.
+- **Windows Studio clean-VM proof is read from the repo (path (a)).** The
+  clean-VM installer reporter read only a Desktop dogfood folder on whichever
+  machine ran it, so "verified" depended on the host. With no explicit root it
+  now reads the newest bundle under `proofs/windows/studio-clean-vm/`. It
+  counts the bundle only when all of these hold:
+  - the newest entry whose name starts with a timestamp decides, and it must be
+    a directory named `<YYYYMMDD-HHMM>-<host>`, with a real date and time,
+    that holds only regular files;
+  - its manifest lists each file exactly once and matches the files;
+  - its JSON is strict UTF-8 with no repeated key and no NaN or Infinity,
+    the record's fields have their JSON types, `verified` is the literal
+    `true`, and `created_at` is an ISO 8601 time with a valid zone offset;
+  - each required gate appears once and passes, and the guest identity,
+    installer path and claim boundary behind those gates are present;
+  - the guest is x64, and its OS name is the guest's own `systeminfo` OS
+    name: Windows 10, Windows 11 or Windows Server 2016/2019/2022/2025,
+    optionally prefixed `Microsoft`. Another system, a subsystem (Android,
+    Linux) or a hypervisor guest-type identifier does not count, and the
+    recorder's fresh-guest gate applies the same rule;
+  - the install log is not empty, and the screenshot is a complete truecolour
+    or greyscale PNG, at most 16384 px a side and 256 MiB of decoded image
+    data (both checked before decompression). It must have valid chunk CRCs, a
+    legal critical-chunk layout (`IHDR` once and first, one consecutive `IDAT`
+    run, `IEND` last, an optional suggested `PLTE` of 1-256 entries),
+    well-formed standard ancillary chunks (`gAMA`, `cHRM`, `sRGB`, `pHYs`,
+    `tIME`, `sBIT`, `bKGD`, `tRNS`, `hIST`: size, colour type, count, order
+    before `IDAT` and around `PLTE`, and values, every four-byte integer at
+    most 2^31-1, and with `sRGB` any `gAMA`/`cHRM` companion carrying the sRGB
+    values), a legal
+    colour type and depth, a legal filter on every scanline, and image data
+    that decompresses to the size the header implies. Other ancillary chunks
+    (text, `iCCP`, `sPLT`, `eXIf` and unknown ones) are not interpreted, though
+    `iCCP` must still come before `PLTE` and the image data. The recorder's
+    gates check the same, and a rejection names its reason;
+  - the install log, smoke record and screenshot are three different files
+    (no bundle file may have a second hard link), each named exactly as one of
+    the files the manifest verified, so an NTFS alternate stream or a case or
+    short-name alias does not count;
+  - the record and the evidence are read only from the bytes the manifest
+    check hashed, each checked on the open handle it is read from, so a file
+    that appears after the check is never evidence;
+  - each file has a stable identity (a nonzero inode), or the bundle is
+    reported unverified;
+  - the evidence files sit inside the bundle, the committed tree has no link
+    from the repository down, and every directory on the way is a real
+    directory the reader can list. A missing path, or a proof root with no
+    timestamp-named entry, means there is no committed evidence.
+  A failing, relinked or record-less newest bundle is reported, never replaced
+  by an older one. These checks cover what is committed. They do not defend
+  against a process that can write the checkout while the reporter runs: such
+  a process could write a consistent bundle outright, because the manifest is
+  an unsigned list of hashes. Who committed a bundle is settled by review.
+- **Playground rebuild (X-9).** The browser Wasm package is rebuilt with
+  the pinned toolchain (Rust 1.95.0, Node v22.22.2, wasm-pack 0.15.0, esbuild
+  0.25.12); two builds matched byte for byte. The W-PLAY browser proof is
+  re-recorded against it.
+- **Riders.**
+  - The rulesets README says the Base-controlled workflow runs but is not
+    required (C4-01).
+  - `why.html` carries a version-scope note for main against v0.8.2.
+  - Two comments no longer say CI rejects `@caps(*)` (C1-20).
+  - Stale test pins in the MIT-readiness, promo, quarterly-watch and
+    release-asset tests are rebased onto current truth, each with its reason.
+  - The front door again carries the recorded phrase "not full
+    MIT/productization completion".
+- **Left red on purpose.** The launch reporter's foundation gate waits for
+  T6-close's final truth re-measure. (The domain-matrix readiness test that
+  T5a first left red now passes: the NUC's fresh Windows and WSL bundles
+  landed in #600 and are merged into this branch.)
+
 ### Integrity rule 2 restated (Jon's wording, 2026-09-23)
 
 - `CLAUDE.md` rule 2 now reads: authority widening is gated, never guessed. A
