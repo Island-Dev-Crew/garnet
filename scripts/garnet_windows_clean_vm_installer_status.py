@@ -50,21 +50,28 @@ NON_WINDOWS_GUEST_OS = re.compile(r"linux|bsd|darwin|mac ?os|ubuntu|debian|fedor
 PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 
 
-PNG_CHANNELS = {0: 1, 2: 3, 3: 1, 4: 2, 6: 4}  # colour type -> samples per pixel
+# Truecolour and greyscale PNGs only (a Windows screenshot is truecolour);
+# palette images are not accepted. Colour type -> (samples per pixel, depths).
+PNG_FORMATS = {0: (1, (1, 2, 4, 8, 16)), 2: (3, (8, 16)), 4: (2, (8, 16)), 6: (4, (8, 16))}
+MAX_SCREENSHOT_SIDE = 16384
+MAX_SCREENSHOT_IMAGE_BYTES = 256 * 1024 * 1024
 ADAM7_PASSES = ((0, 0, 8, 8), (4, 0, 8, 8), (0, 4, 4, 8), (2, 0, 4, 4), (0, 2, 2, 4), (1, 0, 2, 2), (0, 1, 1, 2))
 
 
-def _png_image_bytes(width: int, height: int, bits_per_pixel: int, interlace: int) -> int:
-    """Size of the filtered image data the IHDR implies (one filter byte a row)."""
-    def rows(w: int, h: int) -> int:
-        return h * (1 + (w * bits_per_pixel + 7) // 8) if w and h else 0
+def _png_scanlines(width: int, height: int, bits_per_pixel: int, interlace: int) -> list[tuple[int, int]]:
+    """(row count, bytes per row after the filter byte) for each image pass."""
+    def row_bytes(w: int) -> int:
+        return (w * bits_per_pixel + 7) // 8
 
     if interlace == 0:
-        return rows(width, height)
-    return sum(
-        rows(max(0, (width - x0 + dx - 1) // dx), max(0, (height - y0 + dy - 1) // dy))
-        for x0, y0, dx, dy in ADAM7_PASSES
-    )
+        return [(height, row_bytes(width))]
+    passes = []
+    for x0, y0, dx, dy in ADAM7_PASSES:
+        w = max(0, (width - x0 + dx - 1) // dx)
+        h = max(0, (height - y0 + dy - 1) // dy)
+        if w and h:
+            passes.append((h, row_bytes(w)))
+    return passes
 
 
 def is_png_screenshot(data: bytes) -> bool:
@@ -96,20 +103,34 @@ def is_png_screenshot(data: bytes) -> bool:
     if len(header) != 13:
         return False
     width, height, depth, colour, compression, filtering, interlace = struct.unpack(">IIBBBBB", header)
-    if not width or not height or colour not in PNG_CHANNELS or depth not in (1, 2, 4, 8, 16):
+    if not 0 < width <= MAX_SCREENSHOT_SIDE or not 0 < height <= MAX_SCREENSHOT_SIDE:
+        return False
+    if colour not in PNG_FORMATS or depth not in PNG_FORMATS[colour][1]:
         return False
     if compression or filtering or interlace not in (0, 1):
         return False
     compressed = b"".join(body for kind, body in chunks if kind == b"IDAT")
     if not compressed:
         return False
-    expected = _png_image_bytes(width, height, PNG_CHANNELS[colour] * depth, interlace)
+    passes = _png_scanlines(width, height, PNG_FORMATS[colour][0] * depth, interlace)
+    expected = sum(rows * (1 + row_bytes) for rows, row_bytes in passes)
+    if expected > MAX_SCREENSHOT_IMAGE_BYTES:
+        return False
     try:
         inflater = zlib.decompressobj()
         image = inflater.decompress(compressed, expected + 1)
-    except zlib.error:
+    except (zlib.error, OverflowError, MemoryError):
         return False
-    return len(image) == expected and inflater.eof
+    if len(image) != expected or not inflater.eof:
+        return False
+    # Every scanline starts with a filter type byte, and only 0-4 exist.
+    offset = 0
+    for rows, row_bytes in passes:
+        for _ in range(rows):
+            if image[offset] > 4:
+                return False
+            offset += 1 + row_bytes
+    return True
 
 
 def _content_gate(path_text: str, label: str, accepts: object, requirement: str) -> SmokeGate:
