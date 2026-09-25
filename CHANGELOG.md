@@ -62,7 +62,7 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   - its manifest lists each file exactly once and matches the files;
   - its JSON is strict UTF-8 with no repeated key and no NaN or Infinity,
     the record's fields have their JSON types, `verified` is the literal
-    `true`, and `created_at` is a time with a zone;
+    `true`, and `created_at` is an ISO 8601 time with a valid zone offset;
   - each required gate appears once and passes, and the guest identity,
     installer path and claim boundary behind those gates are present;
   - the guest is x64, and its OS name is the guest's own `systeminfo` OS
@@ -71,10 +71,11 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
     Linux) or a hypervisor guest-type identifier does not count, and the
     recorder's fresh-guest gate applies the same rule;
   - the install log is not empty, and the screenshot is a complete truecolour
-    or greyscale PNG, at most 16384 px a side. It must have valid chunk CRCs,
-    `IHDR` first and `IEND` last, a legal colour type and depth, a legal filter
-    on every scanline, and image data that decompresses to the size the header
-    implies. The recorder's gates check the same;
+    or greyscale PNG, at most 16384 px a side. It must have valid chunk CRCs, a
+    legal critical-chunk layout (`IHDR` once and first, one consecutive `IDAT`
+    run, `IEND` last), a legal colour type and depth, a legal filter on every
+    scanline, and image data that decompresses to the size the header implies.
+    The recorder's gates check the same, and a rejection names its reason;
   - the install log, smoke record and screenshot are three different files
     (no bundle file may have a second hard link), each named exactly as one of
     the files the manifest verified, so an NTFS alternate stream or a case or
