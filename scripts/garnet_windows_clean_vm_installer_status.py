@@ -126,6 +126,11 @@ def _content_gate(path_text: str, label: str, accepts: object, requirement: str)
     return gate
 
 
+def is_guest_identity(vm_name: str, guest_os: str, guest_arch: str) -> bool:
+    """The fresh-guest facts the recorder and committed replay both require."""
+    return bool(vm_name.strip()) and is_windows_guest_os(guest_os) and guest_arch.lower() in X64_GUEST_ARCHES
+
+
 def is_windows_guest_os(text: str) -> bool:
     text = text.strip()
     return bool(WINDOWS_GUEST_OS.fullmatch(text)) and not NON_WINDOWS_GUEST_OS.search(text)
@@ -363,7 +368,7 @@ def build_proof_record(
     fresh_guest_gate = SmokeGate(
         "fresh-guest",
         "Fresh Guest",
-        "pass" if mode == "clean-vm" and is_windows_guest_os(guest_os) and guest_arch else "blocked",
+        "pass" if mode == "clean-vm" and is_guest_identity(vm_name, guest_os, guest_arch) else "blocked",
         f"mode={mode}; vm={vm_name or '(missing)'}; os={guest_os or '(missing)'}; arch={guest_arch or '(missing)'}",
     )
     install_log_gate = _content_gate(
@@ -467,6 +472,12 @@ def _committed_record_problem(data: object) -> str | None:
             return f"{key} is missing or not a string"
     if data.get("verified") is not True:
         return "verified is not the literal true"
+    try:
+        created = datetime.fromisoformat(data["created_at"])
+    except ValueError:
+        created = None
+    if created is None or created.tzinfo is None:
+        return "created_at is not an ISO 8601 time with a time zone"
     gates = data.get("gates")
     if not isinstance(gates, list) or not all(
         isinstance(gate, dict) and set(gate) == GATE_FIELDS and all(isinstance(value, str) for value in gate.values())
@@ -679,9 +690,23 @@ def _reject_duplicate_keys(pairs: list[tuple[str, object]]) -> dict:
     return dict(pairs)
 
 
+def _is_real_stamp(stamp: str) -> bool:
+    try:
+        datetime.strptime(stamp, "%Y%m%d-%H%M")
+    except ValueError:
+        return False
+    return True
+
+
+def _reject_nonfinite(constant: str) -> object:
+    raise ValueError(f"non-finite JSON constant {constant}")
+
+
 def _strict_json_bytes(data: bytes) -> object:
-    """Committed evidence JSON: strict UTF-8, and no key may repeat."""
-    return json.loads(data.decode("utf-8"), object_pairs_hook=_reject_duplicate_keys)
+    """Committed evidence JSON: strict UTF-8, no repeated key, no NaN or Infinity."""
+    return json.loads(
+        data.decode("utf-8"), object_pairs_hook=_reject_duplicate_keys, parse_constant=_reject_nonfinite
+    )
 
 
 def latest_committed_proof(repo: Path | None = None) -> tuple[ProofRecord, str] | None:
@@ -724,7 +749,7 @@ def latest_committed_proof(repo: Path | None = None) -> tuple[ProofRecord, str] 
         source = f"committed:{(COMMITTED_BUNDLES_REL / bundle.name).as_posix()}"
         if _is_link(bundle) or not bundle.is_dir():
             return _broken_proof("the newest bundle entry is not a directory"), source
-        if not BUNDLE_FULL_NAME.fullmatch(bundle.name):
+        if not BUNDLE_FULL_NAME.fullmatch(bundle.name) or not _is_real_stamp(bundle.name[:13]):
             return _broken_proof("the newest bundle is not named <YYYYMMDD-HHMM>-<host>"), source
         problem = _confinement_problem(repo, bundle)
         if problem:
