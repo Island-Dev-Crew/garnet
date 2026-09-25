@@ -897,6 +897,26 @@ class CommittedCleanVmBundleAdversarialTests(_CommittedRepoCase):
         self.assertIn("after PLTE", problem or "")
         self.assertIsNone(status_mod.png_screenshot_problem(_png(1, 1, 2, 8, rgb, (plte, (b"bKGD", bytes(6))))))
 
+    def test_srgb_companions_must_carry_the_srgb_values(self) -> None:
+        # Codex round 13: with sRGB present, a gAMA or cHRM companion must
+        # carry the values the PNG specification gives for sRGB.
+        rgb = b"\x00" + bytes(3)
+        srgb = (b"sRGB", b"\x00")
+        standard = b"".join(v.to_bytes(4, "big") for v in (31270, 32900, 64000, 33000, 30000, 60000, 15000, 6000))
+        off = b"".join(v.to_bytes(4, "big") for v in (31270, 32900, 64001, 33000, 30000, 60000, 15000, 6000))
+        for label, extra in (
+            ("sRGB with gAMA 100000", ((b"gAMA", (100000).to_bytes(4, "big")), srgb)),
+            ("sRGB with a non-sRGB cHRM", ((b"cHRM", off), srgb)),
+        ):
+            with self.subTest(label=label):
+                self.assertIn("sRGB", status_mod.png_screenshot_problem(_png(1, 1, 2, 8, rgb, extra)) or "")
+        for label, extra in (
+            ("sRGB with its gAMA and cHRM", (srgb, (b"gAMA", GAMMA_2_2), (b"cHRM", standard))),
+            ("gAMA 100000 without sRGB", ((b"gAMA", (100000).to_bytes(4, "big")),)),
+        ):
+            with self.subTest(label=label):
+                self.assertIsNone(status_mod.png_screenshot_problem(_png(1, 1, 2, 8, rgb, extra)))
+
     def test_an_oversized_png_is_rejected_by_name(self) -> None:
         huge = _png(2147483647, 2147483647, 6, 16, b"\x00")
         problem = status_mod.png_screenshot_problem(huge)
