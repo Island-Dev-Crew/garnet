@@ -73,7 +73,9 @@ PNG_ANCILLARY_SIZES = {
     b"bKGD": {0: 2, 2: 6, 4: 2, 6: 6},
     b"tRNS": {0: 2, 2: 6},
 }
-PNG_BEFORE_IDAT = frozenset({b"gAMA", b"cHRM", b"sRGB", b"iCCP", b"sBIT", b"pHYs", b"bKGD", b"tRNS"})
+PNG_BEFORE_IDAT = frozenset({b"gAMA", b"cHRM", b"sRGB", b"iCCP", b"sBIT", b"pHYs", b"bKGD", b"tRNS", b"hIST"})
+# The PNG specification limits every four-byte unsigned integer to 2^31-1.
+PNG_MAX_UINT = 0x7FFFFFFF
 MAX_SCREENSHOT_SIDE = 16384
 MAX_SCREENSHOT_IMAGE_BYTES = 256 * 1024 * 1024
 ADAM7_PASSES = ((0, 0, 8, 8), (4, 0, 8, 8), (0, 4, 4, 8), (2, 0, 4, 4), (0, 2, 2, 4), (1, 0, 2, 2), (0, 1, 1, 2))
@@ -102,6 +104,8 @@ def _png_chunks(data: bytes) -> tuple[str | None, list[tuple[bytes, bytes]]]:
     offset, chunks = len(PNG_SIGNATURE), []
     while offset + 12 <= len(data):
         length = struct.unpack(">I", data[offset : offset + 4])[0]
+        if length > PNG_MAX_UINT:
+            return "a chunk length is above 2^31-1", []
         kind = data[offset + 4 : offset + 8]
         end = offset + 12 + length
         if end > len(data):
@@ -134,16 +138,25 @@ def _png_layout_problem(chunks: list[tuple[bytes, bytes]], colour: int) -> str |
             return f"unknown critical chunk {kind.decode()}"
         if kind == b"PLTE" and (colour not in (2, 6) or kinds.count(b"PLTE") != 1 or index > idat[0]):
             return "PLTE is allowed once, before IDAT, and only in a truecolour image"
+        if kind == b"PLTE" and not (3 <= len(chunks[index][1]) <= 768 and len(chunks[index][1]) % 3 == 0):
+            return "PLTE must hold 1-256 RGB entries"
     return None
 
 
-def _png_ancillary_problem(chunks: list[tuple[bytes, bytes]], colour: int) -> str | None:
-    """Standard fixed-size ancillary chunks: size, colour type, count, order."""
+def _png_ancillary_problem(chunks: list[tuple[bytes, bytes]], colour: int, depth: int) -> str | None:
+    """Standard ancillary chunks: size, colour type, count, order and values."""
     kinds = [kind for kind, _ in chunks]
     first_idat = kinds.index(b"IDAT")
+    plte = kinds.index(b"PLTE") if b"PLTE" in kinds else None
     for index, (kind, body) in enumerate(chunks):
         if kind in PNG_BEFORE_IDAT and index > first_idat:
             return f"{kind.decode()} must come before the image data"
+        if kind in (b"tRNS", b"hIST") and plte is not None and index < plte:
+            return f"{kind.decode()} must come after PLTE"
+        if kind == b"hIST":
+            if plte is None or kinds.count(b"hIST") != 1 or len(body) != 2 * (len(chunks[plte][1]) // 3):
+                return "hIST needs a PLTE, appears once, and holds two bytes per palette entry"
+            continue
         if kind not in PNG_ANCILLARY_SIZES:
             continue
         sizes = PNG_ANCILLARY_SIZES[kind]
@@ -157,6 +170,18 @@ def _png_ancillary_problem(chunks: list[tuple[bytes, bytes]], colour: int) -> st
             return "sRGB rendering intent must be 0-3"
         if kind == b"pHYs" and body[8] > 1:
             return "pHYs unit must be 0 or 1"
+        if kind in (b"gAMA", b"cHRM", b"pHYs"):
+            values = struct.unpack(f">{len(body) // 4}I", body[: len(body) // 4 * 4])
+            if any(value > PNG_MAX_UINT for value in values):
+                return f"{kind.decode()} holds a value above 2^31-1"
+        if kind == b"gAMA" and not struct.unpack(">I", body)[0]:
+            return "gAMA must be greater than 0"
+        if kind == b"sBIT" and not all(1 <= bits <= depth for bits in body):
+            return f"sBIT values must be 1-{depth}"
+        if kind == b"tIME":
+            _, month, day, hour, minute, second = struct.unpack(">HBBBBB", body)
+            if not (1 <= month <= 12 and 1 <= day <= 31 and hour <= 23 and minute <= 59 and second <= 60):
+                return "tIME holds an impossible date or time"
     return None
 
 
@@ -183,7 +208,7 @@ def png_screenshot_problem(data: bytes) -> str | None:
         return f"colour type {colour} at depth {depth} is not a supported truecolour or greyscale format"
     if compression or filtering or interlace not in (0, 1):
         return "unknown compression, filter or interlace method"
-    problem = _png_layout_problem(chunks, colour) or _png_ancillary_problem(chunks, colour)
+    problem = _png_layout_problem(chunks, colour) or _png_ancillary_problem(chunks, colour, depth)
     if problem:
         return problem
     passes = _png_scanlines(width, height, PNG_FORMATS[colour][0] * depth, interlace)
