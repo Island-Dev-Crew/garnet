@@ -24,6 +24,7 @@ import re
 import stat
 import struct
 import sys
+import zlib
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime, timezone
 from pathlib import Path
@@ -49,12 +50,66 @@ NON_WINDOWS_GUEST_OS = re.compile(r"linux|bsd|darwin|mac ?os|ubuntu|debian|fedor
 PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 
 
+PNG_CHANNELS = {0: 1, 2: 3, 3: 1, 4: 2, 6: 4}  # colour type -> samples per pixel
+ADAM7_PASSES = ((0, 0, 8, 8), (4, 0, 8, 8), (0, 4, 4, 8), (2, 0, 4, 4), (0, 2, 2, 4), (1, 0, 2, 2), (0, 1, 1, 2))
+
+
+def _png_image_bytes(width: int, height: int, bits_per_pixel: int, interlace: int) -> int:
+    """Size of the filtered image data the IHDR implies (one filter byte a row)."""
+    def rows(w: int, h: int) -> int:
+        return h * (1 + (w * bits_per_pixel + 7) // 8) if w and h else 0
+
+    if interlace == 0:
+        return rows(width, height)
+    return sum(
+        rows(max(0, (width - x0 + dx - 1) // dx), max(0, (height - y0 + dy - 1) // dy))
+        for x0, y0, dx, dy in ADAM7_PASSES
+    )
+
+
 def is_png_screenshot(data: bytes) -> bool:
-    """A launch screenshot is a PNG whose IHDR header gives a nonzero size."""
-    if len(data) < 24 or not data.startswith(PNG_SIGNATURE) or data[12:16] != b"IHDR":
+    """A launch screenshot is a complete PNG with a nonzero size.
+
+    Every chunk's CRC must match, IHDR comes first, IDAT is present, IEND is
+    last with nothing after it, and the image data must decompress to exactly
+    the size the header implies (decompression is capped at that size).
+    """
+    if not data.startswith(PNG_SIGNATURE):
         return False
-    width, height = struct.unpack(">II", data[16:24])
-    return width > 0 and height > 0
+    offset, chunks = len(PNG_SIGNATURE), []
+    while offset + 12 <= len(data):
+        length = struct.unpack(">I", data[offset : offset + 4])[0]
+        kind = data[offset + 4 : offset + 8]
+        end = offset + 12 + length
+        if end > len(data):
+            return False
+        body = data[offset + 8 : offset + 8 + length]
+        if zlib.crc32(kind + body) & 0xFFFFFFFF != struct.unpack(">I", data[end - 4 : end])[0]:
+            return False
+        chunks.append((kind, body))
+        offset = end
+        if kind == b"IEND":
+            break
+    if offset != len(data) or not chunks or chunks[0][0] != b"IHDR" or chunks[-1] != (b"IEND", b""):
+        return False
+    header = chunks[0][1]
+    if len(header) != 13:
+        return False
+    width, height, depth, colour, compression, filtering, interlace = struct.unpack(">IIBBBBB", header)
+    if not width or not height or colour not in PNG_CHANNELS or depth not in (1, 2, 4, 8, 16):
+        return False
+    if compression or filtering or interlace not in (0, 1):
+        return False
+    compressed = b"".join(body for kind, body in chunks if kind == b"IDAT")
+    if not compressed:
+        return False
+    expected = _png_image_bytes(width, height, PNG_CHANNELS[colour] * depth, interlace)
+    try:
+        inflater = zlib.decompressobj()
+        image = inflater.decompress(compressed, expected + 1)
+    except zlib.error:
+        return False
+    return len(image) == expected and inflater.eof
 
 
 def _content_gate(path_text: str, label: str, accepts: object, requirement: str) -> SmokeGate:
@@ -326,7 +381,7 @@ def build_proof_record(
         smoke_path or "missing studio-smoke.json",
     )
     screenshot_gate = _content_gate(
-        screenshot_path, "launch-screenshot", is_png_screenshot, "the screenshot is not a PNG image with a nonzero size"
+        screenshot_path, "launch-screenshot", is_png_screenshot, "the screenshot is not a complete PNG image with a nonzero size"
     )
     claim_gate = SmokeGate(
         "claim-boundary",
@@ -570,7 +625,7 @@ def _committed_bundle_problem(
     if not verified[log_name].strip():
         return "the install log is empty"
     if not is_png_screenshot(verified[screenshot_name]):
-        return "the screenshot is not a PNG image with a nonzero size"
+        return "the screenshot is not a complete PNG image with a nonzero size"
     for field, text in (
         ("install_log", proof.install_log),
         ("studio_smoke_json", proof.studio_smoke_json),
