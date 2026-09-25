@@ -60,9 +60,10 @@ CREATED_AT = re.compile(
 # palette images are not accepted. Colour type -> (samples per pixel, depths).
 PNG_FORMATS = {0: (1, (1, 2, 4, 8, 16)), 2: (3, (8, 16)), 4: (2, (8, 16)), 6: (4, (8, 16))}
 # Standard fixed-size ancillary chunks: body size (or per colour type), each at
-# most once, and those marked "before IDAT" must precede the image data. Text
-# and unknown ancillary chunks are not interpreted; the PNG specification lets
-# a decoder ignore them.
+# most once, and those in PNG_BEFORE_IDAT must precede the image data. Other
+# ancillary chunks (text, iCCP, sPLT, eXIf, unknown) are not interpreted,
+# though iCCP must still precede IDAT; the PNG specification lets a decoder
+# ignore ancillary chunks.
 PNG_ANCILLARY_SIZES = {
     b"gAMA": {0: 4, 2: 4, 4: 4, 6: 4},
     b"cHRM": {0: 32, 2: 32, 4: 32, 6: 32},

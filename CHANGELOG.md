@@ -78,8 +78,9 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
     `tIME`, `sBIT`, `bKGD`, `tRNS`, `hIST`: size, colour type, count, order
     and values, every four-byte integer at most 2^31-1), a legal
     colour type and depth, a legal filter on every scanline, and image data
-    that decompresses to the size the header implies. Text and unknown
-    ancillary chunks are not interpreted. The recorder's gates check the same,
+    that decompresses to the size the header implies. Other ancillary chunks
+    (text, `iCCP`, `sPLT`, `eXIf` and unknown ones) are not interpreted, though
+    `iCCP` must still come before the image data. The recorder's gates check the same,
     and a rejection names its reason;
   - the install log, smoke record and screenshot are three different files
     (no bundle file may have a second hard link), each named exactly as one of
