@@ -814,6 +814,33 @@ class CommittedCleanVmBundleAdversarialTests(_CommittedRepoCase):
         ok = sig + ihdr + chunk(b"tEXt", b"k\x00v") + chunk(b"IDAT", data[:4]) + chunk(b"IDAT", data[4:]) + iend
         self.assertTrue(status_mod.is_png_screenshot(ok), "ancillary chunks and a consecutive IDAT run are fine")
 
+    def test_standard_ancillary_chunks_must_be_well_formed(self) -> None:
+        # Codex round 12: an empty tRNS or pHYs passed. Standard fixed-size
+        # ancillary chunks are checked for size, colour type, count and order.
+        cases = (
+            ("empty tRNS", 0, 8, b"\x00\x00", ((b"tRNS", b""),)),
+            ("tRNS in rgba", 6, 8, b"\x00" + bytes(4), ((b"tRNS", b"\x00" * 6),)),
+            ("short pHYs", 0, 8, b"\x00\x00", ((b"pHYs", b"\x00" * 8),)),
+            ("empty pHYs", 0, 8, b"\x00\x00", ((b"pHYs", b""),)),
+            ("pHYs with unit 7", 0, 8, b"\x00\x00", ((b"pHYs", b"\x00" * 8 + b"\x07"),)),
+            ("sRGB intent 9", 2, 8, b"\x00" + bytes(3), ((b"sRGB", b"\x09"),)),
+            ("two gAMA", 0, 8, b"\x00\x00", ((b"gAMA", bytes(4)), (b"gAMA", bytes(4)))),
+        )
+        for label, colour, depth, raw, extra in cases:
+            with self.subTest(label=label):
+                self.assertFalse(status_mod.is_png_screenshot(_png(1, 1, colour, depth, raw, extra)))
+        after_idat = _png(1, 1, 0, 8, b"\x00\x00")
+        cut = after_idat.index(b"IEND") - 4
+        gama = (4).to_bytes(4, "big") + b"gAMA" + bytes(4) + (zlib.crc32(b"gAMA" + bytes(4)) & 0xFFFFFFFF).to_bytes(4, "big")
+        self.assertFalse(status_mod.is_png_screenshot(after_idat[:cut] + gama + after_idat[cut:]), "gAMA after IDAT")
+        for label, colour, raw, extra in (
+            ("grey tRNS", 0, b"\x00\x00", ((b"tRNS", b"\x00\x01"),)),
+            ("pHYs metres", 2, b"\x00" + bytes(3), ((b"pHYs", (3780).to_bytes(4, "big") * 2 + b"\x01"),)),
+            ("sRGB and text", 6, b"\x00" + bytes(4), ((b"sRGB", b"\x00"), (b"tEXt", b"Software\x00Snipping Tool"))),
+        ):
+            with self.subTest(label=label):
+                self.assertTrue(status_mod.is_png_screenshot(_png(1, 1, colour, 8, raw, extra)))
+
     def test_an_oversized_png_is_rejected_by_name(self) -> None:
         huge = _png(2147483647, 2147483647, 6, 16, b"\x00")
         problem = status_mod.png_screenshot_problem(huge)
@@ -826,8 +853,10 @@ class CommittedCleanVmBundleAdversarialTests(_CommittedRepoCase):
     def test_a_png_with_zero_size_does_not_count(self) -> None:
         # Codex round 11: build the zero-width image with consistent CRCs, so
         # the dimension check itself is what rejects it.
-        zero = _png(0, 1, 6, 8, b"")
-        self.assertFalse(status_mod.is_png_screenshot(zero))
+        zero = _png(0, 1, 6, 8, b"\x00")
+        problem = status_mod.png_screenshot_problem(zero)
+        self.assertIsNotNone(problem)
+        self.assertIn("between 1 and", problem, "the dimension check, not a later size check, rejects it")
         (self.bundle / "launch.png").write_bytes(zero)
         status_mod._write_manifest(self.bundle)
         self._assert_unverified()
