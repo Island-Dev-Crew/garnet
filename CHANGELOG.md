@@ -73,8 +73,10 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   - the install log is not empty, and the screenshot is a complete truecolour
     or greyscale PNG, at most 16384 px a side. It must have valid chunk CRCs, a
     legal critical-chunk layout (`IHDR` once and first, one consecutive `IDAT`
-    run, `IEND` last), well-formed standard fixed-size ancillary chunks
-    (`gAMA`, `cHRM`, `sRGB`, `pHYs`, `tIME`, `sBIT`, `bKGD`, `tRNS`), a legal
+    run, `IEND` last, an optional suggested `PLTE` of 1-256 entries),
+    well-formed standard ancillary chunks (`gAMA`, `cHRM`, `sRGB`, `pHYs`,
+    `tIME`, `sBIT`, `bKGD`, `tRNS`, `hIST`: size, colour type, count, order
+    and values, every four-byte integer at most 2^31-1), a legal
     colour type and depth, a legal filter on every scanline, and image data
     that decompresses to the size the header implies. Text and unknown
     ancillary chunks are not interpreted. The recorder's gates check the same,
