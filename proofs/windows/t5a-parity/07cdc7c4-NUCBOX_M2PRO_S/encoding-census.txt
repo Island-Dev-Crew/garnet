@@ -1,0 +1,7 @@
+# Encoding census (UTF-8 validity, BOM, line endings) of every file in this folder except this file and
+# MANIFEST.sha256 (both UTF-8, no BOM, LF). lf = bare LF, crlf = CRLF pairs, cr = lone CR.
+
+path                      bytes  utf8    bom    endings     lf   crlf   cr nonascii finalnl  sha256
+commands.txt              12675  True   none      MIXED    144      7   52        0    True  bac386765c7da3616b0bcc9142e6bc6f8ba35a8469e643873e2a1f832395c886
+env.txt                    6990  True   none      MIXED    107     12    0        0    True  5c01e0aa5edcb24b781b7a850d970540083992d85a9c9dd87b68d47b30718b5e
+test-output.txt           12154  True   none       CRLF      0     69    0        0    True  05a23962754255a39760711435c61cb061f634e0524b3d57e2d5732be5f1e072
