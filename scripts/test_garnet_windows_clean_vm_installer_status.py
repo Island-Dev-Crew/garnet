@@ -29,6 +29,22 @@ TINY_PNG = bytes.fromhex(
 )
 
 
+def _png(width: int, height: int, colour: int, depth: int, raw: bytes, extra_chunks: tuple = ()) -> bytes:
+    """A PNG with correct CRCs around the given filtered image data."""
+    def chunk(kind: bytes, body: bytes) -> bytes:
+        return len(body).to_bytes(4, "big") + kind + body + (zlib.crc32(kind + body) & 0xFFFFFFFF).to_bytes(4, "big")
+
+    header = width.to_bytes(4, "big") + height.to_bytes(4, "big") + bytes([depth, colour, 0, 0, 0])
+    body = b"".join(chunk(kind, data) for kind, data in extra_chunks)
+    return (
+        b"\x89PNG\r\n\x1a\n"
+        + chunk(b"IHDR", header)
+        + body
+        + chunk(b"IDAT", zlib.compress(raw))
+        + chunk(b"IEND", b"")
+    )
+
+
 class GarnetWindowsCleanVmInstallerStatusTests(unittest.TestCase):
     def test_target_matrix_names_architectures_without_overclaiming(self) -> None:
         status = status_mod.read_status(Path("missing-root"))
@@ -746,10 +762,35 @@ class CommittedCleanVmBundleAdversarialTests(_CommittedRepoCase):
                 self._assert_unverified()
         self.assertTrue(status_mod.is_png_screenshot(TINY_PNG))
 
+    def test_an_undecodable_or_unsupported_png_does_not_count(self) -> None:
+        # Codex round 11: CRC-correct PNGs that no decoder can render, or that
+        # the reader does not support, must not pass (and must not raise).
+        huge = _png(0xFFFFFFFF, 0xFFFFFFFF, 6, 16, b"\x00")
+        for label, data in (
+            ("scanline filter 5", _png(1, 1, 6, 8, b"\x05\x00\x00\x00\x00")),
+            ("truecolour at depth 4", _png(1, 1, 2, 4, b"\x00\x00\x00")),
+            ("palette image", _png(1, 1, 3, 8, b"\x00\x00", ((b"PLTE", b"\x00\x00\x00"),))),
+            ("4-billion-pixel header", huge),
+            ("over the dimension cap", _png(20000, 1, 0, 8, b"\x00" + bytes(20000))),
+        ):
+            with self.subTest(label=label):
+                self.assertFalse(status_mod.is_png_screenshot(data))
+                (self.bundle / "launch.png").write_bytes(data)
+                status_mod._write_manifest(self.bundle)
+                self._assert_unverified()
+        for label, data in (
+            ("greyscale 16", _png(2, 2, 0, 16, (b"\x00" + bytes(4)) * 2)),
+            ("rgba 8 with every filter", _png(1, 5, 6, 8, b"".join(bytes([f]) + bytes(4) for f in range(5)))),
+        ):
+            with self.subTest(label=label):
+                self.assertTrue(status_mod.is_png_screenshot(data))
+
     def test_a_png_with_zero_size_does_not_count(self) -> None:
-        zero = bytearray(TINY_PNG)
-        zero[16:20] = b"\x00\x00\x00\x00"
-        (self.bundle / "launch.png").write_bytes(bytes(zero))
+        # Codex round 11: build the zero-width image with consistent CRCs, so
+        # the dimension check itself is what rejects it.
+        zero = _png(0, 1, 6, 8, b"")
+        self.assertFalse(status_mod.is_png_screenshot(zero))
+        (self.bundle / "launch.png").write_bytes(zero)
         status_mod._write_manifest(self.bundle)
         self._assert_unverified()
 
