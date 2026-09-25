@@ -51,8 +51,8 @@ checker, parser, or macOS SwiftUI Studio implementation.
     contract, and the recorder's fresh-guest gate applies the same rule;
   - the three evidence files are distinct, manifest-verified files named
     directly inside the bundle; the install log is not empty, and the
-    screenshot is a PNG with a nonzero width and height, checked by both the
-    recorder and the reader;
+    screenshot is a complete, well-formed PNG with a nonzero size
+    (`is_png_screenshot`), checked by both the recorder and the reader;
   - no directory on the way is a link, and each one can be listed.
 
   A failing newest bundle is reported, never replaced by an older one.
