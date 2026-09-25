@@ -75,6 +75,9 @@ PNG_ANCILLARY_SIZES = {
     b"tRNS": {0: 2, 2: 6},
 }
 PNG_BEFORE_IDAT = frozenset({b"gAMA", b"cHRM", b"sRGB", b"iCCP", b"sBIT", b"pHYs", b"bKGD", b"tRNS", b"hIST"})
+# PNG chunk ordering around a PLTE, when one is present.
+PNG_BEFORE_PLTE = frozenset({b"gAMA", b"cHRM", b"sRGB", b"iCCP", b"sBIT"})
+PNG_AFTER_PLTE = frozenset({b"bKGD", b"tRNS", b"hIST"})
 # The PNG specification limits every four-byte unsigned integer to 2^31-1.
 PNG_MAX_UINT = 0x7FFFFFFF
 MAX_SCREENSHOT_SIDE = 16384
@@ -152,7 +155,9 @@ def _png_ancillary_problem(chunks: list[tuple[bytes, bytes]], colour: int, depth
     for index, (kind, body) in enumerate(chunks):
         if kind in PNG_BEFORE_IDAT and index > first_idat:
             return f"{kind.decode()} must come before the image data"
-        if kind in (b"tRNS", b"hIST") and plte is not None and index < plte:
+        if plte is not None and kind in PNG_BEFORE_PLTE and index > plte:
+            return f"{kind.decode()} must come before PLTE"
+        if plte is not None and kind in PNG_AFTER_PLTE and index < plte:
             return f"{kind.decode()} must come after PLTE"
         if kind == b"hIST":
             if plte is None or kinds.count(b"hIST") != 1 or len(body) != 2 * (len(chunks[plte][1]) // 3):
