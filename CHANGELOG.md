@@ -57,10 +57,12 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   now reads the newest bundle under `proofs/windows/studio-clean-vm/`. It
   counts the bundle only when all of these hold:
   - the newest entry whose name starts with a timestamp decides, and it must be
-    a directory named `<YYYYMMDD-HHMM>-<host>` that holds only regular files;
+    a directory named `<YYYYMMDD-HHMM>-<host>`, with a real date and time,
+    that holds only regular files;
   - its manifest lists each file exactly once and matches the files;
-  - its JSON is strict UTF-8 with no repeated key, the record's fields have
-    their JSON types, and `verified` is the literal `true`;
+  - its JSON is strict UTF-8 with no repeated key and no NaN or Infinity,
+    the record's fields have their JSON types, `verified` is the literal
+    `true`, and `created_at` is a time with a zone;
   - each required gate appears once and passes, and the guest identity,
     installer path and claim boundary behind those gates are present;
   - the guest is x64, and its OS name is the guest's own `systeminfo` OS

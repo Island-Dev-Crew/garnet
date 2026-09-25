@@ -43,8 +43,13 @@ checker, parser, or macOS SwiftUI Studio implementation.
   - it holds only regular files, each with one link and a nonzero inode, and
     each read from the handle it was checked on;
   - `MANIFEST.sha256` lists every file once and matches;
-  - its JSON is strict, and `verified` is the literal `true`;
-  - every gate passes, and the facts behind the gates are present;
+  - its JSON is strict (UTF-8, no repeated key, no NaN or Infinity),
+    `verified` is the literal `true`, and `created_at` is a time with a zone;
+  - every gate appears once and passes. Replay checks what it can from
+    committed bytes: the fresh-guest facts and the claim boundary. The
+    installer is recorded only by path and SHA-256, and the `.exe` is not
+    committed, so replay checks the digest's form, not the file. What the
+    install log says and what the screenshot shows are for review;
   - the guest is x64 and its OS name is the guest's own `systeminfo` OS name:
     Windows 10, Windows 11 or Windows Server 2016/2019/2022/2025, optionally
     prefixed `Microsoft`. A hypervisor guest-type identifier is out of
