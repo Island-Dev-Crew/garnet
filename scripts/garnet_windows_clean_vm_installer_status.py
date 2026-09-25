@@ -48,6 +48,12 @@ NON_WINDOWS_GUEST_OS = re.compile(r"linux|bsd|darwin|mac ?os|ubuntu|debian|fedor
 
 
 PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
+# created_at as the recorder writes it (datetime.isoformat, with a zone): the
+# offset's hours and minutes are range-checked before parsing, because
+# fromisoformat normalises an impossible offset such as +00:99.
+CREATED_AT = re.compile(
+    r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]{1,6})?(?:Z|[+-](?:[01][0-9]|2[0-3]):[0-5][0-9])"
+)
 
 
 # Truecolour and greyscale PNGs only (a Windows screenshot is truecolour);
@@ -74,67 +80,104 @@ def _png_scanlines(width: int, height: int, bits_per_pixel: int, interlace: int)
     return passes
 
 
-def is_png_screenshot(data: bytes) -> bool:
-    """A launch screenshot is a complete PNG with a nonzero size.
-
-    Every chunk's CRC must match, IHDR comes first, IDAT is present, IEND is
-    last with nothing after it, and the image data must decompress to exactly
-    the size the header implies (decompression is capped at that size).
-    """
+def _png_chunks(data: bytes) -> tuple[str | None, list[tuple[bytes, bytes]]]:
+    """Split a PNG into CRC-checked chunks, or say why it cannot be split."""
     if not data.startswith(PNG_SIGNATURE):
-        return False
+        return "no PNG signature", []
     offset, chunks = len(PNG_SIGNATURE), []
     while offset + 12 <= len(data):
         length = struct.unpack(">I", data[offset : offset + 4])[0]
         kind = data[offset + 4 : offset + 8]
         end = offset + 12 + length
         if end > len(data):
-            return False
+            return "a chunk runs past the end of the file", []
+        if not kind.isalpha() or not kind.isascii():
+            return "a chunk type is not four ASCII letters", []
         body = data[offset + 8 : offset + 8 + length]
         if zlib.crc32(kind + body) & 0xFFFFFFFF != struct.unpack(">I", data[end - 4 : end])[0]:
-            return False
+            return f"the {kind.decode()} chunk CRC does not match", []
         chunks.append((kind, body))
         offset = end
         if kind == b"IEND":
             break
-    if offset != len(data) or not chunks or chunks[0][0] != b"IHDR" or chunks[-1] != (b"IEND", b""):
-        return False
-    header = chunks[0][1]
+    if offset != len(data) or not chunks or chunks[-1] != (b"IEND", b""):
+        return "the file does not end with an empty IEND chunk", []
+    return None, chunks
+
+
+def _png_layout_problem(chunks: list[tuple[bytes, bytes]], colour: int) -> str | None:
+    """Critical-chunk rules: IHDR once and first, one consecutive IDAT run, IEND
+    last, PLTE only in truecolour and before IDAT, no other critical chunk."""
+    kinds = [kind for kind, _ in chunks]
+    if kinds[0] != b"IHDR" or kinds.count(b"IHDR") != 1 or kinds.count(b"IEND") != 1:
+        return "IHDR must come first and appear once, with one IEND"
+    idat = [index for index, kind in enumerate(kinds) if kind == b"IDAT"]
+    if not idat or idat != list(range(idat[0], idat[-1] + 1)):
+        return "the IDAT chunks must form one consecutive run"
+    for index, kind in enumerate(kinds):
+        if kind[:1].isupper() and kind not in (b"IHDR", b"PLTE", b"IDAT", b"IEND"):
+            return f"unknown critical chunk {kind.decode()}"
+        if kind == b"PLTE" and (colour not in (2, 6) or kinds.count(b"PLTE") != 1 or index > idat[0]):
+            return "PLTE is allowed once, before IDAT, and only in a truecolour image"
+    return None
+
+
+def png_screenshot_problem(data: bytes) -> str | None:
+    """Why `data` is not an acceptable launch screenshot, or None if it is.
+
+    Accepted: a complete truecolour or greyscale PNG, at most
+    MAX_SCREENSHOT_SIDE px a side and MAX_SCREENSHOT_IMAGE_BYTES of decoded
+    data. Every chunk CRC must match, the chunk layout must be legal, the header
+    values must be a legal combination, the image data must decompress (capped)
+    to exactly the size the header implies, and every scanline must start with
+    a legal filter type.
+    """
+    problem, chunks = _png_chunks(data)
+    if problem:
+        return problem
+    header = chunks[0][1] if chunks[0][0] == b"IHDR" else b""
     if len(header) != 13:
-        return False
+        return "IHDR must come first and hold 13 bytes"
     width, height, depth, colour, compression, filtering, interlace = struct.unpack(">IIBBBBB", header)
     if not 0 < width <= MAX_SCREENSHOT_SIDE or not 0 < height <= MAX_SCREENSHOT_SIDE:
-        return False
+        return f"each side must be between 1 and {MAX_SCREENSHOT_SIDE} px (got {width} x {height})"
     if colour not in PNG_FORMATS or depth not in PNG_FORMATS[colour][1]:
-        return False
+        return f"colour type {colour} at depth {depth} is not a supported truecolour or greyscale format"
     if compression or filtering or interlace not in (0, 1):
-        return False
-    compressed = b"".join(body for kind, body in chunks if kind == b"IDAT")
-    if not compressed:
-        return False
+        return "unknown compression, filter or interlace method"
+    problem = _png_layout_problem(chunks, colour)
+    if problem:
+        return problem
     passes = _png_scanlines(width, height, PNG_FORMATS[colour][0] * depth, interlace)
     expected = sum(rows * (1 + row_bytes) for rows, row_bytes in passes)
     if expected > MAX_SCREENSHOT_IMAGE_BYTES:
-        return False
+        return f"the decoded image would exceed the {MAX_SCREENSHOT_IMAGE_BYTES // (1024 * 1024)} MiB budget"
+    compressed = b"".join(body for kind, body in chunks if kind == b"IDAT")
     try:
         inflater = zlib.decompressobj()
         image = inflater.decompress(compressed, expected + 1)
-    except (zlib.error, OverflowError, MemoryError):
-        return False
+    except (zlib.error, OverflowError, MemoryError) as error:
+        return f"the image data does not decompress: {error}"
     if len(image) != expected or not inflater.eof:
-        return False
-    # Every scanline starts with a filter type byte, and only 0-4 exist.
+        return "the image data does not match the size the header implies"
     offset = 0
     for rows, row_bytes in passes:
         for _ in range(rows):
             if image[offset] > 4:
-                return False
+                return f"a scanline uses filter type {image[offset]}; only 0-4 exist"
             offset += 1 + row_bytes
-    return True
+    return None
 
 
-def _content_gate(path_text: str, label: str, accepts: object, requirement: str) -> SmokeGate:
-    """A recorder gate that checks the file's bytes, not only that it exists."""
+def is_png_screenshot(data: bytes) -> bool:
+    return png_screenshot_problem(data) is None
+
+
+def _content_gate(path_text: str, label: str, problem_of: object) -> SmokeGate:
+    """A recorder gate that checks the file's bytes, not only that it exists.
+
+    `problem_of(data)` returns why the bytes are not acceptable, or None.
+    """
     gate = _path_status(path_text, label)
     if gate.status != "pass":
         return gate
@@ -142,9 +185,14 @@ def _content_gate(path_text: str, label: str, accepts: object, requirement: str)
         data = Path(path_text).read_bytes()
     except OSError as error:
         return SmokeGate(label, gate.label, "blocked", f"unreadable: {error}")
-    if not accepts(data):
-        return SmokeGate(label, gate.label, "blocked", f"{path_text}: {requirement}")
+    problem = problem_of(data)
+    if problem:
+        return SmokeGate(label, gate.label, "blocked", f"{path_text}: {problem}")
     return gate
+
+
+def _install_log_problem(data: bytes) -> str | None:
+    return None if data.strip() else "the install log is empty"
 
 
 def is_guest_identity(vm_name: str, guest_os: str, guest_arch: str) -> bool:
@@ -299,7 +347,7 @@ def required_gates() -> list[SmokeGate]:
     return [
         SmokeGate(
             id="installer-artifact",
-            label="Installer artifact exists and is SHA-256 identified",
+            label="Installer path and SHA-256 are recorded",
             status="required",
             evidence="Unsigned NSIS setup executable path plus SHA-256 digest.",
         ),
@@ -392,9 +440,7 @@ def build_proof_record(
         "pass" if mode == "clean-vm" and is_guest_identity(vm_name, guest_os, guest_arch) else "blocked",
         f"mode={mode}; vm={vm_name or '(missing)'}; os={guest_os or '(missing)'}; arch={guest_arch or '(missing)'}",
     )
-    install_log_gate = _content_gate(
-        install_log_path, "install-log", lambda data: bool(data.strip()), "the install log is empty"
-    )
+    install_log_gate = _content_gate(install_log_path, "install-log", _install_log_problem)
     smoke_passed = (
         smoke.get("status") == "passed"
         and smoke.get("source_included") is False
@@ -406,9 +452,7 @@ def build_proof_record(
         "pass" if smoke_passed else "blocked",
         smoke_path or "missing studio-smoke.json",
     )
-    screenshot_gate = _content_gate(
-        screenshot_path, "launch-screenshot", is_png_screenshot, "the screenshot is not a complete PNG image with a nonzero size"
-    )
+    screenshot_gate = _content_gate(screenshot_path, "launch-screenshot", png_screenshot_problem)
     claim_gate = SmokeGate(
         "claim-boundary",
         "Claim Boundary",
@@ -493,10 +537,12 @@ def _committed_record_problem(data: object) -> str | None:
             return f"{key} is missing or not a string"
     if data.get("verified") is not True:
         return "verified is not the literal true"
-    try:
-        created = datetime.fromisoformat(data["created_at"])
-    except ValueError:
-        created = None
+    created = None
+    if CREATED_AT.fullmatch(data["created_at"]):
+        try:
+            created = datetime.fromisoformat(data["created_at"])
+        except ValueError:
+            created = None
     if created is None or created.tzinfo is None:
         return "created_at is not an ISO 8601 time with a time zone"
     gates = data.get("gates")
@@ -656,8 +702,9 @@ def _committed_bundle_problem(
     log_name, _, screenshot_name = names
     if not verified[log_name].strip():
         return "the install log is empty"
-    if not is_png_screenshot(verified[screenshot_name]):
-        return "the screenshot is not a complete PNG image with a nonzero size"
+    problem = png_screenshot_problem(verified[screenshot_name])
+    if problem:
+        return f"the screenshot is not an acceptable PNG: {problem}"
     for field, text in (
         ("install_log", proof.install_log),
         ("studio_smoke_json", proof.studio_smoke_json),
