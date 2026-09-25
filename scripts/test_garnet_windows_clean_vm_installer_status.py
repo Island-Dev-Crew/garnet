@@ -29,6 +29,9 @@ TINY_PNG = bytes.fromhex(
 )
 
 
+GAMMA_2_2 = (45455).to_bytes(4, "big")  # a valid gAMA body (1/2.2)
+
+
 def _png(width: int, height: int, colour: int, depth: int, raw: bytes, extra_chunks: tuple = ()) -> bytes:
     """A PNG with correct CRCs around the given filtered image data."""
     def chunk(kind: bytes, body: bytes) -> bytes:
@@ -824,15 +827,18 @@ class CommittedCleanVmBundleAdversarialTests(_CommittedRepoCase):
             ("empty pHYs", 0, 8, b"\x00\x00", ((b"pHYs", b""),)),
             ("pHYs with unit 7", 0, 8, b"\x00\x00", ((b"pHYs", b"\x00" * 8 + b"\x07"),)),
             ("sRGB intent 9", 2, 8, b"\x00" + bytes(3), ((b"sRGB", b"\x09"),)),
-            ("two gAMA", 0, 8, b"\x00\x00", ((b"gAMA", bytes(4)), (b"gAMA", bytes(4)))),
+            ("two gAMA", 0, 8, b"\x00\x00", ((b"gAMA", GAMMA_2_2), (b"gAMA", GAMMA_2_2))),
         )
         for label, colour, depth, raw, extra in cases:
             with self.subTest(label=label):
                 self.assertFalse(status_mod.is_png_screenshot(_png(1, 1, colour, depth, raw, extra)))
         after_idat = _png(1, 1, 0, 8, b"\x00\x00")
         cut = after_idat.index(b"IEND") - 4
-        gama = (4).to_bytes(4, "big") + b"gAMA" + bytes(4) + (zlib.crc32(b"gAMA" + bytes(4)) & 0xFFFFFFFF).to_bytes(4, "big")
-        self.assertFalse(status_mod.is_png_screenshot(after_idat[:cut] + gama + after_idat[cut:]), "gAMA after IDAT")
+        gama = (4).to_bytes(4, "big") + b"gAMA" + GAMMA_2_2 + (zlib.crc32(b"gAMA" + GAMMA_2_2) & 0xFFFFFFFF).to_bytes(4, "big")
+        problem = status_mod.png_screenshot_problem(after_idat[:cut] + gama + after_idat[cut:])
+        self.assertIn("before the image data", problem or "", "a valid gamma rejected for its position")
+        two = status_mod.png_screenshot_problem(_png(1, 1, 0, 8, b"\x00\x00", ((b"gAMA", GAMMA_2_2), (b"gAMA", GAMMA_2_2))))
+        self.assertIn("more than once", two or "", "a valid gamma rejected for repeating")
         for label, colour, raw, extra in (
             ("grey tRNS", 0, b"\x00\x00", ((b"tRNS", b"\x00\x01"),)),
             ("pHYs metres", 2, b"\x00" + bytes(3), ((b"pHYs", (3780).to_bytes(4, "big") * 2 + b"\x01"),)),
@@ -871,6 +877,25 @@ class CommittedCleanVmBundleAdversarialTests(_CommittedRepoCase):
         ):
             with self.subTest(label=label):
                 self.assertTrue(status_mod.is_png_screenshot(_png(1, 1, colour, 8, raw, extra)))
+
+    def test_ancillary_chunks_keep_their_order_around_plte(self) -> None:
+        # Codex round 13: gAMA, cHRM, sRGB, iCCP and sBIT must precede PLTE;
+        # bKGD, tRNS and hIST must follow it (PNG chunk ordering).
+        rgb = b"\x00" + bytes(3)
+        plte = (b"PLTE", bytes(6))
+        for kind, body in (
+            (b"gAMA", GAMMA_2_2),
+            (b"cHRM", (31270).to_bytes(4, "big") * 8),
+            (b"sRGB", b"\x00"),
+            (b"sBIT", b"\x08\x08\x08"),
+        ):
+            with self.subTest(after_plte=kind):
+                problem = status_mod.png_screenshot_problem(_png(1, 1, 2, 8, rgb, (plte, (kind, body))))
+                self.assertIn("before PLTE", problem or "")
+                self.assertIsNone(status_mod.png_screenshot_problem(_png(1, 1, 2, 8, rgb, ((kind, body), plte))))
+        problem = status_mod.png_screenshot_problem(_png(1, 1, 2, 8, rgb, ((b"bKGD", bytes(6)), plte)))
+        self.assertIn("after PLTE", problem or "")
+        self.assertIsNone(status_mod.png_screenshot_problem(_png(1, 1, 2, 8, rgb, (plte, (b"bKGD", bytes(6))))))
 
     def test_an_oversized_png_is_rejected_by_name(self) -> None:
         huge = _png(2147483647, 2147483647, 6, 16, b"\x00")
