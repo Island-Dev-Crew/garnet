@@ -1,0 +1,1 @@
+garnet seal: in-toto predicate emitted UNSIGNED (Garnet never signs); install cosign to sign it (wrap-don't-rebuild)

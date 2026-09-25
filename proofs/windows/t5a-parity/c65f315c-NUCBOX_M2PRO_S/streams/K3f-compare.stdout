@@ -1,0 +1,5 @@
+without stdout sha256=46402674e309205f66455414b0cadc950594235b4d3f87d063572aa2d7ef1da3 bytes=1290
+with    stdout sha256=46402674e309205f66455414b0cadc950594235b4d3f87d063572aa2d7ef1da3 bytes=1290
+seal_bytes_identical=True
+with-stub stderr says UNSIGNED=True
+stderr differs between the runs=True

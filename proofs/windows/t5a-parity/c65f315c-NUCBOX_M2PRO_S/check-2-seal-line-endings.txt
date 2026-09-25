@@ -1,0 +1,97 @@
+# Check 2: seal subject digest, LF vs CRLF
+folder: proofs/windows/t5a-parity/c65f315c-NUCBOX_M2PRO_S/
+t5a head: c65f315c0c55c75b2f00c4217c3d1cc57fb6ff59 (branch train/t5a-evidence-tools; read back from the remote in C01 and P02)
+host: NUCBOX_M2PRO_S (%COMPUTERNAME%; `hostname` prints the DNS casing, see E01)
+stamp: 20260925-1857 (UTC)
+harness: harness/w3_capture.py, sha256 7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845; every step ran from this one invocation
+  (w3_capture.py all --stamp 20260925-1857), 2026-09-25T18:57:38.592136Z to 2026-09-25T18:58:33.198545Z.
+scope: evidence for the T5a review record, gathered on native Windows. It is not a review.
+python: every python step ran with Python312 first on PATH except E06, which shows the machine's default
+  PATH (an unrelated 3.11.15 virtualenv). Path mode `stub` puts the stub cosign.exe directory first.
+inputs: hand-run inputs are written by K00 into a scratch directory outside both checkouts; their exact
+  bytes are in inputs.json.
+powershell: PowerShell steps run powershell.exe 5.1 with -EncodedCommand; with redirected output it writes
+  progress/error records to stderr as CLIXML. The raw streams are authoritative.
+captures: stdout and stderr are the raw child-process bytes, unedited; see encoding-census.txt.
+
+==============================================================================
+[K2a] Seal the flagship source saved with LF
+$ garnet seal seal/lf/tool.garnet
+exit_code=0 expected=0 timed_out=False started=2026-09-25T18:58:26.082720Z duration_s=0.016 path=pinned
+--- stdout (streams/K2a-seal-lf.stdout, 1290 bytes, sha256 46402674e309205f66455414b0cadc950594235b4d3f87d063572aa2d7ef1da3)
+{"_type":"https://in-toto.io/Statement/v1","subject":[{"name":"tool","digest":{"blake3":"38db718f35ec1dd034010a9c3d52b4236ce30523a117abefdf41196d5cc9cce9"}}],"predicateType":"https://garnet-lang.org/attestation/seal/v2","predicate":{"subject_identity":"garnet-source-lf-blake3-v1","signed":false,"source_blake3":"38db718f35ec1dd034010a9c3d52b4236ce30523a117abefdf41196d5cc9cce9","build_manifest":{
+  "ast_hash": "bdfaf8674e8c62a93fd9723256a011edfa6118ac77792313476e8a489179ce4f"
+,
+  "deterministic_flags": ["lto=on", "codegen-units=1", "strip=symbols"]
+,
+  "interp_version": "0.8.2"
+,
+  "parser_version": "0.8.2"
+,
+  "prelude_hash": "df4f1648cf79ea77d0842fd1cb8725aba82be1b2631d5a906952640f9a25cc6d"
+,
+  "schema": "garnet-manifest-v1"
+,
+  "signature": ""
+,
+  "signer_pubkey": ""
+,
+  "source_hash": "38db718f35ec1dd034010a9c3d52b4236ce30523a117abefdf41196d5cc9cce9"
+,
+  "target_triple": "unknown-target"
+
+}
+,"capability_manifest":{"schema":"garnet-capability-manifest-v1","aggregate":[],"functions":[{"name":"main","caps":[]}],"wildcard":false},"tooling":{"cosign":"not used by garnet seal; this predicate is UNSIGNED. To sign it: cosign attest --predicate <file> --type custom","sbom":"garnet-capability-manifest (native SBOM-equivalent; CycloneDX/SPDX via syft/cyclonedx when present)"}}}
+--- end stdout
+--- stderr (streams/K2a-seal-lf.stderr, 117 bytes, sha256 26ec1c29a96e6ce2deb9f85f73a0e1a8de7efc5e1027656be8a22eaeeea3f0c0)
+garnet seal: in-toto predicate emitted UNSIGNED (Garnet never signs); install cosign to sign it (wrap-don't-rebuild)
+--- end stderr
+
+==============================================================================
+[K2b] Seal the same source saved with CRLF
+$ garnet seal seal/crlf/tool.garnet
+exit_code=0 expected=0 timed_out=False started=2026-09-25T18:58:26.104113Z duration_s=0.015 path=pinned
+--- stdout (streams/K2b-seal-crlf.stdout, 1290 bytes, sha256 46402674e309205f66455414b0cadc950594235b4d3f87d063572aa2d7ef1da3)
+{"_type":"https://in-toto.io/Statement/v1","subject":[{"name":"tool","digest":{"blake3":"38db718f35ec1dd034010a9c3d52b4236ce30523a117abefdf41196d5cc9cce9"}}],"predicateType":"https://garnet-lang.org/attestation/seal/v2","predicate":{"subject_identity":"garnet-source-lf-blake3-v1","signed":false,"source_blake3":"38db718f35ec1dd034010a9c3d52b4236ce30523a117abefdf41196d5cc9cce9","build_manifest":{
+  "ast_hash": "bdfaf8674e8c62a93fd9723256a011edfa6118ac77792313476e8a489179ce4f"
+,
+  "deterministic_flags": ["lto=on", "codegen-units=1", "strip=symbols"]
+,
+  "interp_version": "0.8.2"
+,
+  "parser_version": "0.8.2"
+,
+  "prelude_hash": "df4f1648cf79ea77d0842fd1cb8725aba82be1b2631d5a906952640f9a25cc6d"
+,
+  "schema": "garnet-manifest-v1"
+,
+  "signature": ""
+,
+  "signer_pubkey": ""
+,
+  "source_hash": "38db718f35ec1dd034010a9c3d52b4236ce30523a117abefdf41196d5cc9cce9"
+,
+  "target_triple": "unknown-target"
+
+}
+,"capability_manifest":{"schema":"garnet-capability-manifest-v1","aggregate":[],"functions":[{"name":"main","caps":[]}],"wildcard":false},"tooling":{"cosign":"not used by garnet seal; this predicate is UNSIGNED. To sign it: cosign attest --predicate <file> --type custom","sbom":"garnet-capability-manifest (native SBOM-equivalent; CycloneDX/SPDX via syft/cyclonedx when present)"}}}
+--- end stdout
+--- stderr (streams/K2b-seal-crlf.stderr, 117 bytes, sha256 26ec1c29a96e6ce2deb9f85f73a0e1a8de7efc5e1027656be8a22eaeeea3f0c0)
+garnet seal: in-toto predicate emitted UNSIGNED (Garnet never signs); install cosign to sign it (wrap-don't-rebuild)
+--- end stderr
+
+==============================================================================
+[K2c] Subject digests must be equal (LF vs CRLF)
+$ python -I -c <compare subject digests of K2a and K2b>
+exit_code=0 expected=0 timed_out=False started=2026-09-25T18:58:26.125643Z duration_s=0.063 path=pinned
+--- stdout (streams/K2c-compare.stdout, 538 bytes, sha256 303e86960cac6a7956bf445712928cef2d5d2af9bd534d4cd82c947f0006fe4d)
+lf   subject=[{"name": "tool", "digest": {"blake3": "38db718f35ec1dd034010a9c3d52b4236ce30523a117abefdf41196d5cc9cce9"}}]
+crlf subject=[{"name": "tool", "digest": {"blake3": "38db718f35ec1dd034010a9c3d52b4236ce30523a117abefdf41196d5cc9cce9"}}]
+lf   predicate.source_blake3=38db718f35ec1dd034010a9c3d52b4236ce30523a117abefdf41196d5cc9cce9
+crlf predicate.source_blake3=38db718f35ec1dd034010a9c3d52b4236ce30523a117abefdf41196d5cc9cce9
+subject_identity=garnet-source-lf-blake3-v1
+subject_digests_equal=True
+whole_statements_equal=True
+--- end stdout
+--- stderr (streams/K2c-compare.stderr, 0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr

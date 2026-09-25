@@ -1,0 +1,5 @@
+   Compiling garnet-cli v0.8.2 (C:\gw3-20260925-1857-t5a\garnet-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.54s
+     Running tests\mcp_stdio.rs (target\debug\deps\mcp_stdio-e9f7167a1ecdfafa.exe)
+     Running tests\minimum_shelf_package.rs (target\debug\deps\minimum_shelf_package-0b2ad63e7b633218.exe)
+     Running tests\seal_attestation.rs (target\debug\deps\seal_attestation-4210f8814572aecd.exe)
