@@ -1,0 +1,534 @@
+# Commands run for proofs/windows/t5a-parity/c65f315c-NUCBOX_M2PRO_S/
+folder: proofs/windows/t5a-parity/c65f315c-NUCBOX_M2PRO_S/
+t5a head: c65f315c0c55c75b2f00c4217c3d1cc57fb6ff59 (branch train/t5a-evidence-tools; read back from the remote in C01 and P02)
+host: NUCBOX_M2PRO_S (%COMPUTERNAME%; `hostname` prints the DNS casing, see E01)
+stamp: 20260925-1857 (UTC)
+harness: harness/w3_capture.py, sha256 7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845; every step ran from this one invocation
+  (w3_capture.py all --stamp 20260925-1857), 2026-09-25T18:57:38.592136Z to 2026-09-25T18:58:33.198545Z.
+scope: evidence for the T5a review record, gathered on native Windows. It is not a review.
+python: every python step ran with Python312 first on PATH except E06, which shows the machine's default
+  PATH (an unrelated 3.11.15 virtualenv). Path mode `stub` puts the stub cosign.exe directory first.
+inputs: hand-run inputs are written by K00 into a scratch directory outside both checkouts; their exact
+  bytes are in inputs.json.
+powershell: PowerShell steps run powershell.exe 5.1 with -EncodedCommand; with redirected output it writes
+  progress/error records to stderr as CLIXML. The raw streams are authoritative.
+captures: stdout and stderr are the raw child-process bytes, unedited; see encoding-census.txt.
+run: stopped_at=None unexpected_exits=[]
+
+==============================================================================
+[C00] Clone, worktree and scratch directories absent   (phase clone)
+command: python -I -c <precheck>
+argv: ["C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.exe", "-I", "-c", "import os, sys\nbad = False\nfor p in (r'C:\\gw3-20260925-1857', r'C:\\gw3-20260925-1857-t5a', r'C:\\gw1-stage\\w3\\scratch-20260925-1857'):\n    e = os.path.exists(p); bad |= e; print(f'{p} exists={e}')\nsys.exit(1 if bad else 0)\n"]
+resolved_exe: C:\Users\IslandDevCrew\AppData\Local\Programs\Python\Python312\python.exe
+cwd: C:\   path: pinned   env_overrides: {}
+started_utc: 2026-09-25T18:57:38.592136Z   ended_utc: 2026-09-25T18:57:38.635859Z   duration_s: 0.047
+exit_code: 0   expected: 0   timed_out: False   timeout_s: 900
+stream: stdout  4cffe1d3586f403ea9dec4e30cd4645f5e21927c590f46ed8424e68794721018        126 B  streams/C00-precheck.stdout
+stream: stderr  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855          0 B  streams/C00-precheck.stderr
+==============================================================================
+[C01] Remote readback: the T5a branch tip must equal the named full head   (phase clone)
+command: git ls-remote https://github.com/Island-Dev-Crew/garnet.git refs/heads/train/t5a-evidence-tools refs/heads/main (+ equality gate)
+argv: ["C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.exe", "-I", "-c", "import subprocess, sys\nout = subprocess.run(['git', '-c', 'credential.helper=', 'ls-remote', r'https://github.com/Island-Dev-Crew/garnet.git', 'refs/heads/train/t5a-evidence-tools', 'refs/heads/main'], capture_output=True, text=True)\nprint(out.stdout, end=''); print(out.stderr, end='', file=sys.stderr)\ntip = [l.split()[0] for l in out.stdout.splitlines() if l.endswith('refs/heads/train/t5a-evidence-tools')]\nprint('named_head=c65f315c0c55c75b2f00c4217c3d1cc57fb6ff59')\nprint('branch_tip=' + (tip[0] if tip else 'ABSENT'))\nsys.exit(0 if tip and tip[0] == 'c65f315c0c55c75b2f00c4217c3d1cc57fb6ff59' else 1)\n"]
+resolved_exe: C:\Users\IslandDevCrew\AppData\Local\Programs\Python\Python312\python.exe
+cwd: C:\   path: pinned   env_overrides: {"GIT_TERMINAL_PROMPT": "0"}
+started_utc: 2026-09-25T18:57:38.642861Z   ended_utc: 2026-09-25T18:57:39.327173Z   duration_s: 0.687
+exit_code: 0   expected: 0   timed_out: False   timeout_s: 900
+stream: stdout  78d57a390c80048f2249d10d67e2d8983bb8246ded81a72ca44c5f72ac1e6b70        242 B  streams/C01-readback.stdout
+stream: stderr  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855          0 B  streams/C01-readback.stderr
+==============================================================================
+[C02] Fresh clone of main with core.autocrlf=false set before checkout   (phase clone)
+command: git clone -c core.autocrlf=false https://github.com/Island-Dev-Crew/garnet.git C:\gw3-20260925-1857
+argv: ["C:\\Program Files\\Git\\cmd\\git.EXE", "-c", "credential.helper=", "clone", "-c", "core.autocrlf=false", "https://github.com/Island-Dev-Crew/garnet.git", "C:\\gw3-20260925-1857"]
+resolved_exe: C:\Program Files\Git\cmd\git.EXE
+cwd: C:\   path: pinned   env_overrides: {"GIT_TERMINAL_PROMPT": "0"}
+started_utc: 2026-09-25T18:57:39.333179Z   ended_utc: 2026-09-25T18:57:42.988602Z   duration_s: 3.641
+exit_code: 0   expected: 0   timed_out: False   timeout_s: 1800
+stream: stdout  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855          0 B  streams/C02-clone.stdout
+stream: stderr  dafcdd102dbd59a79acbc9aa124b0eef668f416cd231f4495578ac398bcd412f       1465 B  streams/C02-clone.stderr
+==============================================================================
+[C03] Commit identity for the evidence clone: name   (phase clone)
+command: git config user.name "Jon Isaac"
+argv: ["C:\\Program Files\\Git\\cmd\\git.EXE", "-C", "C:\\gw3-20260925-1857", "config", "user.name", "Jon Isaac"]
+resolved_exe: C:\Program Files\Git\cmd\git.EXE
+cwd: C:\gw3-20260925-1857   path: pinned   env_overrides: {}
+started_utc: 2026-09-25T18:57:42.998844Z   ended_utc: 2026-09-25T18:57:43.034135Z   duration_s: 0.032
+exit_code: 0   expected: 0   timed_out: False   timeout_s: 900
+stream: stdout  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855          0 B  streams/C03-user-name.stdout
+stream: stderr  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855          0 B  streams/C03-user-name.stderr
+==============================================================================
+[C04] Commit identity for the evidence clone: noreply address   (phase clone)
+command: git config user.email "275140286+IslandDevCrew@users.noreply.github.com"
+argv: ["C:\\Program Files\\Git\\cmd\\git.EXE", "-C", "C:\\gw3-20260925-1857", "config", "user.email", "275140286+IslandDevCrew@users.noreply.github.com"]
+resolved_exe: C:\Program Files\Git\cmd\git.EXE
+cwd: C:\gw3-20260925-1857   path: pinned   env_overrides: {}
+started_utc: 2026-09-25T18:57:43.039155Z   ended_utc: 2026-09-25T18:57:43.074814Z   duration_s: 0.031
+exit_code: 0   expected: 0   timed_out: False   timeout_s: 900
+stream: stdout  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855          0 B  streams/C04-user-email.stdout
+stream: stderr  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855          0 B  streams/C04-user-email.stderr
+==============================================================================
+[C05] Fetch the named T5a head by full SHA   (phase clone)
+command: git fetch origin c65f315c0c55c75b2f00c4217c3d1cc57fb6ff59
+argv: ["C:\\Program Files\\Git\\cmd\\git.EXE", "-C", "C:\\gw3-20260925-1857", "-c", "credential.helper=", "fetch", "origin", "c65f315c0c55c75b2f00c4217c3d1cc57fb6ff59"]
+resolved_exe: C:\Program Files\Git\cmd\git.EXE
+cwd: C:\gw3-20260925-1857   path: pinned   env_overrides: {"GIT_TERMINAL_PROMPT": "0"}
+started_utc: 2026-09-25T18:57:43.079815Z   ended_utc: 2026-09-25T18:57:43.417693Z   duration_s: 0.344
+exit_code: 0   expected: 0   timed_out: False   timeout_s: 900
+stream: stdout  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855          0 B  streams/C05-fetch-t5a.stdout
+stream: stderr  d0816ea47f9874b942ef72b5451c03a95685ae4b86e35885d0e20fe9c6a0c29b        123 B  streams/C05-fetch-t5a.stderr
+==============================================================================
+[C06] Check out the T5a head detached in a separate worktree   (phase clone)
+command: git worktree add --detach C:\gw3-20260925-1857-t5a c65f315c0c55c75b2f00c4217c3d1cc57fb6ff59
+argv: ["C:\\Program Files\\Git\\cmd\\git.EXE", "-C", "C:\\gw3-20260925-1857", "worktree", "add", "--detach", "C:\\gw3-20260925-1857-t5a", "c65f315c0c55c75b2f00c4217c3d1cc57fb6ff59"]
+resolved_exe: C:\Program Files\Git\cmd\git.EXE
+cwd: C:\gw3-20260925-1857   path: pinned   env_overrides: {}
+started_utc: 2026-09-25T18:57:43.423991Z   ended_utc: 2026-09-25T18:57:45.109726Z   duration_s: 1.688
+exit_code: 0   expected: 0   timed_out: False   timeout_s: 900
+stream: stdout  87a1262108314e41f7280ef096bca1c5f23d23d870a68e7c0b029adf798705c1         91 B  streams/C06-worktree.stdout
+stream: stderr  81ec903081f4f08c6c5168ac61e5b215451871591ecec533546bed895ad4f1cc       1436 B  streams/C06-worktree.stderr
+==============================================================================
+[C07] Worktree HEAD (must be the named head)   (phase clone)
+command: git -C <worktree> rev-parse HEAD
+argv: ["C:\\Program Files\\Git\\cmd\\git.EXE", "-C", "C:\\gw3-20260925-1857-t5a", "rev-parse", "HEAD"]
+resolved_exe: C:\Program Files\Git\cmd\git.EXE
+cwd: C:\gw3-20260925-1857-t5a   path: pinned   env_overrides: {}
+started_utc: 2026-09-25T18:57:45.121777Z   ended_utc: 2026-09-25T18:57:45.157307Z   duration_s: 0.032
+exit_code: 0   expected: 0   timed_out: False   timeout_s: 900
+stream: stdout  fc192eab8af99fb5219234279045d24b1e46214b52350a9e0c6ee96085b1c9ac         41 B  streams/C07-wt-head.stdout
+stream: stderr  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855          0 B  streams/C07-wt-head.stderr
+==============================================================================
+[E01] Hostname   (phase env)
+command: hostname
+argv: ["C:\\windows\\system32\\hostname.EXE"]
+resolved_exe: C:\windows\system32\hostname.EXE
+cwd: C:\gw3-20260925-1857-t5a   path: pinned   env_overrides: {}
+started_utc: 2026-09-25T18:57:45.162332Z   ended_utc: 2026-09-25T18:57:45.178465Z   duration_s: 0.016
+exit_code: 0   expected: 0   timed_out: False   timeout_s: 900
+stream: stdout  17394d5f57b3858fabc726caf419e0c6df2a7babc2cf6becb6874e2d1de5ae42         16 B  streams/E01-hostname.stdout
+stream: stderr  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855          0 B  streams/E01-hostname.stderr
+==============================================================================
+[E02] OS name, version and system type   (phase env)
+command (PowerShell script):
+    systeminfo | findstr /B /C:"OS Name" /C:"OS Version" /C:"System Type"
+argv: ["C:\\windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-EncodedCommand", "<base64 UTF-16LE of the script above>"]
+resolved_exe: C:\windows\System32\WindowsPowerShell\v1.0\powershell.exe
+cwd: C:\gw3-20260925-1857-t5a   path: pinned   env_overrides: {}
+started_utc: 2026-09-25T18:57:45.181465Z   ended_utc: 2026-09-25T18:57:47.616925Z   duration_s: 2.437
+exit_code: 0   expected: 0   timed_out: False   timeout_s: 900
+stream: stdout  9caffa4c160c5c2067d959aca18ad76f80563530b438211e124918c6895e7ac0        161 B  streams/E02-systeminfo.stdout
+stream: stderr  a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f        392 B  streams/E02-systeminfo.stderr
+==============================================================================
+[E03] Rust compiler   (phase env)
+command: rustc -Vv
+argv: ["C:\\Users\\IslandDevCrew\\.cargo\\bin\\rustc.EXE", "-Vv"]
+resolved_exe: C:\Users\IslandDevCrew\.cargo\bin\rustc.EXE
+cwd: C:\gw3-20260925-1857-t5a   path: pinned   env_overrides: {}
+started_utc: 2026-09-25T18:57:47.628331Z   ended_utc: 2026-09-25T18:57:47.669548Z   duration_s: 0.047
+exit_code: 0   expected: 0   timed_out: False   timeout_s: 900
+stream: stdout  185aa337caf524a621d7b1ce7b21a4d6f92f3ea592d009e481fea0e00e0d0434        194 B  streams/E03-rustc.stdout
+stream: stderr  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855          0 B  streams/E03-rustc.stderr
+==============================================================================
+[E04] Cargo   (phase env)
+command: cargo -V
+argv: ["C:\\Users\\IslandDevCrew\\.cargo\\bin\\cargo.EXE", "-V"]
+resolved_exe: C:\Users\IslandDevCrew\.cargo\bin\cargo.EXE
+cwd: C:\gw3-20260925-1857-t5a   path: pinned   env_overrides: {}
+started_utc: 2026-09-25T18:57:47.681977Z   ended_utc: 2026-09-25T18:57:47.719340Z   duration_s: 0.031
+exit_code: 0   expected: 0   timed_out: False   timeout_s: 900
+stream: stdout  c10ec31b8c6e6e2693cf65fc1971b41edbc3da1ae7db6f9f3f36c4823f8dcab5         36 B  streams/E04-cargo.stdout
+stream: stderr  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855          0 B  streams/E04-cargo.stderr
+==============================================================================
+[E05] python with Python312 first on PATH   (phase env)
+command: python --version
+argv: ["C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.EXE", "--version"]
+resolved_exe: C:\Users\IslandDevCrew\AppData\Local\Programs\Python\Python312\python.EXE
+cwd: C:\gw3-20260925-1857-t5a   path: pinned   env_overrides: {}
+started_utc: 2026-09-25T18:57:47.726742Z   ended_utc: 2026-09-25T18:57:47.738774Z   duration_s: 0.0
+exit_code: 0   expected: 0   timed_out: False   timeout_s: 900
+stream: stdout  6a5d9f6462ca5dfc6788cfd216ba579fffd7875776ab9d9b35659be78858f73a         16 B  streams/E05-python-pinned.stdout
+stream: stderr  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855          0 B  streams/E05-python-pinned.stderr
+==============================================================================
+[E06] python on the machine's default PATH (disclosure: not the pinned interpreter)   (phase env)
+command: python --version
+argv: ["C:\\Users\\IslandDevCrew\\AppData\\Local\\hermes\\hermes-agent\\venv\\Scripts\\python.EXE", "--version"]
+resolved_exe: C:\Users\IslandDevCrew\AppData\Local\hermes\hermes-agent\venv\Scripts\python.EXE
+cwd: C:\gw3-20260925-1857-t5a   path: default   env_overrides: {}
+started_utc: 2026-09-25T18:57:47.744834Z   ended_utc: 2026-09-25T18:57:47.775541Z   duration_s: 0.032
+exit_code: 0   expected: 0   timed_out: False   timeout_s: 900
+stream: stdout  d901007b84bfc7eb172ba21b077c642df7d6285ca37e9634f913f8dfb8f7b898         16 B  streams/E06-python-default.stdout
+stream: stderr  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855          0 B  streams/E06-python-default.stderr
+==============================================================================
+[E07] Git   (phase env)
+command: git --version
+argv: ["C:\\Program Files\\Git\\cmd\\git.EXE", "--version"]
+resolved_exe: C:\Program Files\Git\cmd\git.EXE
+cwd: C:\gw3-20260925-1857-t5a   path: pinned   env_overrides: {}
+started_utc: 2026-09-25T18:57:47.781539Z   ended_utc: 2026-09-25T18:57:47.814039Z   duration_s: 0.031
+exit_code: 0   expected: 0   timed_out: False   timeout_s: 900
+stream: stdout  9d9d8a49f3de42d6e7b569bf28bd8db3ea3384c44386d6f2de4655e4ca41ff26         29 B  streams/E07-git.stdout
+stream: stderr  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855          0 B  streams/E07-git.stderr
+==============================================================================
+[E08] GitHub CLI auth status (tokens are masked by gh)   (phase env)
+command: gh auth status
+argv: ["C:\\Program Files\\GitHub CLI\\gh.EXE", "auth", "status"]
+resolved_exe: C:\Program Files\GitHub CLI\gh.EXE
+cwd: C:\gw3-20260925-1857-t5a   path: pinned   env_overrides: {}
+started_utc: 2026-09-25T18:57:47.824381Z   ended_utc: 2026-09-25T18:57:48.293167Z   duration_s: 0.469
+exit_code: 0   expected: 0   timed_out: False   timeout_s: 900
+stream: stdout  d136e3aea16530287cd598777591d1cf1f01557557919c019c88193597e73d23        471 B  streams/E08-gh-auth.stdout
+stream: stderr  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855          0 B  streams/E08-gh-auth.stderr
+==============================================================================
+[E09] T5a worktree history   (phase env)
+command: git -C <worktree> log --oneline -5
+argv: ["C:\\Program Files\\Git\\cmd\\git.EXE", "-C", "C:\\gw3-20260925-1857-t5a", "log", "--oneline", "-5"]
+resolved_exe: C:\Program Files\Git\cmd\git.EXE
+cwd: C:\gw3-20260925-1857-t5a   path: pinned   env_overrides: {}
+started_utc: 2026-09-25T18:57:48.299086Z   ended_utc: 2026-09-25T18:57:48.336048Z   duration_s: 0.047
+exit_code: 0   expected: 0   timed_out: False   timeout_s: 900
+stream: stdout  1baca8a11c019bea78885c849332efe9c3c72f75212e4402870945d671fac467        374 B  streams/E09-wt-log.stdout
+stream: stderr  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855          0 B  streams/E09-wt-log.stderr
+==============================================================================
+[E10] Merge base of the T5a head with main   (phase env)
+command: git -C <worktree> merge-base HEAD origin/main
+argv: ["C:\\Program Files\\Git\\cmd\\git.EXE", "-C", "C:\\gw3-20260925-1857-t5a", "merge-base", "HEAD", "origin/main"]
+resolved_exe: C:\Program Files\Git\cmd\git.EXE
+cwd: C:\gw3-20260925-1857-t5a   path: pinned   env_overrides: {}
+started_utc: 2026-09-25T18:57:48.341055Z   ended_utc: 2026-09-25T18:57:48.381702Z   duration_s: 0.047
+exit_code: 0   expected: 0   timed_out: False   timeout_s: 900
+stream: stdout  6b3fa1fb8e132f8a53342a29c3e84e97994e48981d2b063c85d9ce94160c7246         41 B  streams/E10-wt-base.stdout
+stream: stderr  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855          0 B  streams/E10-wt-base.stderr
+==============================================================================
+[E11] Worktree status (must be clean)   (phase env)
+command: git -C <worktree> status --short --branch
+argv: ["C:\\Program Files\\Git\\cmd\\git.EXE", "-C", "C:\\gw3-20260925-1857-t5a", "status", "--short", "--branch"]
+resolved_exe: C:\Program Files\Git\cmd\git.EXE
+cwd: C:\gw3-20260925-1857-t5a   path: pinned   env_overrides: {}
+started_utc: 2026-09-25T18:57:48.387701Z   ended_utc: 2026-09-25T18:57:48.461537Z   duration_s: 0.078
+exit_code: 0   expected: 0   timed_out: False   timeout_s: 900
+stream: stdout  ba051334ebc33f3162a4fd5be48615e03c8dac8ec7977e7c2752dbc1cf981841         20 B  streams/E11-wt-status.stdout
+stream: stderr  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855          0 B  streams/E11-wt-status.stderr
+==============================================================================
+[E12] core.autocrlf at every config level   (phase env)
+command: git config --show-origin --get-all core.autocrlf
+argv: ["C:\\Program Files\\Git\\cmd\\git.EXE", "-C", "C:\\gw3-20260925-1857-t5a", "config", "--show-origin", "--get-all", "core.autocrlf"]
+resolved_exe: C:\Program Files\Git\cmd\git.EXE
+cwd: C:\gw3-20260925-1857-t5a   path: pinned   env_overrides: {}
+started_utc: 2026-09-25T18:57:48.467450Z   ended_utc: 2026-09-25T18:57:48.500894Z   duration_s: 0.031
+exit_code: 0   expected: 0   timed_out: False   timeout_s: 900
+stream: stdout  203e2f34586ab273d0b3a6b76b99ce4741080a0207bb5486f6d2a3998876b27a        134 B  streams/E12-autocrlf.stdout
+stream: stderr  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855          0 B  streams/E12-autocrlf.stderr
+==============================================================================
+[E13] Checkout attributes for the flagship and the seal-sensitive prelude   (phase env)
+command: git check-attr text eol -- <flagship tool.garnet, tool.seal.json, prelude.rs>
+argv: ["C:\\Program Files\\Git\\cmd\\git.EXE", "-C", "C:\\gw3-20260925-1857-t5a", "check-attr", "text", "eol", "--", "examples/minimum-shelf-flagship/tool.garnet", "examples/minimum-shelf-flagship/tool.seal.json", "garnet-interp-v0.3/src/prelude.rs"]
+resolved_exe: C:\Program Files\Git\cmd\git.EXE
+cwd: C:\gw3-20260925-1857-t5a   path: pinned   env_overrides: {}
+started_utc: 2026-09-25T18:57:48.500894Z   ended_utc: 2026-09-25T18:57:48.548642Z   duration_s: 0.047
+exit_code: 0   expected: 0   timed_out: False   timeout_s: 900
+stream: stdout  ad819ff8d5a983ad3cc97366b72584a7dc85bc0554ef8575e604a062d8936f62        310 B  streams/E13-check-attr.stdout
+stream: stderr  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855          0 B  streams/E13-check-attr.stderr
+==============================================================================
+[E14] Is a real cosign on the pinned PATH? (expected: no)   (phase env)
+command: where.exe cosign
+argv: ["C:\\windows\\system32\\where.exe", "cosign"]
+resolved_exe: C:\windows\system32\where.exe
+cwd: C:\gw3-20260925-1857-t5a   path: pinned   env_overrides: {}
+started_utc: 2026-09-25T18:57:48.553732Z   ended_utc: 2026-09-25T18:57:48.642077Z   duration_s: 0.078
+exit_code: 1   expected: 1   timed_out: False   timeout_s: 900
+stream: stdout  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855          0 B  streams/E14-where-cosign.stdout
+stream: stderr  63a1626b4d619d0a6614f871440e7f72c64347101e40e7ea87082676d5b0ec22         54 B  streams/E14-where-cosign.stderr
+==============================================================================
+[E15] Process count and OneDrive processes   (phase env)
+command (PowerShell script):
+    $p = Get-Process
+    "process_count=$($p.Count)"
+    $p | Where-Object { $_.ProcessName -like '*OneDrive*' } | Sort-Object Id | ForEach-Object { "onedrive_process=$($_.ProcessName) pid=$($_.Id)" }
+argv: ["C:\\windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-EncodedCommand", "<base64 UTF-16LE of the script above>"]
+resolved_exe: C:\windows\System32\WindowsPowerShell\v1.0\powershell.exe
+cwd: C:\gw3-20260925-1857-t5a   path: pinned   env_overrides: {}
+started_utc: 2026-09-25T18:57:48.645087Z   ended_utc: 2026-09-25T18:57:48.917400Z   duration_s: 0.281
+exit_code: 0   expected: 0   timed_out: False   timeout_s: 900
+stream: stdout  98638265c1e2bb82654cd984a112b808f9d4d25e071c16143164891e922a4173        106 B  streams/E15-processes.stdout
+stream: stderr  2ce70d6c8c9ad6726c794690c8b14a2b83673648cac88edf4ff1acc50ec46348        616 B  streams/E15-processes.stderr
+==============================================================================
+[E16] Toolchain-relevant environment variables inherited by every step   (phase env)
+command (PowerShell script):
+    Get-ChildItem env: | Where-Object { $_.Name -match '^(GARNET|CARGO|RUSTUP|RUSTC|RUSTFLAGS|RUST_|PYTHON|GIT_|GH_)' } | Sort-Object Name | ForEach-Object { "$($_.Name)=$($_.Value)" }
+    "(end of GARNET/CARGO/RUST/PYTHON/GIT/GH variables)"
+argv: ["C:\\windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-EncodedCommand", "<base64 UTF-16LE of the script above>"]
+resolved_exe: C:\windows\System32\WindowsPowerShell\v1.0\powershell.exe
+cwd: C:\gw3-20260925-1857-t5a   path: pinned   env_overrides: {}
+started_utc: 2026-09-25T18:57:48.925646Z   ended_utc: 2026-09-25T18:57:49.160637Z   duration_s: 0.235
+exit_code: 0   expected: 0   timed_out: False   timeout_s: 900
+stream: stdout  8f0de808c57b7ec1e43e8be28ea3d7d5014afc5a4cac63b1f371354954691327        146 B  streams/E16-env-vars.stdout
+stream: stderr  2ce70d6c8c9ad6726c794690c8b14a2b83673648cac88edf4ff1acc50ec46348        616 B  streams/E16-env-vars.stderr
+==============================================================================
+[B01] Build garnet-cli at the T5a head   (phase build)
+command: cargo build --locked -p garnet-cli
+argv: ["C:\\Users\\IslandDevCrew\\.cargo\\bin\\cargo.EXE", "build", "--locked", "-p", "garnet-cli"]
+resolved_exe: C:\Users\IslandDevCrew\.cargo\bin\cargo.EXE
+cwd: C:\gw3-20260925-1857-t5a   path: pinned   env_overrides: {}
+started_utc: 2026-09-25T18:57:49.172636Z   ended_utc: 2026-09-25T18:58:18.305558Z   duration_s: 29.141
+exit_code: 0   expected: 0   timed_out: False   timeout_s: 5400
+stream: stdout  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855          0 B  streams/B01-cargo-build.stdout
+stream: stderr  7b3e03fd06acb4fb8807d05e5a3b5788520f11a3364b8092a390cb88af2a9ee3       5002 B  streams/B01-cargo-build.stderr
+==============================================================================
+[B02] The built binary   (phase build)
+command: target\debug\garnet.exe --version
+argv: ["C:\\gw3-20260925-1857-t5a\\target\\debug\\garnet.exe", "--version"]
+resolved_exe: C:\gw3-20260925-1857-t5a\target\debug\garnet.exe
+cwd: C:\gw3-20260925-1857-t5a   path: pinned   env_overrides: {}
+started_utc: 2026-09-25T18:58:18.313562Z   ended_utc: 2026-09-25T18:58:18.827096Z   duration_s: 0.515
+exit_code: 0   expected: 0   timed_out: False   timeout_s: 900
+stream: stdout  ddf4896fcb790bc3e7dc606ad3e78672f3d3b05678f72ad6924db1caedab828f       1201 B  streams/B02-garnet-version.stdout
+stream: stderr  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855          0 B  streams/B02-garnet-version.stderr
+==============================================================================
+[K00] Write the hand-run inputs (exact bytes from inputs.json) to the scratch dir   (phase check1)
+command: python -I -c <write inputs.json files into the scratch directory>
+argv: ["C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.exe", "-I", "-c", "import json, sys, hashlib\nfrom pathlib import Path\nroot = Path(r'C:\\gw1-stage\\w3\\scratch-20260925-1857')\nfiles = json.loads(open(r'C:\\gw1-stage\\w3\\c65f315c-NUCBOX_M2PRO_S\\inputs.json', encoding='utf-8').read())['files']\nfor rel, meta in sorted(files.items()):\n    p = root / rel; p.parent.mkdir(parents=True, exist_ok=True)\n    data = bytes.fromhex(meta['hex']); p.write_bytes(data)\n    assert hashlib.sha256(p.read_bytes()).hexdigest() == meta['sha256']\n    print(f\"{meta['sha256']}  {len(data):>5} B  crlf={data.count(bytes([13, 10]))}  {rel}\")\n"]
+resolved_exe: C:\Users\IslandDevCrew\AppData\Local\Programs\Python\Python312\python.exe
+cwd: C:\   path: pinned   env_overrides: {}
+started_utc: 2026-09-25T18:58:18.835114Z   ended_utc: 2026-09-25T18:58:18.948884Z   duration_s: 0.109
+exit_code: 0   expected: 0   timed_out: False   timeout_s: 900
+stream: stdout  e44e4d961ed0a8738d10eb5101c3becaff7f896a96d75bf96572a23fa2cbf190       1617 B  streams/K00-write-inputs.stdout
+stream: stderr  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855          0 B  streams/K00-write-inputs.stderr
+==============================================================================
+[K1a] The four named diff_caps tests   (phase check1)
+command: cargo test --locked -p garnet-cli --test diff_caps -- nested_module_gain directory_mode_names swapping_two_definitions directory_mode_reports_reordered
+argv: ["C:\\Users\\IslandDevCrew\\.cargo\\bin\\cargo.EXE", "test", "--locked", "-p", "garnet-cli", "--test", "diff_caps", "--", "nested_module_gain", "directory_mode_names", "swapping_two_definitions", "directory_mode_reports_reordered"]
+resolved_exe: C:\Users\IslandDevCrew\.cargo\bin\cargo.EXE
+cwd: C:\gw3-20260925-1857-t5a   path: pinned   env_overrides: {}
+started_utc: 2026-09-25T18:58:18.959107Z   ended_utc: 2026-09-25T18:58:25.889925Z   duration_s: 6.922
+exit_code: 0   expected: 0   timed_out: False   timeout_s: 3600
+stream: stdout  f63ed88e4d4df94f573fac8495624b5e7052c16780f71fc12f306664d5b329c7        364 B  streams/K1a-diff-caps-tests.stdout
+stream: stderr  5390589e399b597a477e8125146101b1ae048c8e2af32e1b74a7eaf04c80b348        558 B  streams/K1a-diff-caps-tests.stderr
+==============================================================================
+[K1b] By hand: nested-module gain (expected `~ a::f gained: fs`, exit 0)   (phase check1)
+command: garnet diff-caps diff/nested/old.garnet diff/nested/new.garnet
+argv: ["C:\\gw3-20260925-1857-t5a\\target\\debug\\garnet.exe", "diff-caps", "C:\\gw1-stage\\w3\\scratch-20260925-1857\\diff\\nested\\old.garnet", "C:\\gw1-stage\\w3\\scratch-20260925-1857\\diff\\nested\\new.garnet"]
+resolved_exe: C:\gw3-20260925-1857-t5a\target\debug\garnet.exe
+cwd: C:\gw1-stage\w3\scratch-20260925-1857   path: pinned   env_overrides: {}
+started_utc: 2026-09-25T18:58:25.904171Z   ended_utc: 2026-09-25T18:58:25.920261Z   duration_s: 0.015
+exit_code: 0   expected: 0   timed_out: False   timeout_s: 900
+stream: stdout  b81a93e6a40ef9cc501a95122408bcfc8987f409204403548576c1f350c72e63        220 B  streams/K1b-nested.stdout
+stream: stderr  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855          0 B  streams/K1b-nested.stderr
+==============================================================================
+[K1c] By hand: nested-module gain, --machine   (phase check1)
+command: garnet diff-caps --machine diff/nested/old.garnet diff/nested/new.garnet
+argv: ["C:\\gw3-20260925-1857-t5a\\target\\debug\\garnet.exe", "diff-caps", "--machine", "C:\\gw1-stage\\w3\\scratch-20260925-1857\\diff\\nested\\old.garnet", "C:\\gw1-stage\\w3\\scratch-20260925-1857\\diff\\nested\\new.garnet"]
+resolved_exe: C:\gw3-20260925-1857-t5a\target\debug\garnet.exe
+cwd: C:\gw1-stage\w3\scratch-20260925-1857   path: pinned   env_overrides: {}
+started_utc: 2026-09-25T18:58:25.927802Z   ended_utc: 2026-09-25T18:58:25.943803Z   duration_s: 0.015
+exit_code: 0   expected: not asserted   timed_out: False   timeout_s: 900
+stream: stdout  e049096f6607dd0d4ad8d229d5b466a27b29803bc34277bc8cce18a998a737e2        487 B  streams/K1c-nested-machine.stdout
+stream: stderr  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855          0 B  streams/K1c-nested-machine.stderr
+==============================================================================
+[K1d] By hand: directory mode names functions by file (expected `~ a.garnet::helper gained: fs`)   (phase check1)
+command: garnet diff-caps diff/dirnames/old diff/dirnames/new
+argv: ["C:\\gw3-20260925-1857-t5a\\target\\debug\\garnet.exe", "diff-caps", "C:\\gw1-stage\\w3\\scratch-20260925-1857\\diff\\dirnames\\old", "C:\\gw1-stage\\w3\\scratch-20260925-1857\\diff\\dirnames\\new"]
+resolved_exe: C:\gw3-20260925-1857-t5a\target\debug\garnet.exe
+cwd: C:\gw1-stage\w3\scratch-20260925-1857   path: pinned   env_overrides: {}
+started_utc: 2026-09-25T18:58:25.945805Z   ended_utc: 2026-09-25T18:58:25.961979Z   duration_s: 0.016
+exit_code: 1   expected: not asserted   timed_out: False   timeout_s: 900
+stream: stdout  fa4872177a46fe5a92e8aeda97776948563ef94c937a57a94406aca594179a9e        259 B  streams/K1d-dirnames.stdout
+stream: stderr  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855          0 B  streams/K1d-dirnames.stderr
+==============================================================================
+[K1e] By hand: swapped definitions of one name (expected `~ f gained: fs`)   (phase check1)
+command: garnet diff-caps diff/swap/old.garnet diff/swap/new.garnet
+argv: ["C:\\gw3-20260925-1857-t5a\\target\\debug\\garnet.exe", "diff-caps", "C:\\gw1-stage\\w3\\scratch-20260925-1857\\diff\\swap\\old.garnet", "C:\\gw1-stage\\w3\\scratch-20260925-1857\\diff\\swap\\new.garnet"]
+resolved_exe: C:\gw3-20260925-1857-t5a\target\debug\garnet.exe
+cwd: C:\gw1-stage\w3\scratch-20260925-1857   path: pinned   env_overrides: {}
+started_utc: 2026-09-25T18:58:25.967984Z   ended_utc: 2026-09-25T18:58:25.983201Z   duration_s: 0.016
+exit_code: 0   expected: not asserted   timed_out: False   timeout_s: 900
+stream: stdout  2ecfa6dfb8d0d0e05ea20bbb88344e494488483c172dc409555dc82ef518d94d        213 B  streams/K1e-swap.stdout
+stream: stderr  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855          0 B  streams/K1e-swap.stderr
+==============================================================================
+[K1f] By hand: reordered definitions in a two-file directory (expected `~ a.garnet::f gained: fs`)   (phase check1)
+command: garnet diff-caps diff/dirswap/old diff/dirswap/new
+argv: ["C:\\gw3-20260925-1857-t5a\\target\\debug\\garnet.exe", "diff-caps", "C:\\gw1-stage\\w3\\scratch-20260925-1857\\diff\\dirswap\\old", "C:\\gw1-stage\\w3\\scratch-20260925-1857\\diff\\dirswap\\new"]
+resolved_exe: C:\gw3-20260925-1857-t5a\target\debug\garnet.exe
+cwd: C:\gw1-stage\w3\scratch-20260925-1857   path: pinned   env_overrides: {}
+started_utc: 2026-09-25T18:58:25.990216Z   ended_utc: 2026-09-25T18:58:26.006460Z   duration_s: 0.016
+exit_code: 0   expected: not asserted   timed_out: False   timeout_s: 900
+stream: stdout  a6970ceb6d55850e26753755ca317a55660baceb122940f328cdfe21a3a4f62d        215 B  streams/K1f-dirswap.stdout
+stream: stderr  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855          0 B  streams/K1f-dirswap.stderr
+==============================================================================
+[K1g] Check the hand-run outputs against the trigger's expectations   (phase check1)
+command: python -I -c <assert the expected lines and exit codes>
+argv: ["C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.exe", "-I", "-c", "import sys\nS = r'C:\\gw1-stage\\w3\\c65f315c-NUCBOX_M2PRO_S\\streams'\ndef out(stem): return open(S + '\\\\' + stem + '.stdout', 'rb').read().decode('utf-8', 'replace')\nimport json\nrec = {}\nok = True\ndef expect(label, cond):\n    global ok\n    ok &= bool(cond); print(('PASS ' if cond else 'FAIL ') + label)\nexpect('K1a ran the four named tests: `4 passed; 0 failed`', 'test result: ok. 4 passed; 0 failed' in out('K1a-diff-caps-tests'))\nexpect('K1b stdout contains `~ a::f gained: fs`', '~ a::f gained: fs' in out('K1b-nested'))\nexpect('K1c --machine names a::f', '{\"name\":\"a::f\",\"gained\":[\"fs\"]}' in out('K1c-nested-machine'))\nexpect('K1d stdout contains `~ a.garnet::helper gained: fs`', '~ a.garnet::helper gained: fs' in out('K1d-dirnames'))\nexpect('K1d stdout has no `helper gained: net`', 'helper gained: net' not in out('K1d-dirnames'))\nexpect('K1e stdout contains `~ f gained: fs`', '~ f gained: fs' in out('K1e-swap'))\nexpect('K1f stdout contains `~ a.garnet::f gained: fs`', '~ a.garnet::f gained: fs' in out('K1f-dirswap'))\nsys.exit(0 if ok else 1)\n"]
+resolved_exe: C:\Users\IslandDevCrew\AppData\Local\Programs\Python\Python312\python.exe
+cwd: C:\   path: pinned   env_overrides: {}
+started_utc: 2026-09-25T18:58:26.012506Z   ended_utc: 2026-09-25T18:58:26.080688Z   duration_s: 0.062
+exit_code: 0   expected: 0   timed_out: False   timeout_s: 900
+stream: stdout  12d9d8a202fc10ee5ce11b192cd708ea5ea37df8a2a3a29d70cd0f486d80bd8c        333 B  streams/K1g-expectations.stdout
+stream: stderr  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855          0 B  streams/K1g-expectations.stderr
+==============================================================================
+[K2a] Seal the flagship source saved with LF   (phase check2)
+command: garnet seal seal/lf/tool.garnet
+argv: ["C:\\gw3-20260925-1857-t5a\\target\\debug\\garnet.exe", "seal", "C:\\gw1-stage\\w3\\scratch-20260925-1857\\seal\\lf\\tool.garnet"]
+resolved_exe: C:\gw3-20260925-1857-t5a\target\debug\garnet.exe
+cwd: C:\gw1-stage\w3\scratch-20260925-1857   path: pinned   env_overrides: {}
+started_utc: 2026-09-25T18:58:26.082720Z   ended_utc: 2026-09-25T18:58:26.101020Z   duration_s: 0.016
+exit_code: 0   expected: 0   timed_out: False   timeout_s: 900
+stream: stdout  46402674e309205f66455414b0cadc950594235b4d3f87d063572aa2d7ef1da3       1290 B  streams/K2a-seal-lf.stdout
+stream: stderr  26ec1c29a96e6ce2deb9f85f73a0e1a8de7efc5e1027656be8a22eaeeea3f0c0        117 B  streams/K2a-seal-lf.stderr
+==============================================================================
+[K2b] Seal the same source saved with CRLF   (phase check2)
+command: garnet seal seal/crlf/tool.garnet
+argv: ["C:\\gw3-20260925-1857-t5a\\target\\debug\\garnet.exe", "seal", "C:\\gw1-stage\\w3\\scratch-20260925-1857\\seal\\crlf\\tool.garnet"]
+resolved_exe: C:\gw3-20260925-1857-t5a\target\debug\garnet.exe
+cwd: C:\gw1-stage\w3\scratch-20260925-1857   path: pinned   env_overrides: {}
+started_utc: 2026-09-25T18:58:26.104113Z   ended_utc: 2026-09-25T18:58:26.122250Z   duration_s: 0.015
+exit_code: 0   expected: 0   timed_out: False   timeout_s: 900
+stream: stdout  46402674e309205f66455414b0cadc950594235b4d3f87d063572aa2d7ef1da3       1290 B  streams/K2b-seal-crlf.stdout
+stream: stderr  26ec1c29a96e6ce2deb9f85f73a0e1a8de7efc5e1027656be8a22eaeeea3f0c0        117 B  streams/K2b-seal-crlf.stderr
+==============================================================================
+[K2c] Subject digests must be equal (LF vs CRLF)   (phase check2)
+command: python -I -c <compare subject digests of K2a and K2b>
+argv: ["C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.exe", "-I", "-c", "import json, sys\nS = r'C:\\gw1-stage\\w3\\c65f315c-NUCBOX_M2PRO_S\\streams'\ndef stmt(stem): return json.loads(open(S + '\\\\' + stem + '.stdout', 'rb').read().decode('utf-8'))\na, b = stmt('K2a-seal-lf'), stmt('K2b-seal-crlf')\nda, db = a['subject'][0]['digest'], b['subject'][0]['digest']\nprint('lf   subject=' + json.dumps(a['subject']))\nprint('crlf subject=' + json.dumps(b['subject']))\nprint('lf   predicate.source_blake3=' + str(a['predicate'].get('source_blake3')))\nprint('crlf predicate.source_blake3=' + str(b['predicate'].get('source_blake3')))\nprint('subject_identity=' + str(a['predicate'].get('subject_identity')))\nprint('subject_digests_equal=' + str(da == db))\nprint('whole_statements_equal=' + str(a == b))\nsys.exit(0 if da == db else 1)\n"]
+resolved_exe: C:\Users\IslandDevCrew\AppData\Local\Programs\Python\Python312\python.exe
+cwd: C:\   path: pinned   env_overrides: {}
+started_utc: 2026-09-25T18:58:26.125643Z   ended_utc: 2026-09-25T18:58:26.190336Z   duration_s: 0.063
+exit_code: 0   expected: 0   timed_out: False   timeout_s: 900
+stream: stdout  303e86960cac6a7956bf445712928cef2d5d2af9bd534d4cd82c947f0006fe4d        538 B  streams/K2c-compare.stdout
+stream: stderr  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855          0 B  streams/K2c-compare.stderr
+==============================================================================
+[K3a] Compile the stub cosign.exe (prints a version line, exits 0)   (phase check3)
+command: rustc -O -o stub/cosign.exe stub/cosign.rs
+argv: ["C:\\Users\\IslandDevCrew\\.cargo\\bin\\rustc.EXE", "-O", "-o", "C:\\gw1-stage\\w3\\scratch-20260925-1857\\stub\\cosign.exe", "C:\\gw1-stage\\w3\\scratch-20260925-1857\\stub\\cosign.rs"]
+resolved_exe: C:\Users\IslandDevCrew\.cargo\bin\rustc.EXE
+cwd: C:\gw1-stage\w3\scratch-20260925-1857   path: pinned   env_overrides: {}
+started_utc: 2026-09-25T18:58:26.201664Z   ended_utc: 2026-09-25T18:58:26.375947Z   duration_s: 0.172
+exit_code: 0   expected: 0   timed_out: False   timeout_s: 900
+stream: stdout  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855          0 B  streams/K3a-build-stub.stdout
+stream: stderr  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855          0 B  streams/K3a-build-stub.stderr
+==============================================================================
+[K3b] The stub answers `cosign version`   (phase check3)
+command: stub/cosign.exe version
+argv: ["C:\\gw1-stage\\w3\\scratch-20260925-1857\\stub\\cosign.exe", "version"]
+resolved_exe: C:\gw1-stage\w3\scratch-20260925-1857\stub\cosign.exe
+cwd: C:\gw1-stage\w3\scratch-20260925-1857   path: pinned   env_overrides: {}
+started_utc: 2026-09-25T18:58:26.377834Z   ended_utc: 2026-09-25T18:58:26.411789Z   duration_s: 0.047
+exit_code: 0   expected: 0   timed_out: False   timeout_s: 900
+stream: stdout  6d19d5885f83a358eeb97072fcb2ce3fc4c46d19574a51f0977461d96f0f5ca9         15 B  streams/K3b-stub-version.stdout
+stream: stderr  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855          0 B  streams/K3b-stub-version.stderr
+==============================================================================
+[K3c] Where cosign resolves with the stub directory first on PATH   (phase check3)
+command: where.exe cosign
+argv: ["C:\\windows\\system32\\where.exe", "cosign"]
+resolved_exe: C:\windows\system32\where.exe
+cwd: C:\gw1-stage\w3\scratch-20260925-1857   path: stub   env_overrides: {}
+started_utc: 2026-09-25T18:58:26.421263Z   ended_utc: 2026-09-25T18:58:26.503557Z   duration_s: 0.078
+exit_code: 0   expected: 0   timed_out: False   timeout_s: 900
+stream: stdout  0e7108f1e74d3a77df94573ebd8a8bb1a99ca31a6c28e4ed7c776c7285b67001         55 B  streams/K3c-where-with-stub.stdout
+stream: stderr  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855          0 B  streams/K3c-where-with-stub.stderr
+==============================================================================
+[K3d] Seal with no cosign on PATH   (phase check3)
+command: garnet seal seal/lf/tool.garnet
+argv: ["C:\\gw3-20260925-1857-t5a\\target\\debug\\garnet.exe", "seal", "C:\\gw1-stage\\w3\\scratch-20260925-1857\\seal\\lf\\tool.garnet"]
+resolved_exe: C:\gw3-20260925-1857-t5a\target\debug\garnet.exe
+cwd: C:\gw1-stage\w3\scratch-20260925-1857   path: pinned   env_overrides: {}
+started_utc: 2026-09-25T18:58:26.509874Z   ended_utc: 2026-09-25T18:58:26.525965Z   duration_s: 0.016
+exit_code: 0   expected: 0   timed_out: False   timeout_s: 900
+stream: stdout  46402674e309205f66455414b0cadc950594235b4d3f87d063572aa2d7ef1da3       1290 B  streams/K3d-seal-without.stdout
+stream: stderr  26ec1c29a96e6ce2deb9f85f73a0e1a8de7efc5e1027656be8a22eaeeea3f0c0        117 B  streams/K3d-seal-without.stderr
+==============================================================================
+[K3e] Seal with the stub cosign.exe first on PATH   (phase check3)
+command: garnet seal seal/lf/tool.garnet
+argv: ["C:\\gw3-20260925-1857-t5a\\target\\debug\\garnet.exe", "seal", "C:\\gw1-stage\\w3\\scratch-20260925-1857\\seal\\lf\\tool.garnet"]
+resolved_exe: C:\gw3-20260925-1857-t5a\target\debug\garnet.exe
+cwd: C:\gw1-stage\w3\scratch-20260925-1857   path: stub   env_overrides: {}
+started_utc: 2026-09-25T18:58:26.528920Z   ended_utc: 2026-09-25T18:58:26.549081Z   duration_s: 0.015
+exit_code: 0   expected: 0   timed_out: False   timeout_s: 900
+stream: stdout  46402674e309205f66455414b0cadc950594235b4d3f87d063572aa2d7ef1da3       1290 B  streams/K3e-seal-with-stub.stdout
+stream: stderr  b4e330d92c82266ebb87dcef138e42645f145f0dbdfa135918e9e1144819551f        155 B  streams/K3e-seal-with-stub.stderr
+==============================================================================
+[K3f] Seal bytes must be identical; stderr must still say UNSIGNED   (phase check3)
+command: python -I -c <compare K3d and K3e>
+argv: ["C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.exe", "-I", "-c", "import sys\nS = r'C:\\gw1-stage\\w3\\c65f315c-NUCBOX_M2PRO_S\\streams'\ndef rd(n): return open(S + '\\\\' + n, 'rb').read()\no1, o2 = rd('K3d-seal-without.stdout'), rd('K3e-seal-with-stub.stdout')\ne1, e2 = rd('K3d-seal-without.stderr'), rd('K3e-seal-with-stub.stderr')\nimport hashlib\nprint('without stdout sha256=' + hashlib.sha256(o1).hexdigest() + f' bytes={len(o1)}')\nprint('with    stdout sha256=' + hashlib.sha256(o2).hexdigest() + f' bytes={len(o2)}')\nprint('seal_bytes_identical=' + str(o1 == o2))\nprint('with-stub stderr says UNSIGNED=' + str(b'UNSIGNED' in e2))\nprint('stderr differs between the runs=' + str(e1 != e2))\nsys.exit(0 if o1 == o2 and b'UNSIGNED' in e2 else 1)\n"]
+resolved_exe: C:\Users\IslandDevCrew\AppData\Local\Programs\Python\Python312\python.exe
+cwd: C:\   path: pinned   env_overrides: {}
+started_utc: 2026-09-25T18:58:26.554200Z   ended_utc: 2026-09-25T18:58:26.608804Z   duration_s: 0.047
+exit_code: 0   expected: 0   timed_out: False   timeout_s: 900
+stream: stdout  2e5f051914c4f2046ebcec7bb68937a94ba77159dc1849994e3b88f4c1d56652        300 B  streams/K3f-compare.stdout
+stream: stderr  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855          0 B  streams/K3f-compare.stderr
+==============================================================================
+[K4a] The flagship seal/v2 is accepted   (phase check4)
+command: garnet verify examples/minimum-shelf-flagship/tool.garnet examples/minimum-shelf-flagship/tool.seal.json
+argv: ["C:\\gw3-20260925-1857-t5a\\target\\debug\\garnet.exe", "verify", "C:\\gw3-20260925-1857-t5a\\examples\\minimum-shelf-flagship\\tool.garnet", "C:\\gw3-20260925-1857-t5a\\examples\\minimum-shelf-flagship\\tool.seal.json"]
+resolved_exe: C:\gw3-20260925-1857-t5a\target\debug\garnet.exe
+cwd: C:\gw3-20260925-1857-t5a   path: pinned   env_overrides: {}
+started_utc: 2026-09-25T18:58:26.610825Z   ended_utc: 2026-09-25T18:58:26.623346Z   duration_s: 0.015
+exit_code: 0   expected: 0   timed_out: False   timeout_s: 900
+stream: stdout  359e40292c8d380f190e32adf6b34d6f62c9284a58ee314974eb42cdc3d6f4b4        167 B  streams/K4a-verify-flagship.stdout
+stream: stderr  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855          0 B  streams/K4a-verify-flagship.stderr
+==============================================================================
+[K4b] Make a copy with one byte changed (the first hex digit of the subject digest)   (phase check4)
+command: python -I -c <copy the seal, flip one byte>
+argv: ["C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.exe", "-I", "-c", "import hashlib, json\nfrom pathlib import Path\nsrc, dst = Path(r'C:\\gw3-20260925-1857-t5a\\examples\\minimum-shelf-flagship\\tool.seal.json'), Path(r'C:\\gw1-stage\\w3\\scratch-20260925-1857\\tamper\\tool.seal.json')\ndata = bytearray(src.read_bytes())\ndigest = json.loads(data.decode('utf-8'))['subject'][0]['digest']\nkey, value = next(iter(digest.items()))\ni = bytes(data).index(value.encode())\nold = chr(data[i]); new = '0' if old != '0' else '1'\ndata[i] = ord(new)\ndst.parent.mkdir(parents=True, exist_ok=True); dst.write_bytes(bytes(data))\njson.loads(dst.read_bytes().decode('utf-8'))\nprint(f'subject digest ({key}) first hex digit at byte offset {i}: {old!r} -> {new!r}')\nprint('original sha256=' + hashlib.sha256(src.read_bytes()).hexdigest())\nprint('tampered sha256=' + hashlib.sha256(dst.read_bytes()).hexdigest())\nprint('bytes differing=' + str(sum(1 for x, y in zip(src.read_bytes(), dst.read_bytes()) if x != y)))\n"]
+resolved_exe: C:\Users\IslandDevCrew\AppData\Local\Programs\Python\Python312\python.exe
+cwd: C:\   path: pinned   env_overrides: {}
+started_utc: 2026-09-25T18:58:26.632260Z   ended_utc: 2026-09-25T18:58:26.715071Z   duration_s: 0.078
+exit_code: 0   expected: 0   timed_out: False   timeout_s: 900
+stream: stdout  91ec696003cf5615632a786bbac5fc185aedcbf1a689bab98f89b0664d3f1bf3        254 B  streams/K4b-tamper.stdout
+stream: stderr  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855          0 B  streams/K4b-tamper.stderr
+==============================================================================
+[K4c] The tampered copy is rejected (expected rc 2)   (phase check4)
+command: garnet verify examples/minimum-shelf-flagship/tool.garnet <scratch>/tamper/tool.seal.json
+argv: ["C:\\gw3-20260925-1857-t5a\\target\\debug\\garnet.exe", "verify", "C:\\gw3-20260925-1857-t5a\\examples\\minimum-shelf-flagship\\tool.garnet", "C:\\gw1-stage\\w3\\scratch-20260925-1857\\tamper\\tool.seal.json"]
+resolved_exe: C:\gw3-20260925-1857-t5a\target\debug\garnet.exe
+cwd: C:\gw3-20260925-1857-t5a   path: pinned   env_overrides: {}
+started_utc: 2026-09-25T18:58:26.717990Z   ended_utc: 2026-09-25T18:58:26.731337Z   duration_s: 0.016
+exit_code: 2   expected: 2   timed_out: False   timeout_s: 900
+stream: stdout  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855          0 B  streams/K4c-verify-tampered.stdout
+stream: stderr  d824e25a3ac08f33d78444903b8b958d9536ebb3d963d96c74f5443b243dc13f         64 B  streams/K4c-verify-tampered.stderr
+==============================================================================
+[K5] minimum_shelf_package, mcp_stdio and seal_attestation tests   (phase check5)
+command: cargo test --locked -p garnet-cli --test minimum_shelf_package --test mcp_stdio --test seal_attestation
+argv: ["C:\\Users\\IslandDevCrew\\.cargo\\bin\\cargo.EXE", "test", "--locked", "-p", "garnet-cli", "--test", "minimum_shelf_package", "--test", "mcp_stdio", "--test", "seal_attestation"]
+resolved_exe: C:\Users\IslandDevCrew\.cargo\bin\cargo.EXE
+cwd: C:\gw3-20260925-1857-t5a   path: pinned   env_overrides: {}
+started_utc: 2026-09-25T18:58:26.741382Z   ended_utc: 2026-09-25T18:58:28.890768Z   duration_s: 2.141
+exit_code: 0   expected: 0   timed_out: False   timeout_s: 3600
+stream: stdout  f6fd490d2a23908548ed70c158a634e00617875c7fe2dcd306ab65cf9174a140       1072 B  streams/K5-shelf-mcp-seal-tests.stdout
+stream: stderr  b9761c1ec73b86c17d88949f5f016f1452e0cc1c043c2cb7ce8815a409e58903        429 B  streams/K5-shelf-mcp-seal-tests.stderr
+==============================================================================
+[K6] Committed-bundle reader tests, natively (verbose, so each skip is named)   (phase check6)
+command: python scripts/test_garnet_windows_clean_vm_installer_status.py -v
+argv: ["C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.EXE", "scripts/test_garnet_windows_clean_vm_installer_status.py", "-v"]
+resolved_exe: C:\Users\IslandDevCrew\AppData\Local\Programs\Python\Python312\python.EXE
+cwd: C:\gw3-20260925-1857-t5a   path: pinned   env_overrides: {}
+started_utc: 2026-09-25T18:58:28.902261Z   ended_utc: 2026-09-25T18:58:32.357807Z   duration_s: 3.453
+exit_code: 0   expected: 0   timed_out: False   timeout_s: 1800
+stream: stdout  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855          0 B  streams/K6-clean-vm-reader-tests.stdout
+stream: stderr  a48c1d18f5fa63d260e652067dd90ec9dfa3635f599c3201aa9fc2121a51ab45      11998 B  streams/K6-clean-vm-reader-tests.stderr
+==============================================================================
+[P01] T5a worktree status after every step   (phase post)
+command: git -C <worktree> status --short --branch
+argv: ["C:\\Program Files\\Git\\cmd\\git.EXE", "-C", "C:\\gw3-20260925-1857-t5a", "status", "--short", "--branch"]
+resolved_exe: C:\Program Files\Git\cmd\git.EXE
+cwd: C:\gw3-20260925-1857-t5a   path: pinned   env_overrides: {}
+started_utc: 2026-09-25T18:58:32.374062Z   ended_utc: 2026-09-25T18:58:32.431550Z   duration_s: 0.063
+exit_code: 0   expected: 0   timed_out: False   timeout_s: 900
+stream: stdout  ba051334ebc33f3162a4fd5be48615e03c8dac8ec7977e7c2752dbc1cf981841         20 B  streams/P01-wt-status.stdout
+stream: stderr  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855          0 B  streams/P01-wt-status.stderr
+==============================================================================
+[P02] Remote readback after every step   (phase post)
+command: git ls-remote https://github.com/Island-Dev-Crew/garnet.git refs/heads/train/t5a-evidence-tools refs/heads/main
+argv: ["C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.exe", "-I", "-c", "import subprocess\nout = subprocess.run(['git', '-c', 'credential.helper=', 'ls-remote', r'https://github.com/Island-Dev-Crew/garnet.git', 'refs/heads/train/t5a-evidence-tools', 'refs/heads/main'], capture_output=True, text=True)\nprint(out.stdout, end='')\n"]
+resolved_exe: C:\Users\IslandDevCrew\AppData\Local\Programs\Python\Python312\python.exe
+cwd: C:\   path: pinned   env_overrides: {"GIT_TERMINAL_PROMPT": "0"}
+started_utc: 2026-09-25T18:58:32.433550Z   ended_utc: 2026-09-25T18:58:32.989988Z   duration_s: 0.562
+exit_code: 0   expected: 0   timed_out: False   timeout_s: 900
+stream: stdout  640706af506c9cf97930f94043f602e10043fa646a9eef4dcb92333f25b9452c        136 B  streams/P02-readback-after.stdout
+stream: stderr  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855          0 B  streams/P02-readback-after.stderr
+==============================================================================
+[P03] Process count after every step   (phase post)
+command (PowerShell script):
+    "process_count=$((Get-Process).Count)"
+argv: ["C:\\windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-EncodedCommand", "<base64 UTF-16LE of the script above>"]
+resolved_exe: C:\windows\System32\WindowsPowerShell\v1.0\powershell.exe
+cwd: C:\gw3-20260925-1857-t5a   path: pinned   env_overrides: {}
+started_utc: 2026-09-25T18:58:32.992982Z   ended_utc: 2026-09-25T18:58:33.195334Z   duration_s: 0.203
+exit_code: 0   expected: 0   timed_out: False   timeout_s: 900
+stream: stdout  986cfdae659eaab5e42320729e42e18db875f8c2ee29ec53e68e36609c3946c4         19 B  streams/P03-processes-after.stdout
+stream: stderr  a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f        392 B  streams/P03-processes-after.stderr

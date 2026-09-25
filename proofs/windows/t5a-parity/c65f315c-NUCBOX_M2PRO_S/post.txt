@@ -1,0 +1,50 @@
+# Post-run state
+folder: proofs/windows/t5a-parity/c65f315c-NUCBOX_M2PRO_S/
+t5a head: c65f315c0c55c75b2f00c4217c3d1cc57fb6ff59 (branch train/t5a-evidence-tools; read back from the remote in C01 and P02)
+host: NUCBOX_M2PRO_S (%COMPUTERNAME%; `hostname` prints the DNS casing, see E01)
+stamp: 20260925-1857 (UTC)
+harness: harness/w3_capture.py, sha256 7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845; every step ran from this one invocation
+  (w3_capture.py all --stamp 20260925-1857), 2026-09-25T18:57:38.592136Z to 2026-09-25T18:58:33.198545Z.
+scope: evidence for the T5a review record, gathered on native Windows. It is not a review.
+python: every python step ran with Python312 first on PATH except E06, which shows the machine's default
+  PATH (an unrelated 3.11.15 virtualenv). Path mode `stub` puts the stub cosign.exe directory first.
+inputs: hand-run inputs are written by K00 into a scratch directory outside both checkouts; their exact
+  bytes are in inputs.json.
+powershell: PowerShell steps run powershell.exe 5.1 with -EncodedCommand; with redirected output it writes
+  progress/error records to stderr as CLIXML. The raw streams are authoritative.
+captures: stdout and stderr are the raw child-process bytes, unedited; see encoding-census.txt.
+
+==============================================================================
+[P01] T5a worktree status after every step
+$ git -C <worktree> status --short --branch
+exit_code=0 expected=0 timed_out=False started=2026-09-25T18:58:32.374062Z duration_s=0.063 path=pinned
+--- stdout (streams/P01-wt-status.stdout, 20 bytes, sha256 ba051334ebc33f3162a4fd5be48615e03c8dac8ec7977e7c2752dbc1cf981841)
+## HEAD (no branch)
+--- end stdout
+--- stderr (streams/P01-wt-status.stderr, 0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+
+==============================================================================
+[P02] Remote readback after every step
+$ git ls-remote https://github.com/Island-Dev-Crew/garnet.git refs/heads/train/t5a-evidence-tools refs/heads/main
+exit_code=0 expected=0 timed_out=False started=2026-09-25T18:58:32.433550Z duration_s=0.562 path=pinned
+--- stdout (streams/P02-readback-after.stdout, 136 bytes, sha256 640706af506c9cf97930f94043f602e10043fa646a9eef4dcb92333f25b9452c)
+218d7cfb782e58bf67f3cae90a2f1aacea1b8e04	refs/heads/main
+c65f315c0c55c75b2f00c4217c3d1cc57fb6ff59	refs/heads/train/t5a-evidence-tools
+--- end stdout
+--- stderr (streams/P02-readback-after.stderr, 0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+
+==============================================================================
+[P03] Process count after every step
+$ (PowerShell 5.1)
+  "process_count=$((Get-Process).Count)"
+exit_code=0 expected=0 timed_out=False started=2026-09-25T18:58:32.992982Z duration_s=0.203 path=pinned
+--- stdout (streams/P03-processes-after.stdout, 19 bytes, sha256 986cfdae659eaab5e42320729e42e18db875f8c2ee29ec53e68e36609c3946c4)
+process_count=362
+--- end stdout
+--- stderr (streams/P03-processes-after.stderr, 392 bytes, sha256 a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f)
+#< CLIXML
+<Objs Version="1.1.0.1" xmlns="http://schemas.microsoft.com/powershell/2004/04"><Obj S="progress" RefId="0"><TN RefId="0"><T>System.Management.Automation.PSCustomObject</T><T>System.Object</T></TN><MS><I64 N="SourceId">1</I64><PR N="Record"><AV>Preparing modules for first use.</AV><AI>0</AI><Nil /><PI>-1</PI><PC>-1</PC><T>Completed</T><SR>-1</SR><SD> </SD></PR></MS></Obj></Objs>
+[no trailing newline in the captured stream]
+--- end stderr

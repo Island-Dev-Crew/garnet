@@ -1,0 +1,9 @@
+
+running 4 tests
+test swapping_two_definitions_of_one_name_is_reported ... ok
+test directory_mode_names_each_function_by_its_file ... ok
+test directory_mode_reports_reordered_definitions_of_one_name ... ok
+test nested_module_gain_is_named_with_its_module_path ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.53s
+

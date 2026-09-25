@@ -1,0 +1,29 @@
+
+running 2 tests
+test native_stdio_initialize_list_call_and_error ... ok
+test native_stdio_rejects_tampered_package_before_protocol_output ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+
+running 7 tests
+test sealed_flagship_loads_end_to_end ... ok
+test rejects_when_manifest_bytes_change ... ok
+test rejects_when_seal_is_missing ... ok
+test rejects_when_seal_is_empty ... ok
+test rejects_when_source_bytes_change ... ok
+test rejects_when_tampered_source_has_new_seal_and_rebound_manifest ... ok
+test rejects_when_seal_bytes_change ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+
+running 5 tests
+test seal_predicate_always_says_it_is_unsigned ... ok
+test seal_reports_cosign_availability_on_stderr ... ok
+test seal_emits_an_in_toto_statement ... ok
+test seal_out_writes_the_predicate_to_a_file ... ok
+test verify_rejects_the_retired_cosign_available_variant ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+

@@ -1,0 +1,48 @@
+# Check 4: flagship seal accepted, tampered copy rejected
+folder: proofs/windows/t5a-parity/c65f315c-NUCBOX_M2PRO_S/
+t5a head: c65f315c0c55c75b2f00c4217c3d1cc57fb6ff59 (branch train/t5a-evidence-tools; read back from the remote in C01 and P02)
+host: NUCBOX_M2PRO_S (%COMPUTERNAME%; `hostname` prints the DNS casing, see E01)
+stamp: 20260925-1857 (UTC)
+harness: harness/w3_capture.py, sha256 7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845; every step ran from this one invocation
+  (w3_capture.py all --stamp 20260925-1857), 2026-09-25T18:57:38.592136Z to 2026-09-25T18:58:33.198545Z.
+scope: evidence for the T5a review record, gathered on native Windows. It is not a review.
+python: every python step ran with Python312 first on PATH except E06, which shows the machine's default
+  PATH (an unrelated 3.11.15 virtualenv). Path mode `stub` puts the stub cosign.exe directory first.
+inputs: hand-run inputs are written by K00 into a scratch directory outside both checkouts; their exact
+  bytes are in inputs.json.
+powershell: PowerShell steps run powershell.exe 5.1 with -EncodedCommand; with redirected output it writes
+  progress/error records to stderr as CLIXML. The raw streams are authoritative.
+captures: stdout and stderr are the raw child-process bytes, unedited; see encoding-census.txt.
+
+==============================================================================
+[K4a] The flagship seal/v2 is accepted
+$ garnet verify examples/minimum-shelf-flagship/tool.garnet examples/minimum-shelf-flagship/tool.seal.json
+exit_code=0 expected=0 timed_out=False started=2026-09-25T18:58:26.610825Z duration_s=0.015 path=pinned
+--- stdout (streams/K4a-verify-flagship.stdout, 167 bytes, sha256 359e40292c8d380f190e32adf6b34d6f62c9284a58ee314974eb42cdc3d6f4b4)
+OK C:\gw3-20260925-1857-t5a\examples\minimum-shelf-flagship\tool.garnet matches seal/v2 source and declared capabilities (content binding only; no signature verified)
+--- end stdout
+--- stderr (streams/K4a-verify-flagship.stderr, 0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+
+==============================================================================
+[K4b] Make a copy with one byte changed (the first hex digit of the subject digest)
+$ python -I -c <copy the seal, flip one byte>
+exit_code=0 expected=0 timed_out=False started=2026-09-25T18:58:26.632260Z duration_s=0.078 path=pinned
+--- stdout (streams/K4b-tamper.stdout, 254 bytes, sha256 91ec696003cf5615632a786bbac5fc185aedcbf1a689bab98f89b0664d3f1bf3)
+subject digest (blake3) first hex digit at byte offset 89: '3' -> '0'
+original sha256=b3578595bf3ad4cd342265d6f797ad9d1321f451abbfffafc9fc6e205b615139
+tampered sha256=b810c898f0d133fe1705b7958f39d954d6c7e787c2028edd3c61e8f6bcca0453
+bytes differing=1
+--- end stdout
+--- stderr (streams/K4b-tamper.stderr, 0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+
+==============================================================================
+[K4c] The tampered copy is rejected (expected rc 2)
+$ garnet verify examples/minimum-shelf-flagship/tool.garnet <scratch>/tamper/tool.seal.json
+exit_code=2 expected=2 timed_out=False started=2026-09-25T18:58:26.717990Z duration_s=0.016 path=pinned
+--- stdout (streams/K4c-verify-tampered.stdout, 0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stdout
+--- stderr (streams/K4c-verify-tampered.stderr, 64 bytes, sha256 d824e25a3ac08f33d78444903b8b958d9536ebb3d963d96c74f5443b243dc13f)
+FAIL seal content/binding mismatch or noncanonical fields/bytes
+--- end stderr

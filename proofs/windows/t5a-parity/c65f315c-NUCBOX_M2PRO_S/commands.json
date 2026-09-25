@@ -1,0 +1,2173 @@
+{
+  "run": {
+    "argv": [
+      "C:\\gw1-stage\\w3_capture.py",
+      "all",
+      "--stamp",
+      "20260925-1857"
+    ],
+    "clone": "C:\\gw3-20260925-1857",
+    "ended_utc": "2026-09-25T18:58:33.198545Z",
+    "harness_sha256": "7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845",
+    "host": "NUCBOX_M2PRO_S",
+    "phases": [
+      "clone",
+      "env",
+      "build",
+      "check1",
+      "check2",
+      "check3",
+      "check4",
+      "check5",
+      "check6",
+      "post"
+    ],
+    "python": "C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "python_version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+    "scratch": "C:\\gw1-stage\\w3\\scratch-20260925-1857",
+    "stage": "C:\\gw1-stage\\w3\\c65f315c-NUCBOX_M2PRO_S",
+    "started_utc": "2026-09-25T18:57:38.592136Z",
+    "stopped_at": null,
+    "t5a_head": "c65f315c0c55c75b2f00c4217c3d1cc57fb6ff59",
+    "unexpected_exits": [],
+    "worktree": "C:\\gw3-20260925-1857-t5a"
+  },
+  "steps": [
+    {
+      "argv": [
+        "C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-I",
+        "-c",
+        "import os, sys\nbad = False\nfor p in (r'C:\\gw3-20260925-1857', r'C:\\gw3-20260925-1857-t5a', r'C:\\gw1-stage\\w3\\scratch-20260925-1857'):\n    e = os.path.exists(p); bad |= e; print(f'{p} exists={e}')\nsys.exit(1 if bad else 0)\n"
+      ],
+      "cwd": "C:\\",
+      "display": "python -I -c <precheck>",
+      "duration_s": 0.047,
+      "ended_utc": "2026-09-25T18:57:38.635859Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "harness_sha256": "7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845",
+      "id": "C00",
+      "path_mode": "pinned",
+      "phase": "clone",
+      "resolved_exe": "C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+      "script": null,
+      "section": "env",
+      "started_utc": "2026-09-25T18:57:38.592136Z",
+      "stem": "precheck",
+      "streams": [
+        {
+          "bytes": 126,
+          "file": "streams/C00-precheck.stdout",
+          "kind": "stdout",
+          "sha256": "4cffe1d3586f403ea9dec4e30cd4645f5e21927c590f46ed8424e68794721018"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/C00-precheck.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Clone, worktree and scratch directories absent"
+    },
+    {
+      "argv": [
+        "C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-I",
+        "-c",
+        "import subprocess, sys\nout = subprocess.run(['git', '-c', 'credential.helper=', 'ls-remote', r'https://github.com/Island-Dev-Crew/garnet.git', 'refs/heads/train/t5a-evidence-tools', 'refs/heads/main'], capture_output=True, text=True)\nprint(out.stdout, end=''); print(out.stderr, end='', file=sys.stderr)\ntip = [l.split()[0] for l in out.stdout.splitlines() if l.endswith('refs/heads/train/t5a-evidence-tools')]\nprint('named_head=c65f315c0c55c75b2f00c4217c3d1cc57fb6ff59')\nprint('branch_tip=' + (tip[0] if tip else 'ABSENT'))\nsys.exit(0 if tip and tip[0] == 'c65f315c0c55c75b2f00c4217c3d1cc57fb6ff59' else 1)\n"
+      ],
+      "cwd": "C:\\",
+      "display": "git ls-remote https://github.com/Island-Dev-Crew/garnet.git refs/heads/train/t5a-evidence-tools refs/heads/main (+ equality gate)",
+      "duration_s": 0.687,
+      "ended_utc": "2026-09-25T18:57:39.327173Z",
+      "env_overrides": {
+        "GIT_TERMINAL_PROMPT": "0"
+      },
+      "exit_code": 0,
+      "expect_exit": 0,
+      "harness_sha256": "7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845",
+      "id": "C01",
+      "path_mode": "pinned",
+      "phase": "clone",
+      "resolved_exe": "C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+      "script": null,
+      "section": "env",
+      "started_utc": "2026-09-25T18:57:38.642861Z",
+      "stem": "readback",
+      "streams": [
+        {
+          "bytes": 242,
+          "file": "streams/C01-readback.stdout",
+          "kind": "stdout",
+          "sha256": "78d57a390c80048f2249d10d67e2d8983bb8246ded81a72ca44c5f72ac1e6b70"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/C01-readback.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Remote readback: the T5a branch tip must equal the named full head"
+    },
+    {
+      "argv": [
+        "C:\\Program Files\\Git\\cmd\\git.EXE",
+        "-c",
+        "credential.helper=",
+        "clone",
+        "-c",
+        "core.autocrlf=false",
+        "https://github.com/Island-Dev-Crew/garnet.git",
+        "C:\\gw3-20260925-1857"
+      ],
+      "cwd": "C:\\",
+      "display": "git clone -c core.autocrlf=false https://github.com/Island-Dev-Crew/garnet.git C:\\gw3-20260925-1857",
+      "duration_s": 3.641,
+      "ended_utc": "2026-09-25T18:57:42.988602Z",
+      "env_overrides": {
+        "GIT_TERMINAL_PROMPT": "0"
+      },
+      "exit_code": 0,
+      "expect_exit": 0,
+      "harness_sha256": "7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845",
+      "id": "C02",
+      "path_mode": "pinned",
+      "phase": "clone",
+      "resolved_exe": "C:\\Program Files\\Git\\cmd\\git.EXE",
+      "script": null,
+      "section": "env",
+      "started_utc": "2026-09-25T18:57:39.333179Z",
+      "stem": "clone",
+      "streams": [
+        {
+          "bytes": 0,
+          "file": "streams/C02-clone.stdout",
+          "kind": "stdout",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "bytes": 1465,
+          "file": "streams/C02-clone.stderr",
+          "kind": "stderr",
+          "sha256": "dafcdd102dbd59a79acbc9aa124b0eef668f416cd231f4495578ac398bcd412f"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 1800,
+      "title": "Fresh clone of main with core.autocrlf=false set before checkout"
+    },
+    {
+      "argv": [
+        "C:\\Program Files\\Git\\cmd\\git.EXE",
+        "-C",
+        "C:\\gw3-20260925-1857",
+        "config",
+        "user.name",
+        "Jon Isaac"
+      ],
+      "cwd": "C:\\gw3-20260925-1857",
+      "display": "git config user.name \"Jon Isaac\"",
+      "duration_s": 0.032,
+      "ended_utc": "2026-09-25T18:57:43.034135Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "harness_sha256": "7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845",
+      "id": "C03",
+      "path_mode": "pinned",
+      "phase": "clone",
+      "resolved_exe": "C:\\Program Files\\Git\\cmd\\git.EXE",
+      "script": null,
+      "section": "env",
+      "started_utc": "2026-09-25T18:57:42.998844Z",
+      "stem": "user-name",
+      "streams": [
+        {
+          "bytes": 0,
+          "file": "streams/C03-user-name.stdout",
+          "kind": "stdout",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/C03-user-name.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Commit identity for the evidence clone: name"
+    },
+    {
+      "argv": [
+        "C:\\Program Files\\Git\\cmd\\git.EXE",
+        "-C",
+        "C:\\gw3-20260925-1857",
+        "config",
+        "user.email",
+        "275140286+IslandDevCrew@users.noreply.github.com"
+      ],
+      "cwd": "C:\\gw3-20260925-1857",
+      "display": "git config user.email \"275140286+IslandDevCrew@users.noreply.github.com\"",
+      "duration_s": 0.031,
+      "ended_utc": "2026-09-25T18:57:43.074814Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "harness_sha256": "7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845",
+      "id": "C04",
+      "path_mode": "pinned",
+      "phase": "clone",
+      "resolved_exe": "C:\\Program Files\\Git\\cmd\\git.EXE",
+      "script": null,
+      "section": "env",
+      "started_utc": "2026-09-25T18:57:43.039155Z",
+      "stem": "user-email",
+      "streams": [
+        {
+          "bytes": 0,
+          "file": "streams/C04-user-email.stdout",
+          "kind": "stdout",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/C04-user-email.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Commit identity for the evidence clone: noreply address"
+    },
+    {
+      "argv": [
+        "C:\\Program Files\\Git\\cmd\\git.EXE",
+        "-C",
+        "C:\\gw3-20260925-1857",
+        "-c",
+        "credential.helper=",
+        "fetch",
+        "origin",
+        "c65f315c0c55c75b2f00c4217c3d1cc57fb6ff59"
+      ],
+      "cwd": "C:\\gw3-20260925-1857",
+      "display": "git fetch origin c65f315c0c55c75b2f00c4217c3d1cc57fb6ff59",
+      "duration_s": 0.344,
+      "ended_utc": "2026-09-25T18:57:43.417693Z",
+      "env_overrides": {
+        "GIT_TERMINAL_PROMPT": "0"
+      },
+      "exit_code": 0,
+      "expect_exit": 0,
+      "harness_sha256": "7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845",
+      "id": "C05",
+      "path_mode": "pinned",
+      "phase": "clone",
+      "resolved_exe": "C:\\Program Files\\Git\\cmd\\git.EXE",
+      "script": null,
+      "section": "env",
+      "started_utc": "2026-09-25T18:57:43.079815Z",
+      "stem": "fetch-t5a",
+      "streams": [
+        {
+          "bytes": 0,
+          "file": "streams/C05-fetch-t5a.stdout",
+          "kind": "stdout",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "bytes": 123,
+          "file": "streams/C05-fetch-t5a.stderr",
+          "kind": "stderr",
+          "sha256": "d0816ea47f9874b942ef72b5451c03a95685ae4b86e35885d0e20fe9c6a0c29b"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Fetch the named T5a head by full SHA"
+    },
+    {
+      "argv": [
+        "C:\\Program Files\\Git\\cmd\\git.EXE",
+        "-C",
+        "C:\\gw3-20260925-1857",
+        "worktree",
+        "add",
+        "--detach",
+        "C:\\gw3-20260925-1857-t5a",
+        "c65f315c0c55c75b2f00c4217c3d1cc57fb6ff59"
+      ],
+      "cwd": "C:\\gw3-20260925-1857",
+      "display": "git worktree add --detach C:\\gw3-20260925-1857-t5a c65f315c0c55c75b2f00c4217c3d1cc57fb6ff59",
+      "duration_s": 1.688,
+      "ended_utc": "2026-09-25T18:57:45.109726Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "harness_sha256": "7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845",
+      "id": "C06",
+      "path_mode": "pinned",
+      "phase": "clone",
+      "resolved_exe": "C:\\Program Files\\Git\\cmd\\git.EXE",
+      "script": null,
+      "section": "env",
+      "started_utc": "2026-09-25T18:57:43.423991Z",
+      "stem": "worktree",
+      "streams": [
+        {
+          "bytes": 91,
+          "file": "streams/C06-worktree.stdout",
+          "kind": "stdout",
+          "sha256": "87a1262108314e41f7280ef096bca1c5f23d23d870a68e7c0b029adf798705c1"
+        },
+        {
+          "bytes": 1436,
+          "file": "streams/C06-worktree.stderr",
+          "kind": "stderr",
+          "sha256": "81ec903081f4f08c6c5168ac61e5b215451871591ecec533546bed895ad4f1cc"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Check out the T5a head detached in a separate worktree"
+    },
+    {
+      "argv": [
+        "C:\\Program Files\\Git\\cmd\\git.EXE",
+        "-C",
+        "C:\\gw3-20260925-1857-t5a",
+        "rev-parse",
+        "HEAD"
+      ],
+      "cwd": "C:\\gw3-20260925-1857-t5a",
+      "display": "git -C <worktree> rev-parse HEAD",
+      "duration_s": 0.032,
+      "ended_utc": "2026-09-25T18:57:45.157307Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "harness_sha256": "7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845",
+      "id": "C07",
+      "path_mode": "pinned",
+      "phase": "clone",
+      "resolved_exe": "C:\\Program Files\\Git\\cmd\\git.EXE",
+      "script": null,
+      "section": "env",
+      "started_utc": "2026-09-25T18:57:45.121777Z",
+      "stem": "wt-head",
+      "streams": [
+        {
+          "bytes": 41,
+          "file": "streams/C07-wt-head.stdout",
+          "kind": "stdout",
+          "sha256": "fc192eab8af99fb5219234279045d24b1e46214b52350a9e0c6ee96085b1c9ac"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/C07-wt-head.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Worktree HEAD (must be the named head)"
+    },
+    {
+      "argv": [
+        "C:\\windows\\system32\\hostname.EXE"
+      ],
+      "cwd": "C:\\gw3-20260925-1857-t5a",
+      "display": "hostname",
+      "duration_s": 0.016,
+      "ended_utc": "2026-09-25T18:57:45.178465Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "harness_sha256": "7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845",
+      "id": "E01",
+      "path_mode": "pinned",
+      "phase": "env",
+      "resolved_exe": "C:\\windows\\system32\\hostname.EXE",
+      "script": null,
+      "section": "env",
+      "started_utc": "2026-09-25T18:57:45.162332Z",
+      "stem": "hostname",
+      "streams": [
+        {
+          "bytes": 16,
+          "file": "streams/E01-hostname.stdout",
+          "kind": "stdout",
+          "sha256": "17394d5f57b3858fabc726caf419e0c6df2a7babc2cf6becb6874e2d1de5ae42"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/E01-hostname.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Hostname"
+    },
+    {
+      "argv": [
+        "C:\\windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+        "-NoProfile",
+        "-NonInteractive",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-EncodedCommand",
+        "cwB5AHMAdABlAG0AaQBuAGYAbwAgAHwAIABmAGkAbgBkAHMAdAByACAALwBCACAALwBDADoAIgBPAFMAIABOAGEAbQBlACIAIAAvAEMAOgAiAE8AUwAgAFYAZQByAHMAaQBvAG4AIgAgAC8AQwA6ACIAUwB5AHMAdABlAG0AIABUAHkAcABlACIA"
+      ],
+      "cwd": "C:\\gw3-20260925-1857-t5a",
+      "display": "systeminfo | findstr /B /C:\"OS Name\" /C:\"OS Version\" /C:\"System Type\"",
+      "duration_s": 2.437,
+      "ended_utc": "2026-09-25T18:57:47.616925Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "harness_sha256": "7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845",
+      "id": "E02",
+      "path_mode": "pinned",
+      "phase": "env",
+      "resolved_exe": "C:\\windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+      "script": "systeminfo | findstr /B /C:\"OS Name\" /C:\"OS Version\" /C:\"System Type\"",
+      "section": "env",
+      "started_utc": "2026-09-25T18:57:45.181465Z",
+      "stem": "systeminfo",
+      "streams": [
+        {
+          "bytes": 161,
+          "file": "streams/E02-systeminfo.stdout",
+          "kind": "stdout",
+          "sha256": "9caffa4c160c5c2067d959aca18ad76f80563530b438211e124918c6895e7ac0"
+        },
+        {
+          "bytes": 392,
+          "file": "streams/E02-systeminfo.stderr",
+          "kind": "stderr",
+          "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "OS name, version and system type"
+    },
+    {
+      "argv": [
+        "C:\\Users\\IslandDevCrew\\.cargo\\bin\\rustc.EXE",
+        "-Vv"
+      ],
+      "cwd": "C:\\gw3-20260925-1857-t5a",
+      "display": "rustc -Vv",
+      "duration_s": 0.047,
+      "ended_utc": "2026-09-25T18:57:47.669548Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "harness_sha256": "7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845",
+      "id": "E03",
+      "path_mode": "pinned",
+      "phase": "env",
+      "resolved_exe": "C:\\Users\\IslandDevCrew\\.cargo\\bin\\rustc.EXE",
+      "script": null,
+      "section": "env",
+      "started_utc": "2026-09-25T18:57:47.628331Z",
+      "stem": "rustc",
+      "streams": [
+        {
+          "bytes": 194,
+          "file": "streams/E03-rustc.stdout",
+          "kind": "stdout",
+          "sha256": "185aa337caf524a621d7b1ce7b21a4d6f92f3ea592d009e481fea0e00e0d0434"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/E03-rustc.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Rust compiler"
+    },
+    {
+      "argv": [
+        "C:\\Users\\IslandDevCrew\\.cargo\\bin\\cargo.EXE",
+        "-V"
+      ],
+      "cwd": "C:\\gw3-20260925-1857-t5a",
+      "display": "cargo -V",
+      "duration_s": 0.031,
+      "ended_utc": "2026-09-25T18:57:47.719340Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "harness_sha256": "7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845",
+      "id": "E04",
+      "path_mode": "pinned",
+      "phase": "env",
+      "resolved_exe": "C:\\Users\\IslandDevCrew\\.cargo\\bin\\cargo.EXE",
+      "script": null,
+      "section": "env",
+      "started_utc": "2026-09-25T18:57:47.681977Z",
+      "stem": "cargo",
+      "streams": [
+        {
+          "bytes": 36,
+          "file": "streams/E04-cargo.stdout",
+          "kind": "stdout",
+          "sha256": "c10ec31b8c6e6e2693cf65fc1971b41edbc3da1ae7db6f9f3f36c4823f8dcab5"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/E04-cargo.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Cargo"
+    },
+    {
+      "argv": [
+        "C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.EXE",
+        "--version"
+      ],
+      "cwd": "C:\\gw3-20260925-1857-t5a",
+      "display": "python --version",
+      "duration_s": 0.0,
+      "ended_utc": "2026-09-25T18:57:47.738774Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "harness_sha256": "7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845",
+      "id": "E05",
+      "path_mode": "pinned",
+      "phase": "env",
+      "resolved_exe": "C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.EXE",
+      "script": null,
+      "section": "env",
+      "started_utc": "2026-09-25T18:57:47.726742Z",
+      "stem": "python-pinned",
+      "streams": [
+        {
+          "bytes": 16,
+          "file": "streams/E05-python-pinned.stdout",
+          "kind": "stdout",
+          "sha256": "6a5d9f6462ca5dfc6788cfd216ba579fffd7875776ab9d9b35659be78858f73a"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/E05-python-pinned.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "python with Python312 first on PATH"
+    },
+    {
+      "argv": [
+        "C:\\Users\\IslandDevCrew\\AppData\\Local\\hermes\\hermes-agent\\venv\\Scripts\\python.EXE",
+        "--version"
+      ],
+      "cwd": "C:\\gw3-20260925-1857-t5a",
+      "display": "python --version",
+      "duration_s": 0.032,
+      "ended_utc": "2026-09-25T18:57:47.775541Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "harness_sha256": "7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845",
+      "id": "E06",
+      "path_mode": "default",
+      "phase": "env",
+      "resolved_exe": "C:\\Users\\IslandDevCrew\\AppData\\Local\\hermes\\hermes-agent\\venv\\Scripts\\python.EXE",
+      "script": null,
+      "section": "env",
+      "started_utc": "2026-09-25T18:57:47.744834Z",
+      "stem": "python-default",
+      "streams": [
+        {
+          "bytes": 16,
+          "file": "streams/E06-python-default.stdout",
+          "kind": "stdout",
+          "sha256": "d901007b84bfc7eb172ba21b077c642df7d6285ca37e9634f913f8dfb8f7b898"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/E06-python-default.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "python on the machine's default PATH (disclosure: not the pinned interpreter)"
+    },
+    {
+      "argv": [
+        "C:\\Program Files\\Git\\cmd\\git.EXE",
+        "--version"
+      ],
+      "cwd": "C:\\gw3-20260925-1857-t5a",
+      "display": "git --version",
+      "duration_s": 0.031,
+      "ended_utc": "2026-09-25T18:57:47.814039Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "harness_sha256": "7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845",
+      "id": "E07",
+      "path_mode": "pinned",
+      "phase": "env",
+      "resolved_exe": "C:\\Program Files\\Git\\cmd\\git.EXE",
+      "script": null,
+      "section": "env",
+      "started_utc": "2026-09-25T18:57:47.781539Z",
+      "stem": "git",
+      "streams": [
+        {
+          "bytes": 29,
+          "file": "streams/E07-git.stdout",
+          "kind": "stdout",
+          "sha256": "9d9d8a49f3de42d6e7b569bf28bd8db3ea3384c44386d6f2de4655e4ca41ff26"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/E07-git.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Git"
+    },
+    {
+      "argv": [
+        "C:\\Program Files\\GitHub CLI\\gh.EXE",
+        "auth",
+        "status"
+      ],
+      "cwd": "C:\\gw3-20260925-1857-t5a",
+      "display": "gh auth status",
+      "duration_s": 0.469,
+      "ended_utc": "2026-09-25T18:57:48.293167Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "harness_sha256": "7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845",
+      "id": "E08",
+      "path_mode": "pinned",
+      "phase": "env",
+      "resolved_exe": "C:\\Program Files\\GitHub CLI\\gh.EXE",
+      "script": null,
+      "section": "env",
+      "started_utc": "2026-09-25T18:57:47.824381Z",
+      "stem": "gh-auth",
+      "streams": [
+        {
+          "bytes": 471,
+          "file": "streams/E08-gh-auth.stdout",
+          "kind": "stdout",
+          "sha256": "d136e3aea16530287cd598777591d1cf1f01557557919c019c88193597e73d23"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/E08-gh-auth.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "GitHub CLI auth status (tokens are masked by gh)"
+    },
+    {
+      "argv": [
+        "C:\\Program Files\\Git\\cmd\\git.EXE",
+        "-C",
+        "C:\\gw3-20260925-1857-t5a",
+        "log",
+        "--oneline",
+        "-5"
+      ],
+      "cwd": "C:\\gw3-20260925-1857-t5a",
+      "display": "git -C <worktree> log --oneline -5",
+      "duration_s": 0.047,
+      "ended_utc": "2026-09-25T18:57:48.336048Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "harness_sha256": "7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845",
+      "id": "E09",
+      "path_mode": "pinned",
+      "phase": "env",
+      "resolved_exe": "C:\\Program Files\\Git\\cmd\\git.EXE",
+      "script": null,
+      "section": "env",
+      "started_utc": "2026-09-25T18:57:48.299086Z",
+      "stem": "wt-log",
+      "streams": [
+        {
+          "bytes": 374,
+          "file": "streams/E09-wt-log.stdout",
+          "kind": "stdout",
+          "sha256": "1baca8a11c019bea78885c849332efe9c3c72f75212e4402870945d671fac467"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/E09-wt-log.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "T5a worktree history"
+    },
+    {
+      "argv": [
+        "C:\\Program Files\\Git\\cmd\\git.EXE",
+        "-C",
+        "C:\\gw3-20260925-1857-t5a",
+        "merge-base",
+        "HEAD",
+        "origin/main"
+      ],
+      "cwd": "C:\\gw3-20260925-1857-t5a",
+      "display": "git -C <worktree> merge-base HEAD origin/main",
+      "duration_s": 0.047,
+      "ended_utc": "2026-09-25T18:57:48.381702Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "harness_sha256": "7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845",
+      "id": "E10",
+      "path_mode": "pinned",
+      "phase": "env",
+      "resolved_exe": "C:\\Program Files\\Git\\cmd\\git.EXE",
+      "script": null,
+      "section": "env",
+      "started_utc": "2026-09-25T18:57:48.341055Z",
+      "stem": "wt-base",
+      "streams": [
+        {
+          "bytes": 41,
+          "file": "streams/E10-wt-base.stdout",
+          "kind": "stdout",
+          "sha256": "6b3fa1fb8e132f8a53342a29c3e84e97994e48981d2b063c85d9ce94160c7246"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/E10-wt-base.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Merge base of the T5a head with main"
+    },
+    {
+      "argv": [
+        "C:\\Program Files\\Git\\cmd\\git.EXE",
+        "-C",
+        "C:\\gw3-20260925-1857-t5a",
+        "status",
+        "--short",
+        "--branch"
+      ],
+      "cwd": "C:\\gw3-20260925-1857-t5a",
+      "display": "git -C <worktree> status --short --branch",
+      "duration_s": 0.078,
+      "ended_utc": "2026-09-25T18:57:48.461537Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "harness_sha256": "7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845",
+      "id": "E11",
+      "path_mode": "pinned",
+      "phase": "env",
+      "resolved_exe": "C:\\Program Files\\Git\\cmd\\git.EXE",
+      "script": null,
+      "section": "env",
+      "started_utc": "2026-09-25T18:57:48.387701Z",
+      "stem": "wt-status",
+      "streams": [
+        {
+          "bytes": 20,
+          "file": "streams/E11-wt-status.stdout",
+          "kind": "stdout",
+          "sha256": "ba051334ebc33f3162a4fd5be48615e03c8dac8ec7977e7c2752dbc1cf981841"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/E11-wt-status.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Worktree status (must be clean)"
+    },
+    {
+      "argv": [
+        "C:\\Program Files\\Git\\cmd\\git.EXE",
+        "-C",
+        "C:\\gw3-20260925-1857-t5a",
+        "config",
+        "--show-origin",
+        "--get-all",
+        "core.autocrlf"
+      ],
+      "cwd": "C:\\gw3-20260925-1857-t5a",
+      "display": "git config --show-origin --get-all core.autocrlf",
+      "duration_s": 0.031,
+      "ended_utc": "2026-09-25T18:57:48.500894Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "harness_sha256": "7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845",
+      "id": "E12",
+      "path_mode": "pinned",
+      "phase": "env",
+      "resolved_exe": "C:\\Program Files\\Git\\cmd\\git.EXE",
+      "script": null,
+      "section": "env",
+      "started_utc": "2026-09-25T18:57:48.467450Z",
+      "stem": "autocrlf",
+      "streams": [
+        {
+          "bytes": 134,
+          "file": "streams/E12-autocrlf.stdout",
+          "kind": "stdout",
+          "sha256": "203e2f34586ab273d0b3a6b76b99ce4741080a0207bb5486f6d2a3998876b27a"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/E12-autocrlf.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "core.autocrlf at every config level"
+    },
+    {
+      "argv": [
+        "C:\\Program Files\\Git\\cmd\\git.EXE",
+        "-C",
+        "C:\\gw3-20260925-1857-t5a",
+        "check-attr",
+        "text",
+        "eol",
+        "--",
+        "examples/minimum-shelf-flagship/tool.garnet",
+        "examples/minimum-shelf-flagship/tool.seal.json",
+        "garnet-interp-v0.3/src/prelude.rs"
+      ],
+      "cwd": "C:\\gw3-20260925-1857-t5a",
+      "display": "git check-attr text eol -- <flagship tool.garnet, tool.seal.json, prelude.rs>",
+      "duration_s": 0.047,
+      "ended_utc": "2026-09-25T18:57:48.548642Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "harness_sha256": "7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845",
+      "id": "E13",
+      "path_mode": "pinned",
+      "phase": "env",
+      "resolved_exe": "C:\\Program Files\\Git\\cmd\\git.EXE",
+      "script": null,
+      "section": "env",
+      "started_utc": "2026-09-25T18:57:48.500894Z",
+      "stem": "check-attr",
+      "streams": [
+        {
+          "bytes": 310,
+          "file": "streams/E13-check-attr.stdout",
+          "kind": "stdout",
+          "sha256": "ad819ff8d5a983ad3cc97366b72584a7dc85bc0554ef8575e604a062d8936f62"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/E13-check-attr.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Checkout attributes for the flagship and the seal-sensitive prelude"
+    },
+    {
+      "argv": [
+        "C:\\windows\\system32\\where.exe",
+        "cosign"
+      ],
+      "cwd": "C:\\gw3-20260925-1857-t5a",
+      "display": "where.exe cosign",
+      "duration_s": 0.078,
+      "ended_utc": "2026-09-25T18:57:48.642077Z",
+      "env_overrides": {},
+      "exit_code": 1,
+      "expect_exit": 1,
+      "harness_sha256": "7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845",
+      "id": "E14",
+      "path_mode": "pinned",
+      "phase": "env",
+      "resolved_exe": "C:\\windows\\system32\\where.exe",
+      "script": null,
+      "section": "env",
+      "started_utc": "2026-09-25T18:57:48.553732Z",
+      "stem": "where-cosign",
+      "streams": [
+        {
+          "bytes": 0,
+          "file": "streams/E14-where-cosign.stdout",
+          "kind": "stdout",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "bytes": 54,
+          "file": "streams/E14-where-cosign.stderr",
+          "kind": "stderr",
+          "sha256": "63a1626b4d619d0a6614f871440e7f72c64347101e40e7ea87082676d5b0ec22"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Is a real cosign on the pinned PATH? (expected: no)"
+    },
+    {
+      "argv": [
+        "C:\\windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+        "-NoProfile",
+        "-NonInteractive",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-EncodedCommand",
+        "JABwACAAPQAgAEcAZQB0AC0AUAByAG8AYwBlAHMAcwAKACIAcAByAG8AYwBlAHMAcwBfAGMAbwB1AG4AdAA9ACQAKAAkAHAALgBDAG8AdQBuAHQAKQAiAAoAJABwACAAfAAgAFcAaABlAHIAZQAtAE8AYgBqAGUAYwB0ACAAewAgACQAXwAuAFAAcgBvAGMAZQBzAHMATgBhAG0AZQAgAC0AbABpAGsAZQAgACcAKgBPAG4AZQBEAHIAaQB2AGUAKgAnACAAfQAgAHwAIABTAG8AcgB0AC0ATwBiAGoAZQBjAHQAIABJAGQAIAB8ACAARgBvAHIARQBhAGMAaAAtAE8AYgBqAGUAYwB0ACAAewAgACIAbwBuAGUAZAByAGkAdgBlAF8AcAByAG8AYwBlAHMAcwA9ACQAKAAkAF8ALgBQAHIAbwBjAGUAcwBzAE4AYQBtAGUAKQAgAHAAaQBkAD0AJAAoACQAXwAuAEkAZAApACIAIAB9AAoA"
+      ],
+      "cwd": "C:\\gw3-20260925-1857-t5a",
+      "display": "$p = Get-Process\n\"process_count=$($p.Count)\"\n$p | Where-Object { $_.ProcessName -like '*OneDrive*' } | Sort-Object Id | ForEach-Object { \"onedrive_process=$($_.ProcessName) pid=$($_.Id)\" }\n",
+      "duration_s": 0.281,
+      "ended_utc": "2026-09-25T18:57:48.917400Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "harness_sha256": "7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845",
+      "id": "E15",
+      "path_mode": "pinned",
+      "phase": "env",
+      "resolved_exe": "C:\\windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+      "script": "$p = Get-Process\n\"process_count=$($p.Count)\"\n$p | Where-Object { $_.ProcessName -like '*OneDrive*' } | Sort-Object Id | ForEach-Object { \"onedrive_process=$($_.ProcessName) pid=$($_.Id)\" }\n",
+      "section": "env",
+      "started_utc": "2026-09-25T18:57:48.645087Z",
+      "stem": "processes",
+      "streams": [
+        {
+          "bytes": 106,
+          "file": "streams/E15-processes.stdout",
+          "kind": "stdout",
+          "sha256": "98638265c1e2bb82654cd984a112b808f9d4d25e071c16143164891e922a4173"
+        },
+        {
+          "bytes": 616,
+          "file": "streams/E15-processes.stderr",
+          "kind": "stderr",
+          "sha256": "2ce70d6c8c9ad6726c794690c8b14a2b83673648cac88edf4ff1acc50ec46348"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Process count and OneDrive processes"
+    },
+    {
+      "argv": [
+        "C:\\windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+        "-NoProfile",
+        "-NonInteractive",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-EncodedCommand",
+        "RwBlAHQALQBDAGgAaQBsAGQASQB0AGUAbQAgAGUAbgB2ADoAIAB8ACAAVwBoAGUAcgBlAC0ATwBiAGoAZQBjAHQAIAB7ACAAJABfAC4ATgBhAG0AZQAgAC0AbQBhAHQAYwBoACAAJwBeACgARwBBAFIATgBFAFQAfABDAEEAUgBHAE8AfABSAFUAUwBUAFUAUAB8AFIAVQBTAFQAQwB8AFIAVQBTAFQARgBMAEEARwBTAHwAUgBVAFMAVABfAHwAUABZAFQASABPAE4AfABHAEkAVABfAHwARwBIAF8AKQAnACAAfQAgAHwAIABTAG8AcgB0AC0ATwBiAGoAZQBjAHQAIABOAGEAbQBlACAAfAAgAEYAbwByAEUAYQBjAGgALQBPAGIAagBlAGMAdAAgAHsAIAAiACQAKAAkAF8ALgBOAGEAbQBlACkAPQAkACgAJABfAC4AVgBhAGwAdQBlACkAIgAgAH0ACgAiACgAZQBuAGQAIABvAGYAIABHAEEAUgBOAEUAVAAvAEMAQQBSAEcATwAvAFIAVQBTAFQALwBQAFkAVABIAE8ATgAvAEcASQBUAC8ARwBIACAAdgBhAHIAaQBhAGIAbABlAHMAKQAiAAoA"
+      ],
+      "cwd": "C:\\gw3-20260925-1857-t5a",
+      "display": "Get-ChildItem env: | Where-Object { $_.Name -match '^(GARNET|CARGO|RUSTUP|RUSTC|RUSTFLAGS|RUST_|PYTHON|GIT_|GH_)' } | Sort-Object Name | ForEach-Object { \"$($_.Name)=$($_.Value)\" }\n\"(end of GARNET/CARGO/RUST/PYTHON/GIT/GH variables)\"\n",
+      "duration_s": 0.235,
+      "ended_utc": "2026-09-25T18:57:49.160637Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "harness_sha256": "7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845",
+      "id": "E16",
+      "path_mode": "pinned",
+      "phase": "env",
+      "resolved_exe": "C:\\windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+      "script": "Get-ChildItem env: | Where-Object { $_.Name -match '^(GARNET|CARGO|RUSTUP|RUSTC|RUSTFLAGS|RUST_|PYTHON|GIT_|GH_)' } | Sort-Object Name | ForEach-Object { \"$($_.Name)=$($_.Value)\" }\n\"(end of GARNET/CARGO/RUST/PYTHON/GIT/GH variables)\"\n",
+      "section": "env",
+      "started_utc": "2026-09-25T18:57:48.925646Z",
+      "stem": "env-vars",
+      "streams": [
+        {
+          "bytes": 146,
+          "file": "streams/E16-env-vars.stdout",
+          "kind": "stdout",
+          "sha256": "8f0de808c57b7ec1e43e8be28ea3d7d5014afc5a4cac63b1f371354954691327"
+        },
+        {
+          "bytes": 616,
+          "file": "streams/E16-env-vars.stderr",
+          "kind": "stderr",
+          "sha256": "2ce70d6c8c9ad6726c794690c8b14a2b83673648cac88edf4ff1acc50ec46348"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Toolchain-relevant environment variables inherited by every step"
+    },
+    {
+      "argv": [
+        "C:\\Users\\IslandDevCrew\\.cargo\\bin\\cargo.EXE",
+        "build",
+        "--locked",
+        "-p",
+        "garnet-cli"
+      ],
+      "cwd": "C:\\gw3-20260925-1857-t5a",
+      "display": "cargo build --locked -p garnet-cli",
+      "duration_s": 29.141,
+      "ended_utc": "2026-09-25T18:58:18.305558Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "harness_sha256": "7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845",
+      "id": "B01",
+      "path_mode": "pinned",
+      "phase": "build",
+      "resolved_exe": "C:\\Users\\IslandDevCrew\\.cargo\\bin\\cargo.EXE",
+      "script": null,
+      "section": "build",
+      "started_utc": "2026-09-25T18:57:49.172636Z",
+      "stem": "cargo-build",
+      "streams": [
+        {
+          "bytes": 0,
+          "file": "streams/B01-cargo-build.stdout",
+          "kind": "stdout",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "bytes": 5002,
+          "file": "streams/B01-cargo-build.stderr",
+          "kind": "stderr",
+          "sha256": "7b3e03fd06acb4fb8807d05e5a3b5788520f11a3364b8092a390cb88af2a9ee3"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 5400,
+      "title": "Build garnet-cli at the T5a head"
+    },
+    {
+      "argv": [
+        "C:\\gw3-20260925-1857-t5a\\target\\debug\\garnet.exe",
+        "--version"
+      ],
+      "cwd": "C:\\gw3-20260925-1857-t5a",
+      "display": "target\\debug\\garnet.exe --version",
+      "duration_s": 0.515,
+      "ended_utc": "2026-09-25T18:58:18.827096Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "harness_sha256": "7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845",
+      "id": "B02",
+      "path_mode": "pinned",
+      "phase": "build",
+      "resolved_exe": "C:\\gw3-20260925-1857-t5a\\target\\debug\\garnet.exe",
+      "script": null,
+      "section": "build",
+      "started_utc": "2026-09-25T18:58:18.313562Z",
+      "stem": "garnet-version",
+      "streams": [
+        {
+          "bytes": 1201,
+          "file": "streams/B02-garnet-version.stdout",
+          "kind": "stdout",
+          "sha256": "ddf4896fcb790bc3e7dc606ad3e78672f3d3b05678f72ad6924db1caedab828f"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/B02-garnet-version.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "The built binary"
+    },
+    {
+      "argv": [
+        "C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-I",
+        "-c",
+        "import json, sys, hashlib\nfrom pathlib import Path\nroot = Path(r'C:\\gw1-stage\\w3\\scratch-20260925-1857')\nfiles = json.loads(open(r'C:\\gw1-stage\\w3\\c65f315c-NUCBOX_M2PRO_S\\inputs.json', encoding='utf-8').read())['files']\nfor rel, meta in sorted(files.items()):\n    p = root / rel; p.parent.mkdir(parents=True, exist_ok=True)\n    data = bytes.fromhex(meta['hex']); p.write_bytes(data)\n    assert hashlib.sha256(p.read_bytes()).hexdigest() == meta['sha256']\n    print(f\"{meta['sha256']}  {len(data):>5} B  crlf={data.count(bytes([13, 10]))}  {rel}\")\n"
+      ],
+      "cwd": "C:\\",
+      "display": "python -I -c <write inputs.json files into the scratch directory>",
+      "duration_s": 0.109,
+      "ended_utc": "2026-09-25T18:58:18.948884Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "harness_sha256": "7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845",
+      "id": "K00",
+      "path_mode": "pinned",
+      "phase": "check1",
+      "resolved_exe": "C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+      "script": null,
+      "section": "check1",
+      "started_utc": "2026-09-25T18:58:18.835114Z",
+      "stem": "write-inputs",
+      "streams": [
+        {
+          "bytes": 1617,
+          "file": "streams/K00-write-inputs.stdout",
+          "kind": "stdout",
+          "sha256": "e44e4d961ed0a8738d10eb5101c3becaff7f896a96d75bf96572a23fa2cbf190"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/K00-write-inputs.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Write the hand-run inputs (exact bytes from inputs.json) to the scratch dir"
+    },
+    {
+      "argv": [
+        "C:\\Users\\IslandDevCrew\\.cargo\\bin\\cargo.EXE",
+        "test",
+        "--locked",
+        "-p",
+        "garnet-cli",
+        "--test",
+        "diff_caps",
+        "--",
+        "nested_module_gain",
+        "directory_mode_names",
+        "swapping_two_definitions",
+        "directory_mode_reports_reordered"
+      ],
+      "cwd": "C:\\gw3-20260925-1857-t5a",
+      "display": "cargo test --locked -p garnet-cli --test diff_caps -- nested_module_gain directory_mode_names swapping_two_definitions directory_mode_reports_reordered",
+      "duration_s": 6.922,
+      "ended_utc": "2026-09-25T18:58:25.889925Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "harness_sha256": "7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845",
+      "id": "K1a",
+      "path_mode": "pinned",
+      "phase": "check1",
+      "resolved_exe": "C:\\Users\\IslandDevCrew\\.cargo\\bin\\cargo.EXE",
+      "script": null,
+      "section": "check1",
+      "started_utc": "2026-09-25T18:58:18.959107Z",
+      "stem": "diff-caps-tests",
+      "streams": [
+        {
+          "bytes": 364,
+          "file": "streams/K1a-diff-caps-tests.stdout",
+          "kind": "stdout",
+          "sha256": "f63ed88e4d4df94f573fac8495624b5e7052c16780f71fc12f306664d5b329c7"
+        },
+        {
+          "bytes": 558,
+          "file": "streams/K1a-diff-caps-tests.stderr",
+          "kind": "stderr",
+          "sha256": "5390589e399b597a477e8125146101b1ae048c8e2af32e1b74a7eaf04c80b348"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 3600,
+      "title": "The four named diff_caps tests"
+    },
+    {
+      "argv": [
+        "C:\\gw3-20260925-1857-t5a\\target\\debug\\garnet.exe",
+        "diff-caps",
+        "C:\\gw1-stage\\w3\\scratch-20260925-1857\\diff\\nested\\old.garnet",
+        "C:\\gw1-stage\\w3\\scratch-20260925-1857\\diff\\nested\\new.garnet"
+      ],
+      "cwd": "C:\\gw1-stage\\w3\\scratch-20260925-1857",
+      "display": "garnet diff-caps diff/nested/old.garnet diff/nested/new.garnet",
+      "duration_s": 0.015,
+      "ended_utc": "2026-09-25T18:58:25.920261Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "harness_sha256": "7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845",
+      "id": "K1b",
+      "path_mode": "pinned",
+      "phase": "check1",
+      "resolved_exe": "C:\\gw3-20260925-1857-t5a\\target\\debug\\garnet.exe",
+      "script": null,
+      "section": "check1",
+      "started_utc": "2026-09-25T18:58:25.904171Z",
+      "stem": "nested",
+      "streams": [
+        {
+          "bytes": 220,
+          "file": "streams/K1b-nested.stdout",
+          "kind": "stdout",
+          "sha256": "b81a93e6a40ef9cc501a95122408bcfc8987f409204403548576c1f350c72e63"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/K1b-nested.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "By hand: nested-module gain (expected `~ a::f gained: fs`, exit 0)"
+    },
+    {
+      "argv": [
+        "C:\\gw3-20260925-1857-t5a\\target\\debug\\garnet.exe",
+        "diff-caps",
+        "--machine",
+        "C:\\gw1-stage\\w3\\scratch-20260925-1857\\diff\\nested\\old.garnet",
+        "C:\\gw1-stage\\w3\\scratch-20260925-1857\\diff\\nested\\new.garnet"
+      ],
+      "cwd": "C:\\gw1-stage\\w3\\scratch-20260925-1857",
+      "display": "garnet diff-caps --machine diff/nested/old.garnet diff/nested/new.garnet",
+      "duration_s": 0.015,
+      "ended_utc": "2026-09-25T18:58:25.943803Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": null,
+      "harness_sha256": "7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845",
+      "id": "K1c",
+      "path_mode": "pinned",
+      "phase": "check1",
+      "resolved_exe": "C:\\gw3-20260925-1857-t5a\\target\\debug\\garnet.exe",
+      "script": null,
+      "section": "check1",
+      "started_utc": "2026-09-25T18:58:25.927802Z",
+      "stem": "nested-machine",
+      "streams": [
+        {
+          "bytes": 487,
+          "file": "streams/K1c-nested-machine.stdout",
+          "kind": "stdout",
+          "sha256": "e049096f6607dd0d4ad8d229d5b466a27b29803bc34277bc8cce18a998a737e2"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/K1c-nested-machine.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "By hand: nested-module gain, --machine"
+    },
+    {
+      "argv": [
+        "C:\\gw3-20260925-1857-t5a\\target\\debug\\garnet.exe",
+        "diff-caps",
+        "C:\\gw1-stage\\w3\\scratch-20260925-1857\\diff\\dirnames\\old",
+        "C:\\gw1-stage\\w3\\scratch-20260925-1857\\diff\\dirnames\\new"
+      ],
+      "cwd": "C:\\gw1-stage\\w3\\scratch-20260925-1857",
+      "display": "garnet diff-caps diff/dirnames/old diff/dirnames/new",
+      "duration_s": 0.016,
+      "ended_utc": "2026-09-25T18:58:25.961979Z",
+      "env_overrides": {},
+      "exit_code": 1,
+      "expect_exit": null,
+      "harness_sha256": "7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845",
+      "id": "K1d",
+      "path_mode": "pinned",
+      "phase": "check1",
+      "resolved_exe": "C:\\gw3-20260925-1857-t5a\\target\\debug\\garnet.exe",
+      "script": null,
+      "section": "check1",
+      "started_utc": "2026-09-25T18:58:25.945805Z",
+      "stem": "dirnames",
+      "streams": [
+        {
+          "bytes": 259,
+          "file": "streams/K1d-dirnames.stdout",
+          "kind": "stdout",
+          "sha256": "fa4872177a46fe5a92e8aeda97776948563ef94c937a57a94406aca594179a9e"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/K1d-dirnames.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "By hand: directory mode names functions by file (expected `~ a.garnet::helper gained: fs`)"
+    },
+    {
+      "argv": [
+        "C:\\gw3-20260925-1857-t5a\\target\\debug\\garnet.exe",
+        "diff-caps",
+        "C:\\gw1-stage\\w3\\scratch-20260925-1857\\diff\\swap\\old.garnet",
+        "C:\\gw1-stage\\w3\\scratch-20260925-1857\\diff\\swap\\new.garnet"
+      ],
+      "cwd": "C:\\gw1-stage\\w3\\scratch-20260925-1857",
+      "display": "garnet diff-caps diff/swap/old.garnet diff/swap/new.garnet",
+      "duration_s": 0.016,
+      "ended_utc": "2026-09-25T18:58:25.983201Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": null,
+      "harness_sha256": "7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845",
+      "id": "K1e",
+      "path_mode": "pinned",
+      "phase": "check1",
+      "resolved_exe": "C:\\gw3-20260925-1857-t5a\\target\\debug\\garnet.exe",
+      "script": null,
+      "section": "check1",
+      "started_utc": "2026-09-25T18:58:25.967984Z",
+      "stem": "swap",
+      "streams": [
+        {
+          "bytes": 213,
+          "file": "streams/K1e-swap.stdout",
+          "kind": "stdout",
+          "sha256": "2ecfa6dfb8d0d0e05ea20bbb88344e494488483c172dc409555dc82ef518d94d"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/K1e-swap.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "By hand: swapped definitions of one name (expected `~ f gained: fs`)"
+    },
+    {
+      "argv": [
+        "C:\\gw3-20260925-1857-t5a\\target\\debug\\garnet.exe",
+        "diff-caps",
+        "C:\\gw1-stage\\w3\\scratch-20260925-1857\\diff\\dirswap\\old",
+        "C:\\gw1-stage\\w3\\scratch-20260925-1857\\diff\\dirswap\\new"
+      ],
+      "cwd": "C:\\gw1-stage\\w3\\scratch-20260925-1857",
+      "display": "garnet diff-caps diff/dirswap/old diff/dirswap/new",
+      "duration_s": 0.016,
+      "ended_utc": "2026-09-25T18:58:26.006460Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": null,
+      "harness_sha256": "7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845",
+      "id": "K1f",
+      "path_mode": "pinned",
+      "phase": "check1",
+      "resolved_exe": "C:\\gw3-20260925-1857-t5a\\target\\debug\\garnet.exe",
+      "script": null,
+      "section": "check1",
+      "started_utc": "2026-09-25T18:58:25.990216Z",
+      "stem": "dirswap",
+      "streams": [
+        {
+          "bytes": 215,
+          "file": "streams/K1f-dirswap.stdout",
+          "kind": "stdout",
+          "sha256": "a6970ceb6d55850e26753755ca317a55660baceb122940f328cdfe21a3a4f62d"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/K1f-dirswap.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "By hand: reordered definitions in a two-file directory (expected `~ a.garnet::f gained: fs`)"
+    },
+    {
+      "argv": [
+        "C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-I",
+        "-c",
+        "import sys\nS = r'C:\\gw1-stage\\w3\\c65f315c-NUCBOX_M2PRO_S\\streams'\ndef out(stem): return open(S + '\\\\' + stem + '.stdout', 'rb').read().decode('utf-8', 'replace')\nimport json\nrec = {}\nok = True\ndef expect(label, cond):\n    global ok\n    ok &= bool(cond); print(('PASS ' if cond else 'FAIL ') + label)\nexpect('K1a ran the four named tests: `4 passed; 0 failed`', 'test result: ok. 4 passed; 0 failed' in out('K1a-diff-caps-tests'))\nexpect('K1b stdout contains `~ a::f gained: fs`', '~ a::f gained: fs' in out('K1b-nested'))\nexpect('K1c --machine names a::f', '{\"name\":\"a::f\",\"gained\":[\"fs\"]}' in out('K1c-nested-machine'))\nexpect('K1d stdout contains `~ a.garnet::helper gained: fs`', '~ a.garnet::helper gained: fs' in out('K1d-dirnames'))\nexpect('K1d stdout has no `helper gained: net`', 'helper gained: net' not in out('K1d-dirnames'))\nexpect('K1e stdout contains `~ f gained: fs`', '~ f gained: fs' in out('K1e-swap'))\nexpect('K1f stdout contains `~ a.garnet::f gained: fs`', '~ a.garnet::f gained: fs' in out('K1f-dirswap'))\nsys.exit(0 if ok else 1)\n"
+      ],
+      "cwd": "C:\\",
+      "display": "python -I -c <assert the expected lines and exit codes>",
+      "duration_s": 0.062,
+      "ended_utc": "2026-09-25T18:58:26.080688Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "harness_sha256": "7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845",
+      "id": "K1g",
+      "path_mode": "pinned",
+      "phase": "check1",
+      "resolved_exe": "C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+      "script": null,
+      "section": "check1",
+      "started_utc": "2026-09-25T18:58:26.012506Z",
+      "stem": "expectations",
+      "streams": [
+        {
+          "bytes": 333,
+          "file": "streams/K1g-expectations.stdout",
+          "kind": "stdout",
+          "sha256": "12d9d8a202fc10ee5ce11b192cd708ea5ea37df8a2a3a29d70cd0f486d80bd8c"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/K1g-expectations.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Check the hand-run outputs against the trigger's expectations"
+    },
+    {
+      "argv": [
+        "C:\\gw3-20260925-1857-t5a\\target\\debug\\garnet.exe",
+        "seal",
+        "C:\\gw1-stage\\w3\\scratch-20260925-1857\\seal\\lf\\tool.garnet"
+      ],
+      "cwd": "C:\\gw1-stage\\w3\\scratch-20260925-1857",
+      "display": "garnet seal seal/lf/tool.garnet",
+      "duration_s": 0.016,
+      "ended_utc": "2026-09-25T18:58:26.101020Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "harness_sha256": "7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845",
+      "id": "K2a",
+      "path_mode": "pinned",
+      "phase": "check2",
+      "resolved_exe": "C:\\gw3-20260925-1857-t5a\\target\\debug\\garnet.exe",
+      "script": null,
+      "section": "check2",
+      "started_utc": "2026-09-25T18:58:26.082720Z",
+      "stem": "seal-lf",
+      "streams": [
+        {
+          "bytes": 1290,
+          "file": "streams/K2a-seal-lf.stdout",
+          "kind": "stdout",
+          "sha256": "46402674e309205f66455414b0cadc950594235b4d3f87d063572aa2d7ef1da3"
+        },
+        {
+          "bytes": 117,
+          "file": "streams/K2a-seal-lf.stderr",
+          "kind": "stderr",
+          "sha256": "26ec1c29a96e6ce2deb9f85f73a0e1a8de7efc5e1027656be8a22eaeeea3f0c0"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Seal the flagship source saved with LF"
+    },
+    {
+      "argv": [
+        "C:\\gw3-20260925-1857-t5a\\target\\debug\\garnet.exe",
+        "seal",
+        "C:\\gw1-stage\\w3\\scratch-20260925-1857\\seal\\crlf\\tool.garnet"
+      ],
+      "cwd": "C:\\gw1-stage\\w3\\scratch-20260925-1857",
+      "display": "garnet seal seal/crlf/tool.garnet",
+      "duration_s": 0.015,
+      "ended_utc": "2026-09-25T18:58:26.122250Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "harness_sha256": "7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845",
+      "id": "K2b",
+      "path_mode": "pinned",
+      "phase": "check2",
+      "resolved_exe": "C:\\gw3-20260925-1857-t5a\\target\\debug\\garnet.exe",
+      "script": null,
+      "section": "check2",
+      "started_utc": "2026-09-25T18:58:26.104113Z",
+      "stem": "seal-crlf",
+      "streams": [
+        {
+          "bytes": 1290,
+          "file": "streams/K2b-seal-crlf.stdout",
+          "kind": "stdout",
+          "sha256": "46402674e309205f66455414b0cadc950594235b4d3f87d063572aa2d7ef1da3"
+        },
+        {
+          "bytes": 117,
+          "file": "streams/K2b-seal-crlf.stderr",
+          "kind": "stderr",
+          "sha256": "26ec1c29a96e6ce2deb9f85f73a0e1a8de7efc5e1027656be8a22eaeeea3f0c0"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Seal the same source saved with CRLF"
+    },
+    {
+      "argv": [
+        "C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-I",
+        "-c",
+        "import json, sys\nS = r'C:\\gw1-stage\\w3\\c65f315c-NUCBOX_M2PRO_S\\streams'\ndef stmt(stem): return json.loads(open(S + '\\\\' + stem + '.stdout', 'rb').read().decode('utf-8'))\na, b = stmt('K2a-seal-lf'), stmt('K2b-seal-crlf')\nda, db = a['subject'][0]['digest'], b['subject'][0]['digest']\nprint('lf   subject=' + json.dumps(a['subject']))\nprint('crlf subject=' + json.dumps(b['subject']))\nprint('lf   predicate.source_blake3=' + str(a['predicate'].get('source_blake3')))\nprint('crlf predicate.source_blake3=' + str(b['predicate'].get('source_blake3')))\nprint('subject_identity=' + str(a['predicate'].get('subject_identity')))\nprint('subject_digests_equal=' + str(da == db))\nprint('whole_statements_equal=' + str(a == b))\nsys.exit(0 if da == db else 1)\n"
+      ],
+      "cwd": "C:\\",
+      "display": "python -I -c <compare subject digests of K2a and K2b>",
+      "duration_s": 0.063,
+      "ended_utc": "2026-09-25T18:58:26.190336Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "harness_sha256": "7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845",
+      "id": "K2c",
+      "path_mode": "pinned",
+      "phase": "check2",
+      "resolved_exe": "C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+      "script": null,
+      "section": "check2",
+      "started_utc": "2026-09-25T18:58:26.125643Z",
+      "stem": "compare",
+      "streams": [
+        {
+          "bytes": 538,
+          "file": "streams/K2c-compare.stdout",
+          "kind": "stdout",
+          "sha256": "303e86960cac6a7956bf445712928cef2d5d2af9bd534d4cd82c947f0006fe4d"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/K2c-compare.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Subject digests must be equal (LF vs CRLF)"
+    },
+    {
+      "argv": [
+        "C:\\Users\\IslandDevCrew\\.cargo\\bin\\rustc.EXE",
+        "-O",
+        "-o",
+        "C:\\gw1-stage\\w3\\scratch-20260925-1857\\stub\\cosign.exe",
+        "C:\\gw1-stage\\w3\\scratch-20260925-1857\\stub\\cosign.rs"
+      ],
+      "cwd": "C:\\gw1-stage\\w3\\scratch-20260925-1857",
+      "display": "rustc -O -o stub/cosign.exe stub/cosign.rs",
+      "duration_s": 0.172,
+      "ended_utc": "2026-09-25T18:58:26.375947Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "harness_sha256": "7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845",
+      "id": "K3a",
+      "path_mode": "pinned",
+      "phase": "check3",
+      "resolved_exe": "C:\\Users\\IslandDevCrew\\.cargo\\bin\\rustc.EXE",
+      "script": null,
+      "section": "check3",
+      "started_utc": "2026-09-25T18:58:26.201664Z",
+      "stem": "build-stub",
+      "streams": [
+        {
+          "bytes": 0,
+          "file": "streams/K3a-build-stub.stdout",
+          "kind": "stdout",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/K3a-build-stub.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Compile the stub cosign.exe (prints a version line, exits 0)"
+    },
+    {
+      "argv": [
+        "C:\\gw1-stage\\w3\\scratch-20260925-1857\\stub\\cosign.exe",
+        "version"
+      ],
+      "cwd": "C:\\gw1-stage\\w3\\scratch-20260925-1857",
+      "display": "stub/cosign.exe version",
+      "duration_s": 0.047,
+      "ended_utc": "2026-09-25T18:58:26.411789Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "harness_sha256": "7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845",
+      "id": "K3b",
+      "path_mode": "pinned",
+      "phase": "check3",
+      "resolved_exe": "C:\\gw1-stage\\w3\\scratch-20260925-1857\\stub\\cosign.exe",
+      "script": null,
+      "section": "check3",
+      "started_utc": "2026-09-25T18:58:26.377834Z",
+      "stem": "stub-version",
+      "streams": [
+        {
+          "bytes": 15,
+          "file": "streams/K3b-stub-version.stdout",
+          "kind": "stdout",
+          "sha256": "6d19d5885f83a358eeb97072fcb2ce3fc4c46d19574a51f0977461d96f0f5ca9"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/K3b-stub-version.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "The stub answers `cosign version`"
+    },
+    {
+      "argv": [
+        "C:\\windows\\system32\\where.exe",
+        "cosign"
+      ],
+      "cwd": "C:\\gw1-stage\\w3\\scratch-20260925-1857",
+      "display": "where.exe cosign",
+      "duration_s": 0.078,
+      "ended_utc": "2026-09-25T18:58:26.503557Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "harness_sha256": "7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845",
+      "id": "K3c",
+      "path_mode": "stub",
+      "phase": "check3",
+      "resolved_exe": "C:\\windows\\system32\\where.exe",
+      "script": null,
+      "section": "check3",
+      "started_utc": "2026-09-25T18:58:26.421263Z",
+      "stem": "where-with-stub",
+      "streams": [
+        {
+          "bytes": 55,
+          "file": "streams/K3c-where-with-stub.stdout",
+          "kind": "stdout",
+          "sha256": "0e7108f1e74d3a77df94573ebd8a8bb1a99ca31a6c28e4ed7c776c7285b67001"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/K3c-where-with-stub.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Where cosign resolves with the stub directory first on PATH"
+    },
+    {
+      "argv": [
+        "C:\\gw3-20260925-1857-t5a\\target\\debug\\garnet.exe",
+        "seal",
+        "C:\\gw1-stage\\w3\\scratch-20260925-1857\\seal\\lf\\tool.garnet"
+      ],
+      "cwd": "C:\\gw1-stage\\w3\\scratch-20260925-1857",
+      "display": "garnet seal seal/lf/tool.garnet",
+      "duration_s": 0.016,
+      "ended_utc": "2026-09-25T18:58:26.525965Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "harness_sha256": "7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845",
+      "id": "K3d",
+      "path_mode": "pinned",
+      "phase": "check3",
+      "resolved_exe": "C:\\gw3-20260925-1857-t5a\\target\\debug\\garnet.exe",
+      "script": null,
+      "section": "check3",
+      "started_utc": "2026-09-25T18:58:26.509874Z",
+      "stem": "seal-without",
+      "streams": [
+        {
+          "bytes": 1290,
+          "file": "streams/K3d-seal-without.stdout",
+          "kind": "stdout",
+          "sha256": "46402674e309205f66455414b0cadc950594235b4d3f87d063572aa2d7ef1da3"
+        },
+        {
+          "bytes": 117,
+          "file": "streams/K3d-seal-without.stderr",
+          "kind": "stderr",
+          "sha256": "26ec1c29a96e6ce2deb9f85f73a0e1a8de7efc5e1027656be8a22eaeeea3f0c0"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Seal with no cosign on PATH"
+    },
+    {
+      "argv": [
+        "C:\\gw3-20260925-1857-t5a\\target\\debug\\garnet.exe",
+        "seal",
+        "C:\\gw1-stage\\w3\\scratch-20260925-1857\\seal\\lf\\tool.garnet"
+      ],
+      "cwd": "C:\\gw1-stage\\w3\\scratch-20260925-1857",
+      "display": "garnet seal seal/lf/tool.garnet",
+      "duration_s": 0.015,
+      "ended_utc": "2026-09-25T18:58:26.549081Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "harness_sha256": "7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845",
+      "id": "K3e",
+      "path_mode": "stub",
+      "phase": "check3",
+      "resolved_exe": "C:\\gw3-20260925-1857-t5a\\target\\debug\\garnet.exe",
+      "script": null,
+      "section": "check3",
+      "started_utc": "2026-09-25T18:58:26.528920Z",
+      "stem": "seal-with-stub",
+      "streams": [
+        {
+          "bytes": 1290,
+          "file": "streams/K3e-seal-with-stub.stdout",
+          "kind": "stdout",
+          "sha256": "46402674e309205f66455414b0cadc950594235b4d3f87d063572aa2d7ef1da3"
+        },
+        {
+          "bytes": 155,
+          "file": "streams/K3e-seal-with-stub.stderr",
+          "kind": "stderr",
+          "sha256": "b4e330d92c82266ebb87dcef138e42645f145f0dbdfa135918e9e1144819551f"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Seal with the stub cosign.exe first on PATH"
+    },
+    {
+      "argv": [
+        "C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-I",
+        "-c",
+        "import sys\nS = r'C:\\gw1-stage\\w3\\c65f315c-NUCBOX_M2PRO_S\\streams'\ndef rd(n): return open(S + '\\\\' + n, 'rb').read()\no1, o2 = rd('K3d-seal-without.stdout'), rd('K3e-seal-with-stub.stdout')\ne1, e2 = rd('K3d-seal-without.stderr'), rd('K3e-seal-with-stub.stderr')\nimport hashlib\nprint('without stdout sha256=' + hashlib.sha256(o1).hexdigest() + f' bytes={len(o1)}')\nprint('with    stdout sha256=' + hashlib.sha256(o2).hexdigest() + f' bytes={len(o2)}')\nprint('seal_bytes_identical=' + str(o1 == o2))\nprint('with-stub stderr says UNSIGNED=' + str(b'UNSIGNED' in e2))\nprint('stderr differs between the runs=' + str(e1 != e2))\nsys.exit(0 if o1 == o2 and b'UNSIGNED' in e2 else 1)\n"
+      ],
+      "cwd": "C:\\",
+      "display": "python -I -c <compare K3d and K3e>",
+      "duration_s": 0.047,
+      "ended_utc": "2026-09-25T18:58:26.608804Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "harness_sha256": "7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845",
+      "id": "K3f",
+      "path_mode": "pinned",
+      "phase": "check3",
+      "resolved_exe": "C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+      "script": null,
+      "section": "check3",
+      "started_utc": "2026-09-25T18:58:26.554200Z",
+      "stem": "compare",
+      "streams": [
+        {
+          "bytes": 300,
+          "file": "streams/K3f-compare.stdout",
+          "kind": "stdout",
+          "sha256": "2e5f051914c4f2046ebcec7bb68937a94ba77159dc1849994e3b88f4c1d56652"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/K3f-compare.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Seal bytes must be identical; stderr must still say UNSIGNED"
+    },
+    {
+      "argv": [
+        "C:\\gw3-20260925-1857-t5a\\target\\debug\\garnet.exe",
+        "verify",
+        "C:\\gw3-20260925-1857-t5a\\examples\\minimum-shelf-flagship\\tool.garnet",
+        "C:\\gw3-20260925-1857-t5a\\examples\\minimum-shelf-flagship\\tool.seal.json"
+      ],
+      "cwd": "C:\\gw3-20260925-1857-t5a",
+      "display": "garnet verify examples/minimum-shelf-flagship/tool.garnet examples/minimum-shelf-flagship/tool.seal.json",
+      "duration_s": 0.015,
+      "ended_utc": "2026-09-25T18:58:26.623346Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "harness_sha256": "7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845",
+      "id": "K4a",
+      "path_mode": "pinned",
+      "phase": "check4",
+      "resolved_exe": "C:\\gw3-20260925-1857-t5a\\target\\debug\\garnet.exe",
+      "script": null,
+      "section": "check4",
+      "started_utc": "2026-09-25T18:58:26.610825Z",
+      "stem": "verify-flagship",
+      "streams": [
+        {
+          "bytes": 167,
+          "file": "streams/K4a-verify-flagship.stdout",
+          "kind": "stdout",
+          "sha256": "359e40292c8d380f190e32adf6b34d6f62c9284a58ee314974eb42cdc3d6f4b4"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/K4a-verify-flagship.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "The flagship seal/v2 is accepted"
+    },
+    {
+      "argv": [
+        "C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-I",
+        "-c",
+        "import hashlib, json\nfrom pathlib import Path\nsrc, dst = Path(r'C:\\gw3-20260925-1857-t5a\\examples\\minimum-shelf-flagship\\tool.seal.json'), Path(r'C:\\gw1-stage\\w3\\scratch-20260925-1857\\tamper\\tool.seal.json')\ndata = bytearray(src.read_bytes())\ndigest = json.loads(data.decode('utf-8'))['subject'][0]['digest']\nkey, value = next(iter(digest.items()))\ni = bytes(data).index(value.encode())\nold = chr(data[i]); new = '0' if old != '0' else '1'\ndata[i] = ord(new)\ndst.parent.mkdir(parents=True, exist_ok=True); dst.write_bytes(bytes(data))\njson.loads(dst.read_bytes().decode('utf-8'))\nprint(f'subject digest ({key}) first hex digit at byte offset {i}: {old!r} -> {new!r}')\nprint('original sha256=' + hashlib.sha256(src.read_bytes()).hexdigest())\nprint('tampered sha256=' + hashlib.sha256(dst.read_bytes()).hexdigest())\nprint('bytes differing=' + str(sum(1 for x, y in zip(src.read_bytes(), dst.read_bytes()) if x != y)))\n"
+      ],
+      "cwd": "C:\\",
+      "display": "python -I -c <copy the seal, flip one byte>",
+      "duration_s": 0.078,
+      "ended_utc": "2026-09-25T18:58:26.715071Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "harness_sha256": "7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845",
+      "id": "K4b",
+      "path_mode": "pinned",
+      "phase": "check4",
+      "resolved_exe": "C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+      "script": null,
+      "section": "check4",
+      "started_utc": "2026-09-25T18:58:26.632260Z",
+      "stem": "tamper",
+      "streams": [
+        {
+          "bytes": 254,
+          "file": "streams/K4b-tamper.stdout",
+          "kind": "stdout",
+          "sha256": "91ec696003cf5615632a786bbac5fc185aedcbf1a689bab98f89b0664d3f1bf3"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/K4b-tamper.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Make a copy with one byte changed (the first hex digit of the subject digest)"
+    },
+    {
+      "argv": [
+        "C:\\gw3-20260925-1857-t5a\\target\\debug\\garnet.exe",
+        "verify",
+        "C:\\gw3-20260925-1857-t5a\\examples\\minimum-shelf-flagship\\tool.garnet",
+        "C:\\gw1-stage\\w3\\scratch-20260925-1857\\tamper\\tool.seal.json"
+      ],
+      "cwd": "C:\\gw3-20260925-1857-t5a",
+      "display": "garnet verify examples/minimum-shelf-flagship/tool.garnet <scratch>/tamper/tool.seal.json",
+      "duration_s": 0.016,
+      "ended_utc": "2026-09-25T18:58:26.731337Z",
+      "env_overrides": {},
+      "exit_code": 2,
+      "expect_exit": 2,
+      "harness_sha256": "7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845",
+      "id": "K4c",
+      "path_mode": "pinned",
+      "phase": "check4",
+      "resolved_exe": "C:\\gw3-20260925-1857-t5a\\target\\debug\\garnet.exe",
+      "script": null,
+      "section": "check4",
+      "started_utc": "2026-09-25T18:58:26.717990Z",
+      "stem": "verify-tampered",
+      "streams": [
+        {
+          "bytes": 0,
+          "file": "streams/K4c-verify-tampered.stdout",
+          "kind": "stdout",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "bytes": 64,
+          "file": "streams/K4c-verify-tampered.stderr",
+          "kind": "stderr",
+          "sha256": "d824e25a3ac08f33d78444903b8b958d9536ebb3d963d96c74f5443b243dc13f"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "The tampered copy is rejected (expected rc 2)"
+    },
+    {
+      "argv": [
+        "C:\\Users\\IslandDevCrew\\.cargo\\bin\\cargo.EXE",
+        "test",
+        "--locked",
+        "-p",
+        "garnet-cli",
+        "--test",
+        "minimum_shelf_package",
+        "--test",
+        "mcp_stdio",
+        "--test",
+        "seal_attestation"
+      ],
+      "cwd": "C:\\gw3-20260925-1857-t5a",
+      "display": "cargo test --locked -p garnet-cli --test minimum_shelf_package --test mcp_stdio --test seal_attestation",
+      "duration_s": 2.141,
+      "ended_utc": "2026-09-25T18:58:28.890768Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "harness_sha256": "7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845",
+      "id": "K5",
+      "path_mode": "pinned",
+      "phase": "check5",
+      "resolved_exe": "C:\\Users\\IslandDevCrew\\.cargo\\bin\\cargo.EXE",
+      "script": null,
+      "section": "check5",
+      "started_utc": "2026-09-25T18:58:26.741382Z",
+      "stem": "shelf-mcp-seal-tests",
+      "streams": [
+        {
+          "bytes": 1072,
+          "file": "streams/K5-shelf-mcp-seal-tests.stdout",
+          "kind": "stdout",
+          "sha256": "f6fd490d2a23908548ed70c158a634e00617875c7fe2dcd306ab65cf9174a140"
+        },
+        {
+          "bytes": 429,
+          "file": "streams/K5-shelf-mcp-seal-tests.stderr",
+          "kind": "stderr",
+          "sha256": "b9761c1ec73b86c17d88949f5f016f1452e0cc1c043c2cb7ce8815a409e58903"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 3600,
+      "title": "minimum_shelf_package, mcp_stdio and seal_attestation tests"
+    },
+    {
+      "argv": [
+        "C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.EXE",
+        "scripts/test_garnet_windows_clean_vm_installer_status.py",
+        "-v"
+      ],
+      "cwd": "C:\\gw3-20260925-1857-t5a",
+      "display": "python scripts/test_garnet_windows_clean_vm_installer_status.py -v",
+      "duration_s": 3.453,
+      "ended_utc": "2026-09-25T18:58:32.357807Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "harness_sha256": "7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845",
+      "id": "K6",
+      "path_mode": "pinned",
+      "phase": "check6",
+      "resolved_exe": "C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.EXE",
+      "script": null,
+      "section": "check6",
+      "started_utc": "2026-09-25T18:58:28.902261Z",
+      "stem": "clean-vm-reader-tests",
+      "streams": [
+        {
+          "bytes": 0,
+          "file": "streams/K6-clean-vm-reader-tests.stdout",
+          "kind": "stdout",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "bytes": 11998,
+          "file": "streams/K6-clean-vm-reader-tests.stderr",
+          "kind": "stderr",
+          "sha256": "a48c1d18f5fa63d260e652067dd90ec9dfa3635f599c3201aa9fc2121a51ab45"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 1800,
+      "title": "Committed-bundle reader tests, natively (verbose, so each skip is named)"
+    },
+    {
+      "argv": [
+        "C:\\Program Files\\Git\\cmd\\git.EXE",
+        "-C",
+        "C:\\gw3-20260925-1857-t5a",
+        "status",
+        "--short",
+        "--branch"
+      ],
+      "cwd": "C:\\gw3-20260925-1857-t5a",
+      "display": "git -C <worktree> status --short --branch",
+      "duration_s": 0.063,
+      "ended_utc": "2026-09-25T18:58:32.431550Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "harness_sha256": "7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845",
+      "id": "P01",
+      "path_mode": "pinned",
+      "phase": "post",
+      "resolved_exe": "C:\\Program Files\\Git\\cmd\\git.EXE",
+      "script": null,
+      "section": "post",
+      "started_utc": "2026-09-25T18:58:32.374062Z",
+      "stem": "wt-status",
+      "streams": [
+        {
+          "bytes": 20,
+          "file": "streams/P01-wt-status.stdout",
+          "kind": "stdout",
+          "sha256": "ba051334ebc33f3162a4fd5be48615e03c8dac8ec7977e7c2752dbc1cf981841"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/P01-wt-status.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "T5a worktree status after every step"
+    },
+    {
+      "argv": [
+        "C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-I",
+        "-c",
+        "import subprocess\nout = subprocess.run(['git', '-c', 'credential.helper=', 'ls-remote', r'https://github.com/Island-Dev-Crew/garnet.git', 'refs/heads/train/t5a-evidence-tools', 'refs/heads/main'], capture_output=True, text=True)\nprint(out.stdout, end='')\n"
+      ],
+      "cwd": "C:\\",
+      "display": "git ls-remote https://github.com/Island-Dev-Crew/garnet.git refs/heads/train/t5a-evidence-tools refs/heads/main",
+      "duration_s": 0.562,
+      "ended_utc": "2026-09-25T18:58:32.989988Z",
+      "env_overrides": {
+        "GIT_TERMINAL_PROMPT": "0"
+      },
+      "exit_code": 0,
+      "expect_exit": 0,
+      "harness_sha256": "7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845",
+      "id": "P02",
+      "path_mode": "pinned",
+      "phase": "post",
+      "resolved_exe": "C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+      "script": null,
+      "section": "post",
+      "started_utc": "2026-09-25T18:58:32.433550Z",
+      "stem": "readback-after",
+      "streams": [
+        {
+          "bytes": 136,
+          "file": "streams/P02-readback-after.stdout",
+          "kind": "stdout",
+          "sha256": "640706af506c9cf97930f94043f602e10043fa646a9eef4dcb92333f25b9452c"
+        },
+        {
+          "bytes": 0,
+          "file": "streams/P02-readback-after.stderr",
+          "kind": "stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Remote readback after every step"
+    },
+    {
+      "argv": [
+        "C:\\windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+        "-NoProfile",
+        "-NonInteractive",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-EncodedCommand",
+        "IgBwAHIAbwBjAGUAcwBzAF8AYwBvAHUAbgB0AD0AJAAoACgARwBlAHQALQBQAHIAbwBjAGUAcwBzACkALgBDAG8AdQBuAHQAKQAiAAoA"
+      ],
+      "cwd": "C:\\gw3-20260925-1857-t5a",
+      "display": "\"process_count=$((Get-Process).Count)\"\n",
+      "duration_s": 0.203,
+      "ended_utc": "2026-09-25T18:58:33.195334Z",
+      "env_overrides": {},
+      "exit_code": 0,
+      "expect_exit": 0,
+      "harness_sha256": "7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845",
+      "id": "P03",
+      "path_mode": "pinned",
+      "phase": "post",
+      "resolved_exe": "C:\\windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+      "script": "\"process_count=$((Get-Process).Count)\"\n",
+      "section": "post",
+      "started_utc": "2026-09-25T18:58:32.992982Z",
+      "stem": "processes-after",
+      "streams": [
+        {
+          "bytes": 19,
+          "file": "streams/P03-processes-after.stdout",
+          "kind": "stdout",
+          "sha256": "986cfdae659eaab5e42320729e42e18db875f8c2ee29ec53e68e36609c3946c4"
+        },
+        {
+          "bytes": 392,
+          "file": "streams/P03-processes-after.stderr",
+          "kind": "stderr",
+          "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+        }
+      ],
+      "timed_out": false,
+      "timeout_s": 900,
+      "title": "Process count after every step"
+    }
+  ]
+}

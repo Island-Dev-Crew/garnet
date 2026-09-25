@@ -1,0 +1,6 @@
+examples/minimum-shelf-flagship/tool.garnet: text: set
+examples/minimum-shelf-flagship/tool.garnet: eol: lf
+examples/minimum-shelf-flagship/tool.seal.json: text: set
+examples/minimum-shelf-flagship/tool.seal.json: eol: lf
+garnet-interp-v0.3/src/prelude.rs: text: set
+garnet-interp-v0.3/src/prelude.rs: eol: lf

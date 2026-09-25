@@ -1,0 +1,7 @@
+PASS K1a ran the four named tests: `4 passed; 0 failed`
+PASS K1b stdout contains `~ a::f gained: fs`
+PASS K1c --machine names a::f
+PASS K1d stdout contains `~ a.garnet::helper gained: fs`
+PASS K1d stdout has no `helper gained: net`
+PASS K1e stdout contains `~ f gained: fs`
+PASS K1f stdout contains `~ a.garnet::f gained: fs`

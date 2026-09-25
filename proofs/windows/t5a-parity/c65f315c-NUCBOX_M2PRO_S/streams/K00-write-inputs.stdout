@@ -1,0 +1,15 @@
+5f8066deb2c1243b67d23040320bf201db56a0a02730de373a89a496858ddfce     36 B  crlf=0  diff/dirnames/new/a.garnet
+14712414359b278d59a87f5f6464d2688ffcbc56d1cd746c498bcb16189b95f6     37 B  crlf=0  diff/dirnames/new/b.garnet
+2ea00aefd1770eb160a9837f29c2c56c547578498fc92841cb8b504dbb3d295d     34 B  crlf=0  diff/dirnames/old/a.garnet
+14712414359b278d59a87f5f6464d2688ffcbc56d1cd746c498bcb16189b95f6     37 B  crlf=0  diff/dirnames/old/b.garnet
+c8a8ea8bcd2e1a1497508ec134d104678c3ac871bd0f94ecb8ed3b6281b79b79     60 B  crlf=0  diff/dirswap/new/a.garnet
+4c49d5af515b1c1f7027a229c43e465544ea0d77237ba9961e260c99f0f1ec74     29 B  crlf=0  diff/dirswap/new/b.garnet
+be14b6ad9115965a4129422ef6b74c97db138f7005fcccc3a2cd584c833ec14c     60 B  crlf=0  diff/dirswap/old/a.garnet
+4c49d5af515b1c1f7027a229c43e465544ea0d77237ba9961e260c99f0f1ec74     29 B  crlf=0  diff/dirswap/old/b.garnet
+b467cafde81832ecd8dbc1b1ec03bc0c2c0015464781efc97f26c751e177e0a4    128 B  crlf=0  diff/nested/new.garnet
+389f61ca670a8ba94caeaaafba384de1a18d191f49d3cbf27c9c1701879ccb4d    126 B  crlf=0  diff/nested/old.garnet
+dda257e382ccd6d942036d43c545fc395c32809e69b86af610be1a600c4624d0     94 B  crlf=0  diff/swap/new.garnet
+f40682ac7ecfd9658bee2cee978d71b7101edff9a0f1bba6f5edc54764e23733     94 B  crlf=0  diff/swap/old.garnet
+1b989741b522f2da4d2439977db00ed35ec27b4069360ac1c65e84858868966b     40 B  crlf=2  seal/crlf/tool.garnet
+25ebd3dc02c8ab7d17e343c867e6becda9918c84a567f56f5b14ba4aba08a967     38 B  crlf=0  seal/lf/tool.garnet
+ad0bae38bedf356b8d52a228e90db7fb3805f01604485bacd71d9a7c7908666a     46 B  crlf=0  stub/cosign.rs
