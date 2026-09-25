@@ -9,6 +9,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import zlib
 from pathlib import Path
 from unittest import mock
 
@@ -692,6 +693,30 @@ class CommittedCleanVmBundleAdversarialTests(_CommittedRepoCase):
                 self._assert_unverified()
                 (self.bundle / name).write_bytes(original)
                 status_mod._write_manifest(self.bundle)
+
+    def test_a_structurally_broken_png_does_not_count(self) -> None:
+        # Codex round 10: a header-only check accepted TINY_PNG[:24]. The PNG
+        # must be complete: valid chunk CRCs, IHDR first, IDAT, IEND last, and
+        # image data that decompresses to the size the header implies.
+        bad_crc = bytearray(TINY_PNG)
+        bad_crc[29] ^= 0xFF  # a byte of the IHDR CRC
+        no_iend = TINY_PNG[: TINY_PNG.index(b"IEND") - 4]
+        short_data = bytearray(TINY_PNG)
+        short_data[20:24] = (2).to_bytes(4, "big")  # IHDR claims height 2
+        short_data[29:33] = (zlib.crc32(bytes(short_data[12:29])) & 0xFFFFFFFF).to_bytes(4, "big")  # valid CRC
+        for label, data in (
+            ("truncated header", TINY_PNG[:24]),
+            ("bad crc", bytes(bad_crc)),
+            ("no IEND", no_iend),
+            ("trailing bytes", TINY_PNG + b"x"),
+            ("data shorter than the header implies", bytes(short_data)),
+        ):
+            with self.subTest(label=label):
+                self.assertFalse(status_mod.is_png_screenshot(data))
+                (self.bundle / "launch.png").write_bytes(data)
+                status_mod._write_manifest(self.bundle)
+                self._assert_unverified()
+        self.assertTrue(status_mod.is_png_screenshot(TINY_PNG))
 
     def test_a_png_with_zero_size_does_not_count(self) -> None:
         zero = bytearray(TINY_PNG)
