@@ -228,6 +228,13 @@ class GarnetWindowsCleanVmInstallerStatusTests(unittest.TestCase):
                     self.assertEqual("blocked", gates[blocked].status)
                     self.assertFalse(record.verified)
 
+    def test_the_installer_gate_label_claims_only_what_is_recorded(self) -> None:
+        # Codex round 11: committed replay cannot see the .exe, so the label
+        # must not say the installer "exists".
+        label = {gate.id: gate.label for gate in status_mod.required_gates()}["installer-artifact"]
+        self.assertNotIn("exists", label)
+        self.assertIn("recorded", label)
+
     def test_cli_json_and_markdown_are_honest_without_evidence(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             json_output = subprocess.check_output(
@@ -785,6 +792,37 @@ class CommittedCleanVmBundleAdversarialTests(_CommittedRepoCase):
             with self.subTest(label=label):
                 self.assertTrue(status_mod.is_png_screenshot(data))
 
+    def test_png_chunk_structure_must_be_legal(self) -> None:
+        # Codex round 11: a duplicate IHDR, a split IDAT run, an unknown
+        # critical chunk, or a palette in a greyscale image must not pass.
+        raw = b"\x00" + bytes(4)
+
+        def chunk(kind: bytes, body: bytes) -> bytes:
+            return len(body).to_bytes(4, "big") + kind + body + (zlib.crc32(kind + body) & 0xFFFFFFFF).to_bytes(4, "big")
+
+        ihdr = chunk(b"IHDR", (1).to_bytes(4, "big") * 2 + bytes([8, 6, 0, 0, 0]))
+        data = zlib.compress(raw)
+        sig, iend = b"\x89PNG\r\n\x1a\n", chunk(b"IEND", b"")
+        for label, png in (
+            ("duplicate IHDR", sig + ihdr + ihdr + chunk(b"IDAT", data) + iend),
+            ("split IDAT run", sig + ihdr + chunk(b"IDAT", data[:4]) + chunk(b"tEXt", b"k\x00v") + chunk(b"IDAT", data[4:]) + iend),
+            ("unknown critical chunk", sig + ihdr + chunk(b"ABCD", b"") + chunk(b"IDAT", data) + iend),
+            ("palette in greyscale", _png(1, 1, 0, 8, b"\x00\x00", ((b"PLTE", b"\x00\x00\x00"),))),
+        ):
+            with self.subTest(label=label):
+                self.assertFalse(status_mod.is_png_screenshot(png))
+        ok = sig + ihdr + chunk(b"tEXt", b"k\x00v") + chunk(b"IDAT", data[:4]) + chunk(b"IDAT", data[4:]) + iend
+        self.assertTrue(status_mod.is_png_screenshot(ok), "ancillary chunks and a consecutive IDAT run are fine")
+
+    def test_an_oversized_png_is_rejected_by_name(self) -> None:
+        huge = _png(2147483647, 2147483647, 6, 16, b"\x00")
+        problem = status_mod.png_screenshot_problem(huge)
+        self.assertIsNotNone(problem)
+        self.assertIn("16384", problem)
+        (self.bundle / "launch.png").write_bytes(huge)
+        status_mod._write_manifest(self.bundle)
+        self._assert_unverified()
+
     def test_a_png_with_zero_size_does_not_count(self) -> None:
         # Codex round 11: build the zero-width image with consistent CRCs, so
         # the dimension check itself is what rejects it.
@@ -796,7 +834,7 @@ class CommittedCleanVmBundleAdversarialTests(_CommittedRepoCase):
 
     def test_created_at_must_be_a_time_with_a_zone(self) -> None:
         # Codex round 10 (LOW): created_at was only checked to be a string.
-        for value in ("", "not-a-date", "2026-09-24T12:00:00"):
+        for value in ("", "not-a-date", "2026-09-24T12:00:00", "2026-09-24T12:00:00+00:99"):
             with self.subTest(created_at=value):
                 self._edit_proof(created_at=value)
                 self._assert_unverified()
