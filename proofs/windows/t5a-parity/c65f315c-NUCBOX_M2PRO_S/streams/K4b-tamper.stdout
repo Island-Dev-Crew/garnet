@@ -1,0 +1,4 @@
+subject digest (blake3) first hex digit at byte offset 89: '3' -> '0'
+original sha256=b3578595bf3ad4cd342265d6f797ad9d1321f451abbfffafc9fc6e205b615139
+tampered sha256=b810c898f0d133fe1705b7958f39d954d6c7e787c2028edd3c61e8f6bcca0453
+bytes differing=1

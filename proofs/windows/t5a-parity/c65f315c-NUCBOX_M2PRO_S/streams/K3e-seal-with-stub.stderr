@@ -1,0 +1,1 @@
+garnet seal: in-toto predicate emitted UNSIGNED (Garnet never signs); cosign is installed — to sign it: cosign attest --predicate <output> --type custom

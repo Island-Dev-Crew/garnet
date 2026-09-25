@@ -1,0 +1,149 @@
+# Check 1: diff-caps, tests and by hand
+folder: proofs/windows/t5a-parity/c65f315c-NUCBOX_M2PRO_S/
+t5a head: c65f315c0c55c75b2f00c4217c3d1cc57fb6ff59 (branch train/t5a-evidence-tools; read back from the remote in C01 and P02)
+host: NUCBOX_M2PRO_S (%COMPUTERNAME%; `hostname` prints the DNS casing, see E01)
+stamp: 20260925-1857 (UTC)
+harness: harness/w3_capture.py, sha256 7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845; every step ran from this one invocation
+  (w3_capture.py all --stamp 20260925-1857), 2026-09-25T18:57:38.592136Z to 2026-09-25T18:58:33.198545Z.
+scope: evidence for the T5a review record, gathered on native Windows. It is not a review.
+python: every python step ran with Python312 first on PATH except E06, which shows the machine's default
+  PATH (an unrelated 3.11.15 virtualenv). Path mode `stub` puts the stub cosign.exe directory first.
+inputs: hand-run inputs are written by K00 into a scratch directory outside both checkouts; their exact
+  bytes are in inputs.json.
+powershell: PowerShell steps run powershell.exe 5.1 with -EncodedCommand; with redirected output it writes
+  progress/error records to stderr as CLIXML. The raw streams are authoritative.
+captures: stdout and stderr are the raw child-process bytes, unedited; see encoding-census.txt.
+
+==============================================================================
+[K00] Write the hand-run inputs (exact bytes from inputs.json) to the scratch dir
+$ python -I -c <write inputs.json files into the scratch directory>
+exit_code=0 expected=0 timed_out=False started=2026-09-25T18:58:18.835114Z duration_s=0.109 path=pinned
+--- stdout (streams/K00-write-inputs.stdout, 1617 bytes, sha256 e44e4d961ed0a8738d10eb5101c3becaff7f896a96d75bf96572a23fa2cbf190)
+5f8066deb2c1243b67d23040320bf201db56a0a02730de373a89a496858ddfce     36 B  crlf=0  diff/dirnames/new/a.garnet
+14712414359b278d59a87f5f6464d2688ffcbc56d1cd746c498bcb16189b95f6     37 B  crlf=0  diff/dirnames/new/b.garnet
+2ea00aefd1770eb160a9837f29c2c56c547578498fc92841cb8b504dbb3d295d     34 B  crlf=0  diff/dirnames/old/a.garnet
+14712414359b278d59a87f5f6464d2688ffcbc56d1cd746c498bcb16189b95f6     37 B  crlf=0  diff/dirnames/old/b.garnet
+c8a8ea8bcd2e1a1497508ec134d104678c3ac871bd0f94ecb8ed3b6281b79b79     60 B  crlf=0  diff/dirswap/new/a.garnet
+4c49d5af515b1c1f7027a229c43e465544ea0d77237ba9961e260c99f0f1ec74     29 B  crlf=0  diff/dirswap/new/b.garnet
+be14b6ad9115965a4129422ef6b74c97db138f7005fcccc3a2cd584c833ec14c     60 B  crlf=0  diff/dirswap/old/a.garnet
+4c49d5af515b1c1f7027a229c43e465544ea0d77237ba9961e260c99f0f1ec74     29 B  crlf=0  diff/dirswap/old/b.garnet
+b467cafde81832ecd8dbc1b1ec03bc0c2c0015464781efc97f26c751e177e0a4    128 B  crlf=0  diff/nested/new.garnet
+389f61ca670a8ba94caeaaafba384de1a18d191f49d3cbf27c9c1701879ccb4d    126 B  crlf=0  diff/nested/old.garnet
+dda257e382ccd6d942036d43c545fc395c32809e69b86af610be1a600c4624d0     94 B  crlf=0  diff/swap/new.garnet
+f40682ac7ecfd9658bee2cee978d71b7101edff9a0f1bba6f5edc54764e23733     94 B  crlf=0  diff/swap/old.garnet
+1b989741b522f2da4d2439977db00ed35ec27b4069360ac1c65e84858868966b     40 B  crlf=2  seal/crlf/tool.garnet
+25ebd3dc02c8ab7d17e343c867e6becda9918c84a567f56f5b14ba4aba08a967     38 B  crlf=0  seal/lf/tool.garnet
+ad0bae38bedf356b8d52a228e90db7fb3805f01604485bacd71d9a7c7908666a     46 B  crlf=0  stub/cosign.rs
+--- end stdout
+--- stderr (streams/K00-write-inputs.stderr, 0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+
+==============================================================================
+[K1a] The four named diff_caps tests
+$ cargo test --locked -p garnet-cli --test diff_caps -- nested_module_gain directory_mode_names swapping_two_definitions directory_mode_reports_reordered
+exit_code=0 expected=0 timed_out=False started=2026-09-25T18:58:18.959107Z duration_s=6.922 path=pinned
+--- stdout (streams/K1a-diff-caps-tests.stdout, 364 bytes, sha256 f63ed88e4d4df94f573fac8495624b5e7052c16780f71fc12f306664d5b329c7)
+
+running 4 tests
+test swapping_two_definitions_of_one_name_is_reported ... ok
+test directory_mode_names_each_function_by_its_file ... ok
+test directory_mode_reports_reordered_definitions_of_one_name ... ok
+test nested_module_gain_is_named_with_its_module_path ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.53s
+
+--- end stdout
+--- stderr (streams/K1a-diff-caps-tests.stderr, 558 bytes, sha256 5390589e399b597a477e8125146101b1ae048c8e2af32e1b74a7eaf04c80b348)
+   Compiling once_cell v1.21.4
+   Compiling getrandom v0.4.2
+   Compiling fastrand v2.4.1
+   Compiling ahash v0.8.12
+   Compiling hashbrown v0.14.5
+   Compiling tempfile v3.27.0
+   Compiling rowan v0.16.1
+   Compiling hashlink v0.9.1
+   Compiling rusqlite v0.32.1
+   Compiling garnet-cst v0.1.0 (C:\gw3-20260925-1857-t5a\garnet-cst)
+   Compiling garnet-cli v0.8.2 (C:\gw3-20260925-1857-t5a\garnet-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.26s
+     Running tests\diff_caps.rs (target\debug\deps\diff_caps-b4c2b6d794600ab4.exe)
+--- end stderr
+
+==============================================================================
+[K1b] By hand: nested-module gain (expected `~ a::f gained: fs`, exit 0)
+$ garnet diff-caps diff/nested/old.garnet diff/nested/new.garnet
+exit_code=0 expected=0 timed_out=False started=2026-09-25T18:58:25.904171Z duration_s=0.015 path=pinned
+--- stdout (streams/K1b-nested.stdout, 220 bytes, sha256 b81a93e6a40ef9cc501a95122408bcfc8987f409204403548576c1f350c72e63)
+garnet diff-caps: C:\gw1-stage\w3\scratch-20260925-1857\diff\nested\old.garnet -> C:\gw1-stage\w3\scratch-20260925-1857\diff\nested\new.garnet
+  ~ a::f gained: fs
+
+diff-caps: no authority expansion (capability band 5/5)
+--- end stdout
+--- stderr (streams/K1b-nested.stderr, 0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+
+==============================================================================
+[K1c] By hand: nested-module gain, --machine
+$ garnet diff-caps --machine diff/nested/old.garnet diff/nested/new.garnet
+exit_code=0 expected=not asserted timed_out=False started=2026-09-25T18:58:25.927802Z duration_s=0.015 path=pinned
+--- stdout (streams/K1c-nested-machine.stdout, 487 bytes, sha256 e049096f6607dd0d4ad8d229d5b466a27b29803bc34277bc8cce18a998a737e2)
+{"schema":"garnet.diff-caps.machine/1","verdict":"no-authority-expansion","authority_expanded":false,"capability_band":"5/5","exit_code":0,"aggregate_gained":[],"aggregate_removed":[],"wildcard_introduced":false,"functions_added":[],"functions_removed":[],"functions_caps_expanded":[{"name":"a::f","gained":["fs"]}],"skipped_path_count":0,"skipped_paths":[],"scope":"declared-surface-only; does not prove absence of undeclared authority; bound annotations are not part of this surface"}
+--- end stdout
+--- stderr (streams/K1c-nested-machine.stderr, 0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+
+==============================================================================
+[K1d] By hand: directory mode names functions by file (expected `~ a.garnet::helper gained: fs`)
+$ garnet diff-caps diff/dirnames/old diff/dirnames/new
+exit_code=1 expected=not asserted timed_out=False started=2026-09-25T18:58:25.945805Z duration_s=0.016 path=pinned
+--- stdout (streams/K1d-dirnames.stdout, 259 bytes, sha256 fa4872177a46fe5a92e8aeda97776948563ef94c937a57a94406aca594179a9e)
+garnet diff-caps: C:\gw1-stage\w3\scratch-20260925-1857\diff\dirnames\old -> C:\gw1-stage\w3\scratch-20260925-1857\diff\dirnames\new
+  + caps GAINED:  fs
+  ~ a.garnet::helper gained: fs
+
+diff-caps: AUTHORITY EXPANDED — review required (capability band 2/5)
+--- end stdout
+--- stderr (streams/K1d-dirnames.stderr, 0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+
+==============================================================================
+[K1e] By hand: swapped definitions of one name (expected `~ f gained: fs`)
+$ garnet diff-caps diff/swap/old.garnet diff/swap/new.garnet
+exit_code=0 expected=not asserted timed_out=False started=2026-09-25T18:58:25.967984Z duration_s=0.016 path=pinned
+--- stdout (streams/K1e-swap.stdout, 213 bytes, sha256 2ecfa6dfb8d0d0e05ea20bbb88344e494488483c172dc409555dc82ef518d94d)
+garnet diff-caps: C:\gw1-stage\w3\scratch-20260925-1857\diff\swap\old.garnet -> C:\gw1-stage\w3\scratch-20260925-1857\diff\swap\new.garnet
+  ~ f gained: fs
+
+diff-caps: no authority expansion (capability band 5/5)
+--- end stdout
+--- stderr (streams/K1e-swap.stderr, 0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+
+==============================================================================
+[K1f] By hand: reordered definitions in a two-file directory (expected `~ a.garnet::f gained: fs`)
+$ garnet diff-caps diff/dirswap/old diff/dirswap/new
+exit_code=0 expected=not asserted timed_out=False started=2026-09-25T18:58:25.990216Z duration_s=0.016 path=pinned
+--- stdout (streams/K1f-dirswap.stdout, 215 bytes, sha256 a6970ceb6d55850e26753755ca317a55660baceb122940f328cdfe21a3a4f62d)
+garnet diff-caps: C:\gw1-stage\w3\scratch-20260925-1857\diff\dirswap\old -> C:\gw1-stage\w3\scratch-20260925-1857\diff\dirswap\new
+  ~ a.garnet::f gained: fs
+
+diff-caps: no authority expansion (capability band 5/5)
+--- end stdout
+--- stderr (streams/K1f-dirswap.stderr, 0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+
+==============================================================================
+[K1g] Check the hand-run outputs against the trigger's expectations
+$ python -I -c <assert the expected lines and exit codes>
+exit_code=0 expected=0 timed_out=False started=2026-09-25T18:58:26.012506Z duration_s=0.062 path=pinned
+--- stdout (streams/K1g-expectations.stdout, 333 bytes, sha256 12d9d8a202fc10ee5ce11b192cd708ea5ea37df8a2a3a29d70cd0f486d80bd8c)
+PASS K1a ran the four named tests: `4 passed; 0 failed`
+PASS K1b stdout contains `~ a::f gained: fs`
+PASS K1c --machine names a::f
+PASS K1d stdout contains `~ a.garnet::helper gained: fs`
+PASS K1d stdout has no `helper gained: net`
+PASS K1e stdout contains `~ f gained: fs`
+PASS K1f stdout contains `~ a.garnet::f gained: fs`
+--- end stdout
+--- stderr (streams/K1g-expectations.stderr, 0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr

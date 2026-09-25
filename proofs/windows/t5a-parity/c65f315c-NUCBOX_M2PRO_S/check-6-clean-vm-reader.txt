@@ -1,0 +1,92 @@
+# Check 6: committed-bundle reader tests
+folder: proofs/windows/t5a-parity/c65f315c-NUCBOX_M2PRO_S/
+t5a head: c65f315c0c55c75b2f00c4217c3d1cc57fb6ff59 (branch train/t5a-evidence-tools; read back from the remote in C01 and P02)
+host: NUCBOX_M2PRO_S (%COMPUTERNAME%; `hostname` prints the DNS casing, see E01)
+stamp: 20260925-1857 (UTC)
+harness: harness/w3_capture.py, sha256 7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845; every step ran from this one invocation
+  (w3_capture.py all --stamp 20260925-1857), 2026-09-25T18:57:38.592136Z to 2026-09-25T18:58:33.198545Z.
+scope: evidence for the T5a review record, gathered on native Windows. It is not a review.
+python: every python step ran with Python312 first on PATH except E06, which shows the machine's default
+  PATH (an unrelated 3.11.15 virtualenv). Path mode `stub` puts the stub cosign.exe directory first.
+inputs: hand-run inputs are written by K00 into a scratch directory outside both checkouts; their exact
+  bytes are in inputs.json.
+powershell: PowerShell steps run powershell.exe 5.1 with -EncodedCommand; with redirected output it writes
+  progress/error records to stderr as CLIXML. The raw streams are authoritative.
+captures: stdout and stderr are the raw child-process bytes, unedited; see encoding-census.txt.
+
+==============================================================================
+[K6] Committed-bundle reader tests, natively (verbose, so each skip is named)
+$ python scripts/test_garnet_windows_clean_vm_installer_status.py -v
+exit_code=0 expected=0 timed_out=False started=2026-09-25T18:58:28.902261Z duration_s=3.453 path=pinned
+--- stdout (streams/K6-clean-vm-reader-tests.stdout, 0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stdout
+--- stderr (streams/K6-clean-vm-reader-tests.stderr, 11998 bytes, sha256 a48c1d18f5fa63d260e652067dd90ec9dfa3635f599c3201aa9fc2121a51ab45)
+test_a_bundle_holds_only_regular_files (__main__.CommittedCleanVmBundleAdversarialTests.test_a_bundle_holds_only_regular_files) ... skipped "this host cannot create a directory symlink: [WinError 1314] A required privilege is not held by the client: 'C:\\\\Users\\\\ISLAND~1\\\\AppData\\\\Local\\\\Temp\\\\tmp7cqv3zoi' -> 'C:\\\\Users\\\\ISLAND~1\\\\AppData\\\\Local\\\\Temp\\\\tmp7cqv3zoi\\\\repo\\\\proofs\\\\windows\\\\studio-clean-vm\\\\20260924-1200-nuc\\\\extra'"
+test_a_dangling_link_on_the_proof_path_does_not_fall_back_to_local_evidence (__main__.CommittedCleanVmBundleAdversarialTests.test_a_dangling_link_on_the_proof_path_does_not_fall_back_to_local_evidence) ... skipped "this host cannot create a directory symlink: [WinError 1314] A required privilege is not held by the client: 'C:\\\\Users\\\\ISLAND~1\\\\AppData\\\\Local\\\\Temp\\\\tmp6sc8zf2a\\\\missing-target' -> 'C:\\\\Users\\\\ISLAND~1\\\\AppData\\\\Local\\\\Temp\\\\tmp6sc8zf2a\\\\repo\\\\proofs'"
+test_a_file_added_after_manifest_verification_does_not_count (__main__.CommittedCleanVmBundleAdversarialTests.test_a_file_added_after_manifest_verification_does_not_count) ... ok
+test_a_file_listed_twice_in_the_manifest_does_not_count (__main__.CommittedCleanVmBundleAdversarialTests.test_a_file_listed_twice_in_the_manifest_does_not_count) ... ok
+test_a_filesystem_without_stable_file_identity_fails_closed (__main__.CommittedCleanVmBundleAdversarialTests.test_a_filesystem_without_stable_file_identity_fails_closed) ... ok
+test_a_gate_listed_twice_does_not_count (__main__.CommittedCleanVmBundleAdversarialTests.test_a_gate_listed_twice_does_not_count) ... ok
+test_a_link_inside_a_recorded_path_does_not_count (__main__.CommittedCleanVmBundleAdversarialTests.test_a_link_inside_a_recorded_path_does_not_count) ... skipped "this host cannot create a directory symlink: [WinError 1314] A required privilege is not held by the client: 'C:\\\\Users\\\\ISLAND~1\\\\AppData\\\\Local\\\\Temp\\\\tmp5accbsy4\\\\repo\\\\proofs\\\\windows\\\\studio-clean-vm\\\\20260924-1200-nuc' -> 'C:\\\\Users\\\\ISLAND~1\\\\AppData\\\\Local\\\\Temp\\\\tmp5accbsy4\\\\repo\\\\evidence-alias'"
+test_a_missing_newest_proof_cannot_bring_back_an_older_bundle (__main__.CommittedCleanVmBundleAdversarialTests.test_a_missing_newest_proof_cannot_bring_back_an_older_bundle) ... ok
+test_a_newest_entry_that_is_not_a_directory_does_not_bring_back_an_older_bundle (__main__.CommittedCleanVmBundleAdversarialTests.test_a_newest_entry_that_is_not_a_directory_does_not_bring_back_an_older_bundle) ... ok
+test_a_non_string_architecture_is_unverified_not_an_exception (__main__.CommittedCleanVmBundleAdversarialTests.test_a_non_string_architecture_is_unverified_not_an_exception) ... ok
+test_a_png_with_zero_size_does_not_count (__main__.CommittedCleanVmBundleAdversarialTests.test_a_png_with_zero_size_does_not_count) ... ok
+test_a_proof_path_ancestor_that_is_a_file_does_not_fall_back (__main__.CommittedCleanVmBundleAdversarialTests.test_a_proof_path_ancestor_that_is_a_file_does_not_fall_back) ... ok
+test_a_record_swapped_for_an_outside_link_after_the_checks_does_not_count (__main__.CommittedCleanVmBundleAdversarialTests.test_a_record_swapped_for_an_outside_link_after_the_checks_does_not_count) ... ok
+test_a_recorded_path_must_name_the_bundle_directly (__main__.CommittedCleanVmBundleAdversarialTests.test_a_recorded_path_must_name_the_bundle_directly) ... ok
+test_a_search_only_proof_path_does_not_count (__main__.CommittedCleanVmBundleAdversarialTests.test_a_search_only_proof_path_does_not_count) ... skipped 'needs a non-root POSIX host to make a directory search-only'
+test_a_structurally_broken_png_does_not_count (__main__.CommittedCleanVmBundleAdversarialTests.test_a_structurally_broken_png_does_not_count) ... ok
+test_a_symlinked_bundle_outside_the_repo_does_not_count (__main__.CommittedCleanVmBundleAdversarialTests.test_a_symlinked_bundle_outside_the_repo_does_not_count) ... skipped "this host cannot create a directory symlink: [WinError 1314] A required privilege is not held by the client: 'C:\\\\Users\\\\ISLAND~1\\\\AppData\\\\Local\\\\Temp\\\\tmple8q_u2c\\\\outside' -> 'C:\\\\Users\\\\ISLAND~1\\\\AppData\\\\Local\\\\Temp\\\\tmple8q_u2c\\\\repo\\\\proofs\\\\windows\\\\studio-clean-vm\\\\20260924-1200-nuc'"
+test_a_symlinked_proof_root_does_not_count (__main__.CommittedCleanVmBundleAdversarialTests.test_a_symlinked_proof_root_does_not_count) ... skipped "this host cannot create a directory symlink: [WinError 1314] A required privilege is not held by the client: 'C:\\\\Users\\\\ISLAND~1\\\\AppData\\\\Local\\\\Temp\\\\tmpu2qjm8gt\\\\outside-root' -> 'C:\\\\Users\\\\ISLAND~1\\\\AppData\\\\Local\\\\Temp\\\\tmpu2qjm8gt\\\\repo\\\\proofs\\\\windows\\\\studio-clean-vm'"
+test_an_array_smoke_record_is_unverified_not_an_exception (__main__.CommittedCleanVmBundleAdversarialTests.test_an_array_smoke_record_is_unverified_not_an_exception) ... ok
+test_an_evidence_name_must_be_a_verified_file_of_the_bundle (__main__.CommittedCleanVmBundleAdversarialTests.test_an_evidence_name_must_be_a_verified_file_of_the_bundle) ... ok
+test_an_invalid_utf8_manifest_is_unverified_not_an_exception (__main__.CommittedCleanVmBundleAdversarialTests.test_an_invalid_utf8_manifest_is_unverified_not_an_exception) ... ok
+test_an_oversized_png_is_rejected_by_name (__main__.CommittedCleanVmBundleAdversarialTests.test_an_oversized_png_is_rejected_by_name) ... ok
+test_an_undecodable_or_unsupported_png_does_not_count (__main__.CommittedCleanVmBundleAdversarialTests.test_an_undecodable_or_unsupported_png_does_not_count) ... ok
+test_an_unreadable_proof_path_does_not_fall_back (__main__.CommittedCleanVmBundleAdversarialTests.test_an_unreadable_proof_path_does_not_fall_back) ... skipped 'needs a non-root POSIX host to make a directory unreadable'
+test_ancillary_chunks_keep_their_order_around_plte (__main__.CommittedCleanVmBundleAdversarialTests.test_ancillary_chunks_keep_their_order_around_plte) ... ok
+test_created_at_must_be_a_time_with_a_zone (__main__.CommittedCleanVmBundleAdversarialTests.test_created_at_must_be_a_time_with_a_zone) ... ok
+test_duplicate_keys_in_the_record_do_not_count (__main__.CommittedCleanVmBundleAdversarialTests.test_duplicate_keys_in_the_record_do_not_count) ... ok
+test_duplicate_keys_in_the_smoke_record_do_not_count (__main__.CommittedCleanVmBundleAdversarialTests.test_duplicate_keys_in_the_smoke_record_do_not_count) ... ok
+test_evidence_files_must_not_be_hard_links (__main__.CommittedCleanVmBundleAdversarialTests.test_evidence_files_must_not_be_hard_links) ... ok
+test_evidence_swapped_for_hard_links_after_the_checks_does_not_count (__main__.CommittedCleanVmBundleAdversarialTests.test_evidence_swapped_for_hard_links_after_the_checks_does_not_count) ... ok
+test_invalid_utf8_evidence_is_unverified_not_an_exception (__main__.CommittedCleanVmBundleAdversarialTests.test_invalid_utf8_evidence_is_unverified_not_an_exception) ... ok
+test_nonfinite_json_constants_do_not_count (__main__.CommittedCleanVmBundleAdversarialTests.test_nonfinite_json_constants_do_not_count) ... ok
+test_palette_and_ancillary_values_must_be_legal (__main__.CommittedCleanVmBundleAdversarialTests.test_palette_and_ancillary_values_must_be_legal) ... ok
+test_png_chunk_structure_must_be_legal (__main__.CommittedCleanVmBundleAdversarialTests.test_png_chunk_structure_must_be_legal) ... ok
+test_srgb_companions_must_carry_the_srgb_values (__main__.CommittedCleanVmBundleAdversarialTests.test_srgb_companions_must_carry_the_srgb_values) ... ok
+test_standard_ancillary_chunks_must_be_well_formed (__main__.CommittedCleanVmBundleAdversarialTests.test_standard_ancillary_chunks_must_be_well_formed) ... ok
+test_the_bundle_name_must_carry_a_real_time (__main__.CommittedCleanVmBundleAdversarialTests.test_the_bundle_name_must_carry_a_real_time) ... ok
+test_the_claim_boundary_cannot_be_removed (__main__.CommittedCleanVmBundleAdversarialTests.test_the_claim_boundary_cannot_be_removed) ... ok
+test_the_fresh_guest_identity_is_checked_not_its_gate_label (__main__.CommittedCleanVmBundleAdversarialTests.test_the_fresh_guest_identity_is_checked_not_its_gate_label) ... ok
+test_the_guest_must_be_windows (__main__.CommittedCleanVmBundleAdversarialTests.test_the_guest_must_be_windows) ... ok
+test_the_install_log_and_screenshot_must_hold_evidence (__main__.CommittedCleanVmBundleAdversarialTests.test_the_install_log_and_screenshot_must_hold_evidence) ... ok
+test_the_newest_bundle_must_be_named_timestamp_dash_host (__main__.CommittedCleanVmBundleAdversarialTests.test_the_newest_bundle_must_be_named_timestamp_dash_host) ... ok
+test_the_three_evidence_files_are_distinct (__main__.CommittedCleanVmBundleAdversarialTests.test_the_three_evidence_files_are_distinct) ... ok
+test_the_unedited_fixture_verifies (__main__.CommittedCleanVmBundleAdversarialTests.test_the_unedited_fixture_verifies) ... ok
+test_verified_must_be_the_literal_true (__main__.CommittedCleanVmBundleAdversarialTests.test_verified_must_be_the_literal_true) ... ok
+test_vm_tool_type_identifiers_are_out_of_contract (__main__.CommittedCleanVmBundleAdversarialTests.test_vm_tool_type_identifiers_are_out_of_contract) ... ok
+test_windows_guest_names_verify (__main__.CommittedCleanVmBundleAdversarialTests.test_windows_guest_names_verify) ... ok
+test_windows_separators_in_recorded_paths_still_verify (__main__.CommittedCleanVmBundleAdversarialTests.test_windows_separators_in_recorded_paths_still_verify) ... ok
+test_committed_bundle_evidence_must_sit_inside_the_bundle (__main__.CommittedCleanVmBundleTests.test_committed_bundle_evidence_must_sit_inside_the_bundle) ... ok
+test_committed_bundle_is_read_when_no_root_is_given (__main__.CommittedCleanVmBundleTests.test_committed_bundle_is_read_when_no_root_is_given) ... ok
+test_committed_bundle_must_be_an_x64_guest (__main__.CommittedCleanVmBundleTests.test_committed_bundle_must_be_an_x64_guest) ... ok
+test_explicit_evidence_root_still_wins (__main__.CommittedCleanVmBundleTests.test_explicit_evidence_root_still_wins) ... ok
+test_newest_committed_bundle_decides_without_falling_back (__main__.CommittedCleanVmBundleTests.test_newest_committed_bundle_decides_without_falling_back) ... ok
+test_tampered_committed_bundle_is_not_verified (__main__.CommittedCleanVmBundleTests.test_tampered_committed_bundle_is_not_verified) ... ok
+test_unreadable_committed_proof_is_not_verified (__main__.CommittedCleanVmBundleTests.test_unreadable_committed_proof_is_not_verified) ... ok
+test_clean_vm_record_writes_manifest_and_verifies_all_gates (__main__.GarnetWindowsCleanVmInstallerStatusTests.test_clean_vm_record_writes_manifest_and_verifies_all_gates) ... ok
+test_cli_json_and_markdown_are_honest_without_evidence (__main__.GarnetWindowsCleanVmInstallerStatusTests.test_cli_json_and_markdown_are_honest_without_evidence) ... ok
+test_current_host_record_is_not_clean_vm_verified (__main__.GarnetWindowsCleanVmInstallerStatusTests.test_current_host_record_is_not_clean_vm_verified) ... ok
+test_target_matrix_names_architectures_without_overclaiming (__main__.GarnetWindowsCleanVmInstallerStatusTests.test_target_matrix_names_architectures_without_overclaiming) ... ok
+test_the_installer_gate_label_claims_only_what_is_recorded (__main__.GarnetWindowsCleanVmInstallerStatusTests.test_the_installer_gate_label_claims_only_what_is_recorded) ... ok
+test_the_recorder_applies_the_readers_guest_identity_checks (__main__.GarnetWindowsCleanVmInstallerStatusTests.test_the_recorder_applies_the_readers_guest_identity_checks) ... ok
+test_the_recorder_blocks_a_non_windows_guest (__main__.GarnetWindowsCleanVmInstallerStatusTests.test_the_recorder_blocks_a_non_windows_guest) ... ok
+test_the_recorder_blocks_an_empty_log_or_a_non_png_screenshot (__main__.GarnetWindowsCleanVmInstallerStatusTests.test_the_recorder_blocks_an_empty_log_or_a_non_png_screenshot) ... ok
+
+----------------------------------------------------------------------
+Ran 63 tests in 3.190s
+
+OK (skipped=7)
+--- end stderr

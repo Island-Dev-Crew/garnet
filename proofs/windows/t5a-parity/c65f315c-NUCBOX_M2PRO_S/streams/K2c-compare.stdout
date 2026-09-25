@@ -1,0 +1,7 @@
+lf   subject=[{"name": "tool", "digest": {"blake3": "38db718f35ec1dd034010a9c3d52b4236ce30523a117abefdf41196d5cc9cce9"}}]
+crlf subject=[{"name": "tool", "digest": {"blake3": "38db718f35ec1dd034010a9c3d52b4236ce30523a117abefdf41196d5cc9cce9"}}]
+lf   predicate.source_blake3=38db718f35ec1dd034010a9c3d52b4236ce30523a117abefdf41196d5cc9cce9
+crlf predicate.source_blake3=38db718f35ec1dd034010a9c3d52b4236ce30523a117abefdf41196d5cc9cce9
+subject_identity=garnet-source-lf-blake3-v1
+subject_digests_equal=True
+whole_statements_equal=True

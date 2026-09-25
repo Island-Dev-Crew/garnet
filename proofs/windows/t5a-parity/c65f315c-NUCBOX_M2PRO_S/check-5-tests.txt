@@ -1,0 +1,58 @@
+# Check 5: shelf, MCP and seal tests
+folder: proofs/windows/t5a-parity/c65f315c-NUCBOX_M2PRO_S/
+t5a head: c65f315c0c55c75b2f00c4217c3d1cc57fb6ff59 (branch train/t5a-evidence-tools; read back from the remote in C01 and P02)
+host: NUCBOX_M2PRO_S (%COMPUTERNAME%; `hostname` prints the DNS casing, see E01)
+stamp: 20260925-1857 (UTC)
+harness: harness/w3_capture.py, sha256 7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845; every step ran from this one invocation
+  (w3_capture.py all --stamp 20260925-1857), 2026-09-25T18:57:38.592136Z to 2026-09-25T18:58:33.198545Z.
+scope: evidence for the T5a review record, gathered on native Windows. It is not a review.
+python: every python step ran with Python312 first on PATH except E06, which shows the machine's default
+  PATH (an unrelated 3.11.15 virtualenv). Path mode `stub` puts the stub cosign.exe directory first.
+inputs: hand-run inputs are written by K00 into a scratch directory outside both checkouts; their exact
+  bytes are in inputs.json.
+powershell: PowerShell steps run powershell.exe 5.1 with -EncodedCommand; with redirected output it writes
+  progress/error records to stderr as CLIXML. The raw streams are authoritative.
+captures: stdout and stderr are the raw child-process bytes, unedited; see encoding-census.txt.
+
+==============================================================================
+[K5] minimum_shelf_package, mcp_stdio and seal_attestation tests
+$ cargo test --locked -p garnet-cli --test minimum_shelf_package --test mcp_stdio --test seal_attestation
+exit_code=0 expected=0 timed_out=False started=2026-09-25T18:58:26.741382Z duration_s=2.141 path=pinned
+--- stdout (streams/K5-shelf-mcp-seal-tests.stdout, 1072 bytes, sha256 f6fd490d2a23908548ed70c158a634e00617875c7fe2dcd306ab65cf9174a140)
+
+running 2 tests
+test native_stdio_initialize_list_call_and_error ... ok
+test native_stdio_rejects_tampered_package_before_protocol_output ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+
+running 7 tests
+test sealed_flagship_loads_end_to_end ... ok
+test rejects_when_manifest_bytes_change ... ok
+test rejects_when_seal_is_missing ... ok
+test rejects_when_seal_is_empty ... ok
+test rejects_when_source_bytes_change ... ok
+test rejects_when_tampered_source_has_new_seal_and_rebound_manifest ... ok
+test rejects_when_seal_bytes_change ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+
+running 5 tests
+test seal_predicate_always_says_it_is_unsigned ... ok
+test seal_reports_cosign_availability_on_stderr ... ok
+test seal_emits_an_in_toto_statement ... ok
+test seal_out_writes_the_predicate_to_a_file ... ok
+test verify_rejects_the_retired_cosign_available_variant ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+
+--- end stdout
+--- stderr (streams/K5-shelf-mcp-seal-tests.stderr, 429 bytes, sha256 b9761c1ec73b86c17d88949f5f016f1452e0cc1c043c2cb7ce8815a409e58903)
+   Compiling garnet-cli v0.8.2 (C:\gw3-20260925-1857-t5a\garnet-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.54s
+     Running tests\mcp_stdio.rs (target\debug\deps\mcp_stdio-e9f7167a1ecdfafa.exe)
+     Running tests\minimum_shelf_package.rs (target\debug\deps\minimum_shelf_package-0b2ad63e7b633218.exe)
+     Running tests\seal_attestation.rs (target\debug\deps\seal_attestation-4210f8814572aecd.exe)
+--- end stderr

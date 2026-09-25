@@ -1,0 +1,5 @@
+garnet diff-caps: C:\gw1-stage\w3\scratch-20260925-1857\diff\dirnames\old -> C:\gw1-stage\w3\scratch-20260925-1857\diff\dirnames\new
+  + caps GAINED:  fs
+  ~ a.garnet::helper gained: fs
+
+diff-caps: AUTHORITY EXPANDED — review required (capability band 2/5)

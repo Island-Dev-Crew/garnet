@@ -1,0 +1,13 @@
+   Compiling once_cell v1.21.4
+   Compiling getrandom v0.4.2
+   Compiling fastrand v2.4.1
+   Compiling ahash v0.8.12
+   Compiling hashbrown v0.14.5
+   Compiling tempfile v3.27.0
+   Compiling rowan v0.16.1
+   Compiling hashlink v0.9.1
+   Compiling rusqlite v0.32.1
+   Compiling garnet-cst v0.1.0 (C:\gw3-20260925-1857-t5a\garnet-cst)
+   Compiling garnet-cli v0.8.2 (C:\gw3-20260925-1857-t5a\garnet-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.26s
+     Running tests\diff_caps.rs (target\debug\deps\diff_caps-b4c2b6d794600ab4.exe)

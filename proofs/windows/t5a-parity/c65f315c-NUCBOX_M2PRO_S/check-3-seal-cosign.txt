@@ -1,0 +1,124 @@
+# Check 3: seal bytes with and without a stub cosign.exe
+folder: proofs/windows/t5a-parity/c65f315c-NUCBOX_M2PRO_S/
+t5a head: c65f315c0c55c75b2f00c4217c3d1cc57fb6ff59 (branch train/t5a-evidence-tools; read back from the remote in C01 and P02)
+host: NUCBOX_M2PRO_S (%COMPUTERNAME%; `hostname` prints the DNS casing, see E01)
+stamp: 20260925-1857 (UTC)
+harness: harness/w3_capture.py, sha256 7696c358ec25dc38597a0d4e98ad8f3e23c6e34094dace8f9b5bd89cf5e00845; every step ran from this one invocation
+  (w3_capture.py all --stamp 20260925-1857), 2026-09-25T18:57:38.592136Z to 2026-09-25T18:58:33.198545Z.
+scope: evidence for the T5a review record, gathered on native Windows. It is not a review.
+python: every python step ran with Python312 first on PATH except E06, which shows the machine's default
+  PATH (an unrelated 3.11.15 virtualenv). Path mode `stub` puts the stub cosign.exe directory first.
+inputs: hand-run inputs are written by K00 into a scratch directory outside both checkouts; their exact
+  bytes are in inputs.json.
+powershell: PowerShell steps run powershell.exe 5.1 with -EncodedCommand; with redirected output it writes
+  progress/error records to stderr as CLIXML. The raw streams are authoritative.
+captures: stdout and stderr are the raw child-process bytes, unedited; see encoding-census.txt.
+
+==============================================================================
+[K3a] Compile the stub cosign.exe (prints a version line, exits 0)
+$ rustc -O -o stub/cosign.exe stub/cosign.rs
+exit_code=0 expected=0 timed_out=False started=2026-09-25T18:58:26.201664Z duration_s=0.172 path=pinned
+--- stdout (streams/K3a-build-stub.stdout, 0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stdout
+--- stderr (streams/K3a-build-stub.stderr, 0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+
+==============================================================================
+[K3b] The stub answers `cosign version`
+$ stub/cosign.exe version
+exit_code=0 expected=0 timed_out=False started=2026-09-25T18:58:26.377834Z duration_s=0.047 path=pinned
+--- stdout (streams/K3b-stub-version.stdout, 15 bytes, sha256 6d19d5885f83a358eeb97072fcb2ce3fc4c46d19574a51f0977461d96f0f5ca9)
+cosign stub v0
+--- end stdout
+--- stderr (streams/K3b-stub-version.stderr, 0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+
+==============================================================================
+[K3c] Where cosign resolves with the stub directory first on PATH
+$ where.exe cosign
+exit_code=0 expected=0 timed_out=False started=2026-09-25T18:58:26.421263Z duration_s=0.078 path=stub
+--- stdout (streams/K3c-where-with-stub.stdout, 55 bytes, sha256 0e7108f1e74d3a77df94573ebd8a8bb1a99ca31a6c28e4ed7c776c7285b67001)
+C:\gw1-stage\w3\scratch-20260925-1857\stub\cosign.exe
+--- end stdout
+--- stderr (streams/K3c-where-with-stub.stderr, 0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+
+==============================================================================
+[K3d] Seal with no cosign on PATH
+$ garnet seal seal/lf/tool.garnet
+exit_code=0 expected=0 timed_out=False started=2026-09-25T18:58:26.509874Z duration_s=0.016 path=pinned
+--- stdout (streams/K3d-seal-without.stdout, 1290 bytes, sha256 46402674e309205f66455414b0cadc950594235b4d3f87d063572aa2d7ef1da3)
+{"_type":"https://in-toto.io/Statement/v1","subject":[{"name":"tool","digest":{"blake3":"38db718f35ec1dd034010a9c3d52b4236ce30523a117abefdf41196d5cc9cce9"}}],"predicateType":"https://garnet-lang.org/attestation/seal/v2","predicate":{"subject_identity":"garnet-source-lf-blake3-v1","signed":false,"source_blake3":"38db718f35ec1dd034010a9c3d52b4236ce30523a117abefdf41196d5cc9cce9","build_manifest":{
+  "ast_hash": "bdfaf8674e8c62a93fd9723256a011edfa6118ac77792313476e8a489179ce4f"
+,
+  "deterministic_flags": ["lto=on", "codegen-units=1", "strip=symbols"]
+,
+  "interp_version": "0.8.2"
+,
+  "parser_version": "0.8.2"
+,
+  "prelude_hash": "df4f1648cf79ea77d0842fd1cb8725aba82be1b2631d5a906952640f9a25cc6d"
+,
+  "schema": "garnet-manifest-v1"
+,
+  "signature": ""
+,
+  "signer_pubkey": ""
+,
+  "source_hash": "38db718f35ec1dd034010a9c3d52b4236ce30523a117abefdf41196d5cc9cce9"
+,
+  "target_triple": "unknown-target"
+
+}
+,"capability_manifest":{"schema":"garnet-capability-manifest-v1","aggregate":[],"functions":[{"name":"main","caps":[]}],"wildcard":false},"tooling":{"cosign":"not used by garnet seal; this predicate is UNSIGNED. To sign it: cosign attest --predicate <file> --type custom","sbom":"garnet-capability-manifest (native SBOM-equivalent; CycloneDX/SPDX via syft/cyclonedx when present)"}}}
+--- end stdout
+--- stderr (streams/K3d-seal-without.stderr, 117 bytes, sha256 26ec1c29a96e6ce2deb9f85f73a0e1a8de7efc5e1027656be8a22eaeeea3f0c0)
+garnet seal: in-toto predicate emitted UNSIGNED (Garnet never signs); install cosign to sign it (wrap-don't-rebuild)
+--- end stderr
+
+==============================================================================
+[K3e] Seal with the stub cosign.exe first on PATH
+$ garnet seal seal/lf/tool.garnet
+exit_code=0 expected=0 timed_out=False started=2026-09-25T18:58:26.528920Z duration_s=0.015 path=stub
+--- stdout (streams/K3e-seal-with-stub.stdout, 1290 bytes, sha256 46402674e309205f66455414b0cadc950594235b4d3f87d063572aa2d7ef1da3)
+{"_type":"https://in-toto.io/Statement/v1","subject":[{"name":"tool","digest":{"blake3":"38db718f35ec1dd034010a9c3d52b4236ce30523a117abefdf41196d5cc9cce9"}}],"predicateType":"https://garnet-lang.org/attestation/seal/v2","predicate":{"subject_identity":"garnet-source-lf-blake3-v1","signed":false,"source_blake3":"38db718f35ec1dd034010a9c3d52b4236ce30523a117abefdf41196d5cc9cce9","build_manifest":{
+  "ast_hash": "bdfaf8674e8c62a93fd9723256a011edfa6118ac77792313476e8a489179ce4f"
+,
+  "deterministic_flags": ["lto=on", "codegen-units=1", "strip=symbols"]
+,
+  "interp_version": "0.8.2"
+,
+  "parser_version": "0.8.2"
+,
+  "prelude_hash": "df4f1648cf79ea77d0842fd1cb8725aba82be1b2631d5a906952640f9a25cc6d"
+,
+  "schema": "garnet-manifest-v1"
+,
+  "signature": ""
+,
+  "signer_pubkey": ""
+,
+  "source_hash": "38db718f35ec1dd034010a9c3d52b4236ce30523a117abefdf41196d5cc9cce9"
+,
+  "target_triple": "unknown-target"
+
+}
+,"capability_manifest":{"schema":"garnet-capability-manifest-v1","aggregate":[],"functions":[{"name":"main","caps":[]}],"wildcard":false},"tooling":{"cosign":"not used by garnet seal; this predicate is UNSIGNED. To sign it: cosign attest --predicate <file> --type custom","sbom":"garnet-capability-manifest (native SBOM-equivalent; CycloneDX/SPDX via syft/cyclonedx when present)"}}}
+--- end stdout
+--- stderr (streams/K3e-seal-with-stub.stderr, 155 bytes, sha256 b4e330d92c82266ebb87dcef138e42645f145f0dbdfa135918e9e1144819551f)
+garnet seal: in-toto predicate emitted UNSIGNED (Garnet never signs); cosign is installed — to sign it: cosign attest --predicate <output> --type custom
+--- end stderr
+
+==============================================================================
+[K3f] Seal bytes must be identical; stderr must still say UNSIGNED
+$ python -I -c <compare K3d and K3e>
+exit_code=0 expected=0 timed_out=False started=2026-09-25T18:58:26.554200Z duration_s=0.047 path=pinned
+--- stdout (streams/K3f-compare.stdout, 300 bytes, sha256 2e5f051914c4f2046ebcec7bb68937a94ba77159dc1849994e3b88f4c1d56652)
+without stdout sha256=46402674e309205f66455414b0cadc950594235b4d3f87d063572aa2d7ef1da3 bytes=1290
+with    stdout sha256=46402674e309205f66455414b0cadc950594235b4d3f87d063572aa2d7ef1da3 bytes=1290
+seal_bytes_identical=True
+with-stub stderr says UNSIGNED=True
+stderr differs between the runs=True
+--- end stdout
+--- stderr (streams/K3f-compare.stderr, 0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr

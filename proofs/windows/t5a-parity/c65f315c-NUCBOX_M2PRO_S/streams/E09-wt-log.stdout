@@ -1,0 +1,5 @@
+c65f315 docs(changelog): the domain-matrix readiness test passes after #600
+a8b12e1 Merge remote-tracking branch 'origin/main' into train/t5a-evidence-tools
+2c4acb0 docs(changelog): the sRGB companion rule (Codex round 13)
+6790c1d fix(studio): sRGB companions carry the sRGB values (Codex round 13)
+1445c66 test(studio): red tests for sRGB companion values (Codex round 13)
