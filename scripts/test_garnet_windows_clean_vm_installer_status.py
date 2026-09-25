@@ -841,6 +841,34 @@ class CommittedCleanVmBundleAdversarialTests(_CommittedRepoCase):
             with self.subTest(label=label):
                 self.assertTrue(status_mod.is_png_screenshot(_png(1, 1, colour, 8, raw, extra)))
 
+    def test_palette_and_ancillary_values_must_be_legal(self) -> None:
+        # Codex round 12: payload values and PLTE-dependent chunks. A
+        # truecolour PNG may carry a suggested palette of 1-256 RGB triples.
+        rgb = b"\x00" + bytes(3)
+        cases = (
+            ("PLTE of 1 byte", 2, rgb, ((b"PLTE", b"\x00"),)),
+            ("PLTE of 0 bytes", 2, rgb, ((b"PLTE", b""),)),
+            ("PLTE of 257 entries", 6, b"\x00" + bytes(4), ((b"PLTE", bytes(771)),)),
+            ("gAMA of 0", 2, rgb, ((b"gAMA", bytes(4)),)),
+            ("sBIT of 0", 2, rgb, ((b"sBIT", b"\x00\x08\x08"),)),
+            ("sBIT over depth", 2, rgb, ((b"sBIT", b"\x09\x08\x08"),)),
+            ("tIME month 13", 2, rgb, ((b"tIME", (2026).to_bytes(2, "big") + bytes([13, 1, 0, 0, 0])),)),
+            ("tRNS before PLTE", 2, rgb, ((b"tRNS", bytes(6)), (b"PLTE", bytes(3)))),
+            ("hIST without PLTE", 2, rgb, ((b"hIST", bytes(2)),)),
+            ("hIST of the wrong size", 2, rgb, ((b"PLTE", bytes(6)), (b"hIST", bytes(2)))),
+        )
+        for label, colour, raw, extra in cases:
+            with self.subTest(label=label):
+                self.assertFalse(status_mod.is_png_screenshot(_png(1, 1, colour, 8, raw, extra)))
+        for label, colour, raw, extra in (
+            ("suggested palette of 2", 2, rgb, ((b"PLTE", bytes(6)),)),
+            ("PLTE, tRNS and hIST in order", 2, rgb, ((b"PLTE", bytes(6)), (b"tRNS", bytes(6)), (b"hIST", bytes(4)))),
+            ("gAMA 1/2.2", 2, rgb, ((b"gAMA", (45455).to_bytes(4, "big")),)),
+            ("tIME", 2, rgb, ((b"tIME", (2026).to_bytes(2, "big") + bytes([9, 25, 12, 0, 0])),)),
+        ):
+            with self.subTest(label=label):
+                self.assertTrue(status_mod.is_png_screenshot(_png(1, 1, colour, 8, raw, extra)))
+
     def test_an_oversized_png_is_rejected_by_name(self) -> None:
         huge = _png(2147483647, 2147483647, 6, 16, b"\x00")
         problem = status_mod.png_screenshot_problem(huge)
