@@ -1,0 +1,265 @@
+# Installer, from main (docs/install.ps1 at main)
+bundle: proofs/windows/nuc-baseline/20260924-1205-NUCBOX_M2PRO_S/
+host: NUCBOX_M2PRO_S (%COMPUTERNAME%; `hostname` prints the DNS casing, see E01)
+main: dfb9b7c619b0f356bf7905a7542080f679fb9bd9
+stamp: 20260924-1205 (UTC)
+harness: harness/nuc_capture.py, sha256 85210907f3a7b03d1ed0439f1c94e89f53b6f1eaab9c5e4e326ff31d2c81e040; every step below ran from this one
+  invocation (nuc_capture.py all --stamp 20260924-1205), 2026-09-24T12:05:48.205222Z to 2026-09-24T12:10:46.666642Z.
+python: every step except E09/E10 ran with Python312 first on PATH. E09/E10 deliberately use the
+  machine's default PATH, where python resolves to an unrelated 3.11.15 virtualenv. python3 is not
+  pinned; E11 shows where it resolves.
+powershell: PowerShell steps run powershell.exe (Windows PowerShell 5.1, see E23) with -NoProfile
+  -NonInteractive -ExecutionPolicy Bypass -EncodedCommand. With its output redirected, powershell.exe
+  writes error, progress and information records to stderr as CLIXML ('#< CLIXML'); M04 and M06 print
+  decoded views of the error text. The raw streams are authoritative.
+fetches: L01, L07 and L08 are companion fetches made next to the installer runs; they are not the
+  bytes the installers themselves downloaded.
+captures: stdout and stderr are the raw child-process bytes, unedited; see encoding-census.txt.
+
+==============================================================================
+[M01] docs/install.ps1 from main, same steps (happy path; own prefix)
+$ $env:GARNET_PREFIX = "$env:TEMP\garnet-nuc-install-test-main"
+  $env:GARNET_NO_MODIFY_PATH = "1"
+  Get-Content -Raw -LiteralPath 'C:\gw1c-20260924\docs\install.ps1' | iex
+  & "$env:GARNET_PREFIX\bin\garnet.exe" --version
+exit_code=0 expected=0 timed_out=False started=2026-09-24T12:06:04.782493Z duration_s=1.515 path=pinned
+--- stdout (streams/M01-installer-main.stdout, 2909 bytes, sha256 2929ffcc88ff58de5e0466799838d3176c8c16963fe03c5c06a038a4dcfc5dfe)
+garnet-install: version  = 0.8.2
+garnet-install: release  = https://github.com/Island-Dev-Crew/garnet/releases/download/v0.8.2
+garnet-install: asset    = garnet-0.8.2-x86_64-pc-windows-msvc.zip
+garnet-install: downloading https://github.com/Island-Dev-Crew/garnet/releases/download/v0.8.2/garnet-0.8.2-x86_64-pc-windows-msvc.zip
+garnet-install: SHA-256 verified
+garnet-install: installed garnet.exe into C:\Users\ISLAND~1\AppData\Local\Temp\garnet-nuc-install-test-main\bin
+                                                  
+   ####   ###  ####  #   # ####### ##### ######   
+  #    # #   # #   # ##  # #         #     #      
+  #      ##### ####  # # # #####     #     #      
+  #  ### #   # #  #  #  ## #         #     #      
+  #    # #   # #   # #   # #         #     #      
+   ####  #   # #   # #   # #######   #     #      
+  Rust Rigor. Ruby Velocity. One Coherent Language.
+
+garnet 0.8.2 (Top-level garnet(1) CLI — parse / check / run / test / new / keygen / build --sign / verify / convert + the trust spine (caps / diff-caps / seal / sandbox / caps-log / agent-loop).)
+  parser    garnet-parser 0.3.0 (Mini-Spec v1.0)
+  interp    garnet-interp 0.3.0 (tree-walk, Rung 3)
+  vm        garnet-vm     0.5.0 (bytecode VM; @max_depth + @caps trap-parity with interp, S99–S101)
+  check     garnet-check  0.3.0 (safe-mode + borrow + CapCaps v3.4.1, Rung 4)
+  memory    garnet-memory 0.3.0 (Mnemos — Memory Core reference impl; production roadmap in MEMORY_CORE_ROADMAP.md, Rung 5)
+  stdlib    garnet-stdlib 0.4.0 (80 registry primitives, dispatch derived from the registry)
+  convert   garnet-convert 0.4.0 (migration assistant: Rust / Ruby / Python / Go → Garnet)
+garnet-install: install complete
+                                                  
+   ####   ###  ####  #   # ####### ##### ######   
+  #    # #   # #   # ##  # #         #     #      
+  #      ##### ####  # # # #####     #     #      
+  #  ### #   # #  #  #  ## #         #     #      
+  #    # #   # #   # #   # #         #     #      
+   ####  #   # #   # #   # #######   #     #      
+  Rust Rigor. Ruby Velocity. One Coherent Language.
+
+garnet 0.8.2 (Top-level garnet(1) CLI — parse / check / run / test / new / keygen / build --sign / verify / convert + the trust spine (caps / diff-caps / seal / sandbox / caps-log / agent-loop).)
+  parser    garnet-parser 0.3.0 (Mini-Spec v1.0)
+  interp    garnet-interp 0.3.0 (tree-walk, Rung 3)
+  vm        garnet-vm     0.5.0 (bytecode VM; @max_depth + @caps trap-parity with interp, S99–S101)
+  check     garnet-check  0.3.0 (safe-mode + borrow + CapCaps v3.4.1, Rung 4)
+  memory    garnet-memory 0.3.0 (Mnemos — Memory Core reference impl; production roadmap in MEMORY_CORE_ROADMAP.md, Rung 5)
+  stdlib    garnet-stdlib 0.4.0 (80 registry primitives, dispatch derived from the registry)
+  convert   garnet-convert 0.4.0 (migration assistant: Rust / Ruby / Python / Go → Garnet)
+--- end stdout
+--- stderr (streams/M01-installer-main.stderr, 6837 bytes, sha256 360f3a34e91808707da6092bc5abb44d230eee5c230113d706d4448a623d4451)
+#< CLIXML
+<Objs Version="1.1.0.1" xmlns="http://schemas.microsoft.com/powershell/2004/04"><Obj S="progress" RefId="0"><TN RefId="0"><T>System.Management.Automation.PSCustomObject</T><T>System.Object</T></TN><MS><I64 N="SourceId">1</I64><PR N="Record"><AV>Preparing modules for first use.</AV><AI>0</AI><Nil /><PI>-1</PI><PC>-1</PC><T>Completed</T><SR>-1</SR><SD> </SD></PR></MS></Obj><Obj S="progress" RefId="1"><TNRef RefId="0" /><MS><I64 N="SourceId">1</I64><PR N="Record"><AV>Preparing modules for first use.</AV><AI>0</AI><Nil /><PI>-1</PI><PC>-1</PC><T>Completed</T><SR>-1</SR><SD> </SD></PR></MS></Obj><Obj S="information" RefId="2"><TN RefId="1"><T>System.Management.Automation.InformationRecord</T><T>System.Object</T></TN><ToString>garnet-install: version  = 0.8.2</ToString><Props><Obj N="MessageData" RefId="3"><TN RefId="2"><T>System.Management.Automation.HostInformationMessage</T><T>System.Object</T></TN><ToString>garnet-install: version  = 0.8.2</ToString><Props><S N="Message">garnet-install: version  = 0.8.2</S><B N="NoNewLine">false</B><S N="ForegroundColor">Gray</S><S N="BackgroundColor">Black</S></Props></Obj><S N="Source">Write-Host</S><DT N="TimeGenerated">2026-09-24T07:06:05.1545102-05:00</DT><Obj N="Tags" RefId="4"><TN RefId="3"><T>System.Collections.Generic.List`1[[System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089]]</T><T>System.Object</T></TN><LST><S>PSHOST</S></LST></Obj><S N="User">NUCBOX_M2PRO_S\IslandDevCrew</S><S N="Computer">NUCBOX_M2PRo_S</S><U32 N="ProcessId">27392</U32><U32 N="NativeThreadId">28676</U32><U32 N="ManagedThreadId">13</U32></Props></Obj><Obj S="information" RefId="5"><TNRef RefId="1" /><ToString>garnet-install: release  = https://github.com/Island-Dev-Crew/garnet/releases/download/v0.8.2</ToString><Props><Obj N="MessageData" RefId="6"><TNRef RefId="2" /><ToString>garnet-install: release  = https://github.com/Island-Dev-Crew/garnet/releases/download/v0.8.2</ToString><Props><S N="Message">garnet-install: release  = https://github.com/Island-Dev-Crew/garnet/releases/download/v0.8.2</S><B N="NoNewLine">false</B><S N="ForegroundColor">Gray</S><S N="BackgroundColor">Black</S></Props></Obj><S N="Source">Write-Host</S><DT N="TimeGenerated">2026-09-24T07:06:05.1643935-05:00</DT><Obj N="Tags" RefId="7"><TNRef RefId="3" /><LST><S>PSHOST</S></LST></Obj><S N="User">NUCBOX_M2PRO_S\IslandDevCrew</S><S N="Computer">NUCBOX_M2PRo_S</S><U32 N="ProcessId">27392</U32><U32 N="NativeThreadId">28676</U32><U32 N="ManagedThreadId">13</U32></Props></Obj><Obj S="information" RefId="8"><TNRef RefId="1" /><ToString>garnet-install: asset    = garnet-0.8.2-x86_64-pc-windows-msvc.zip</ToString><Props><Obj N="MessageData" RefId="9"><TNRef RefId="2" /><ToString>garnet-install: asset    = garnet-0.8.2-x86_64-pc-windows-msvc.zip</ToString><Props><S N="Message">garnet-install: asset    = garnet-0.8.2-x86_64-pc-windows-msvc.zip</S><B N="NoNewLine">false</B><S N="ForegroundColor">Gray</S><S N="BackgroundColor">Black</S></Props></Obj><S N="Source">Write-Host</S><DT N="TimeGenerated">2026-09-24T07:06:05.1658878-05:00</DT><Obj N="Tags" RefId="10"><TNRef RefId="3" /><LST><S>PSHOST</S></LST></Obj><S N="User">NUCBOX_M2PRO_S\IslandDevCrew</S><S N="Computer">NUCBOX_M2PRo_S</S><U32 N="ProcessId">27392</U32><U32 N="NativeThreadId">28676</U32><U32 N="ManagedThreadId">13</U32></Props></Obj><Obj S="information" RefId="11"><TNRef RefId="1" /><ToString>garnet-install: downloading https://github.com/Island-Dev-Crew/garnet/releases/download/v0.8.2/garnet-0.8.2-x86_64-pc-windows-msvc.zip</ToString><Props><Obj N="MessageData" RefId="12"><TNRef RefId="2" /><ToString>garnet-install: downloading https://github.com/Island-Dev-Crew/garnet/releases/download/v0.8.2/garnet-0.8.2-x86_64-pc-windows-msvc.zip</ToString><Props><S N="Message">garnet-install: downloading https://github.com/Island-Dev-Crew/garnet/releases/download/v0.8.2/garnet-0.8.2-x86_64-pc-windows-msvc.zip</S><B N="NoNewLine">false</B><S N="ForegroundColor">Gray</S><S N="BackgroundColor">Black</S></Props></Obj><S N="Source">Write-Host</S><DT N="TimeGenerated">2026-09-24T07:06:05.3816216-05:00</DT><Obj N="Tags" RefId="13"><TNRef RefId="3" /><LST><S>PSHOST</S></LST></Obj><S N="User">NUCBOX_M2PRO_S\IslandDevCrew</S><S N="Computer">NUCBOX_M2PRo_S</S><U32 N="ProcessId">27392</U32><U32 N="NativeThreadId">28676</U32><U32 N="ManagedThreadId">13</U32></Props></Obj><Obj S="information" RefId="14"><TNRef RefId="1" /><ToString>garnet-install: SHA-256 verified</ToString><Props><Obj N="MessageData" RefId="15"><TNRef RefId="2" /><ToString>garnet-install: SHA-256 verified</ToString><Props><S N="Message">garnet-install: SHA-256 verified</S><B N="NoNewLine">false</B><S N="ForegroundColor">Gray</S><S N="BackgroundColor">Black</S></Props></Obj><S N="Source">Write-Host</S><DT N="TimeGenerated">2026-09-24T07:06:05.6806586-05:00</DT><Obj N="Tags" RefId="16"><TNRef RefId="3" /><LST><S>PSHOST</S></LST></Obj><S N="User">NUCBOX_M2PRO_S\IslandDevCrew</S><S N="Computer">NUCBOX_M2PRo_S</S><U32 N="ProcessId">27392</U32><U32 N="NativeThreadId">28676</U32><U32 N="ManagedThreadId">13</U32></Props></Obj><Obj S="information" RefId="17"><TNRef RefId="1" /><ToString>garnet-install: installed garnet.exe into C:\Users\ISLAND~1\AppData\Local\Temp\garnet-nuc-install-test-main\bin</ToString><Props><Obj N="MessageData" RefId="18"><TNRef RefId="2" /><ToString>garnet-install: installed garnet.exe into C:\Users\ISLAND~1\AppData\Local\Temp\garnet-nuc-install-test-main\bin</ToString><Props><S N="Message">garnet-install: installed garnet.exe into C:\Users\ISLAND~1\AppData\Local\Temp\garnet-nuc-install-test-main\bin</S><B N="NoNewLine">false</B><S N="ForegroundColor">Gray</S><S N="BackgroundColor">Black</S></Props></Obj><S N="Source">Write-Host</S><DT N="TimeGenerated">2026-09-24T07:06:05.8118191-05:00</DT><Obj N="Tags" RefId="19"><TNRef RefId="3" /><LST><S>PSHOST</S></LST></Obj><S N="User">NUCBOX_M2PRO_S\IslandDevCrew</S><S N="Computer">NUCBOX_M2PRo_S</S><U32 N="ProcessId">27392</U32><U32 N="NativeThreadId">28676</U32><U32 N="ManagedThreadId">13</U32></Props></Obj><Obj S="information" RefId="20"><TNRef RefId="1" /><ToString>garnet-install: install complete</ToString><Props><Obj N="MessageData" RefId="21"><TNRef RefId="2" /><ToString>garnet-install: install complete</ToString><Props><S N="Message">garnet-install: install complete</S><B N="NoNewLine">false</B><S N="ForegroundColor">Gray</S><S N="BackgroundColor">Black</S></Props></Obj><S N="Source">Write-Host</S><DT N="TimeGenerated">2026-09-24T07:06:06.2654565-05:00</DT><Obj N="Tags" RefId="22"><TNRef RefId="3" /><LST><S>PSHOST</S></LST></Obj><S N="User">NUCBOX_M2PRO_S\IslandDevCrew</S><S N="Computer">NUCBOX_M2PRo_S</S><U32 N="ProcessId">27392</U32><U32 N="NativeThreadId">28676</U32><U32 N="ManagedThreadId">13</U32></Props></Obj></Objs>
+[no trailing newline in the captured stream]
+--- end stderr
+
+==============================================================================
+[M02] The file:/// release dir used to make SHA256SUMS unreachable
+$ Get-ChildItem -Force -LiteralPath 'C:\gw1-stage\empty-release-dir' | Measure-Object | ForEach-Object { "entries=$($_.Count)" }
+exit_code=0 expected=0 timed_out=False started=2026-09-24T12:06:06.330446Z duration_s=0.297 path=pinned
+--- stdout (streams/M02-empty-release-dir.stdout, 11 bytes, sha256 71069c824578cd995e6818e8ef68c374ca5b75a920740b0274a8cb4f894258a5)
+entries=0
+--- end stdout
+--- stderr (streams/M02-empty-release-dir.stderr, 616 bytes, sha256 2ce70d6c8c9ad6726c794690c8b14a2b83673648cac88edf4ff1acc50ec46348)
+#< CLIXML
+<Objs Version="1.1.0.1" xmlns="http://schemas.microsoft.com/powershell/2004/04"><Obj S="progress" RefId="0"><TN RefId="0"><T>System.Management.Automation.PSCustomObject</T><T>System.Object</T></TN><MS><I64 N="SourceId">1</I64><PR N="Record"><AV>Preparing modules for first use.</AV><AI>0</AI><Nil /><PI>-1</PI><PC>-1</PC><T>Completed</T><SR>-1</SR><SD> </SD></PR></MS></Obj><Obj S="progress" RefId="1"><TNRef RefId="0" /><MS><I64 N="SourceId">1</I64><PR N="Record"><AV>Preparing modules for first use.</AV><AI>0</AI><Nil /><PI>-1</PI><PC>-1</PC><T>Completed</T><SR>-1</SR><SD> </SD></PR></MS></Obj></Objs>
+[no trailing newline in the captured stream]
+--- end stderr
+
+==============================================================================
+[M03] docs/install.ps1 from main with no reachable release (SHA256SUMS unreachable)
+$ $env:GARNET_PREFIX = "$env:TEMP\garnet-nuc-install-test-hint"
+  $env:GARNET_NO_MODIFY_PATH = "1"
+  $env:GARNET_BASE_URL = "file:///C:/gw1-stage/empty-release-dir"
+  Get-Content -Raw -LiteralPath 'C:\gw1c-20260924\docs\install.ps1' | iex
+exit_code=1 expected=1 timed_out=False started=2026-09-24T12:06:06.635171Z duration_s=0.578 path=pinned
+--- stdout (streams/M03-installer-main-hint.stdout, 166 bytes, sha256 3308bf0ce7e1e1a4b8048d714c3b52886272230bbbe4c796bd41f054774e516e)
+garnet-install: version  = 0.8.2
+garnet-install: release  = file:///C:/gw1-stage/empty-release-dir
+garnet-install: asset    = garnet-0.8.2-x86_64-pc-windows-msvc.zip
+--- end stdout
+--- stderr (streams/M03-installer-main-hint.stderr, 4843 bytes, sha256 1b353f89517dc11964e4ae866d1c3e01c2b58e3b9ddca54c9d658e124f883f7b)
+#< CLIXML
+<Objs Version="1.1.0.1" xmlns="http://schemas.microsoft.com/powershell/2004/04"><Obj S="progress" RefId="0"><TN RefId="0"><T>System.Management.Automation.PSCustomObject</T><T>System.Object</T></TN><MS><I64 N="SourceId">1</I64><PR N="Record"><AV>Preparing modules for first use.</AV><AI>0</AI><Nil /><PI>-1</PI><PC>-1</PC><T>Completed</T><SR>-1</SR><SD> </SD></PR></MS></Obj><Obj S="progress" RefId="1"><TNRef RefId="0" /><MS><I64 N="SourceId">1</I64><PR N="Record"><AV>Preparing modules for first use.</AV><AI>0</AI><Nil /><PI>-1</PI><PC>-1</PC><T>Completed</T><SR>-1</SR><SD> </SD></PR></MS></Obj><Obj S="information" RefId="2"><TN RefId="1"><T>System.Management.Automation.InformationRecord</T><T>System.Object</T></TN><ToString>garnet-install: version  = 0.8.2</ToString><Props><Obj N="MessageData" RefId="3"><TN RefId="2"><T>System.Management.Automation.HostInformationMessage</T><T>System.Object</T></TN><ToString>garnet-install: version  = 0.8.2</ToString><Props><S N="Message">garnet-install: version  = 0.8.2</S><B N="NoNewLine">false</B><S N="ForegroundColor">Gray</S><S N="BackgroundColor">Black</S></Props></Obj><S N="Source">Write-Host</S><DT N="TimeGenerated">2026-09-24T07:06:07.0492907-05:00</DT><Obj N="Tags" RefId="4"><TN RefId="3"><T>System.Collections.Generic.List`1[[System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089]]</T><T>System.Object</T></TN><LST><S>PSHOST</S></LST></Obj><S N="User">NUCBOX_M2PRO_S\IslandDevCrew</S><S N="Computer">NUCBOX_M2PRo_S</S><U32 N="ProcessId">29120</U32><U32 N="NativeThreadId">27424</U32><U32 N="ManagedThreadId">14</U32></Props></Obj><Obj S="information" RefId="5"><TNRef RefId="1" /><ToString>garnet-install: release  = file:///C:/gw1-stage/empty-release-dir</ToString><Props><Obj N="MessageData" RefId="6"><TNRef RefId="2" /><ToString>garnet-install: release  = file:///C:/gw1-stage/empty-release-dir</ToString><Props><S N="Message">garnet-install: release  = file:///C:/gw1-stage/empty-release-dir</S><B N="NoNewLine">false</B><S N="ForegroundColor">Gray</S><S N="BackgroundColor">Black</S></Props></Obj><S N="Source">Write-Host</S><DT N="TimeGenerated">2026-09-24T07:06:07.0576972-05:00</DT><Obj N="Tags" RefId="7"><TNRef RefId="3" /><LST><S>PSHOST</S></LST></Obj><S N="User">NUCBOX_M2PRO_S\IslandDevCrew</S><S N="Computer">NUCBOX_M2PRo_S</S><U32 N="ProcessId">29120</U32><U32 N="NativeThreadId">27424</U32><U32 N="ManagedThreadId">14</U32></Props></Obj><Obj S="information" RefId="8"><TNRef RefId="1" /><ToString>garnet-install: asset    = garnet-0.8.2-x86_64-pc-windows-msvc.zip</ToString><Props><Obj N="MessageData" RefId="9"><TNRef RefId="2" /><ToString>garnet-install: asset    = garnet-0.8.2-x86_64-pc-windows-msvc.zip</ToString><Props><S N="Message">garnet-install: asset    = garnet-0.8.2-x86_64-pc-windows-msvc.zip</S><B N="NoNewLine">false</B><S N="ForegroundColor">Gray</S><S N="BackgroundColor">Black</S></Props></Obj><S N="Source">Write-Host</S><DT N="TimeGenerated">2026-09-24T07:06:07.0597235-05:00</DT><Obj N="Tags" RefId="10"><TNRef RefId="3" /><LST><S>PSHOST</S></LST></Obj><S N="User">NUCBOX_M2PRO_S\IslandDevCrew</S><S N="Computer">NUCBOX_M2PRo_S</S><U32 N="ProcessId">29120</U32><U32 N="NativeThreadId">27424</U32><U32 N="ManagedThreadId">14</U32></Props></Obj><S S="Error">garnet-install: error: could not download SHA256SUMS for v0.8.2 from file:///C:/gw1-stage/empty-release-dir (Cannot _x000D__x000A_</S><S S="Error">find path 'C:\gw1-stage\empty-release-dir\SHA256SUMS' because it does not exist.). Windows release assets are _x000D__x000A_</S><S S="Error">published starting with v0.8.2. To build this version from source instead (requires Rust): cargo install --git _x000D__x000A_</S><S S="Error">https://github.com/Island-Dev-Crew/garnet --tag v0.8.2 --locked garnet-cli_x000D__x000A_</S><S S="Error">At line:32 char:39_x000D__x000A_</S><S S="Error">+ ... on Fail([string]$Message) { throw "garnet-install: error: $Message" }_x000D__x000A_</S><S S="Error">+                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~_x000D__x000A_</S><S S="Error">    + CategoryInfo          : OperationStopped: (garnet-install:...cked garnet-cli:String) [], RuntimeException_x000D__x000A_</S><S S="Error">    + FullyQualifiedErrorId : garnet-install: error: could not download SHA256SUMS for v0.8.2 from file:///C:/gw1-stag _x000D__x000A_</S><S S="Error">   e/empty-release-dir (Cannot find path 'C:\gw1-stage\empty-release-dir\SHA256SUMS' because it does not exist.). Win  _x000D__x000A_</S><S S="Error">  dows release assets are published starting with v0.8.2. To build this version from source instead (requires Rust):   _x000D__x000A_</S><S S="Error">  cargo install --git https://github.com/Island-Dev-Crew/garnet --tag v0.8.2 --locked garnet-cli_x000D__x000A_</S><S S="Error"> _x000D__x000A_</S></Objs>
+[no trailing newline in the captured stream]
+--- end stderr
+
+==============================================================================
+[M04] Does M03's message contain --tag v0.8.2? (decoded view of its error text)
+$ python -I -c <decode M03 CLIXML error text; exit 1 unless it contains --tag v0.8.2>
+exit_code=0 expected=0 timed_out=False started=2026-09-24T12:06:07.235896Z duration_s=0.094 path=pinned
+--- stdout (streams/M04-hint-decode.stdout, 1377 bytes, sha256 b622fa4563a9cbd5f31c0cc8a398e556040160a0c4075e21f7cd4fa2ea829bff)
+streams=M03-installer-main-hint.stderr,M03-installer-main-hint.stdout
+contains '--tag v0.8.2': True
+--- decoded view of the CLIXML error records in the stderr stream (derived; the raw stream is authoritative)
+garnet-install: error: could not download SHA256SUMS for v0.8.2 from file:///C:/gw1-stage/empty-release-dir (Cannot 
+find path 'C:\gw1-stage\empty-release-dir\SHA256SUMS' because it does not exist.). Windows release assets are 
+published starting with v0.8.2. To build this version from source instead (requires Rust): cargo install --git 
+https://github.com/Island-Dev-Crew/garnet --tag v0.8.2 --locked garnet-cli
+At line:32 char:39
++ ... on Fail([string]$Message) { throw "garnet-install: error: $Message" }
++                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (garnet-install:...cked garnet-cli:String) [], RuntimeException
+    + FullyQualifiedErrorId : garnet-install: error: could not download SHA256SUMS for v0.8.2 from file:///C:/gw1-stag 
+   e/empty-release-dir (Cannot find path 'C:\gw1-stage\empty-release-dir\SHA256SUMS' because it does not exist.). Win  
+  dows release assets are published starting with v0.8.2. To build this version from source instead (requires Rust):   
+  cargo install --git https://github.com/Island-Dev-Crew/garnet --tag v0.8.2 --locked garnet-cli
+--- end stdout
+--- stderr (streams/M04-hint-decode.stderr, 0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+
+==============================================================================
+[M05] docs/install.ps1 from main for v0.8.1, a published release with no Windows asset
+$ $env:GARNET_PREFIX = "$env:TEMP\garnet-nuc-install-test-v081"
+  $env:GARNET_NO_MODIFY_PATH = "1"
+  $env:GARNET_VERSION = "0.8.1"
+  Get-Content -Raw -LiteralPath 'C:\gw1c-20260924\docs\install.ps1' | iex
+exit_code=1 expected=1 timed_out=False started=2026-09-24T12:06:07.343245Z duration_s=0.813 path=pinned
+--- stdout (streams/M05-installer-main-v081.stdout, 194 bytes, sha256 1c9393c7d424da7c579af67599278aa8bc79f4921a2c2e17480ce190e72eabee)
+garnet-install: version  = 0.8.1
+garnet-install: release  = https://github.com/Island-Dev-Crew/garnet/releases/download/v0.8.1
+garnet-install: asset    = garnet-0.8.1-x86_64-pc-windows-msvc.zip
+--- end stdout
+--- stderr (streams/M05-installer-main-v081.stderr, 4128 bytes, sha256 d98091a873a67167a1dfc17891ba7c98de8daa87ae85845287d312652a1bfce0)
+#< CLIXML
+<Objs Version="1.1.0.1" xmlns="http://schemas.microsoft.com/powershell/2004/04"><Obj S="progress" RefId="0"><TN RefId="0"><T>System.Management.Automation.PSCustomObject</T><T>System.Object</T></TN><MS><I64 N="SourceId">1</I64><PR N="Record"><AV>Preparing modules for first use.</AV><AI>0</AI><Nil /><PI>-1</PI><PC>-1</PC><T>Completed</T><SR>-1</SR><SD> </SD></PR></MS></Obj><Obj S="progress" RefId="1"><TNRef RefId="0" /><MS><I64 N="SourceId">1</I64><PR N="Record"><AV>Preparing modules for first use.</AV><AI>0</AI><Nil /><PI>-1</PI><PC>-1</PC><T>Completed</T><SR>-1</SR><SD> </SD></PR></MS></Obj><Obj S="information" RefId="2"><TN RefId="1"><T>System.Management.Automation.InformationRecord</T><T>System.Object</T></TN><ToString>garnet-install: version  = 0.8.1</ToString><Props><Obj N="MessageData" RefId="3"><TN RefId="2"><T>System.Management.Automation.HostInformationMessage</T><T>System.Object</T></TN><ToString>garnet-install: version  = 0.8.1</ToString><Props><S N="Message">garnet-install: version  = 0.8.1</S><B N="NoNewLine">false</B><S N="ForegroundColor">Gray</S><S N="BackgroundColor">Black</S></Props></Obj><S N="Source">Write-Host</S><DT N="TimeGenerated">2026-09-24T07:06:07.6807088-05:00</DT><Obj N="Tags" RefId="4"><TN RefId="3"><T>System.Collections.Generic.List`1[[System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089]]</T><T>System.Object</T></TN><LST><S>PSHOST</S></LST></Obj><S N="User">NUCBOX_M2PRO_S\IslandDevCrew</S><S N="Computer">NUCBOX_M2PRo_S</S><U32 N="ProcessId">26488</U32><U32 N="NativeThreadId">18232</U32><U32 N="ManagedThreadId">14</U32></Props></Obj><Obj S="information" RefId="5"><TNRef RefId="1" /><ToString>garnet-install: release  = https://github.com/Island-Dev-Crew/garnet/releases/download/v0.8.1</ToString><Props><Obj N="MessageData" RefId="6"><TNRef RefId="2" /><ToString>garnet-install: release  = https://github.com/Island-Dev-Crew/garnet/releases/download/v0.8.1</ToString><Props><S N="Message">garnet-install: release  = https://github.com/Island-Dev-Crew/garnet/releases/download/v0.8.1</S><B N="NoNewLine">false</B><S N="ForegroundColor">Gray</S><S N="BackgroundColor">Black</S></Props></Obj><S N="Source">Write-Host</S><DT N="TimeGenerated">2026-09-24T07:06:07.6807088-05:00</DT><Obj N="Tags" RefId="7"><TNRef RefId="3" /><LST><S>PSHOST</S></LST></Obj><S N="User">NUCBOX_M2PRO_S\IslandDevCrew</S><S N="Computer">NUCBOX_M2PRo_S</S><U32 N="ProcessId">26488</U32><U32 N="NativeThreadId">18232</U32><U32 N="ManagedThreadId">14</U32></Props></Obj><Obj S="information" RefId="8"><TNRef RefId="1" /><ToString>garnet-install: asset    = garnet-0.8.1-x86_64-pc-windows-msvc.zip</ToString><Props><Obj N="MessageData" RefId="9"><TNRef RefId="2" /><ToString>garnet-install: asset    = garnet-0.8.1-x86_64-pc-windows-msvc.zip</ToString><Props><S N="Message">garnet-install: asset    = garnet-0.8.1-x86_64-pc-windows-msvc.zip</S><B N="NoNewLine">false</B><S N="ForegroundColor">Gray</S><S N="BackgroundColor">Black</S></Props></Obj><S N="Source">Write-Host</S><DT N="TimeGenerated">2026-09-24T07:06:07.6807088-05:00</DT><Obj N="Tags" RefId="10"><TNRef RefId="3" /><LST><S>PSHOST</S></LST></Obj><S N="User">NUCBOX_M2PRO_S\IslandDevCrew</S><S N="Computer">NUCBOX_M2PRo_S</S><U32 N="ProcessId">26488</U32><U32 N="NativeThreadId">18232</U32><U32 N="ManagedThreadId">14</U32></Props></Obj><S S="Error">garnet-install: error: SHA256SUMS for v0.8.1 lists no garnet-0.8.1-x86_64-pc-windows-msvc.zip_x000D__x000A_</S><S S="Error">At line:32 char:39_x000D__x000A_</S><S S="Error">+ ... on Fail([string]$Message) { throw "garnet-install: error: $Message" }_x000D__x000A_</S><S S="Error">+                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~_x000D__x000A_</S><S S="Error">    + CategoryInfo          : OperationStopped: (garnet-install:...indows-msvc.zip:String) [], RuntimeException_x000D__x000A_</S><S S="Error">    + FullyQualifiedErrorId : garnet-install: error: SHA256SUMS for v0.8.1 lists no garnet-0.8.1-x86_64-pc-windows-msv _x000D__x000A_</S><S S="Error">   c.zip_x000D__x000A_</S><S S="Error"> _x000D__x000A_</S></Objs>
+[no trailing newline in the captured stream]
+--- end stderr
+
+==============================================================================
+[M06] Decoded view of M05's error text
+$ python -I -c <decode M05 CLIXML error text>
+exit_code=0 expected=0 timed_out=False started=2026-09-24T12:06:08.189751Z duration_s=0.094 path=pinned
+--- stdout (streams/M06-v081-decode.stdout, 759 bytes, sha256 1cff0eaf3a36317b5f1551a757a29e284eb634cdf3811300a9786869d5d2b74b)
+streams=M05-installer-main-v081.stderr,M05-installer-main-v081.stdout
+contains 'lists no garnet-0.8.1-x86_64-pc-windows-msvc.zip': True
+--- decoded view of the CLIXML error records in the stderr stream (derived; the raw stream is authoritative)
+garnet-install: error: SHA256SUMS for v0.8.1 lists no garnet-0.8.1-x86_64-pc-windows-msvc.zip
+At line:32 char:39
++ ... on Fail([string]$Message) { throw "garnet-install: error: $Message" }
++                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (garnet-install:...indows-msvc.zip:String) [], RuntimeException
+    + FullyQualifiedErrorId : garnet-install: error: SHA256SUMS for v0.8.1 lists no garnet-0.8.1-x86_64-pc-windows-msv 
+   c.zip
+--- end stdout
+--- stderr (streams/M06-v081-decode.stderr, 0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+
+==============================================================================
+[M07] docs/install.ps1 from main with GARNET_INSTALL_MODE=source (the variable FAQ.md:91 names)
+$ $env:GARNET_PREFIX = "$env:TEMP\garnet-nuc-install-test-mode-source"
+  $env:GARNET_NO_MODIFY_PATH = "1"
+  $env:GARNET_INSTALL_MODE = "source"
+  Get-Content -Raw -LiteralPath 'C:\gw1c-20260924\docs\install.ps1' | iex
+  & "$env:GARNET_PREFIX\bin\garnet.exe" --version
+exit_code=0 expected=0 timed_out=False started=2026-09-24T12:06:08.297275Z duration_s=1.985 path=pinned
+--- stdout (streams/M07-installer-main-mode-source.stdout, 2916 bytes, sha256 95e02ba9131509df6a2e330732ece0973ac56edfe52a2a04cd2016de8c36a3b2)
+garnet-install: version  = 0.8.2
+garnet-install: release  = https://github.com/Island-Dev-Crew/garnet/releases/download/v0.8.2
+garnet-install: asset    = garnet-0.8.2-x86_64-pc-windows-msvc.zip
+garnet-install: downloading https://github.com/Island-Dev-Crew/garnet/releases/download/v0.8.2/garnet-0.8.2-x86_64-pc-windows-msvc.zip
+garnet-install: SHA-256 verified
+garnet-install: installed garnet.exe into C:\Users\ISLAND~1\AppData\Local\Temp\garnet-nuc-install-test-mode-source\bin
+                                                  
+   ####   ###  ####  #   # ####### ##### ######   
+  #    # #   # #   # ##  # #         #     #      
+  #      ##### ####  # # # #####     #     #      
+  #  ### #   # #  #  #  ## #         #     #      
+  #    # #   # #   # #   # #         #     #      
+   ####  #   # #   # #   # #######   #     #      
+  Rust Rigor. Ruby Velocity. One Coherent Language.
+
+garnet 0.8.2 (Top-level garnet(1) CLI — parse / check / run / test / new / keygen / build --sign / verify / convert + the trust spine (caps / diff-caps / seal / sandbox / caps-log / agent-loop).)
+  parser    garnet-parser 0.3.0 (Mini-Spec v1.0)
+  interp    garnet-interp 0.3.0 (tree-walk, Rung 3)
+  vm        garnet-vm     0.5.0 (bytecode VM; @max_depth + @caps trap-parity with interp, S99–S101)
+  check     garnet-check  0.3.0 (safe-mode + borrow + CapCaps v3.4.1, Rung 4)
+  memory    garnet-memory 0.3.0 (Mnemos — Memory Core reference impl; production roadmap in MEMORY_CORE_ROADMAP.md, Rung 5)
+  stdlib    garnet-stdlib 0.4.0 (80 registry primitives, dispatch derived from the registry)
+  convert   garnet-convert 0.4.0 (migration assistant: Rust / Ruby / Python / Go → Garnet)
+garnet-install: install complete
+                                                  
+   ####   ###  ####  #   # ####### ##### ######   
+  #    # #   # #   # ##  # #         #     #      
+  #      ##### ####  # # # #####     #     #      
+  #  ### #   # #  #  #  ## #         #     #      
+  #    # #   # #   # #   # #         #     #      
+   ####  #   # #   # #   # #######   #     #      
+  Rust Rigor. Ruby Velocity. One Coherent Language.
+
+garnet 0.8.2 (Top-level garnet(1) CLI — parse / check / run / test / new / keygen / build --sign / verify / convert + the trust spine (caps / diff-caps / seal / sandbox / caps-log / agent-loop).)
+  parser    garnet-parser 0.3.0 (Mini-Spec v1.0)
+  interp    garnet-interp 0.3.0 (tree-walk, Rung 3)
+  vm        garnet-vm     0.5.0 (bytecode VM; @max_depth + @caps trap-parity with interp, S99–S101)
+  check     garnet-check  0.3.0 (safe-mode + borrow + CapCaps v3.4.1, Rung 4)
+  memory    garnet-memory 0.3.0 (Mnemos — Memory Core reference impl; production roadmap in MEMORY_CORE_ROADMAP.md, Rung 5)
+  stdlib    garnet-stdlib 0.4.0 (80 registry primitives, dispatch derived from the registry)
+  convert   garnet-convert 0.4.0 (migration assistant: Rust / Ruby / Python / Go → Garnet)
+--- end stdout
+--- stderr (streams/M07-installer-main-mode-source.stderr, 6855 bytes, sha256 306da436b6250bd6eeafbfee256866c268e007d74d76d3772a2a0242c53521a1)
+#< CLIXML
+<Objs Version="1.1.0.1" xmlns="http://schemas.microsoft.com/powershell/2004/04"><Obj S="progress" RefId="0"><TN RefId="0"><T>System.Management.Automation.PSCustomObject</T><T>System.Object</T></TN><MS><I64 N="SourceId">1</I64><PR N="Record"><AV>Preparing modules for first use.</AV><AI>0</AI><Nil /><PI>-1</PI><PC>-1</PC><T>Completed</T><SR>-1</SR><SD> </SD></PR></MS></Obj><Obj S="progress" RefId="1"><TNRef RefId="0" /><MS><I64 N="SourceId">1</I64><PR N="Record"><AV>Preparing modules for first use.</AV><AI>0</AI><Nil /><PI>-1</PI><PC>-1</PC><T>Completed</T><SR>-1</SR><SD> </SD></PR></MS></Obj><Obj S="information" RefId="2"><TN RefId="1"><T>System.Management.Automation.InformationRecord</T><T>System.Object</T></TN><ToString>garnet-install: version  = 0.8.2</ToString><Props><Obj N="MessageData" RefId="3"><TN RefId="2"><T>System.Management.Automation.HostInformationMessage</T><T>System.Object</T></TN><ToString>garnet-install: version  = 0.8.2</ToString><Props><S N="Message">garnet-install: version  = 0.8.2</S><B N="NoNewLine">false</B><S N="ForegroundColor">Gray</S><S N="BackgroundColor">Black</S></Props></Obj><S N="Source">Write-Host</S><DT N="TimeGenerated">2026-09-24T07:06:08.6303718-05:00</DT><Obj N="Tags" RefId="4"><TN RefId="3"><T>System.Collections.Generic.List`1[[System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089]]</T><T>System.Object</T></TN><LST><S>PSHOST</S></LST></Obj><S N="User">NUCBOX_M2PRO_S\IslandDevCrew</S><S N="Computer">NUCBOX_M2PRo_S</S><U32 N="ProcessId">29124</U32><U32 N="NativeThreadId">26192</U32><U32 N="ManagedThreadId">14</U32></Props></Obj><Obj S="information" RefId="5"><TNRef RefId="1" /><ToString>garnet-install: release  = https://github.com/Island-Dev-Crew/garnet/releases/download/v0.8.2</ToString><Props><Obj N="MessageData" RefId="6"><TNRef RefId="2" /><ToString>garnet-install: release  = https://github.com/Island-Dev-Crew/garnet/releases/download/v0.8.2</ToString><Props><S N="Message">garnet-install: release  = https://github.com/Island-Dev-Crew/garnet/releases/download/v0.8.2</S><B N="NoNewLine">false</B><S N="ForegroundColor">Gray</S><S N="BackgroundColor">Black</S></Props></Obj><S N="Source">Write-Host</S><DT N="TimeGenerated">2026-09-24T07:06:08.6502359-05:00</DT><Obj N="Tags" RefId="7"><TNRef RefId="3" /><LST><S>PSHOST</S></LST></Obj><S N="User">NUCBOX_M2PRO_S\IslandDevCrew</S><S N="Computer">NUCBOX_M2PRo_S</S><U32 N="ProcessId">29124</U32><U32 N="NativeThreadId">26192</U32><U32 N="ManagedThreadId">14</U32></Props></Obj><Obj S="information" RefId="8"><TNRef RefId="1" /><ToString>garnet-install: asset    = garnet-0.8.2-x86_64-pc-windows-msvc.zip</ToString><Props><Obj N="MessageData" RefId="9"><TNRef RefId="2" /><ToString>garnet-install: asset    = garnet-0.8.2-x86_64-pc-windows-msvc.zip</ToString><Props><S N="Message">garnet-install: asset    = garnet-0.8.2-x86_64-pc-windows-msvc.zip</S><B N="NoNewLine">false</B><S N="ForegroundColor">Gray</S><S N="BackgroundColor">Black</S></Props></Obj><S N="Source">Write-Host</S><DT N="TimeGenerated">2026-09-24T07:06:08.6522625-05:00</DT><Obj N="Tags" RefId="10"><TNRef RefId="3" /><LST><S>PSHOST</S></LST></Obj><S N="User">NUCBOX_M2PRO_S\IslandDevCrew</S><S N="Computer">NUCBOX_M2PRo_S</S><U32 N="ProcessId">29124</U32><U32 N="NativeThreadId">26192</U32><U32 N="ManagedThreadId">14</U32></Props></Obj><Obj S="information" RefId="11"><TNRef RefId="1" /><ToString>garnet-install: downloading https://github.com/Island-Dev-Crew/garnet/releases/download/v0.8.2/garnet-0.8.2-x86_64-pc-windows-msvc.zip</ToString><Props><Obj N="MessageData" RefId="12"><TNRef RefId="2" /><ToString>garnet-install: downloading https://github.com/Island-Dev-Crew/garnet/releases/download/v0.8.2/garnet-0.8.2-x86_64-pc-windows-msvc.zip</ToString><Props><S N="Message">garnet-install: downloading https://github.com/Island-Dev-Crew/garnet/releases/download/v0.8.2/garnet-0.8.2-x86_64-pc-windows-msvc.zip</S><B N="NoNewLine">false</B><S N="ForegroundColor">Gray</S><S N="BackgroundColor">Black</S></Props></Obj><S N="Source">Write-Host</S><DT N="TimeGenerated">2026-09-24T07:06:08.8983413-05:00</DT><Obj N="Tags" RefId="13"><TNRef RefId="3" /><LST><S>PSHOST</S></LST></Obj><S N="User">NUCBOX_M2PRO_S\IslandDevCrew</S><S N="Computer">NUCBOX_M2PRo_S</S><U32 N="ProcessId">29124</U32><U32 N="NativeThreadId">26192</U32><U32 N="ManagedThreadId">14</U32></Props></Obj><Obj S="information" RefId="14"><TNRef RefId="1" /><ToString>garnet-install: SHA-256 verified</ToString><Props><Obj N="MessageData" RefId="15"><TNRef RefId="2" /><ToString>garnet-install: SHA-256 verified</ToString><Props><S N="Message">garnet-install: SHA-256 verified</S><B N="NoNewLine">false</B><S N="ForegroundColor">Gray</S><S N="BackgroundColor">Black</S></Props></Obj><S N="Source">Write-Host</S><DT N="TimeGenerated">2026-09-24T07:06:09.2524-05:00</DT><Obj N="Tags" RefId="16"><TNRef RefId="3" /><LST><S>PSHOST</S></LST></Obj><S N="User">NUCBOX_M2PRO_S\IslandDevCrew</S><S N="Computer">NUCBOX_M2PRo_S</S><U32 N="ProcessId">29124</U32><U32 N="NativeThreadId">26192</U32><U32 N="ManagedThreadId">14</U32></Props></Obj><Obj S="information" RefId="17"><TNRef RefId="1" /><ToString>garnet-install: installed garnet.exe into C:\Users\ISLAND~1\AppData\Local\Temp\garnet-nuc-install-test-mode-source\bin</ToString><Props><Obj N="MessageData" RefId="18"><TNRef RefId="2" /><ToString>garnet-install: installed garnet.exe into C:\Users\ISLAND~1\AppData\Local\Temp\garnet-nuc-install-test-mode-source\bin</ToString><Props><S N="Message">garnet-install: installed garnet.exe into C:\Users\ISLAND~1\AppData\Local\Temp\garnet-nuc-install-test-mode-source\bin</S><B N="NoNewLine">false</B><S N="ForegroundColor">Gray</S><S N="BackgroundColor">Black</S></Props></Obj><S N="Source">Write-Host</S><DT N="TimeGenerated">2026-09-24T07:06:09.3655819-05:00</DT><Obj N="Tags" RefId="19"><TNRef RefId="3" /><LST><S>PSHOST</S></LST></Obj><S N="User">NUCBOX_M2PRO_S\IslandDevCrew</S><S N="Computer">NUCBOX_M2PRo_S</S><U32 N="ProcessId">29124</U32><U32 N="NativeThreadId">26192</U32><U32 N="ManagedThreadId">14</U32></Props></Obj><Obj S="information" RefId="20"><TNRef RefId="1" /><ToString>garnet-install: install complete</ToString><Props><Obj N="MessageData" RefId="21"><TNRef RefId="2" /><ToString>garnet-install: install complete</ToString><Props><S N="Message">garnet-install: install complete</S><B N="NoNewLine">false</B><S N="ForegroundColor">Gray</S><S N="BackgroundColor">Black</S></Props></Obj><S N="Source">Write-Host</S><DT N="TimeGenerated">2026-09-24T07:06:10.2202775-05:00</DT><Obj N="Tags" RefId="22"><TNRef RefId="3" /><LST><S>PSHOST</S></LST></Obj><S N="User">NUCBOX_M2PRO_S\IslandDevCrew</S><S N="Computer">NUCBOX_M2PRo_S</S><U32 N="ProcessId">29124</U32><U32 N="NativeThreadId">26192</U32><U32 N="ManagedThreadId">14</U32></Props></Obj></Objs>
+[no trailing newline in the captured stream]
+--- end stderr
+
+==============================================================================
+[M08] Every throwaway prefix: installed garnet.exe sha256 and signature status
+$ foreach ($s in 'garnet-nuc-install-test', 'garnet-nuc-install-test-main', 'garnet-nuc-install-test-hint', 'garnet-nuc-install-test-v081', 'garnet-nuc-install-test-mode-source') {
+      $exe = Join-Path $env:TEMP "$s\bin\garnet.exe"
+      if (Test-Path -LiteralPath $exe) {
+          $h = (Get-FileHash -Algorithm SHA256 -LiteralPath $exe).Hash.ToLower()
+          $sig = (Get-AuthenticodeSignature -LiteralPath $exe).Status
+          "$s garnet.exe sha256=$h bytes=$((Get-Item -LiteralPath $exe).Length) authenticode=$sig"
+      } else {
+          "$s garnet.exe absent"
+      }
+  }
+exit_code=0 expected=0 timed_out=False started=2026-09-24T12:06:10.304449Z duration_s=1.235 path=pinned
+--- stdout (streams/M08-installed-exes.stdout, 548 bytes, sha256 83763895fd492960baf185fd94a9048c6ca82d7069db455c86e1edf34989aa3b)
+garnet-nuc-install-test garnet.exe sha256=2c43c90924046ba27c2b8d9ab5a8b0736e3098872535cdea8112e6a6b8107ced bytes=8242688 authenticode=NotSigned
+garnet-nuc-install-test-main garnet.exe sha256=2c43c90924046ba27c2b8d9ab5a8b0736e3098872535cdea8112e6a6b8107ced bytes=8242688 authenticode=NotSigned
+garnet-nuc-install-test-hint garnet.exe absent
+garnet-nuc-install-test-v081 garnet.exe absent
+garnet-nuc-install-test-mode-source garnet.exe sha256=2c43c90924046ba27c2b8d9ab5a8b0736e3098872535cdea8112e6a6b8107ced bytes=8242688 authenticode=NotSigned
+--- end stdout
+--- stderr (streams/M08-installed-exes.stderr, 840 bytes, sha256 018966bf53cb60e3be45739d0b615e36ec0cd64fb2dc331e24320ce44f76ddff)
+#< CLIXML
+<Objs Version="1.1.0.1" xmlns="http://schemas.microsoft.com/powershell/2004/04"><Obj S="progress" RefId="0"><TN RefId="0"><T>System.Management.Automation.PSCustomObject</T><T>System.Object</T></TN><MS><I64 N="SourceId">1</I64><PR N="Record"><AV>Preparing modules for first use.</AV><AI>0</AI><Nil /><PI>-1</PI><PC>-1</PC><T>Completed</T><SR>-1</SR><SD> </SD></PR></MS></Obj><Obj S="progress" RefId="1"><TNRef RefId="0" /><MS><I64 N="SourceId">1</I64><PR N="Record"><AV>Preparing modules for first use.</AV><AI>0</AI><Nil /><PI>-1</PI><PC>-1</PC><T>Completed</T><SR>-1</SR><SD> </SD></PR></MS></Obj><Obj S="progress" RefId="2"><TNRef RefId="0" /><MS><I64 N="SourceId">1</I64><PR N="Record"><AV>Preparing modules for first use.</AV><AI>0</AI><Nil /><PI>-1</PI><PC>-1</PC><T>Completed</T><SR>-1</SR><SD> </SD></PR></MS></Obj></Objs>
+[no trailing newline in the captured stream]
+--- end stderr
+
+==============================================================================
+[M09] User PATH fingerprint after all installer runs
+$ $u = [Environment]::GetEnvironmentVariable('Path', 'User')
+  $b = [Text.Encoding]::UTF8.GetBytes([string]$u)
+  $h = [BitConverter]::ToString([Security.Cryptography.SHA256]::Create().ComputeHash($b)).Replace('-', '').ToLower()
+  "user_path_sha256=$h"
+  "user_path_entries=$(@($u -split ';' | Where-Object { $_ }).Count)"
+  "user_path_mentions_garnet_nuc_install_test=$([bool]($u -match 'garnet-nuc-install-test'))"
+exit_code=0 expected=0 timed_out=False started=2026-09-24T12:06:11.542122Z duration_s=0.265 path=pinned
+--- stdout (streams/M09-user-path-after.stdout, 155 bytes, sha256 9535dda89a96884dba6be285ebbe44a558dae6447ad064d7408214b980f2bff4)
+user_path_sha256=3c5a20612849087a05d4b998104b50eaf1ffb8232ab2a43200c7a967dd158210
+user_path_entries=25
+user_path_mentions_garnet_nuc_install_test=False
+--- end stdout
+--- stderr (streams/M09-user-path-after.stderr, 0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr

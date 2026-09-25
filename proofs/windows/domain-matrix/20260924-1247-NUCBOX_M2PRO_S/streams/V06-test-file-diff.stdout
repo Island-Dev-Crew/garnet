@@ -1,0 +1,4 @@
+before: ran=42 failing=test_public_site_surfaces_objective_accounting_without_overclaiming, test_repo_site_embed_updates_objective_blockers_without_full_completion, test_status_distinguishes_plan_completion_from_goal_completion
+after:  ran=42 failing=test_public_site_surfaces_objective_accounting_without_overclaiming, test_repo_site_embed_updates_objective_blockers_without_full_completion
+target failing before: True; target failing after: False
+other failures unchanged: True

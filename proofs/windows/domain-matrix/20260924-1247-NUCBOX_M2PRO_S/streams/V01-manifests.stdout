@@ -1,0 +1,2 @@
+proofs/windows/domains/windows-domain-matrix-20260924-1247: manifest_lines=122 bad=0 unlisted=[] manifest_crlf=122 status=passed platform=windows arch=AMD64 cases=20/20 commands=60/60
+proofs/linux/execution/domains/wsl-domain-matrix-20260924-1247: manifest_lines=122 bad=0 unlisted=[] manifest_crlf=0 status=passed platform=linux arch=x86_64 cases=20/20 commands=60/60

@@ -1,0 +1,16 @@
+uname=Linux 6.6.87.2-microsoft-standard-WSL2 x86_64
+os=Ubuntu 24.04.4 LTS
+user=root home=/root home_fs=ext2/ext3
+/root/gw4-20260924-1247 absent
+rustc 1.95.0 (59807616e 2026-04-14)
+binary: rustc
+commit-hash: 59807616e1fa2540724bfbac14d7976d7e4a3860
+commit-date: 2026-04-14
+host: x86_64-unknown-linux-gnu
+release: 1.95.0
+LLVM version: 22.1.2
+cargo 1.95.0 (f2d3ce0bd 2026-03-21)
+Python 3.12.3
+git version 2.43.0
+git_autocrlf_global=[false]
+wsl_script_exit=0

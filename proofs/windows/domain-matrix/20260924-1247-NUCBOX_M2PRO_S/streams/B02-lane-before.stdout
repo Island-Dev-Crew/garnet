@@ -1,0 +1,3 @@
+lane status: source-present
+lane completion_percent: 60.0
+lane evidence: Script present, but no verified `--suite all` bundle was found in the configured domain-matrix evidence root (`GARNET_STUDIO_DOMAIN_MATRIX_ROOT` or `~/Desktop/dogfood/garnet-studio-domain-matrix`). Run `scripts/smoke_garnet_studio_domain_matrix.py --suite all` and keep the JSON/Markdown plus `MANIFEST.sha256` evidence bundle.

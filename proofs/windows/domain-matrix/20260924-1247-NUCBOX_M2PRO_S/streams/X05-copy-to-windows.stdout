@@ -1,0 +1,3 @@
+files_src=123 files_dst=123
+copy_identical=True
+wsl_script_exit=0

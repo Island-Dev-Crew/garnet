@@ -1,0 +1,7 @@
+wsl_head=dfb9b7c619b0f356bf7905a7542080f679fb9bd9
+windows_head=dfb9b7c619b0f356bf7905a7542080f679fb9bd9
+## main...origin/main
+false
+8ac6c414ce37ad9ce06bf983728b1002527c24365675adaaf5152d87a9ad72a6  /root/gw4-20260924-1247/examples/multi_agent_builder.garnet
+525682bc872f5c95afe3a093bb8d8d79602c9995c4de9fb50568053cd5ba51c4  /root/gw4-20260924-1247/examples/agentic_log_analyzer.garnet
+wsl_script_exit=0
