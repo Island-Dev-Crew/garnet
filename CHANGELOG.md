@@ -116,12 +116,10 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
     release-asset tests are rebased onto current truth, each with its reason.
   - The front door again carries the recorded phrase "not full
     MIT/productization completion".
-- **Left red on purpose.**
-  - The committed Windows and WSL domain-matrix bundles predate edits to two
-    examples, so a readiness test stays red until the NUC records fresh
-    bundles.
-  - The launch reporter's foundation gate waits for T6-close's final truth
-    re-measure.
+- **Left red on purpose.** The launch reporter's foundation gate waits for
+  T6-close's final truth re-measure. (The domain-matrix readiness test that
+  T5a first left red now passes: the NUC's fresh Windows and WSL bundles
+  landed in #600 and are merged into this branch.)
 
 ### Integrity rule 2 restated (Jon's wording, 2026-09-23)
 
