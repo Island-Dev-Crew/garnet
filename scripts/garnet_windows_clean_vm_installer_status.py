@@ -59,6 +59,21 @@ CREATED_AT = re.compile(
 # Truecolour and greyscale PNGs only (a Windows screenshot is truecolour);
 # palette images are not accepted. Colour type -> (samples per pixel, depths).
 PNG_FORMATS = {0: (1, (1, 2, 4, 8, 16)), 2: (3, (8, 16)), 4: (2, (8, 16)), 6: (4, (8, 16))}
+# Standard fixed-size ancillary chunks: body size (or per colour type), each at
+# most once, and those marked "before IDAT" must precede the image data. Text
+# and unknown ancillary chunks are not interpreted; the PNG specification lets
+# a decoder ignore them.
+PNG_ANCILLARY_SIZES = {
+    b"gAMA": {0: 4, 2: 4, 4: 4, 6: 4},
+    b"cHRM": {0: 32, 2: 32, 4: 32, 6: 32},
+    b"sRGB": {0: 1, 2: 1, 4: 1, 6: 1},
+    b"pHYs": {0: 9, 2: 9, 4: 9, 6: 9},
+    b"tIME": {0: 7, 2: 7, 4: 7, 6: 7},
+    b"sBIT": {0: 1, 2: 3, 4: 2, 6: 4},
+    b"bKGD": {0: 2, 2: 6, 4: 2, 6: 6},
+    b"tRNS": {0: 2, 2: 6},
+}
+PNG_BEFORE_IDAT = frozenset({b"gAMA", b"cHRM", b"sRGB", b"iCCP", b"sBIT", b"pHYs", b"bKGD", b"tRNS"})
 MAX_SCREENSHOT_SIDE = 16384
 MAX_SCREENSHOT_IMAGE_BYTES = 256 * 1024 * 1024
 ADAM7_PASSES = ((0, 0, 8, 8), (4, 0, 8, 8), (0, 4, 4, 8), (2, 0, 4, 4), (0, 2, 2, 4), (1, 0, 2, 2), (0, 1, 1, 2))
@@ -122,6 +137,29 @@ def _png_layout_problem(chunks: list[tuple[bytes, bytes]], colour: int) -> str |
     return None
 
 
+def _png_ancillary_problem(chunks: list[tuple[bytes, bytes]], colour: int) -> str | None:
+    """Standard fixed-size ancillary chunks: size, colour type, count, order."""
+    kinds = [kind for kind, _ in chunks]
+    first_idat = kinds.index(b"IDAT")
+    for index, (kind, body) in enumerate(chunks):
+        if kind in PNG_BEFORE_IDAT and index > first_idat:
+            return f"{kind.decode()} must come before the image data"
+        if kind not in PNG_ANCILLARY_SIZES:
+            continue
+        sizes = PNG_ANCILLARY_SIZES[kind]
+        if kinds.count(kind) != 1:
+            return f"{kind.decode()} appears more than once"
+        if colour not in sizes:
+            return f"{kind.decode()} is not allowed for colour type {colour}"
+        if len(body) != sizes[colour]:
+            return f"{kind.decode()} holds {len(body)} bytes; it must hold {sizes[colour]}"
+        if kind == b"sRGB" and body[0] > 3:
+            return "sRGB rendering intent must be 0-3"
+        if kind == b"pHYs" and body[8] > 1:
+            return "pHYs unit must be 0 or 1"
+    return None
+
+
 def png_screenshot_problem(data: bytes) -> str | None:
     """Why `data` is not an acceptable launch screenshot, or None if it is.
 
@@ -145,7 +183,7 @@ def png_screenshot_problem(data: bytes) -> str | None:
         return f"colour type {colour} at depth {depth} is not a supported truecolour or greyscale format"
     if compression or filtering or interlace not in (0, 1):
         return "unknown compression, filter or interlace method"
-    problem = _png_layout_problem(chunks, colour)
+    problem = _png_layout_problem(chunks, colour) or _png_ancillary_problem(chunks, colour)
     if problem:
         return problem
     passes = _png_scanlines(width, height, PNG_FORMATS[colour][0] * depth, interlace)
