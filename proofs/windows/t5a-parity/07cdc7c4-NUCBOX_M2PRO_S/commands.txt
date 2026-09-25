@@ -1,0 +1,151 @@
+# Commands, in run order, with their unedited output
+tested T5a head: 07cdc7c4132cc415c008b1df1de0ac0fd1f6e9ac
+folder: proofs/windows/t5a-parity/07cdc7c4-NUCBOX_M2PRO_S/
+host: NUCBOX_M2PRO_S (%COMPUTERNAME%)
+stamp: 20260925-2048 (UTC)
+harness: w3b_capture.py sha256 e0eb6b71a4f03172b8ae27bec477486c6866b72a661a15d4091773b6ac491444, one invocation 2026-09-25T20:48:35.929604Z to 2026-09-25T20:48:54.696642Z
+python: every step ran with Python312 first on PATH (the machine's default PATH resolves python to an
+  unrelated 3.11.15 virtualenv).
+captures: raw child-process bytes, unedited; test-output.txt is written by cmd's own redirection and
+  copied here byte for byte. This is evidence for the T5a review record, not a review.
+
+==============================================================================
+[C00] Clone directory absent
+$ python -I -c <precheck>
+argv: ["C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.exe", "-I", "-c", "import os, sys\ne = os.path.exists(r'C:\\garnet-t5a-07cdc7c4')\nprint(r'C:\\garnet-t5a-07cdc7c4 exists=' + str(e))\nsys.exit(1 if e else 0)\n"]
+cwd: C:\   env_overrides: {}
+exit_code=0 expected=0 started=2026-09-25T20:48:35.930680Z duration_s=0.047
+--- stdout (37 bytes, sha256 30302fe517fd1d25c6d4c5b83e4eff9475faa3fd24b69f6c3fc35c49f7917365)
+C:\garnet-t5a-07cdc7c4 exists=False
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+
+==============================================================================
+[C01] Fresh clone (core.autocrlf=false before checkout)
+$ git -c core.autocrlf=false clone https://github.com/Island-Dev-Crew/garnet garnet-t5a-07cdc7c4
+argv: ["C:\\Program Files\\Git\\cmd\\git.EXE", "-c", "core.autocrlf=false", "clone", "https://github.com/Island-Dev-Crew/garnet", "garnet-t5a-07cdc7c4"]
+cwd: C:\   env_overrides: {"GIT_TERMINAL_PROMPT": "0"}
+exit_code=0 expected=0 started=2026-09-25T20:48:35.980839Z duration_s=9.532
+--- stdout (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stdout
+--- stderr (1794 bytes, sha256 2a6ae3a71978287513230355b06fe65d01cb45bf50d1b9e51d02d71c2ae001a2)
+Cloning into 'garnet-t5a-07cdc7c4'...
+Updating files:  49% (2094/4236)Updating files:  50% (2118/4236)Updating files:  51% (2161/4236)Updating files:  52% (2203/4236)Updating files:  53% (2246/4236)Updating files:  54% (2288/4236)Updating files:  55% (2330/4236)Updating files:  56% (2373/4236)Updating files:  57% (2415/4236)Updating files:  58% (2457/4236)Updating files:  59% (2500/4236)Updating files:  60% (2542/4236)Updating files:  61% (2584/4236)Updating files:  62% (2627/4236)Updating files:  63% (2669/4236)Updating files:  64% (2712/4236)Updating files:  65% (2754/4236)Updating files:  66% (2796/4236)Updating files:  67% (2839/4236)Updating files:  68% (2881/4236)Updating files:  69% (2923/4236)Updating files:  70% (2966/4236)Updating files:  71% (3008/4236)Updating files:  72% (3050/4236)Updating files:  73% (3093/4236)Updating files:  74% (3135/4236)Updating files:  75% (3177/4236)Updating files:  76% (3220/4236)Updating files:  77% (3262/4236)Updating files:  78% (3305/4236)Updating files:  79% (3347/4236)Updating files:  80% (3389/4236)Updating files:  81% (3432/4236)Updating files:  82% (3474/4236)Updating files:  83% (3516/4236)Updating files:  84% (3559/4236)Updating files:  85% (3601/4236)Updating files:  86% (3643/4236)Updating files:  87% (3686/4236)Updating files:  88% (3728/4236)Updating files:  89% (3771/4236)Updating files:  90% (3813/4236)Updating files:  91% (3855/4236)Updating files:  92% (3898/4236)Updating files:  93% (3940/4236)Updating files:  94% (3982/4236)Updating files:  95% (4025/4236)Updating files:  96% (4067/4236)Updating files:  97% (4109/4236)Updating files:  98% (4152/4236)Updating files:  99% (4194/4236)Updating files: 100% (4236/4236)Updating files: 100% (4236/4236), done.
+--- end stderr
+
+==============================================================================
+[C02] core.autocrlf false in this clone
+$ git config core.autocrlf false
+argv: ["C:\\Program Files\\Git\\cmd\\git.EXE", "config", "core.autocrlf", "false"]
+cwd: C:\garnet-t5a-07cdc7c4   env_overrides: {}
+exit_code=0 expected=0 started=2026-09-25T20:48:45.532168Z duration_s=0.032
+--- stdout (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+
+==============================================================================
+[C03] Check out the named head, detached
+$ git checkout --detach 07cdc7c4132cc415c008b1df1de0ac0fd1f6e9ac
+argv: ["C:\\Program Files\\Git\\cmd\\git.EXE", "checkout", "--detach", "07cdc7c4132cc415c008b1df1de0ac0fd1f6e9ac"]
+cwd: C:\garnet-t5a-07cdc7c4   env_overrides: {}
+exit_code=0 expected=0 started=2026-09-25T20:48:45.564571Z duration_s=0.203
+--- stdout (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stdout
+--- stderr (113 bytes, sha256 7b5810ff72d8626e45de62b92d011dfaaad93483ec6290719dfe068a843ad3f4)
+HEAD is now at 07cdc7c test(studio): a Windows-only junction test for the committed clean-VM reader (W3 finding)
+--- end stderr
+
+==============================================================================
+[C04] HEAD
+$ git rev-parse HEAD
+argv: ["C:\\Program Files\\Git\\cmd\\git.EXE", "rev-parse", "HEAD"]
+cwd: C:\garnet-t5a-07cdc7c4   env_overrides: {}
+exit_code=0 expected=0 started=2026-09-25T20:48:45.772510Z duration_s=0.031
+--- stdout (41 bytes, sha256 7a6d6d10ffed8e23e04c4d52616cda8ab8a90d9efe44436832b6e44c5cf17b76)
+07cdc7c4132cc415c008b1df1de0ac0fd1f6e9ac
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+
+==============================================================================
+[C05] Remote refs at the named head
+$ git ls-remote origin | findstr 07cdc7c4132cc415c008b1df1de0ac0fd1f6e9ac
+argv: ["C:\\windows\\system32\\cmd.EXE", "/c", "git ls-remote origin | findstr 07cdc7c4132cc415c008b1df1de0ac0fd1f6e9ac"]
+cwd: C:\garnet-t5a-07cdc7c4   env_overrides: {"GIT_TERMINAL_PROMPT": "0"}
+exit_code=0 expected=0 started=2026-09-25T20:48:45.815784Z duration_s=0.609
+--- stdout (137 bytes, sha256 4540dd458c9d64a852a461f3756c23d1fb40e26b92df81bf000339d95bb825fb)
+07cdc7c4132cc415c008b1df1de0ac0fd1f6e9ac	refs/heads/train/t5a-evidence-tools
+07cdc7c4132cc415c008b1df1de0ac0fd1f6e9ac	refs/pull/598/head
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+
+==============================================================================
+[C06] Gate: HEAD equals the full SHA and ls-remote shows it as T5a's branch tip
+$ python -I -c <compare C04 and C05>
+argv: ["C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.exe", "-I", "-c", "import sys\nhead = open(r'C:\\gw1-stage\\w3b\\20260925-2048\\streams\\C04.stdout', 'rb').read().decode().strip()\nlines = open(r'C:\\gw1-stage\\w3b\\20260925-2048\\streams\\C05.stdout', 'rb').read().decode().splitlines()\ntip = any(l.strip() == '07cdc7c4132cc415c008b1df1de0ac0fd1f6e9ac\\trefs/heads/train/t5a-evidence-tools' for l in lines)\nprint('rev-parse HEAD equals 07cdc7c4132cc415c008b1df1de0ac0fd1f6e9ac: ' + str(head == '07cdc7c4132cc415c008b1df1de0ac0fd1f6e9ac'))\nprint('ls-remote shows it as the tip of refs/heads/train/t5a-evidence-tools: ' + str(tip))\nsys.exit(0 if head == '07cdc7c4132cc415c008b1df1de0ac0fd1f6e9ac' and tip else 1)\n"]
+cwd: C:\   env_overrides: {}
+exit_code=0 expected=0 started=2026-09-25T20:48:46.440037Z duration_s=0.046
+--- stdout (146 bytes, sha256 ccc0dde1c0496519956c7fc5cb92141fdd3cd01e334e81e0dd91ff0ca2eb2766)
+rev-parse HEAD equals 07cdc7c4132cc415c008b1df1de0ac0fd1f6e9ac: True
+ls-remote shows it as the tip of refs/heads/train/t5a-evidence-tools: True
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+
+==============================================================================
+[T01] The test, raw byte capture through cmd's redirection
+$ cmd /c "python -I -X utf8 scripts\test_garnet_windows_clean_vm_installer_status.py -v > test-output.txt 2>&1"
+argv: ["C:\\windows\\system32\\cmd.EXE", "/c", "python -I -X utf8 scripts\\test_garnet_windows_clean_vm_installer_status.py -v > test-output.txt 2>&1"]
+cwd: C:\garnet-t5a-07cdc7c4   env_overrides: {}
+exit_code=0 expected=0 started=2026-09-25T20:48:49.671410Z duration_s=4.141
+--- stdout (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+
+==============================================================================
+[T02] Check the output against the trigger's expectation
+$ python -I -c <junction test ok, only the 5 symlink + 2 POSIX skips, file OK>
+argv: ["C:\\Users\\IslandDevCrew\\AppData\\Local\\Programs\\Python\\Python312\\python.exe", "-I", "-c", "import re, sys\nt = open(r'C:\\garnet-t5a-07cdc7c4\\test-output.txt', 'rb').read().decode('utf-8', 'replace')\nj = [l for l in t.splitlines() if l.startswith('test_a_junction_on_the_proof_path_does_not_count ')]\nprint('junction test line: ' + (j[0] if j else 'ABSENT'))\nskips = [l for l in t.splitlines() if ' ... skipped ' in l]\nsym = [l for l in skips if 'cannot create a directory symlink' in l and 'WinError 1314' in l]\nposix = [l for l in skips if 'needs a non-root POSIX host' in l]\nother = [l for l in skips if l not in sym and l not in posix]\nbad = [l for l in t.splitlines() if re.search(r' \\.\\.\\. (FAIL|ERROR)$', l)]\nran = re.findall(r'^Ran (\\d+) tests', t, re.M); fin = [l for l in t.splitlines() if l.startswith(('OK', 'FAILED'))]\nprint(f'Ran {ran} final={fin}')\nprint(f'skips={len(skips)} symlink_1314={len(sym)} posix_only={len(posix)} other={len(other)} failures={len(bad)}')\nfor l in other + bad: print('UNEXPECTED: ' + l)\nok = bool(j) and j[0].rstrip().endswith('... ok') and len(sym) == 5 and len(posix) == 2 and not other and not bad and fin and fin[-1].startswith('OK')\nprint('expectation met: ' + str(ok))\nsys.exit(0 if ok else 1)\n"]
+cwd: C:\   env_overrides: {}
+exit_code=0 expected=0 started=2026-09-25T20:48:53.815686Z duration_s=0.062
+--- stdout (292 bytes, sha256 559390b696661db384a79f39f4174d475f0c2b80e991ffbf3f6325439510f6d0)
+junction test line: test_a_junction_on_the_proof_path_does_not_count (__main__.CommittedCleanVmBundleAdversarialTests.test_a_junction_on_the_proof_path_does_not_count) ... ok
+Ran ['64'] final=['OK (skipped=7)']
+skips=7 symlink_1314=5 posix_only=2 other=0 failures=0
+expectation met: True
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+
+==============================================================================
+[P01] Worktree status after the test (test-output.txt is the only new file)
+$ git status --short --branch
+argv: ["C:\\Program Files\\Git\\cmd\\git.EXE", "status", "--short", "--branch"]
+cwd: C:\garnet-t5a-07cdc7c4   env_overrides: {}
+exit_code=0 expected=0 started=2026-09-25T20:48:53.880094Z duration_s=0.047
+--- stdout (39 bytes, sha256 edba78a0ee3ec6e8aa939cee1cd04770eef29340b12afefd9cb30c768dc553c2)
+## HEAD (no branch)
+?? test-output.txt
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+
+==============================================================================
+[P02] Remote readback of T5a's tip and main after the run
+$ git ls-remote origin refs/heads/train/t5a-evidence-tools refs/heads/main
+argv: ["C:\\Program Files\\Git\\cmd\\git.EXE", "ls-remote", "origin", "refs/heads/train/t5a-evidence-tools", "refs/heads/main"]
+cwd: C:\garnet-t5a-07cdc7c4   env_overrides: {"GIT_TERMINAL_PROMPT": "0"}
+exit_code=0 expected=0 started=2026-09-25T20:48:53.946690Z duration_s=0.734
+--- stdout (134 bytes, sha256 7eb89d62d4ba9b3f1b5c45590c7c97ec2089421c8dfd71ad83cd91ad65523523)
+716211d71974314ec7d6470fe91bd21e2b38e090	refs/heads/main
+07cdc7c4132cc415c008b1df1de0ac0fd1f6e9ac	refs/heads/train/t5a-evidence-tools
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+
+[test-output.txt] written by T01's redirection: 12154 bytes, sha256 05a23962754255a39760711435c61cb061f634e0524b3d57e2d5732be5f1e072
+run: stopped_at=None unexpected_exits=[]
