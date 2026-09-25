@@ -446,6 +446,26 @@ class CommittedCleanVmBundleAdversarialTests(_CommittedRepoCase):
         self._link_dir(self.bundle, outside)
         self._assert_unverified()
 
+    @unittest.skipUnless(os.name == "nt", "directory junctions exist only on Windows")
+    def test_a_junction_on_the_proof_path_does_not_count(self) -> None:
+        # W3 on the NUC (#601) found no test for the reader's junction check.
+        # A junction needs no privilege, so this runs on an ordinary Windows
+        # account, unlike the directory-symlink cases above.
+        import _winapi
+
+        root = self.repo / BUNDLES_REL
+        for label, target in (("bundle", self.bundle), ("proof root", root)):
+            with self.subTest(junction=label):
+                outside = Path(self._temp.name) / f"outside-{label.replace(' ', '-')}"
+                target.rename(outside)
+                _winapi.CreateJunction(str(outside), str(target))
+                try:
+                    self.assertTrue(status_mod._is_link(target), "the reader must see the junction")
+                    self._assert_unverified()
+                finally:
+                    os.rmdir(target)  # removes the junction only, not its target
+                    outside.rename(target)
+
     def test_a_symlinked_proof_root_does_not_count(self) -> None:
         root = self.repo / BUNDLES_REL
         outside = Path(self._temp.name) / "outside-root"
