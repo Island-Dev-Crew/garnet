@@ -78,7 +78,8 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
     well-formed standard ancillary chunks (`gAMA`, `cHRM`, `sRGB`, `pHYs`,
     `tIME`, `sBIT`, `bKGD`, `tRNS`, `hIST`: size, colour type, count, order
     before `IDAT` and around `PLTE`, and values, every four-byte integer at
-    most 2^31-1), a legal
+    most 2^31-1, and with `sRGB` any `gAMA`/`cHRM` companion carrying the sRGB
+    values), a legal
     colour type and depth, a legal filter on every scanline, and image data
     that decompresses to the size the header implies. Other ancillary chunks
     (text, `iCCP`, `sPLT`, `eXIf` and unknown ones) are not interpreted, though
