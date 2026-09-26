@@ -25,6 +25,8 @@ fn write(dir: &Path, name: &str, body: &str) -> PathBuf {
     p
 }
 
+// T5a (C1-01): a directory scan names each function by its file
+// (`<relative path>::<name>`), so same-named functions in two files stay apart.
 #[test]
 fn caps_standard_profile_emits_language_neutral_schema() {
     let dir = fresh("profile");
@@ -54,12 +56,12 @@ fn caps_standard_profile_emits_language_neutral_schema() {
     );
     assert!(s.contains(r#""aggregate":["fs","net"]"#), "{s}");
     assert!(
-        s.contains(r#"{"kind":"function","name":"load","capabilities":["fs"],"source_span":null}"#),
+        s.contains(r#"{"kind":"function","name":"load.garnet::load","capabilities":["fs"],"source_span":null}"#),
         "{s}"
     );
     assert!(
         s.contains(
-            r#"{"kind":"function","name":"transmit","capabilities":["net"],"source_span":null}"#
+            r#"{"kind":"function","name":"transmit.garnet::transmit","capabilities":["net"],"source_span":null}"#
         ),
         "{s}"
     );

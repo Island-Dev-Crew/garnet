@@ -24,12 +24,27 @@ SPEC.loader.exec_module(watch)
 
 
 class GarnetQuarterlyCompetitiveWatchStatusTests(unittest.TestCase):
-    def test_current_slice_is_activated_but_first_report_is_not_claimed(self) -> None:
-        status = watch.read_status(ROOT, as_of=date(2026, 7, 16))
+    def test_contract_alone_is_planned_before_the_first_due_date(self) -> None:
+        # T5a: this used to read the live tree and assert that no report was
+        # claimed. The first report (research/competitive-watch/2026-Q3.md,
+        # #596) now exists, so the planned state is pinned on a fixture root
+        # holding only the contract.
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            contract = root / watch.CONTRACT_PATH
+            contract.parent.mkdir(parents=True)
+            shutil.copy2(ROOT / watch.CONTRACT_PATH, contract)
+            status = watch.read_status(root, as_of=date(2026, 7, 16))
         self.assertTrue(status.ok, status.findings)
         self.assertEqual(status.state, "planned")
         self.assertEqual(status.report_count, 0)
         self.assertEqual(status.next_due, "2026-09-30")
+
+    def test_committed_tree_carries_the_first_report(self) -> None:
+        status = watch.read_status(ROOT, as_of=date(2026, 9, 23))
+        self.assertTrue(status.ok, status.findings)
+        self.assertEqual(status.state, "active")
+        self.assertGreaterEqual(status.report_count, 1)
 
         proc = subprocess.run(
             [
@@ -37,7 +52,7 @@ class GarnetQuarterlyCompetitiveWatchStatusTests(unittest.TestCase):
                 "-I",
                 str(SCRIPT),
                 "--as-of",
-                "2026-07-16",
+                "2026-09-23",
                 "--gate",
             ],
             cwd=ROOT,
@@ -46,7 +61,7 @@ class GarnetQuarterlyCompetitiveWatchStatusTests(unittest.TestCase):
             check=False,
         )
         self.assertEqual(proc.returncode, 0, proc.stderr)
-        self.assertIn('"state": "planned"', proc.stdout)
+        self.assertIn('"state": "active"', proc.stdout)
 
     def test_missing_first_report_fails_after_due_date(self) -> None:
         with tempfile.TemporaryDirectory() as td:

@@ -89,6 +89,15 @@ fn delta_side(
     out.into_iter().collect()
 }
 
+/// Every declared cap list for each function name, in surface order.
+fn group_by_name(per_function: &[(String, Vec<String>)]) -> BTreeMap<&String, Vec<&Vec<String>>> {
+    let mut map: BTreeMap<&String, Vec<&Vec<String>>> = BTreeMap::new();
+    for (name, caps) in per_function {
+        map.entry(name).or_default().push(caps);
+    }
+    map
+}
+
 /// Compute the capability diff from `old` to `new`. Input surfaces are already
 /// sorted (S35); every output list preserves sorted order. RB-1: the delta
 /// over the closed capability set is XOR on [`CapSet`] bitsets; unknown
@@ -101,38 +110,49 @@ pub fn diff_caps(old: &CapabilitySurface, new: &CapabilitySurface) -> CapsDiff {
     let aggregate_added = delta_side(delta, new_known, &new_unknown, &old_unknown);
     let aggregate_removed = delta_side(delta, old_known, &old_unknown, &new_unknown);
 
-    let old_fns: BTreeMap<&String, &Vec<String>> =
-        old.per_function.iter().map(|(n, c)| (n, c)).collect();
-    let new_fns: BTreeMap<&String, &Vec<String>> =
-        new.per_function.iter().map(|(n, c)| (n, c)).collect();
+    // T5a (C1-01): group entries by name. A name can still repeat — a duplicate
+    // top-level def, or merged sources — and a repeated name cannot be matched
+    // one-to-one. Its entries keep declaration order (the surface sort is
+    // stable), and the last definition is the one that runs, so the entries are
+    // compared in order: any change, a reordering included, fails toward review
+    // with every capability the new entries declare.
+    let old_fns = group_by_name(&old.per_function);
+    let new_fns = group_by_name(&new.per_function);
 
-    let mut functions_added: Vec<String> = new
-        .per_function
-        .iter()
-        .filter(|(n, _)| !old_fns.contains_key(n))
-        .map(|(n, _)| n.clone())
+    let functions_added: Vec<String> = new_fns
+        .keys()
+        .filter(|n| !old_fns.contains_key(*n))
+        .map(|n| (*n).clone())
         .collect();
-    let mut functions_removed: Vec<String> = old
-        .per_function
-        .iter()
-        .filter(|(n, _)| !new_fns.contains_key(n))
-        .map(|(n, _)| n.clone())
+    let functions_removed: Vec<String> = old_fns
+        .keys()
+        .filter(|n| !new_fns.contains_key(*n))
+        .map(|n| (*n).clone())
         .collect();
     let mut functions_caps_expanded: Vec<(String, Vec<String>)> = Vec::new();
-    for (name, old_caps) in &old.per_function {
-        if let Some(new_caps) = new_fns.get(name) {
-            let (fn_old_known, fn_old_unknown) = split_caps(old_caps);
-            let (fn_new_known, fn_new_unknown) = split_caps(new_caps);
-            let fn_delta = fn_old_known.delta(fn_new_known);
-            let gained = delta_side(fn_delta, fn_new_known, &fn_new_unknown, &fn_old_unknown);
-            if !gained.is_empty() {
-                functions_caps_expanded.push((name.clone(), gained));
+    for (name, new_entries) in &new_fns {
+        let Some(old_entries) = old_fns.get(name) else {
+            continue;
+        };
+        let gained = match (old_entries.as_slice(), new_entries.as_slice()) {
+            ([old_caps], [new_caps]) => {
+                let (fn_old_known, fn_old_unknown) = split_caps(old_caps);
+                let (fn_new_known, fn_new_unknown) = split_caps(new_caps);
+                let fn_delta = fn_old_known.delta(fn_new_known);
+                delta_side(fn_delta, fn_new_known, &fn_new_unknown, &fn_old_unknown)
             }
+            _ if old_entries == new_entries => Vec::new(),
+            _ => new_entries
+                .iter()
+                .flat_map(|caps| caps.iter().cloned())
+                .collect::<BTreeSet<String>>()
+                .into_iter()
+                .collect(),
+        };
+        if !gained.is_empty() {
+            functions_caps_expanded.push(((*name).clone(), gained));
         }
     }
-    functions_added.sort();
-    functions_removed.sort();
-    functions_caps_expanded.sort_by(|a, b| a.0.cmp(&b.0));
 
     CapsDiff {
         aggregate_added,
@@ -236,6 +256,107 @@ mod tests {
         );
         assert_eq!(d.aggregate_added, vec!["custom_cap"]);
         assert!(d.authority_expanded());
+    }
+
+    // ── T5a C1-01: module-qualified names and duplicate keys ──────────────
+
+    fn surface_of(src: &str) -> CapabilitySurface {
+        crate::capability_surface(&garnet_parser::parse_source(src).expect("parses"))
+    }
+
+    const TWO_HELPERS_OLD: &str = "module Alpha {\n  @caps()\n  def helper() -> int { 0 }\n}\nmodule Beta {\n  @caps()\n  def helper() -> int { 0 }\n}\n";
+    const TWO_HELPERS_NEW: &str = "module Alpha {\n  @caps(fs)\n  def helper() -> int { 0 }\n}\nmodule Beta {\n  @caps()\n  def helper() -> int { 0 }\n}\n";
+
+    #[test]
+    fn gain_in_first_module_is_reported_under_its_qualified_name() {
+        let d = diff_caps(&surface_of(TWO_HELPERS_OLD), &surface_of(TWO_HELPERS_NEW));
+        assert_eq!(
+            d.functions_caps_expanded,
+            vec![("Alpha::helper".to_string(), vec!["fs".to_string()])]
+        );
+    }
+
+    #[test]
+    fn gain_is_reported_whatever_the_declaration_order() {
+        let old = "module Beta {\n  @caps()\n  def helper() -> int { 0 }\n}\nmodule Alpha {\n  @caps()\n  def helper() -> int { 0 }\n}\n";
+        let new = "module Beta {\n  @caps()\n  def helper() -> int { 0 }\n}\nmodule Alpha {\n  @caps(fs)\n  def helper() -> int { 0 }\n}\n";
+        let d = diff_caps(&surface_of(old), &surface_of(new));
+        assert_eq!(
+            d.functions_caps_expanded,
+            vec![("Alpha::helper".to_string(), vec!["fs".to_string()])]
+        );
+    }
+
+    #[test]
+    fn an_unchanged_capability_is_not_misattributed_as_gained() {
+        // Beta::helper keeps @caps(net); only Alpha::helper gains fs. Before the
+        // fix the last-declared entry won and this printed `helper gained: net`.
+        let old = "module Alpha {\n  @caps()\n  def helper() -> int { 0 }\n}\nmodule Beta {\n  @caps(net)\n  def helper() -> int { 0 }\n}\n";
+        let new = "module Alpha {\n  @caps(fs)\n  def helper() -> int { 0 }\n}\nmodule Beta {\n  @caps(net)\n  def helper() -> int { 0 }\n}\n";
+        let d = diff_caps(&surface_of(old), &surface_of(new));
+        assert_eq!(
+            d.functions_caps_expanded,
+            vec![("Alpha::helper".to_string(), vec!["fs".to_string()])]
+        );
+    }
+
+    #[test]
+    fn same_named_impl_types_in_two_modules_do_not_collide() {
+        let old = "module a {\n  struct Foo {}\n  impl Foo {\n    @caps()\n    def run(self) -> int { 0 }\n  }\n}\nmodule b {\n  struct Foo {}\n  impl Foo {\n    @caps()\n    def run(self) -> int { 0 }\n  }\n}\n";
+        let new = "module a {\n  struct Foo {}\n  impl Foo {\n    @caps(fs)\n    def run(self) -> int { 0 }\n  }\n}\nmodule b {\n  struct Foo {}\n  impl Foo {\n    @caps()\n    def run(self) -> int { 0 }\n  }\n}\n";
+        let d = diff_caps(&surface_of(old), &surface_of(new));
+        assert_eq!(
+            d.functions_caps_expanded,
+            vec![("a::Foo::run".to_string(), vec!["fs".to_string()])]
+        );
+    }
+
+    #[test]
+    fn a_duplicate_name_fails_toward_review_with_every_new_capability() {
+        // A name that still appears twice (a duplicate top-level def, or two
+        // files merged under one name) cannot be matched one-to-one. The diff
+        // must never let the last entry win: it reports the name with every
+        // capability its new entries declare.
+        let d = diff_caps(
+            &surf(&["fs"], &[("f", &["fs"]), ("f", &[])], false),
+            &surf(&["fs", "net"], &[("f", &["fs"]), ("f", &["net"])], false),
+        );
+        assert_eq!(
+            d.functions_caps_expanded,
+            vec![("f".to_string(), vec!["fs".to_string(), "net".to_string()])]
+        );
+    }
+
+    #[test]
+    fn a_name_duplicated_only_in_new_fails_toward_review() {
+        let d = diff_caps(
+            &surf(&["fs"], &[("f", &[]), ("main", &["fs"])], false),
+            &surf(
+                &["fs"],
+                &[("f", &["fs"]), ("f", &[]), ("main", &["fs"])],
+                false,
+            ),
+        );
+        assert_eq!(
+            d.functions_caps_expanded,
+            vec![("f".to_string(), vec!["fs".to_string()])]
+        );
+        assert!(!d.authority_expanded(), "aggregate unchanged");
+    }
+
+    #[test]
+    fn a_repeated_name_is_compared_in_declaration_order() {
+        // T5a (Codex review of #598): the last definition of a repeated name is
+        // the one that runs, so swapping two entries' order is a change. The
+        // same entries in another order must still fail toward review.
+        let d = diff_caps(
+            &surf(&["fs"], &[("f", &["fs"]), ("f", &[])], false),
+            &surf(&["fs"], &[("f", &[]), ("f", &["fs"])], false),
+        );
+        assert_eq!(
+            d.functions_caps_expanded,
+            vec![("f".to_string(), vec!["fs".to_string()])]
+        );
     }
 
     // ── RB-1 permanent reference suite ─────────────────────────────────

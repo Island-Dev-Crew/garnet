@@ -1,0 +1,24 @@
+# T5a flagship reseal as seal/v2 (C2-07 + C3-03), 2026-09-23
+
+Branch train/t5a-evidence-tools, parent a9b603a0. Producer: garnet built from this branch (garnet 0.8.2 (Top-level garnet(1) CLI — parse / check / run / test / new / keygen / build --sign / verify / convert + the trust spine (caps / diff-caps / seal / sandbox / caps-log / agent-loop).)).
+
+## Why
+- C2-07: seal bytes no longer depend on cosign; tooling.cosign is a constant note and the predicate carries "signed":false.
+- C3-03: the shelf verifier accepts seal/v2 and borrows only parser_version/interp_version from the seal, so a CLI version bump alone no longer refuses the package (U-120). The #568 reseal recipe required seal/v1 and no longer applies.
+
+## Command
+    garnet seal examples/minimum-shelf-flagship/tool.garnet --out examples/minimum-shelf-flagship/tool.seal.json
+
+## Hashes
+- tool.garnet (unchanged): canonical BLAKE3 38db718f35ec1dd034010a9c3d52b4236ce30523a117abefdf41196d5cc9cce9
+- tool.seal.json: canonical BLAKE3 543e22925d0f2013d7ad6d83c4f29449a22109f4a75c7f5bba5f5506a94a1f57 (v1) -> 78ba05bbb5a4f0b8bf18f50760232ebf330eda8f4331a6ed483fea3a3ee3f392 (v2); sha256 ec5763fa02ad19ca0466ae469cc15937066d5452d3fbfcabe9a8cb18729f4dd3 -> b3578595bf3ad4cd342265d6f797ad9d1321f451abbfffafc9fc6e205b615139
+- SHELF_PACKAGE.json (sealBlake3 rebound): canonical BLAKE3 ca0829040caaeda53d7044fa763460dd2ccec46e0db0a6d7da7591947f40f3b3 -> 242a8c18c5ecd70a6abfe95252bc24b3185828ae3b76176860dc71bba5a7f6f1; sha256 a3c6cc2306a041c8dc094e1ebc546ab0ae257629d880f34fb969747268110e3a -> fc2b3678bd05ebf443e5701457425b158e0c91805a48592485b4eefb7fd4940e
+- Re-pinned by hand: TRUSTED_SEAL_BLAKE3 and TRUSTED_MANIFEST_BLAKE3 (garnet-cli/src/minimum_shelf.rs); EXPECTED_SEAL_BLAKE3 and the two EXPECTED_FILE_SHA256 entries (scripts/smoke_garnet_minimum_shelf.py). smoke_garnet_minimum_shelf.py --gate is not acceptance and stays red for U-58.
+
+## Results
+    $ garnet verify tool.garnet tool.seal.json
+    OK examples/minimum-shelf-flagship/tool.garnet matches seal/v2 source and declared capabilities (content binding only; no signature verified)
+    rc=0
+    $ garnet verify tool.garnet tampered.seal.json   # "signed":false -> true
+    FAIL seal content/binding mismatch or noncanonical fields/bytes
+    rc=2 (expected)

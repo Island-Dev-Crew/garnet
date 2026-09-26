@@ -107,21 +107,24 @@ impl CapabilityManifest {
 }
 
 /// Merge per-program surfaces into a single package surface: union aggregate,
-/// sorted + deduplicated `(name, caps)` functions, OR-ed wildcard.
+/// every function entry sorted stably by name, OR-ed wildcard.
+///
+/// T5a (Codex round 2): entries are not deduplicated or sorted by their caps.
+/// A repeated name keeps its multiplicity and declaration order, because the
+/// last definition is the one that runs and `diff-caps` compares in order.
 pub fn merge_surfaces(surfaces: Vec<CapabilitySurface>) -> CapabilitySurface {
     let mut aggregate: BTreeSet<String> = BTreeSet::new();
-    let mut functions: BTreeSet<(String, Vec<String>)> = BTreeSet::new();
+    let mut per_function: Vec<(String, Vec<String>)> = Vec::new();
     let mut has_wildcard = false;
     for surface in surfaces {
         aggregate.extend(surface.aggregate);
-        for entry in surface.per_function {
-            functions.insert(entry);
-        }
+        per_function.extend(surface.per_function);
         has_wildcard |= surface.has_wildcard;
     }
+    per_function.sort_by(|a, b| a.0.cmp(&b.0));
     CapabilitySurface {
         aggregate: aggregate.into_iter().collect(),
-        per_function: functions.into_iter().collect(),
+        per_function,
         has_wildcard,
     }
 }
@@ -157,6 +160,9 @@ fn surface_from_targets(path: &Path, targets: &[PathBuf]) -> Result<CapabilitySu
     if targets.is_empty() {
         return Err(format!("no .garnet files found under {}", path.display()));
     }
+    // T5a (C1-01): in directory mode every function is named by its file, so
+    // same-named functions in two files are not collapsed into one entry.
+    let qualify_by_file = path.is_dir();
     let mut surfaces = Vec::with_capacity(targets.len());
     for target in targets {
         let src = read_file(target)?;
@@ -167,7 +173,12 @@ fn surface_from_targets(path: &Path, targets: &[PathBuf]) -> Result<CapabilitySu
         let edition = resolved.edition;
         let module = garnet_parser::parse_source_with_edition(&src, edition)
             .map_err(|e| format!("parse error in {}: {e}", target.display()))?;
-        surfaces.push(capability_surface(&module));
+        let surface = capability_surface(&module);
+        surfaces.push(if qualify_by_file {
+            file_qualified(surface, &file_label(path, target)?)
+        } else {
+            surface
+        });
     }
     if surfaces.len() == 1 {
         #[allow(clippy::expect_used)]
@@ -177,6 +188,41 @@ fn surface_from_targets(path: &Path, targets: &[PathBuf]) -> Result<CapabilitySu
         return Ok(only);
     }
     Ok(merge_surfaces(surfaces))
+}
+
+/// The label a directory-mode surface gives one file: its path relative to the
+/// scanned directory, with `/` separators on every OS and the `.garnet` suffix
+/// kept, so a file label can never be mistaken for a module path.
+///
+/// A path that is not valid UTF-8 is an error, not a lossy label: two such
+/// files could otherwise share one label and merge their functions' names.
+fn file_label(root: &Path, target: &Path) -> Result<String, String> {
+    let rel = target.strip_prefix(root).unwrap_or(target);
+    rel.components()
+        .map(|c| {
+            c.as_os_str().to_str().map(str::to_owned).ok_or_else(|| {
+                format!(
+                    "{}: path is not valid UTF-8, so it cannot be named in a capability surface",
+                    target.display()
+                )
+            })
+        })
+        .collect::<Result<Vec<_>, _>>()
+        .map(|parts| parts.join("/"))
+}
+
+/// A copy of `surface` whose per-function names are prefixed `<label>::`.
+fn file_qualified(surface: CapabilitySurface, label: &str) -> CapabilitySurface {
+    let mut per_function: Vec<(String, Vec<String>)> = surface
+        .per_function
+        .into_iter()
+        .map(|(name, caps)| (format!("{label}::{name}"), caps))
+        .collect();
+    per_function.sort_by(|a, b| a.0.cmp(&b.0));
+    CapabilitySurface {
+        per_function,
+        ..surface
+    }
 }
 
 /// Render a slice of strings as a JSON array of escaped strings.
@@ -234,18 +280,83 @@ mod tests {
     }
 
     #[test]
-    fn merge_unions_and_dedups() {
+    fn merge_unions_and_keeps_every_entry_in_order() {
+        // T5a (Codex round 2): merging no longer dedups (name, caps) entries.
+        // A repeated name's entries keep their multiplicity and declaration
+        // order, because the last definition is the one that runs.
         let merged = merge_surfaces(vec![
             surface(&["fs"], &[("a", &["fs"])], false),
             surface(&["net"], &[("b", &["net"])], true),
-            surface(&["fs"], &[("a", &["fs"])], false), // duplicate of the first
+            surface(&["fs"], &[("a", &["fs"])], false),
         ]);
         assert_eq!(merged.aggregate, vec!["fs", "net"]);
-        // (a,[fs]) deduped; (b,[net]) kept; sorted by name.
-        assert_eq!(merged.per_function.len(), 2);
-        assert_eq!(merged.per_function[0].0, "a");
-        assert_eq!(merged.per_function[1].0, "b");
+        let names: Vec<&str> = merged
+            .per_function
+            .iter()
+            .map(|(n, _)| n.as_str())
+            .collect();
+        assert_eq!(names, vec!["a", "a", "b"]);
         assert!(merged.has_wildcard);
+    }
+
+    #[test]
+    fn merge_keeps_a_repeated_name_in_declaration_order() {
+        let merged = merge_surfaces(vec![
+            surface(
+                &["fs"],
+                &[("a.garnet::f", &["fs"]), ("a.garnet::f", &[])],
+                false,
+            ),
+            surface(&[], &[("b.garnet::g", &[])], false),
+        ]);
+        let entries: Vec<(&str, usize)> = merged
+            .per_function
+            .iter()
+            .map(|(n, c)| (n.as_str(), c.len()))
+            .collect();
+        assert_eq!(
+            entries,
+            vec![("a.garnet::f", 1), ("a.garnet::f", 0), ("b.garnet::g", 0)]
+        );
+    }
+
+    #[test]
+    fn file_label_uses_forward_slashes_and_keeps_the_suffix() {
+        let root = Path::new("pkg");
+        assert_eq!(
+            file_label(root, &root.join("a.garnet")).as_deref(),
+            Ok("a.garnet")
+        );
+        assert_eq!(
+            file_label(root, &root.join("lib").join("b.garnet")).as_deref(),
+            Ok("lib/b.garnet")
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn file_label_rejects_a_non_utf8_path_instead_of_collapsing_it() {
+        // T5a (Codex review of #598): a lossy conversion maps a\x80.garnet and
+        // a\x81.garnet to one label, so two files' functions share names.
+        use std::ffi::OsStr;
+        use std::os::unix::ffi::OsStrExt;
+        let root = Path::new("pkg");
+        for bytes in [&b"pkg/a\x80.garnet"[..], &b"pkg/a\x81.garnet"[..]] {
+            let target = Path::new(OsStr::from_bytes(bytes));
+            assert!(file_label(root, target).is_err(), "{target:?}");
+        }
+    }
+
+    #[test]
+    fn file_qualified_prefixes_every_name_and_keeps_the_rest() {
+        let q = file_qualified(
+            surface(&["fs"], &[("m::f", &["fs"]), ("main", &[])], true),
+            "a.garnet",
+        );
+        let names: Vec<&str> = q.per_function.iter().map(|(n, _)| n.as_str()).collect();
+        assert_eq!(names, vec!["a.garnet::m::f", "a.garnet::main"]);
+        assert_eq!(q.aggregate, vec!["fs"]);
+        assert!(q.has_wildcard);
     }
 
     #[test]

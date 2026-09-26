@@ -1,8 +1,8 @@
 {
   "schema": "garnet.w-play.browser-proof/1",
-  "captured_at": "2026-09-24T02:20:54.935Z",
+  "captured_at": "2026-09-24T12:30:09.254Z",
   "verdict": "pass",
-  "duration_ms": 11200,
+  "duration_ms": 7723,
   "execution": {
     "engine": "playwright-browser-page",
     "browser": "153.0.8010.53",
@@ -11,32 +11,32 @@
     "service_workers": "blocked"
   },
   "git": {
-    "tested_commit": "625ee4cc2d10f7142b57ddae0ec81a8e1ca332df",
-    "tested_tree": "74fe26be75187cacf1b434a37e16ff2ef9314f98",
+    "tested_commit": "4df562154d13f2f587a237376a771ba90ef60026",
+    "tested_tree": "a3ce09a0f271307527e3788c67ef3ff6d26c5405",
     "runtime_inputs_clean": true
   },
   "host": {
     "os": "darwin",
     "arch": "arm64",
-    "node": "v26.8.2"
+    "node": "v22.22.2"
   },
   "package": {
     "schema": "garnet.playground.wasm-package/1",
-    "source_tree_sha256": "b777d42eb15c3f810433fbbb7929ea8463a4be95f5bcd9af08727f7eb6b58bd6",
+    "source_tree_sha256": "5cd74106a82716e85f561a3a37c2c6b8a02095ce2d324f32f392ab2c6ac8a822",
     "artifacts": {
       "garnet_wasm.js": {
         "bytes": 6581,
         "sha256": "bf72509961525b4eb2e0702f41da61b4e8087ceee98787b7a046d83a85791a6d"
       },
       "garnet_wasm_bg.wasm": {
-        "bytes": 2246217,
-        "sha256": "0ee91627610a7937a215be68a078d9ff38496da01d6b972519f0746b9423e644"
+        "bytes": 2234789,
+        "sha256": "e24737d7e13725df529bea80d3581358cd21718c6c43aef21d9869bd33511134"
       }
     }
   },
   "runtime_inputs": {
     "schema": "garnet.w-play.runtime-inputs/1",
-    "sha256": "6a2752a6206979efdf5ed466c3115866334c6bfaf8f02db8baefc4b0ac576e5a",
+    "sha256": "7a816a0f36a85e0b862d133debfba993eaf7f7862f3eb697f4676b1a927882c2",
     "files": {
       "apps/garnet-studio/package-lock.json": {
         "bytes": 44280,
@@ -51,8 +51,8 @@
         "sha256": "790a70b22ea92e6f7004eec6196c0807f612d149a2bb40115d31d44ab68927fa"
       },
       "docs/index.html": {
-        "bytes": 117229,
-        "sha256": "3ca96cfabcecb1ab63081974a22a06234b3c7b85ff4176853e4c96ea523b683c"
+        "bytes": 117275,
+        "sha256": "2b68cecf4e02ac73002a4ebe12e23cc27e4800803169dcd6139e7fe3c878c298"
       },
       "docs/service-worker.js": {
         "bytes": 2698,
@@ -67,28 +67,28 @@
         "sha256": "5529b2f3c1d44fd9fe17d9c443c3be8daf29635cc1ac2dcb86defca7c4449b84"
       },
       "docs/playground/live.js": {
-        "bytes": 15063,
-        "sha256": "a85fe627de323b48a0531aa3545e9171527e5003678219d7881d8c77e45939df"
+        "bytes": 15881,
+        "sha256": "357610d06fa2b6e7e827cfaa69e79aed1903b451d3d06ed9225b7b2d4b8037d9"
       },
       "docs/playground/pkg/garnet_wasm.js": {
         "bytes": 6581,
         "sha256": "bf72509961525b4eb2e0702f41da61b4e8087ceee98787b7a046d83a85791a6d"
       },
       "docs/playground/pkg/garnet_wasm_bg.wasm": {
-        "bytes": 2246217,
-        "sha256": "0ee91627610a7937a215be68a078d9ff38496da01d6b972519f0746b9423e644"
+        "bytes": 2234789,
+        "sha256": "e24737d7e13725df529bea80d3581358cd21718c6c43aef21d9869bd33511134"
       },
       "docs/playground/pkg/provenance.json": {
         "bytes": 8589,
-        "sha256": "19f5ec1d6b84cd25e7de543a642ad54de914ab75d841ff6910861f9e51483c16"
+        "sha256": "2be380957ef4a7d63baff789a7f6516f40ed2b340cf3aff2dcdafbb746e3a238"
       },
       "scripts/smoke_garnet_playground_browser.mjs": {
         "bytes": 21332,
         "sha256": "c4e858ae44873c02680be0b2c82240bd285c6fa12acc1a1d7848e74dc3b819bd"
       },
       "scripts/smoke_garnet_playground_phase1_journeys.mjs": {
-        "bytes": 11613,
-        "sha256": "61429bba924ff3b27a3d7be3a01ed261d858da02cb4944ba74fe67501b42692f"
+        "bytes": 13871,
+        "sha256": "ac8d0bae131f2cb03d1af6820cb3a6cd72a91b29433f87728498bea6f11f2659"
       }
     }
   },

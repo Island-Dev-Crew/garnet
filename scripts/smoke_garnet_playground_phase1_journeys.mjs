@@ -31,6 +31,29 @@ export async function phase1Journeys(page, baseUrl, equal) {
   await page.locator('#diff-caps').click();
   equal(await page.locator('#lane-card').getAttribute('data-state'), 'review', 'per-function gain requires review');
   equal(await page.evaluate(() => window.__garnetPlayground.state.lastDiff.authority_expanded), false, 'S37 aggregate rule unchanged');
+  // T5a (C5-08): a new capability-bearing function under an existing aggregate
+  // goes to review, and a check failure never leaves the diff label green.
+  await page.locator('#baseline-editor').fill('@caps(fs)\ndef main() { 0 }');
+  await page.locator('#source-editor').fill('@caps(fs)\ndef exfil() { 0 }\n@caps(fs)\ndef main() { 0 }');
+  await page.locator('#diff-caps').click();
+  equal(await page.locator('#lane-card').getAttribute('data-state'), 'review', 'new fs function under existing aggregate requires review');
+  if (!(await page.locator('#lane-card').textContent()).includes('exfil added with fs')) throw Error('new function not named on the review card');
+  // T5a (Codex review of #598): the checker accepts a repeated name, so a new
+  // name declared twice routes to review if ANY entry declares a capability,
+  // in either order, while the program-wide aggregate stays unchanged.
+  for (const order of ['@caps(fs)\ndef extra() { 0 }\n@caps()\ndef extra() { 0 }', '@caps()\ndef extra() { 0 }\n@caps(fs)\ndef extra() { 0 }']) {
+    await page.locator('#baseline-editor').fill('@caps(fs)\ndef main() { 0 }');
+    await page.locator('#source-editor').fill(`${order}\n@caps(fs)\ndef main() { 0 }`);
+    await page.locator('#diff-caps').click();
+    equal(await page.evaluate(() => window.__garnetPlayground.state.lastDiff.authority_expanded), false, 'repeated new name leaves the aggregate unchanged');
+    equal(await page.locator('#lane-card').getAttribute('data-state'), 'review', `repeated new name with a declared capability requires review (${order.startsWith('@caps(fs)') ? 'fs first' : 'fs last'})`);
+    if (!(await page.locator('#lane-card').textContent()).includes('extra added with fs')) throw Error('repeated new name not named with its capabilities');
+  }
+  await page.locator('#baseline-editor').fill('@caps()\ndef main() { 0 }');
+  await page.locator('#source-editor').fill('@caps()\ndef main() { time::now_ms() }');
+  await page.locator('#diff-caps').click();
+  equal(await page.locator('#diff-verdict').textContent(), 'No authority expansion', 'check-failure diff label text kept');
+  equal(await page.locator('#diff-verdict').getAttribute('data-state'), 'neutral', 'check failure leaves the diff label neutral, not green');
   const presets = {};
   for (const name of ['capability_cycle', 'illegal_enum', 'undeclared_clock', 'wording_vs_write']) {
     await page.locator('#example-picker').selectOption(name);

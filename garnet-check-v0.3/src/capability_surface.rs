@@ -16,31 +16,39 @@
 use garnet_parser::ast::{Annotation, Capability, FnDef, Item, Module, TypeExpr};
 use std::collections::BTreeSet;
 
-/// A short label for an impl block's owning type, for per-function names.
+/// The label for an impl block's owning type in per-function names: the type's
+/// full written path (`R`, or `a::R` when the impl names a qualified type), so
+/// two impls whose types share a last segment are not collapsed into one name.
 fn type_label(ty: &TypeExpr) -> String {
     match ty {
-        TypeExpr::Named { path, .. } => path.last().cloned().unwrap_or_else(|| "impl".to_string()),
+        TypeExpr::Named { path, .. } if !path.is_empty() => path.join("::"),
         _ => "impl".to_string(),
     }
 }
 
 /// Collect every capability-bearing function in the module tree — top-level
 /// functions, **impl-block methods**, and functions in nested modules — as
-/// `(display_name, &FnDef)`. S114 closed a hole where impl-method `@caps` was
+/// `(qualified_name, &FnDef)`. S114 closed a hole where impl-method `@caps` was
 /// enforced at runtime (the interpreter installs the guard for any managed `FnDef`)
 /// but invisible here, so a file-/net-reading impl method reported an empty surface
 /// and slipped past `diff-caps`, the seal manifest, and the agent-loop gate.
-fn collect_cap_fns<'a>(items: &'a [Item], out: &mut Vec<(String, &'a FnDef)>) {
+///
+/// T5a (C1-01): names carry their module path, so `module a { def f }` is `a::f`
+/// and an impl method inside it is `a::Type::m`. Top-level functions and methods
+/// of an impl on an unqualified type keep their names; an impl written with a
+/// path (`impl a::R`) names its methods by that full path. Before this, same-named
+/// functions in two modules shared one name and `diff-caps` kept only the last.
+fn collect_cap_fns<'a>(items: &'a [Item], prefix: &str, out: &mut Vec<(String, &'a FnDef)>) {
     for item in items {
         match item {
-            Item::Fn(f) => out.push((f.name.clone(), f)),
+            Item::Fn(f) => out.push((format!("{prefix}{}", f.name), f)),
             Item::Impl(block) => {
                 let owner = type_label(&block.target);
                 for m in &block.methods {
-                    out.push((format!("{owner}::{}", m.name), m));
+                    out.push((format!("{prefix}{owner}::{}", m.name), m));
                 }
             }
-            Item::Module(m) => collect_cap_fns(&m.items, out),
+            Item::Module(m) => collect_cap_fns(&m.items, &format!("{prefix}{}::", m.name), out),
             _ => {}
         }
     }
@@ -55,7 +63,8 @@ pub struct CapabilitySurface {
     /// Per-function declared caps: sorted by function name; each cap list sorted
     /// and deduplicated. Only functions that carry an `@caps(...)` appear.
     pub per_function: Vec<(String, Vec<String>)>,
-    /// Whether any `@caps(*)` wildcard appears (debug-only; CI rejects it).
+    /// Whether any `@caps(*)` wildcard appears. The checker accepts a wildcard;
+    /// `diff-caps` treats a newly introduced one as authority expansion.
     pub has_wildcard: bool,
 }
 
@@ -66,7 +75,7 @@ pub fn capability_surface(module: &Module) -> CapabilitySurface {
     let mut has_wildcard = false;
 
     let mut fns: Vec<(String, &FnDef)> = Vec::new();
-    collect_cap_fns(&module.items, &mut fns);
+    collect_cap_fns(&module.items, "", &mut fns);
 
     for (name, f) in fns {
         let mut declared = false;
@@ -184,6 +193,55 @@ mod tests {
     fn surface_is_deterministic() {
         let src = "@caps(net, fs)\ndef a() { 1 }\n@caps(time)\ndef b() { 1 }\n";
         assert_eq!(surface(src), surface(src));
+    }
+
+    // ── T5a C1-01: per-function names carry their module and impl path ──
+
+    #[test]
+    fn functions_in_modules_are_qualified_by_module_path() {
+        let s = surface(
+            "module a {\n  @caps(fs)\n  def f() -> int { 0 }\n}\nmodule b {\n  @caps(net)\n  def f() -> int { 0 }\n}\n",
+        );
+        assert_eq!(
+            s.per_function,
+            vec![
+                ("a::f".to_string(), vec!["fs".to_string()]),
+                ("b::f".to_string(), vec!["net".to_string()]),
+            ],
+            "same-named functions in two modules must not collide"
+        );
+    }
+
+    #[test]
+    fn nested_modules_and_impl_methods_carry_the_full_path() {
+        let s = surface(
+            "module a {\n  module b {\n    @caps(env)\n    def g() -> int { 0 }\n  }\n  struct R {}\n  impl R {\n    @caps(fs)\n    def m(self) -> int { 0 }\n  }\n}\n",
+        );
+        let names: Vec<&str> = s.per_function.iter().map(|(n, _)| n.as_str()).collect();
+        assert_eq!(names, vec!["a::R::m", "a::b::g"]);
+    }
+
+    #[test]
+    fn a_top_level_impl_on_a_path_qualified_type_is_named_by_the_full_path() {
+        // T5a (Codex review of #598): disclosed in the CHANGELOG. `impl a::R` and
+        // `impl b::R` would both have been `R::m` and collided in diff-caps.
+        let s = surface(
+            "@caps(fs)\ndef main() -> int { 0 }\nimpl a::R {\n  @caps(fs)\n  def m(self) -> int { 0 }\n}\nimpl b::R {\n  @caps(net)\n  def m(self) -> int { 0 }\n}\n",
+        );
+        let names: Vec<&str> = s.per_function.iter().map(|(n, _)| n.as_str()).collect();
+        assert_eq!(names, vec!["a::R::m", "b::R::m", "main"]);
+    }
+
+    #[test]
+    fn top_level_names_stay_bare() {
+        // Top-level functions and methods of an impl on an unqualified type keep
+        // their names, so these programs' capability surfaces and manifests do
+        // not change. (Their seal bytes change once with C2-07.)
+        let s = surface(
+            "struct R {}\nimpl R {\n  @caps(fs)\n  def m(self) -> int { 0 }\n}\n@caps(net)\ndef f() -> int { 0 }\n",
+        );
+        let names: Vec<&str> = s.per_function.iter().map(|(n, _)| n.as_str()).collect();
+        assert_eq!(names, vec!["R::m", "f"]);
     }
 
     // ── A1 (element 6, surface side): surface == the enforceable-by-declaration set ──

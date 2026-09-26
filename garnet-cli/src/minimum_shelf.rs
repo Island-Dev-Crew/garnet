@@ -27,10 +27,12 @@ const PACKAGE_SEAL_KIND: &str = "in-toto-predicate-unsigned";
 const MAX_PACKAGE_FILE_BYTES: u64 = 1024 * 1024;
 const TRUSTED_SOURCE_BLAKE3: &str =
     "38db718f35ec1dd034010a9c3d52b4236ce30523a117abefdf41196d5cc9cce9";
+// T5a reseal (C2-07 + C3-03): the flagship seal is seal/v2 with the constant
+// cosign note and `signed:false`; SHELF_PACKAGE.json is rebound to it.
 const TRUSTED_SEAL_BLAKE3: &str =
-    "543e22925d0f2013d7ad6d83c4f29449a22109f4a75c7f5bba5f5506a94a1f57";
+    "78ba05bbb5a4f0b8bf18f50760232ebf330eda8f4331a6ed483fea3a3ee3f392";
 const TRUSTED_MANIFEST_BLAKE3: &str =
-    "ca0829040caaeda53d7044fa763460dd2ccec46e0db0a6d7da7591947f40f3b3";
+    "242a8c18c5ecd70a6abfe95252bc24b3185828ae3b76176860dc71bba5a7f6f1";
 
 #[derive(Debug)]
 pub struct MinimumShelfPackage {
@@ -142,65 +144,41 @@ fn verify_package_manifest(manifest: &Value) -> Result<(), PackageError> {
     Ok(())
 }
 
-// Compatibility is limited to the byte-pinned historical flagship, checked
-// before this function. Generic v1 seals are NOT accepted by garnet verify.
+// T5a (C3-03): the flagship seal is a seal/v2 statement that must equal, byte
+// for byte, what the current producer writes for the current source, AST and
+// capability surface. Only `parser_version` and `interp_version` are taken from
+// the seal itself, so a CLI version bump alone does not refuse the package
+// (U-120), while any change to source, AST, capabilities, tooling note or the
+// `signed:false` field still does. The whole-file byte pin is checked first.
 fn verify_seal(
     bytes: &[u8],
     build: &Manifest,
     caps: &CapabilityManifest,
 ) -> Result<(), PackageError> {
-    let seal: Value = serde_json::from_slice(bytes)
+    let text = std::str::from_utf8(bytes)
+        .map_err(|_| reject("seal is not valid UTF-8"))?
+        .replace("\r\n", "\n");
+    let seal: Value = serde_json::from_str(&text)
         .map_err(|error| reject(format!("seal is invalid JSON: {error}")))?;
-    let Some(root) = seal.as_object() else {
-        return Err(reject("seal must be an object"));
-    };
-    if root.len() != 4
-        || root.get("_type").and_then(Value::as_str) != Some(crate::seal::STATEMENT_TYPE)
-        || root.get("predicateType").and_then(Value::as_str)
-            != Some("https://garnet-lang.org/attestation/seal/v1")
-    {
-        return Err(reject("seal statement envelope is not exact"));
+    if seal.get("predicateType").and_then(Value::as_str) != Some(crate::seal::PREDICATE_TYPE) {
+        return Err(reject("seal is not a seal/v2 statement"));
     }
-    let Some(subjects) = root.get("subject").and_then(Value::as_array) else {
-        return Err(reject("seal subject is missing"));
-    };
-    if subjects.len() != 1
-        || subjects[0].get("name").and_then(Value::as_str) != Some("tool")
-        || subjects[0]
-            .pointer("/digest/blake3")
+    let sealed_version = |field: &str| {
+        seal.pointer(&format!("/predicate/build_manifest/{field}"))
             .and_then(Value::as_str)
-            != Some(build.ast_hash.as_str())
-    {
-        return Err(reject("seal subject does not bind the flagship AST"));
-    }
-    let Some(predicate) = root.get("predicate").and_then(Value::as_object) else {
-        return Err(reject("seal predicate is missing"));
+            .map(str::to_string)
+            .ok_or_else(|| reject(format!("seal build manifest has no `{field}`")))
     };
-    if predicate.len() != 4
-        || predicate.get("source_blake3").and_then(Value::as_str)
-            != Some(build.source_hash.as_str())
-    {
-        return Err(reject("seal predicate does not bind the flagship source"));
-    }
-    let expected_build: Value = serde_json::from_str(&build.to_canonical_json())
-        .map_err(|error| reject(format!("internal build manifest is invalid: {error}")))?;
-    if predicate.get("build_manifest") != Some(&expected_build) {
-        return Err(reject("seal build manifest does not match current Garnet"));
-    }
-    let expected_caps: Value = serde_json::from_str(&caps.to_json())
-        .map_err(|error| reject(format!("internal capability manifest is invalid: {error}")))?;
-    if predicate.get("capability_manifest") != Some(&expected_caps) {
+    let sealed_build = Manifest {
+        parser_version: sealed_version("parser_version")?,
+        interp_version: sealed_version("interp_version")?,
+        ..build.clone()
+    };
+    let expected = crate::seal::statement_json("tool", &sealed_build, caps);
+    if text.strip_suffix('\n').unwrap_or(&text) != expected {
         return Err(reject(
-            "seal capability manifest is not the empty Tier 1 surface",
+            "seal does not bind the flagship source, AST and capability surface",
         ));
-    }
-    if !predicate
-        .get("tooling")
-        .and_then(|tooling| tooling.get("cosign"))
-        .and_then(Value::as_str)
-        .is_some_and(|note| note.contains("UNSIGNED"))
-    {
-        return Err(reject("seal must state its unsigned status explicitly"));
     }
     Ok(())
 }
@@ -373,6 +351,65 @@ fn invoke_tier1_source(source: &str, arguments: &Value) -> Result<Value, String>
 mod tests {
     use super::*;
     use serde_json::json;
+
+    // ── T5a (C3-03): the shelf pins source, AST and capability surface, not the
+    // CLI version, and accepts seal/v2 ────────────────────────────────────────
+
+    fn flagship_source() -> String {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../examples/minimum-shelf-flagship")
+            .join(PACKAGE_SOURCE);
+        fs::read_to_string(path).expect("flagship source")
+    }
+
+    fn build_and_caps(source: &str) -> (Manifest, CapabilityManifest) {
+        let module = garnet_parser::parse_source(source).expect("parses");
+        (
+            Manifest::build(source, &module),
+            CapabilityManifest::from_surface(capability_surface(&module)),
+        )
+    }
+
+    /// A v2 seal of the flagship as the current producer writes it.
+    fn v2_seal_of_flagship() -> String {
+        let (build, caps) = build_and_caps(&flagship_source());
+        crate::seal::statement_json("tool", &build, &caps)
+    }
+
+    #[test]
+    fn a_version_only_bump_still_verifies_the_v2_seal() {
+        let seal = v2_seal_of_flagship();
+        let (mut build, caps) = build_and_caps(&flagship_source());
+        build.parser_version = "0.8.3".to_string();
+        build.interp_version = "0.8.3".to_string();
+        assert_eq!(
+            verify_seal(seal.as_bytes(), &build, &caps),
+            Ok(()),
+            "a CLI version bump alone must not refuse the flagship"
+        );
+    }
+
+    #[test]
+    fn a_changed_capability_surface_is_still_rejected() {
+        let seal = v2_seal_of_flagship();
+        let (build, _) = build_and_caps(&flagship_source());
+        let (_, widened) = build_and_caps("@caps(fs)\ndef main(value) { value * 2 }\n");
+        assert!(verify_seal(seal.as_bytes(), &build, &widened).is_err());
+    }
+
+    #[test]
+    fn a_changed_ast_is_still_rejected() {
+        let seal = v2_seal_of_flagship();
+        let (other_build, caps) = build_and_caps("@caps()\ndef main(value) { value * 3 }\n");
+        assert!(verify_seal(seal.as_bytes(), &other_build, &caps).is_err());
+    }
+
+    #[test]
+    fn a_seal_claiming_to_be_signed_is_rejected() {
+        let seal = v2_seal_of_flagship().replace("\"signed\":false", "\"signed\":true");
+        let (build, caps) = build_and_caps(&flagship_source());
+        assert!(verify_seal(seal.as_bytes(), &build, &caps).is_err());
+    }
 
     #[test]
     fn minimum_shelf_tier1_tool_invokes_garnet_in_process() {

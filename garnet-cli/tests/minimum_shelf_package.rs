@@ -84,7 +84,7 @@ fn rejects_when_tampered_source_has_new_seal_and_rebound_manifest() {
     let caps = garnet_cli::cap_manifest::CapabilityManifest::from_surface(
         garnet_check::capability_surface(&module),
     );
-    let resealed = garnet_cli::seal::statement_json("tool", &build, &caps, false);
+    let resealed = garnet_cli::seal::statement_json("tool", &build, &caps);
     fs::write(temp.path().join("tool.seal.json"), &resealed).expect("reseal source");
 
     let manifest_path = temp.path().join("SHELF_PACKAGE.json");
