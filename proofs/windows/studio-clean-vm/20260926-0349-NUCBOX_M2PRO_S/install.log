@@ -1,0 +1,37 @@
+﻿**********************
+Windows PowerShell transcript start
+Start time: 20260925152112
+Username: 28C52258-DC95-4\WDAGUtilityAccount
+RunAs User: 28C52258-DC95-4\WDAGUtilityAccount
+Configuration Name: 
+Machine: 28C52258-DC95-4 (Microsoft Windows NT 10.0.26100.0)
+Host Application: powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File C:\Users\WDAGUtilityAccount\Desktop\io\guest.ps1
+Process ID: 4732
+PSVersion: 5.1.26100.9444
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.26100.9444
+BuildVersion: 10.0.26100.9444
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+Transcript started, output file is C:\Users\WDAGUtilityAccount\Desktop\io\install.log
+guest_script_started=2026-09-25T20:21:12.8864974Z
+guest_os_name=Microsoft Windows 11 Enterprise
+guest_os_version=10.0.26100 N/A Build 26100
+guest_system_type=x64-based PC
+PROCESSOR_ARCHITECTURE=AMD64
+installer=Garnet Studio_0.8.2_x64-setup.exe sha256=b288930ee8412be3aee3876ab49177d6c73d7d2fe10c2c4d0caa5187cfeb1d8e bytes=2112028
+installer_signature=NotSigned
+installer_exit_code=0
+installed_exe=C:\Users\WDAGUtilityAccount\AppData\Local\Garnet Studio\garnet-studio.exe
+studio_smoke_exit_code=0
+studio_smoke_json_found=C:\Users\WDAGUtilityAccount\Desktop\dogfood\garnet-studio-windows-linux\garnet-studio-windows-linux-smoke-20260925-152205\studio-smoke.json
+studio_running=True window_title=Garnet Studio
+screenshot=958x998 Format24bppRgb
+guest_script_finished=2026-09-25T20:22:30.9900754Z
+**********************
+Windows PowerShell transcript end
+End time: 20260925152230
+**********************

@@ -1,0 +1,1116 @@
+# commands.txt
+W2: Windows Studio clean-VM installer proof
+host: NUCBOX_M2PRO_S
+recording main: c91e09f25159e230730ce883d9f1e29eec412c7f
+build main (the installer was built from): 218d7cfb782e58bf67f3cae90a2f1aacea1b8e04
+bundle: proofs/windows/studio-clean-vm/20260926-0349-NUCBOX_M2PRO_S/
+python: every step ran with Python312 first on PATH.
+harness: w2rec_capture.py sha256 1ffd508ba3647f6d1d9208bac81405234b18c377837db11ff87ae4407b25a49c; steps 1-4 ran under w2_capture.py sha256 2f911c38ffaba78407ff46ff2075925ef17f23f1372a1665347ad3160870a65d.
+
+## Steps 1-4 (run 20260925-2017, build main 218d7cfb782e58bf67f3cae90a2f1aacea1b8e04)
+==============================================================================
+[C00] Clone, I/O and keep directories absent
+$ python -I -c <precheck>
+cwd: C:\   exit_code=0 expected=0 started=2026-09-25T20:17:57.096135Z duration_s=0.047
+--- stdout (131 bytes, sha256 c028cec03c566cb2a069227729d98868f4b6fd9c5be665e76b8d28d6946b657f)
+C:\gw2-20260925-2017 exists=False
+C:\gw1-stage\w2\20260925-2017\io exists=False
+C:\gw1-stage\w2\20260925-2017\keep exists=False
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+==============================================================================
+[C01] Remote readback of main before building (its full SHA)
+$ git -c credential.helper= ls-remote https://github.com/Island-Dev-Crew/garnet.git refs/heads/main
+cwd: C:\   exit_code=0 expected=0 started=2026-09-25T20:17:57.139812Z duration_s=0.687
+--- stdout (57 bytes, sha256 f0b49618a6851d9235a8c97d104f069c36bf8e49c08c3c87f4d1e84406342fa6)
+218d7cfb782e58bf67f3cae90a2f1aacea1b8e04	refs/heads/main
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+==============================================================================
+[C02] Fresh clone of main with core.autocrlf=false set before checkout
+$ git clone -c core.autocrlf=false https://github.com/Island-Dev-Crew/garnet.git C:\gw2-20260925-2017
+cwd: C:\   exit_code=0 expected=0 started=2026-09-25T20:17:57.846572Z duration_s=3.672
+--- stdout (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stdout
+--- stderr (1366 bytes, sha256 fe090068496b4656344dbe29f6b539c33db4c34c25b603687071cc8173c4e5be)
+Cloning into 'C:\gw2-20260925-2017'...
+Updating files:  62% (2571/4119)Updating files:  63% (2595/4119)Updating files:  64% (2637/4119)Updating files:  65% (2678/4119)Updating files:  66% (2719/4119)Updating files:  67% (2760/4119)Updating files:  68% (2801/4119)Updating files:  69% (2843/4119)Updating files:  70% (2884/4119)Updating files:  71% (2925/4119)Updating files:  72% (2966/4119)Updating files:  73% (3007/4119)Updating files:  74% (3049/4119)Updating files:  75% (3090/4119)Updating files:  76% (3131/4119)Updating files:  77% (3172/4119)Updating files:  78% (3213/4119)Updating files:  79% (3255/4119)Updating files:  80% (3296/4119)Updating files:  81% (3337/4119)Updating files:  82% (3378/4119)Updating files:  83% (3419/4119)Updating files:  84% (3460/4119)Updating files:  85% (3502/4119)Updating files:  86% (3543/4119)Updating files:  87% (3584/4119)Updating files:  88% (3625/4119)Updating files:  89% (3666/4119)Updating files:  90% (3708/4119)Updating files:  91% (3749/4119)Updating files:  92% (3790/4119)Updating files:  93% (3831/4119)Updating files:  94% (3872/4119)Updating files:  95% (3914/4119)Updating files:  96% (3955/4119)Updating files:  97% (3996/4119)Updating files:  98% (4037/4119)Updating files:  99% (4078/4119)Updating files: 100% (4119/4119)Updating files: 100% (4119/4119), done.
+--- end stderr
+==============================================================================
+[C03] Commit identity for this clone: name
+$ git config user.name "Jon Isaac"
+cwd: C:\gw2-20260925-2017   exit_code=0 expected=0 started=2026-09-25T20:18:01.532068Z duration_s=0.032
+--- stdout (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+==============================================================================
+[C04] Commit identity for this clone: noreply address
+$ git config user.email "275140286+IslandDevCrew@users.noreply.github.com"
+cwd: C:\gw2-20260925-2017   exit_code=0 expected=0 started=2026-09-25T20:18:01.571976Z duration_s=0.046
+--- stdout (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+==============================================================================
+[C05] Build SHA: the clone's HEAD (must equal C01's main)
+$ git rev-parse HEAD
+cwd: C:\gw2-20260925-2017   exit_code=0 expected=0 started=2026-09-25T20:18:01.610884Z duration_s=0.016
+--- stdout (41 bytes, sha256 6b3fa1fb8e132f8a53342a29c3e84e97994e48981d2b063c85d9ce94160c7246)
+218d7cfb782e58bf67f3cae90a2f1aacea1b8e04
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+==============================================================================
+[E01] Hostname
+$ hostname
+cwd: C:\gw2-20260925-2017   exit_code=0 expected=0 started=2026-09-25T20:18:01.652231Z duration_s=0.016
+--- stdout (16 bytes, sha256 17394d5f57b3858fabc726caf419e0c6df2a7babc2cf6becb6874e2d1de5ae42)
+NUCBOX_M2PRo_S
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+==============================================================================
+[E02] Host OS name, version and system type
+$ (PowerShell 5.1, -EncodedCommand) systeminfo | findstr /B /C:"OS Name" /C:"OS Version" /C:"System Type"
+cwd: C:\gw2-20260925-2017   exit_code=0 expected=0 started=2026-09-25T20:18:01.673417Z duration_s=2.594
+--- stdout (161 bytes, sha256 9caffa4c160c5c2067d959aca18ad76f80563530b438211e124918c6895e7ac0)
+OS Name:                       Microsoft Windows 11 Pro
+OS Version:                    10.0.26200 N/A Build 26200
+System Type:                   x64-based PC
+--- end stdout
+--- stderr (392 bytes, sha256 a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f)
+#< CLIXML
+<Objs Version="1.1.0.1" xmlns="http://schemas.microsoft.com/powershell/2004/04"><Obj S="progress" RefId="0"><TN RefId="0"><T>System.Management.Automation.PSCustomObject</T><T>System.Object</T></TN><MS><I64 N="SourceId">1</I64><PR N="Record"><AV>Preparing modules for first use.</AV><AI>0</AI><Nil /><PI>-1</PI><PC>-1</PC><T>Completed</T><SR>-1</SR><SD> </SD></PR></MS></Obj></Objs>
+[no trailing newline in the captured stream]
+--- end stderr
+==============================================================================
+[E03] Rust compiler
+$ rustc -Vv
+cwd: C:\gw2-20260925-2017   exit_code=0 expected=0 started=2026-09-25T20:18:04.297444Z duration_s=0.422
+--- stdout (194 bytes, sha256 185aa337caf524a621d7b1ce7b21a4d6f92f3ea592d009e481fea0e00e0d0434)
+rustc 1.95.0 (59807616e 2026-04-14)
+binary: rustc
+commit-hash: 59807616e1fa2540724bfbac14d7976d7e4a3860
+commit-date: 2026-04-14
+host: x86_64-pc-windows-msvc
+release: 1.95.0
+LLVM version: 22.1.2
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+==============================================================================
+[E04] Cargo
+$ cargo -V
+cwd: C:\gw2-20260925-2017   exit_code=0 expected=0 started=2026-09-25T20:18:04.732249Z duration_s=0.125
+--- stdout (36 bytes, sha256 c10ec31b8c6e6e2693cf65fc1971b41edbc3da1ae7db6f9f3f36c4823f8dcab5)
+cargo 1.95.0 (f2d3ce0bd 2026-03-21)
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+==============================================================================
+[E05] Node.js
+$ node -v
+cwd: C:\gw2-20260925-2017   exit_code=0 expected=0 started=2026-09-25T20:18:04.869489Z duration_s=0.047
+--- stdout (10 bytes, sha256 99149e35f76aa1efc846f029c3d2733b3541fe76ac97b74d33883481c0ce8dd9)
+v22.22.2
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+==============================================================================
+[E06] npm
+$ npm -v
+cwd: C:\gw2-20260925-2017   exit_code=0 expected=0 started=2026-09-25T20:18:04.913667Z duration_s=0.313
+--- stdout (7 bytes, sha256 35217e32d288f09fea0fe2b8124665225fc00ac7ea72c312bb523db9950a13c4)
+10.9.7
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+==============================================================================
+[E07] python with Python312 first on PATH
+$ python --version
+cwd: C:\gw2-20260925-2017   exit_code=0 expected=0 started=2026-09-25T20:18:05.236327Z duration_s=0.016
+--- stdout (16 bytes, sha256 6a5d9f6462ca5dfc6788cfd216ba579fffd7875776ab9d9b35659be78858f73a)
+Python 3.12.10
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+==============================================================================
+[E08] Git
+$ git --version
+cwd: C:\gw2-20260925-2017   exit_code=0 expected=0 started=2026-09-25T20:18:05.260589Z duration_s=0.031
+--- stdout (29 bytes, sha256 9d9d8a49f3de42d6e7b569bf28bd8db3ea3384c44386d6f2de4655e4ca41ff26)
+git version 2.52.0.windows.1
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+==============================================================================
+[E09] GitHub CLI auth status (tokens are masked by gh)
+$ gh auth status
+cwd: C:\gw2-20260925-2017   exit_code=0 expected=0 started=2026-09-25T20:18:05.297864Z duration_s=0.578
+--- stdout (471 bytes, sha256 d136e3aea16530287cd598777591d1cf1f01557557919c019c88193597e73d23)
+github.com
+  ✓ Logged in to github.com account IslandDevCrew (keyring)
+  - Active account: true
+  - Git operations protocol: https
+  - Token: gho_************************************
+  - Token scopes: 'gist', 'read:org', 'repo', 'workflow'
+
+  ✓ Logged in to github.com account Navigata1 (keyring)
+  - Active account: false
+  - Git operations protocol: https
+  - Token: gho_************************************
+  - Token scopes: 'gist', 'read:org', 'repo', 'workflow'
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+==============================================================================
+[E10] Recent history
+$ git log --oneline -5
+cwd: C:\gw2-20260925-2017   exit_code=0 expected=0 started=2026-09-25T20:18:05.896471Z duration_s=0.031
+--- stdout (393 bytes, sha256 fc8f8310cd235ce9c377bed900b82ac0a0f559c464d80444ab79b9f4d379747e)
+218d7cf Windows NUC baseline evidence at main dfb9b7c6 (#599)
+4c2b21b Fresh Windows and WSL domain-matrix bundles; truth re-stamp 93.0 -> 93.1 (#600)
+dfb9b7c docs(rules): integrity rule 2 in Jon's words; S37 'program-wide declared' copy (#597)
+d5ec395 T6-docs PR-D: 2026 Q3 quarterly competitive watch report (#596)
+5197687 T6-docs PR-A: gap-0 public truth for site, specs and register (#594)
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+==============================================================================
+[E11] Worktree status (must be clean)
+$ git status --short --branch
+cwd: C:\gw2-20260925-2017   exit_code=0 expected=0 started=2026-09-25T20:18:05.931288Z duration_s=0.156
+--- stdout (22 bytes, sha256 5fbcb2990ad25e368c12219bf3ddca36e464d044e7acac16696fa8cd54159185)
+## main...origin/main
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+==============================================================================
+[E12] core.autocrlf at every config level
+$ git config --show-origin --get-all core.autocrlf
+cwd: C:\gw2-20260925-2017   exit_code=0 expected=0 started=2026-09-25T20:18:06.098954Z duration_s=0.031
+--- stdout (113 bytes, sha256 9f0300089a7631a01df46be5af7b4e4e3926cac2f1fe4e07eda1553086360893)
+file:C:/Program Files/Git/etc/gitconfig	true
+file:C:/Users/IslandDevCrew/.gitconfig	false
+file:.git/config	false
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+==============================================================================
+[E13] Windows Sandbox available on the host; hypervisor present
+$ (PowerShell 5.1, -EncodedCommand) "WindowsSandbox.exe present: $(Test-Path 'C:\windows\System32\WindowsSandbox.exe')"
+"hypervisor present: $((Get-CimInstance Win32_ComputerSystem).HypervisorPresent)"
+"host arch: $env:PROCESSOR_ARCHITECTURE"
+cwd: C:\gw2-20260925-2017   exit_code=0 expected=0 started=2026-09-25T20:18:06.132148Z duration_s=0.578
+--- stdout (78 bytes, sha256 240b38b16b81e830e6e7f46ce40a6a2255185e6c193e2f599c2f179d6660b6b7)
+WindowsSandbox.exe present: True
+hypervisor present: True
+host arch: AMD64
+--- end stdout
+--- stderr (840 bytes, sha256 d3cd92134ab88e47dd4cb8d97db0deac2f0722885211a5b8beca7c0f54cfd401)
+#< CLIXML
+<Objs Version="1.1.0.1" xmlns="http://schemas.microsoft.com/powershell/2004/04"><Obj S="progress" RefId="0"><TN RefId="0"><T>System.Management.Automation.PSCustomObject</T><T>System.Object</T></TN><MS><I64 N="SourceId">1</I64><PR N="Record"><AV>Preparing modules for first use.</AV><AI>0</AI><Nil /><PI>-1</PI><PC>-1</PC><T>Completed</T><SR>-1</SR><SD> </SD></PR></MS></Obj><Obj S="progress" RefId="1"><TNRef RefId="0" /><MS><I64 N="SourceId">2</I64><PR N="Record"><AV>Preparing modules for first use.</AV><AI>0</AI><Nil /><PI>-1</PI><PC>-1</PC><T>Completed</T><SR>-1</SR><SD> </SD></PR></MS></Obj><Obj S="progress" RefId="2"><TNRef RefId="0" /><MS><I64 N="SourceId">1</I64><PR N="Record"><AV>Preparing modules for first use.</AV><AI>0</AI><Nil /><PI>-1</PI><PC>-1</PC><T>Completed</T><SR>-1</SR><SD> </SD></PR></MS></Obj></Objs>
+[no trailing newline in the captured stream]
+--- end stderr
+==============================================================================
+[E14] Process count and OneDrive processes
+$ (PowerShell 5.1, -EncodedCommand) $p = Get-Process
+"process_count=$($p.Count)"
+$p | Where-Object { $_.ProcessName -like '*OneDrive*' } | Sort-Object Id | ForEach-Object { "onedrive_process=$($_.ProcessName) pid=$($_.Id)" }
+cwd: C:\gw2-20260925-2017   exit_code=0 expected=0 started=2026-09-25T20:18:06.707801Z duration_s=0.281
+--- stdout (56 bytes, sha256 e676a148fa99553cf3e8a0cdb1da10208e257c5950df22beab23769e859eebf2)
+process_count=256
+onedrive_process=OneDrive pid=10776
+--- end stdout
+--- stderr (616 bytes, sha256 2ce70d6c8c9ad6726c794690c8b14a2b83673648cac88edf4ff1acc50ec46348)
+#< CLIXML
+<Objs Version="1.1.0.1" xmlns="http://schemas.microsoft.com/powershell/2004/04"><Obj S="progress" RefId="0"><TN RefId="0"><T>System.Management.Automation.PSCustomObject</T><T>System.Object</T></TN><MS><I64 N="SourceId">1</I64><PR N="Record"><AV>Preparing modules for first use.</AV><AI>0</AI><Nil /><PI>-1</PI><PC>-1</PC><T>Completed</T><SR>-1</SR><SD> </SD></PR></MS></Obj><Obj S="progress" RefId="1"><TNRef RefId="0" /><MS><I64 N="SourceId">1</I64><PR N="Record"><AV>Preparing modules for first use.</AV><AI>0</AI><Nil /><PI>-1</PI><PC>-1</PC><T>Completed</T><SR>-1</SR><SD> </SD></PR></MS></Obj></Objs>
+[no trailing newline in the captured stream]
+--- end stderr
+==============================================================================
+[B01] npm ci --ignore-scripts
+$ npm ci --ignore-scripts
+cwd: C:\gw2-20260925-2017\apps\garnet-studio   exit_code=0 expected=0 started=2026-09-25T20:18:06.999486Z duration_s=2.344
+--- stdout (223 bytes, sha256 beb86dca8736b2ba0ca6d4686feec69ec60533b5fc5bedebb539b35f8ee68a83)
+
+added 21 packages, and audited 22 packages in 2s
+
+7 packages are looking for funding
+  run `npm fund` for details
+
+3 high severity vulnerabilities
+
+To address all issues, run:
+  npm audit fix
+
+Run `npm audit` for details.
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+==============================================================================
+[B02] npm run build
+$ npm run build
+cwd: C:\gw2-20260925-2017\apps\garnet-studio   exit_code=0 expected=0 started=2026-09-25T20:18:09.357874Z duration_s=2.172
+--- stdout (372 bytes, sha256 a229af0fa3dd8402458c863c4fe6c29f75c5e6d76526e8265ad447432b48cc47)
+
+> garnet-studio@0.8.2 build
+> tsc && vite build
+
+vite v6.4.2 building for production...
+transforming...
+✓ 10 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                 30.56 kB │ gzip: 7.20 kB
+dist/assets/index-Bw3XUTsb.css  17.17 kB │ gzip: 4.19 kB
+dist/assets/index-BOlB1GXi.js   29.06 kB │ gzip: 9.08 kB
+✓ built in 213ms
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+==============================================================================
+[B03] npm run tauri build
+$ npm run tauri build
+cwd: C:\gw2-20260925-2017\apps\garnet-studio   exit_code=0 expected=0 started=2026-09-25T20:18:11.537634Z duration_s=150.719
+--- stdout (416 bytes, sha256 e40c7a5e20753b5f6bd03710820985d6ec63b2b7e8b6c32b35dc7062c5e3135a)
+
+> garnet-studio@0.8.2 tauri
+> tauri build
+
+
+> garnet-studio@0.8.2 build
+> tsc && vite build
+
+vite v6.4.2 building for production...
+transforming...
+✓ 10 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                 30.56 kB │ gzip: 7.20 kB
+dist/assets/index-Bw3XUTsb.css  17.17 kB │ gzip: 4.19 kB
+dist/assets/index-BOlB1GXi.js   29.06 kB │ gzip: 9.08 kB
+✓ built in 167ms
+--- end stdout
+--- stderr (8279 bytes, sha256 a3194ef73e8475c707c535d0fd0e22850cc70ab83c5c67c6c82f713ef0d42574)
+        Info Looking up installed tauri packages to check mismatched versions...
+     Running beforeBuildCommand `npm run build`
+   Compiling proc-macro2 v1.0.106
+   Compiling unicode-ident v1.0.24
+   Compiling quote v1.0.45
+   Compiling serde_core v1.0.228
+   Compiling siphasher v1.0.3
+   Compiling cfg-if v1.0.4
+   Compiling icu_normalizer_data v2.2.0
+   Compiling fastrand v2.4.1
+   Compiling phf_shared v0.13.1
+   Compiling icu_properties_data v2.2.0
+   Compiling stable_deref_trait v1.2.1
+   Compiling zmij v1.0.21
+   Compiling phf_generator v0.13.1
+   Compiling smallvec v1.15.1
+   Compiling thiserror v2.0.18
+   Compiling parking_lot_core v0.9.12
+   Compiling version_check v0.9.5
+   Compiling windows-link v0.2.1
+   Compiling serde v1.0.228
+   Compiling typeid v1.0.3
+   Compiling itoa v1.0.18
+   Compiling memchr v2.8.0
+   Compiling num-conv v0.2.1
+   Compiling time-core v0.1.8
+   Compiling phf_codegen v0.13.1
+   Compiling ident_case v1.0.1
+   Compiling strsim v0.11.1
+   Compiling windows_x86_64_msvc v0.52.6
+   Compiling litemap v0.8.2
+   Compiling erased-serde v0.4.10
+   Compiling writeable v0.6.3
+   Compiling thiserror v1.0.69
+   Compiling utf8_iter v1.0.4
+   Compiling syn v2.0.117
+   Compiling autocfg v1.5.0
+   Compiling libc v0.2.186
+   Compiling new_debug_unreachable v1.0.6
+   Compiling scopeguard v1.2.0
+   Compiling anyhow v1.0.102
+   Compiling lock_api v0.4.14
+   Compiling string_cache_codegen v0.6.1
+   Compiling generic-array v0.14.7
+   Compiling windows-link v0.1.3
+   Compiling getrandom v0.4.2
+   Compiling serde_json v1.0.149
+   Compiling winnow v1.0.3
+   Compiling precomputed-hash v0.1.1
+   Compiling parking_lot v0.12.5
+   Compiling windows-sys v0.61.2
+   Compiling web_atoms v0.2.4
+   Compiling toml_parser v1.1.2+spec-1.1.0
+   Compiling ctor-proc-macro v0.0.7
+   Compiling serde_spanned v1.1.1
+   Compiling toml_writer v1.1.1+spec-1.1.0
+   Compiling semver v1.0.28
+   Compiling string_cache v0.9.0
+   Compiling utf-8 v0.7.6
+   Compiling log v0.4.29
+   Compiling shlex v1.3.0
+   Compiling dtoa v1.0.11
+   Compiling find-msvc-tools v0.1.9
+   Compiling percent-encoding v2.3.2
+   Compiling dtoa-short v0.3.5
+   Compiling form_urlencoded v1.2.2
+   Compiling tendril v0.5.0
+   Compiling uuid v1.23.1
+   Compiling toml_datetime v1.1.1+spec-1.1.0
+   Compiling cc v1.2.62
+   Compiling windows-strings v0.4.2
+   Compiling windows-result v0.3.4
+   Compiling indexmap v1.9.3
+   Compiling aho-corasick v1.1.4
+   Compiling selectors v0.36.1
+   Compiling synstructure v0.13.2
+   Compiling darling_core v0.23.0
+   Compiling camino v1.2.2
+   Compiling regex-syntax v0.8.10
+   Compiling unic-char-range v0.9.0
+   Compiling powerfmt v0.2.0
+   Compiling unic-common v0.9.0
+   Compiling byteorder v1.5.0
+   Compiling alloc-no-stdlib v2.0.4
+   Compiling alloc-stdlib v0.2.2
+   Compiling deranged v0.5.8
+   Compiling unic-ucd-version v0.9.0
+   Compiling unic-char-property v0.9.0
+   Compiling serde_derive_internals v0.29.1
+   Compiling vswhom-sys v0.1.3
+   Compiling winapi-util v0.1.11
+   Compiling toml v1.1.2+spec-1.1.0
+   Compiling servo_arc v0.4.3
+   Compiling bitflags v2.11.1
+   Compiling hashbrown v0.17.1
+   Compiling hashbrown v0.12.3
+   Compiling bit-vec v0.8.0
+   Compiling zerofrom-derive v0.1.7
+   Compiling yoke-derive v0.8.2
+   Compiling zerovec-derive v0.11.3
+   Compiling displaydoc v0.2.5
+   Compiling serde_derive v1.0.228
+   Compiling thiserror-impl v2.0.18
+   Compiling phf_macros v0.13.1
+   Compiling darling_macro v0.23.0
+   Compiling thiserror-impl v1.0.69
+   Compiling zerofrom v0.1.8
+   Compiling yoke v0.8.2
+   Compiling darling v0.23.0
+   Compiling zerovec v0.11.6
+   Compiling zerotrie v0.2.4
+   Compiling phf v0.13.1
+   Compiling serde_with_macros v3.20.0
+   Compiling tinystr v0.8.3
+   Compiling icu_locale_core v2.2.0
+   Compiling potential_utf v0.1.5
+   Compiling icu_collections v2.2.0
+   Compiling windows-interface v0.59.3
+   Compiling cssparser-macros v0.6.1
+   Compiling windows-implement v0.60.2
+   Compiling derive_more-impl v2.1.1
+   Compiling icu_provider v2.2.0
+   Compiling cssparser v0.36.0
+   Compiling icu_normalizer v2.2.0
+   Compiling icu_properties v2.2.0
+   Compiling windows-core v0.61.2
+   Compiling derive_more v2.1.1
+   Compiling markup5ever v0.38.0
+   Compiling regex-automata v0.4.14
+   Compiling equivalent v1.0.2
+   Compiling schemars v0.8.22
+   Compiling fnv v1.0.7
+   Compiling rustc-hash v2.1.2
+   Compiling cfb v0.7.3
+   Compiling idna_adapter v1.2.2
+   Compiling idna v1.1.0
+   Compiling jsonptr v0.6.3
+   Compiling url v2.5.8
+   Compiling cargo-platform v0.1.9
+   Compiling indexmap v2.14.0
+   Compiling html5ever v0.38.0
+   Compiling bit-set v0.8.0
+   Compiling schemars_derive v0.8.22
+   Compiling time v0.3.47
+   Compiling same-file v1.0.6
+   Compiling windows-targets v0.52.6
+   Compiling unic-ucd-ident v0.9.0
+   Compiling brotli-decompressor v5.0.0
+   Compiling regex v1.12.3
+   Compiling quick-xml v0.41.0
+   Compiling base64 v0.22.1
+   Compiling foldhash v0.2.0
+   Compiling dunce v1.0.5
+   Compiling dyn-clone v1.0.20
+   Compiling bytes v1.11.1
+   Compiling brotli v8.0.2
+   Compiling dom_query v0.27.0
+   Compiling urlpattern v0.3.0
+   Compiling http v1.4.0
+   Compiling plist v1.10.0
+   Compiling cargo_metadata v0.19.2
+   Compiling serde-untagged v0.1.9
+   Compiling windows-sys v0.59.0
+   Compiling walkdir v2.5.0
+   Compiling json-patch v3.0.1
+   Compiling infer v0.19.0
+   Compiling serde_with v3.20.0
+   Compiling ctor v0.8.0
+   Compiling windows-threading v0.1.0
+   Compiling glob v0.3.3
+   Compiling windows-future v0.2.1
+   Compiling vswhom v0.1.0
+   Compiling windows-collections v0.2.0
+   Compiling windows-numerics v0.2.0
+   Compiling rustc_version v0.4.1
+   Compiling toml_datetime v0.7.5+spec-1.1.0
+   Compiling time-macros v0.2.27
+   Compiling winnow v0.7.15
+   Compiling option-ext v0.2.0
+   Compiling simd-adler32 v0.3.9
+   Compiling tauri-utils v2.9.2
+   Compiling crc32fast v1.5.0
+   Compiling typenum v1.20.0
+   Compiling dirs-sys v0.5.0
+   Compiling windows v0.61.3
+   Compiling winreg v0.55.0
+   Compiling embed-resource v3.0.9
+   Compiling toml v0.9.12+spec-1.1.0
+   Compiling webview2-com-sys v0.38.2
+   Compiling raw-window-handle v0.6.2
+   Compiling crossbeam-utils v0.8.21
+   Compiling adler2 v2.0.1
+   Compiling heck v0.5.0
+   Compiling miniz_oxide v0.8.9
+   Compiling cargo_toml v0.22.3
+   Compiling tauri-winres v0.3.6
+   Compiling dirs v6.0.0
+   Compiling dpi v0.1.2
+   Compiling cookie v0.18.1
+   Compiling tauri-build v2.6.2
+   Compiling flate2 v1.1.9
+   Compiling crypto-common v0.1.7
+   Compiling block-buffer v0.10.4
+   Compiling fdeflate v0.3.7
+   Compiling webview2-com-macros v0.8.1
+   Compiling windows-version v0.1.7
+   Compiling bitflags v1.3.2
+   Compiling unicode-segmentation v1.13.2
+   Compiling once_cell v1.21.4
+   Compiling pin-project-lite v0.2.17
+   Compiling png v0.17.16
+   Compiling digest v0.10.7
+   Compiling crossbeam-channel v0.5.15
+   Compiling tauri-runtime v2.11.2
+   Compiling cpufeatures v0.2.17
+   Compiling tracing-core v0.1.36
+   Compiling wry v0.55.1
+   Compiling tracing v0.1.44
+   Compiling sha2 v0.10.9
+   Compiling tauri v2.11.2
+   Compiling ico v0.5.0
+   Compiling num-traits v0.2.19
+   Compiling tauri-runtime-wry v2.11.2
+   Compiling getrandom v0.3.4
+   Compiling tauri-codegen v2.6.2
+   Compiling softbuffer v0.4.8
+   Compiling keyboard-types v0.7.0
+   Compiling serialize-to-javascript-impl v0.1.2
+   Compiling window-vibrancy v0.6.0
+   Compiling serialize-to-javascript v0.1.2
+   Compiling garnet-studio v0.8.2 (C:\gw2-20260925-2017\apps\garnet-studio\src-tauri)
+   Compiling tokio v1.52.3
+   Compiling tauri-macros v2.6.2
+   Compiling muda v0.19.1
+   Compiling serde_repr v0.1.20
+   Compiling mime v0.3.17
+   Compiling chrono v0.4.44
+   Compiling tao v0.35.2
+   Compiling webview2-com v0.38.2
+    Finished `release` profile [optimized] target(s) in 2m 22s
+       Built application at: C:\gw2-20260925-2017\target\release\garnet-studio.exe
+        Info Patching C:\gw2-20260925-2017\target\release\garnet-studio.exe with bundle type information: nsis
+        Info Target: x64
+     Running makensis to produce C:\gw2-20260925-2017\target\release\bundle\nsis\Garnet Studio_0.8.2_x64-setup.exe
+    Finished 1 bundle at:
+        C:\gw2-20260925-2017\target\release\bundle\nsis\Garnet Studio_0.8.2_x64-setup.exe
+
+--- end stderr
+==============================================================================
+[B04] The unsigned NSIS setup .exe: sha256, size, repo-relative path
+$ python -I -c <find *-setup.exe under bundle/nsis, hash it>
+cwd: C:\gw2-20260925-2017   exit_code=0 expected=0 started=2026-09-25T20:20:42.262997Z duration_s=0.437
+--- stdout (139 bytes, sha256 602a7673713f24b05eb2a58c95e8516398536cd2abc5fa3bdcbb1f057c259e53)
+b288930ee8412be3aee3876ab49177d6c73d7d2fe10c2c4d0caa5187cfeb1d8e  2112028 B  target/release/bundle/nsis/Garnet Studio_0.8.2_x64-setup.exe
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+==============================================================================
+[B05] Authenticode status of the setup .exe (expected: NotSigned)
+$ (PowerShell 5.1, -EncodedCommand) Get-ChildItem -Path 'C:\gw2-20260925-2017' -Recurse -Filter '*-setup.exe' | Where-Object { $_.FullName -match '\\bundle\\nsis\\' } | ForEach-Object { "$($_.Name) authenticode=$((Get-AuthenticodeSignature -LiteralPath $_.FullName).Status)" }
+cwd: C:\gw2-20260925-2017   exit_code=0 expected=0 started=2026-09-25T20:20:42.703950Z duration_s=0.828
+--- stdout (58 bytes, sha256 2b9745892be518eacc4a410b620240df07a5731e8fa9cc20dfcc7a6cb7779552)
+Garnet Studio_0.8.2_x64-setup.exe authenticode=NotSigned
+--- end stdout
+--- stderr (616 bytes, sha256 aa4c6b5187e8a52a4b02316c91eb0c7a4cfdce4cdea9b9d7ecfe2faa1d97cce4)
+#< CLIXML
+<Objs Version="1.1.0.1" xmlns="http://schemas.microsoft.com/powershell/2004/04"><Obj S="progress" RefId="0"><TN RefId="0"><T>System.Management.Automation.PSCustomObject</T><T>System.Object</T></TN><MS><I64 N="SourceId">1</I64><PR N="Record"><AV>Preparing modules for first use.</AV><AI>0</AI><Nil /><PI>-1</PI><PC>-1</PC><T>Completed</T><SR>-1</SR><SD> </SD></PR></MS></Obj><Obj S="progress" RefId="1"><TNRef RefId="0" /><MS><I64 N="SourceId">2</I64><PR N="Record"><AV>Preparing modules for first use.</AV><AI>0</AI><Nil /><PI>-1</PI><PC>-1</PC><T>Completed</T><SR>-1</SR><SD> </SD></PR></MS></Obj></Objs>
+[no trailing newline in the captured stream]
+--- end stderr
+==============================================================================
+[B06] Worktree status after the build
+$ git status --short --branch
+cwd: C:\gw2-20260925-2017   exit_code=0 expected=0 started=2026-09-25T20:20:43.556917Z duration_s=0.062
+--- stdout (22 bytes, sha256 5fbcb2990ad25e368c12219bf3ddca36e464d044e7acac16696fa8cd54159185)
+## main...origin/main
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+==============================================================================
+[X01] Prepare the guest I/O folder (setup .exe, guest.ps1) and the .wsb config
+$ python -I -c <copy setup .exe, write guest.ps1 and clean-guest.wsb>
+cwd: C:\   exit_code=0 expected=0 started=2026-09-25T20:20:43.613517Z duration_s=0.75
+--- stdout (702 bytes, sha256 11b2f6c9ecee77e5571bc64a9a5a72247cdc02443c903ddc22975afd6ed5c2db)
+setup copied: Garnet Studio_0.8.2_x64-setup.exe sha256=b288930ee8412be3aee3876ab49177d6c73d7d2fe10c2c4d0caa5187cfeb1d8e
+guest.ps1 sha256=ad117aa23e973eb8c7e62f67ff135b8b598911f0410edefb2a0bd5f3a42d0d41
+--- clean-guest.wsb
+<Configuration>
+  <MappedFolders>
+    <MappedFolder>
+      <HostFolder>C:\gw1-stage\w2\20260925-2017\io</HostFolder>
+      <SandboxFolder>C:\Users\WDAGUtilityAccount\Desktop\io</SandboxFolder>
+      <ReadOnly>false</ReadOnly>
+    </MappedFolder>
+  </MappedFolders>
+  <LogonCommand>
+    <Command>powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File C:\Users\WDAGUtilityAccount\Desktop\io\guest.ps1</Command>
+  </LogonCommand>
+</Configuration>
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+==============================================================================
+[X02] Launch a fresh Windows Sandbox with that config
+$ WindowsSandbox.exe C:\gw1-stage\w2\20260925-2017\clean-guest.wsb
+cwd: C:\   exit_code=0 expected=0 started=2026-09-25T20:20:44.373858Z duration_s=0.063
+--- stdout (47 bytes, sha256 f73be2b4775fb0e8f69a0d19c4c656342c4943906d4dab385c17fdb64c3d615c)
+Windows Sandbox launched with clean-guest.wsb
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+==============================================================================
+[X03] Wait for the guest script to finish (done.txt), up to 25 minutes
+$ python -I -c <wait for io\done.txt>
+cwd: C:\   exit_code=0 expected=0 started=2026-09-25T20:20:44.453127Z duration_s=110.11
+--- stdout (69 bytes, sha256 1fd9fe7a7ce8ab53fbd574f19373940d133415e7ff0869fc9546fa9fb36ef724)
+done.txt present=True after 110s
+done 2026-09-25T20:22:31.1005513Z
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+==============================================================================
+[K01] Copy the guest outputs out byte for byte; check them against the recorder's rules
+$ python -I -c <copy io outputs to keep\, check install.log, smoke JSON, PNG, guest OS>
+cwd: C:\   exit_code=0 expected=0 started=2026-09-25T20:22:34.572310Z duration_s=5.171
+--- stdout (1075 bytes, sha256 6e8b7d9b3c6a5d2a4a6fd3e0e22785355f388c42569a815ea9c85b0081658c3e)
+PASS install.log copied byte-identical (1714 B, sha256 64dc0bddb808557c81a068311d71aa2aeae2c2f3d215c142b3990ce44bfde591)
+PASS studio-smoke.json copied byte-identical (1331 B, sha256 c987d3b49b98071e4bb71aa322c3f684f466e44db5261b1b0b06dc49b7e6f2c7)
+PASS launch.png copied byte-identical (485083 B, sha256 175ee5753cb9fa94520a72f9b69ccde6b11e056780da4dcc23fae593b942e644)
+PASS guest-systeminfo.txt copied byte-identical (3161 B, sha256 ed1ce58de2a0319bb705c6e6209951b9f06f53faeb8da19a42382ac1dc965ae0)
+PASS install.log is not empty
+PASS studio-smoke.json status == passed
+PASS studio-smoke.json source_included is false
+PASS studio-smoke.json provider_api_called is false
+PASS launch.png has the PNG signature
+launch.png IHDR: 958x998 bit_depth=8 colour_type=2
+PASS launch.png is truecolour or greyscale (colour type 0/2/4/6), not palette
+PASS launch.png sides <= 16384 px
+guest OS Name: Microsoft Windows 11 Enterprise
+guest OS Version: 10.0.26100 N/A Build 26100
+guest System Type: x64-based PC
+PASS guest OS Name matches the recorder rule
+PASS guest is x64
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+==============================================================================
+[K02] Is the sandbox still running? (it shuts itself down at the end)
+$ (PowerShell 5.1, -EncodedCommand) Get-Process | Where-Object { $_.ProcessName -like 'WindowsSandbox*' -or $_.ProcessName -like 'vmmem*' } | ForEach-Object { "$($_.ProcessName) pid=$($_.Id)" }
+"(end)"
+cwd: C:\   exit_code=0 expected=0 started=2026-09-25T20:22:39.739809Z duration_s=0.266
+--- stdout (132 bytes, sha256 add14fa022203f25540faf0e2e0069e91454315e00dc47dfeb63f87c8e912642)
+vmmemCmZygote pid=1668
+vmmemWindowsSandbox pid=6980
+WindowsSandboxRemoteSession pid=17236
+WindowsSandboxServer pid=12860
+(end)
+--- end stdout
+--- stderr (392 bytes, sha256 a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f)
+#< CLIXML
+<Objs Version="1.1.0.1" xmlns="http://schemas.microsoft.com/powershell/2004/04"><Obj S="progress" RefId="0"><TN RefId="0"><T>System.Management.Automation.PSCustomObject</T><T>System.Object</T></TN><MS><I64 N="SourceId">1</I64><PR N="Record"><AV>Preparing modules for first use.</AV><AI>0</AI><Nil /><PI>-1</PI><PC>-1</PC><T>Completed</T><SR>-1</SR><SD> </SD></PR></MS></Obj></Objs>
+[no trailing newline in the captured stream]
+--- end stderr
+==============================================================================
+[P01] Worktree status after every step
+$ git status --short --branch
+cwd: C:\gw2-20260925-2017   exit_code=0 expected=0 started=2026-09-25T20:22:40.013796Z duration_s=0.062
+--- stdout (22 bytes, sha256 5fbcb2990ad25e368c12219bf3ddca36e464d044e7acac16696fa8cd54159185)
+## main...origin/main
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+==============================================================================
+[P02] Remote readback of main after every step
+$ git -c credential.helper= ls-remote origin refs/heads/main
+cwd: C:\gw2-20260925-2017   exit_code=0 expected=0 started=2026-09-25T20:22:40.080457Z duration_s=0.906
+--- stdout (57 bytes, sha256 f0b49618a6851d9235a8c97d104f069c36bf8e49c08c3c87f4d1e84406342fa6)
+218d7cfb782e58bf67f3cae90a2f1aacea1b8e04	refs/heads/main
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+==============================================================================
+[P03] Process count after every step
+$ (PowerShell 5.1, -EncodedCommand) "process_count=$((Get-Process).Count)"
+cwd: C:\gw2-20260925-2017   exit_code=0 expected=0 started=2026-09-25T20:22:40.988164Z duration_s=0.235
+--- stdout (19 bytes, sha256 86b6e502fbcb64434cd90405a931430ed991798ab5d44d0360b9ae0eabb74884)
+process_count=259
+--- end stdout
+--- stderr (392 bytes, sha256 a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f)
+#< CLIXML
+<Objs Version="1.1.0.1" xmlns="http://schemas.microsoft.com/powershell/2004/04"><Obj S="progress" RefId="0"><TN RefId="0"><T>System.Management.Automation.PSCustomObject</T><T>System.Object</T></TN><MS><I64 N="SourceId">1</I64><PR N="Record"><AV>Preparing modules for first use.</AV><AI>0</AI><Nil /><PI>-1</PI><PC>-1</PC><T>Completed</T><SR>-1</SR><SD> </SD></PR></MS></Obj></Objs>
+[no trailing newline in the captured stream]
+--- end stderr
+
+## Clean-guest configuration used in steps 3-4
+--- clean-guest.wsb
+<Configuration>
+  <MappedFolders>
+    <MappedFolder>
+      <HostFolder>C:\gw1-stage\w2\20260925-2017\io</HostFolder>
+      <SandboxFolder>C:\Users\WDAGUtilityAccount\Desktop\io</SandboxFolder>
+      <ReadOnly>false</ReadOnly>
+    </MappedFolder>
+  </MappedFolders>
+  <LogonCommand>
+    <Command>powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File C:\Users\WDAGUtilityAccount\Desktop\io\guest.ps1</Command>
+  </LogonCommand>
+</Configuration>
+--- guest.ps1 (the guest's logon script; install.log is its Start-Transcript)
+# Runs inside the Windows Sandbox guest at logon (generated by w2_capture.py).
+$ErrorActionPreference = 'Continue'
+$io = 'C:\Users\WDAGUtilityAccount\Desktop\io'
+Start-Transcript -Path "$io\install.log" -Force
+"guest_script_started=$((Get-Date).ToUniversalTime().ToString('o'))"
+$si = systeminfo
+$si | Out-File -Encoding utf8 "$io\guest-systeminfo.txt"
+"guest_os_name=" + (($si | Select-String -Pattern '^OS Name:') -replace '^OS Name:\s+', '')
+"guest_os_version=" + (($si | Select-String -Pattern '^OS Version:') -replace '^OS Version:\s+', '')
+"guest_system_type=" + (($si | Select-String -Pattern '^System Type:') -replace '^System Type:\s+', '')
+"PROCESSOR_ARCHITECTURE=$env:PROCESSOR_ARCHITECTURE"
+$setup = Get-ChildItem -LiteralPath $io -Filter '*-setup.exe' | Select-Object -First 1
+"installer=$($setup.Name) sha256=$((Get-FileHash -Algorithm SHA256 -LiteralPath $setup.FullName).Hash.ToLower()) bytes=$($setup.Length)"
+"installer_signature=$((Get-AuthenticodeSignature -LiteralPath $setup.FullName).Status)"
+$p = Start-Process -FilePath $setup.FullName -ArgumentList '/S' -PassThru
+$p | Wait-Process -Timeout 600
+"installer_exit_code=$($p.ExitCode)"
+$exe = Get-ChildItem -Path $env:LOCALAPPDATA, $env:ProgramFiles -Recurse -Filter 'garnet-studio.exe' -ErrorAction SilentlyContinue | Select-Object -First 1
+"installed_exe=$($exe.FullName)"
+$smoke = Start-Process -FilePath $exe.FullName -ArgumentList '--studio-smoke' -PassThru
+$smoke | Wait-Process -Timeout 300
+"studio_smoke_exit_code=$($smoke.ExitCode)"
+$found = Get-ChildItem -Path "$env:USERPROFILE\Desktop\dogfood" -Recurse -Filter 'studio-smoke.json' -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending
+$found | ForEach-Object { "studio_smoke_json_found=$($_.FullName)" }
+if ($found) { Copy-Item -LiteralPath $found[0].FullName -Destination "$io\studio-smoke.json" }
+$app = Start-Process -FilePath $exe.FullName -PassThru
+Start-Sleep -Seconds 25
+"studio_running=$(-not $app.HasExited) window_title=$((Get-Process -Id $app.Id -ErrorAction SilentlyContinue).MainWindowTitle)"
+Add-Type -AssemblyName System.Windows.Forms, System.Drawing
+$b = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+$bmp = New-Object System.Drawing.Bitmap $b.Width, $b.Height, ([System.Drawing.Imaging.PixelFormat]::Format24bppRgb)
+$g = [System.Drawing.Graphics]::FromImage($bmp)
+$g.CopyFromScreen($b.Location, [System.Drawing.Point]::Empty, $b.Size)
+$bmp.Save("$io\launch.png", [System.Drawing.Imaging.ImageFormat]::Png)
+"screenshot=$($b.Width)x$($b.Height) Format24bppRgb"
+"guest_script_finished=$((Get-Date).ToUniversalTime().ToString('o'))"
+Stop-Transcript
+Set-Content -LiteralPath "$io\done.txt" -Value "done $((Get-Date).ToUniversalTime().ToString('o'))"
+Start-Sleep -Seconds 3
+Stop-Computer -Force
+
+## Recording (main c91e09f25159e230730ce883d9f1e29eec412c7f)
+==============================================================================
+[W00] Recording clone directory absent (old checkouts are left alone)
+$ python -I -c <precheck>
+cwd: C:\   exit_code=0 expected=0 started=2026-09-26T03:48:47.239863Z duration_s=0.032
+--- stdout (27 bytes, sha256 c55ecc9bea23c7043c2b810327b045a3661e45c74d87863e186415833573338c)
+C:\garnet-w2 exists=False
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+==============================================================================
+[W01] Fresh clone
+$ git -c core.autocrlf=false clone https://github.com/Island-Dev-Crew/garnet garnet-w2
+cwd: C:\   exit_code=0 expected=0 started=2026-09-26T03:48:47.290003Z duration_s=3.657
+--- stdout (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stdout
+--- stderr (1487 bytes, sha256 23528c680cd77885c3d559d8593683f4f9abfcd688c7012a8b76e549baa0b21a)
+Cloning into 'garnet-w2'...
+Updating files:  58% (2494/4243)Updating files:  59% (2504/4243)Updating files:  60% (2546/4243)Updating files:  61% (2589/4243)Updating files:  62% (2631/4243)Updating files:  63% (2674/4243)Updating files:  64% (2716/4243)Updating files:  65% (2758/4243)Updating files:  66% (2801/4243)Updating files:  67% (2843/4243)Updating files:  68% (2886/4243)Updating files:  69% (2928/4243)Updating files:  70% (2971/4243)Updating files:  71% (3013/4243)Updating files:  72% (3055/4243)Updating files:  73% (3098/4243)Updating files:  74% (3140/4243)Updating files:  75% (3183/4243)Updating files:  76% (3225/4243)Updating files:  77% (3268/4243)Updating files:  78% (3310/4243)Updating files:  79% (3352/4243)Updating files:  80% (3395/4243)Updating files:  81% (3437/4243)Updating files:  82% (3480/4243)Updating files:  83% (3522/4243)Updating files:  84% (3565/4243)Updating files:  85% (3607/4243)Updating files:  86% (3649/4243)Updating files:  87% (3692/4243)Updating files:  88% (3734/4243)Updating files:  89% (3777/4243)Updating files:  90% (3819/4243)Updating files:  91% (3862/4243)Updating files:  92% (3904/4243)Updating files:  93% (3946/4243)Updating files:  94% (3989/4243)Updating files:  95% (4031/4243)Updating files:  96% (4074/4243)Updating files:  97% (4116/4243)Updating files:  98% (4159/4243)Updating files:  99% (4201/4243)Updating files: 100% (4243/4243)Updating files: 100% (4243/4243), done.
+--- end stderr
+==============================================================================
+[W02] core.autocrlf
+$ git config core.autocrlf false
+cwd: C:\garnet-w2   exit_code=0 expected=0 started=2026-09-26T03:48:50.942309Z duration_s=0.046
+--- stdout (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+==============================================================================
+[W03] Identity: name
+$ git config user.name "Jon Isaac"
+cwd: C:\garnet-w2   exit_code=0 expected=0 started=2026-09-26T03:48:50.989946Z duration_s=0.047
+--- stdout (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+==============================================================================
+[W04] Identity: noreply address
+$ git config user.email "275140286+IslandDevCrew@users.noreply.github.com"
+cwd: C:\garnet-w2   exit_code=0 expected=0 started=2026-09-26T03:48:51.026313Z duration_s=0.016
+--- stdout (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+==============================================================================
+[W05] Recording main (HEAD)
+$ git rev-parse HEAD
+cwd: C:\garnet-w2   exit_code=0 expected=0 started=2026-09-26T03:48:51.056579Z duration_s=0.047
+--- stdout (41 bytes, sha256 0f11eb0ce6d7c7de9f12d09b1e0177fc3d60f301322e12c92594f78758289a16)
+c91e09f25159e230730ce883d9f1e29eec412c7f
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+==============================================================================
+[W06] Gate: HEAD is c91e09f2 or newer
+$ git merge-base --is-ancestor c91e09f25159e230730ce883d9f1e29eec412c7f HEAD
+cwd: C:\garnet-w2   exit_code=0 expected=0 started=2026-09-26T03:48:51.106704Z duration_s=0.032
+--- stdout (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+==============================================================================
+[W07] Remote readback of main
+$ git ls-remote origin refs/heads/main
+cwd: C:\garnet-w2   exit_code=0 expected=0 started=2026-09-26T03:48:51.139863Z duration_s=0.343
+--- stdout (57 bytes, sha256 30c4b8f67c797c996bce4f260651f7243c7106a0cf0e24b011b3c82faa44468a)
+c91e09f25159e230730ce883d9f1e29eec412c7f	refs/heads/main
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+==============================================================================
+[W08] Recent history
+$ git log --oneline -6
+cwd: C:\garnet-w2   exit_code=0 expected=0 started=2026-09-26T03:48:51.506539Z duration_s=0.031
+--- stdout (489 bytes, sha256 a23706931b5b37165ae267ed56242643d56306f9de6bf115dac01beaffd6f499)
+c91e09f T5a (T5-R1): evidence tools correct before 0.8.3 freezes seal/v2 (#598)-JI
+47b85bb proofs(windows): W3b native junction-test run at T5a 07cdc7c4 (NUC) (#602)
+716211d proofs(windows): T5a native-Windows parity at c65f315c (NUC) (#601)-JI
+218d7cf Windows NUC baseline evidence at main dfb9b7c6 (#599)
+4c2b21b Fresh Windows and WSL domain-matrix bundles; truth re-stamp 93.0 -> 93.1 (#600)
+dfb9b7c docs(rules): integrity rule 2 in Jon's words; S37 'program-wide declared' copy (#597)
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+==============================================================================
+[W09] Worktree status (must be empty)
+$ git status --short
+cwd: C:\garnet-w2   exit_code=0 expected=0 started=2026-09-26T03:48:51.539853Z duration_s=0.203
+--- stdout (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+==============================================================================
+[W10] core.autocrlf at every level
+$ git config --show-origin --get-all core.autocrlf
+cwd: C:\garnet-w2   exit_code=0 expected=0 started=2026-09-26T03:48:51.744077Z duration_s=0.032
+--- stdout (113 bytes, sha256 9f0300089a7631a01df46be5af7b4e4e3926cac2f1fe4e07eda1553086360893)
+file:C:/Program Files/Git/etc/gitconfig	true
+file:C:/Users/IslandDevCrew/.gitconfig	false
+file:.git/config	false
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+==============================================================================
+[I01] OS name, version and system type
+$ (PowerShell 5.1, -EncodedCommand) systeminfo | findstr /B /C:"OS Name" /C:"OS Version" /C:"System Type"
+cwd: C:\garnet-w2   exit_code=0 expected=0 started=2026-09-26T03:48:51.781252Z duration_s=2.5
+--- stdout (161 bytes, sha256 9caffa4c160c5c2067d959aca18ad76f80563530b438211e124918c6895e7ac0)
+OS Name:                       Microsoft Windows 11 Pro
+OS Version:                    10.0.26200 N/A Build 26200
+System Type:                   x64-based PC
+--- end stdout
+--- stderr (392 bytes, sha256 a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f)
+#< CLIXML
+<Objs Version="1.1.0.1" xmlns="http://schemas.microsoft.com/powershell/2004/04"><Obj S="progress" RefId="0"><TN RefId="0"><T>System.Management.Automation.PSCustomObject</T><T>System.Object</T></TN><MS><I64 N="SourceId">1</I64><PR N="Record"><AV>Preparing modules for first use.</AV><AI>0</AI><Nil /><PI>-1</PI><PC>-1</PC><T>Completed</T><SR>-1</SR><SD> </SD></PR></MS></Obj></Objs>
+[no trailing newline in the captured stream]
+--- end stderr
+==============================================================================
+[I02] Rust compiler
+$ rustc -Vv
+cwd: C:\garnet-w2   exit_code=0 expected=0 started=2026-09-26T03:48:54.306523Z duration_s=0.062
+--- stdout (194 bytes, sha256 185aa337caf524a621d7b1ce7b21a4d6f92f3ea592d009e481fea0e00e0d0434)
+rustc 1.95.0 (59807616e 2026-04-14)
+binary: rustc
+commit-hash: 59807616e1fa2540724bfbac14d7976d7e4a3860
+commit-date: 2026-04-14
+host: x86_64-pc-windows-msvc
+release: 1.95.0
+LLVM version: 22.1.2
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+==============================================================================
+[I03] Node.js
+$ node -v
+cwd: C:\garnet-w2   exit_code=0 expected=0 started=2026-09-26T03:48:54.373952Z duration_s=0.016
+--- stdout (10 bytes, sha256 99149e35f76aa1efc846f029c3d2733b3541fe76ac97b74d33883481c0ce8dd9)
+v22.22.2
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+==============================================================================
+[I04] python (Python312 first on PATH)
+$ python --version
+cwd: C:\garnet-w2   exit_code=0 expected=0 started=2026-09-26T03:48:54.406753Z duration_s=0.0
+--- stdout (16 bytes, sha256 6a5d9f6462ca5dfc6788cfd216ba579fffd7875776ab9d9b35659be78858f73a)
+Python 3.12.10
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+==============================================================================
+[I05] Git
+$ git --version
+cwd: C:\garnet-w2   exit_code=0 expected=0 started=2026-09-26T03:48:54.424701Z duration_s=0.031
+--- stdout (29 bytes, sha256 9d9d8a49f3de42d6e7b569bf28bd8db3ea3384c44386d6f2de4655e4ca41ff26)
+git version 2.52.0.windows.1
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+==============================================================================
+[I06] GitHub CLI auth status (tokens are masked by gh)
+$ gh auth status
+cwd: C:\garnet-w2   exit_code=0 expected=0 started=2026-09-26T03:48:54.456607Z duration_s=0.531
+--- stdout (471 bytes, sha256 d136e3aea16530287cd598777591d1cf1f01557557919c019c88193597e73d23)
+github.com
+  ✓ Logged in to github.com account IslandDevCrew (keyring)
+  - Active account: true
+  - Git operations protocol: https
+  - Token: gho_************************************
+  - Token scopes: 'gist', 'read:org', 'repo', 'workflow'
+
+  ✓ Logged in to github.com account Navigata1 (keyring)
+  - Active account: false
+  - Git operations protocol: https
+  - Token: gho_************************************
+  - Token scopes: 'gist', 'read:org', 'repo', 'workflow'
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+==============================================================================
+[I07] Process count and OneDrive processes
+$ (PowerShell 5.1, -EncodedCommand) $p = Get-Process
+"process_count=$($p.Count)"
+$p | Where-Object { $_.ProcessName -like '*OneDrive*' } | Sort-Object Id | ForEach-Object { "onedrive_process=$($_.ProcessName) pid=$($_.Id)" }
+cwd: C:\garnet-w2   exit_code=0 expected=0 started=2026-09-26T03:48:55.006658Z duration_s=0.25
+--- stdout (56 bytes, sha256 93efe1e16c70519b74cbab876aae1188a788ca0dde44f6dfcddd19b1cfd17874)
+process_count=339
+onedrive_process=OneDrive pid=10776
+--- end stdout
+--- stderr (616 bytes, sha256 2ce70d6c8c9ad6726c794690c8b14a2b83673648cac88edf4ff1acc50ec46348)
+#< CLIXML
+<Objs Version="1.1.0.1" xmlns="http://schemas.microsoft.com/powershell/2004/04"><Obj S="progress" RefId="0"><TN RefId="0"><T>System.Management.Automation.PSCustomObject</T><T>System.Object</T></TN><MS><I64 N="SourceId">1</I64><PR N="Record"><AV>Preparing modules for first use.</AV><AI>0</AI><Nil /><PI>-1</PI><PC>-1</PC><T>Completed</T><SR>-1</SR><SD> </SD></PR></MS></Obj><Obj S="progress" RefId="1"><TNRef RefId="0" /><MS><I64 N="SourceId">1</I64><PR N="Record"><AV>Preparing modules for first use.</AV><AI>0</AI><Nil /><PI>-1</PI><PC>-1</PC><T>Completed</T><SR>-1</SR><SD> </SD></PR></MS></Obj></Objs>
+[no trailing newline in the captured stream]
+--- end stderr
+==============================================================================
+[D01] Build-input diff, stat
+$ git diff --stat 218d7cfb782e58bf67f3cae90a2f1aacea1b8e04 c91e09f25159e230730ce883d9f1e29eec412c7f -- apps/garnet-studio/ Cargo.toml Cargo.lock .cargo/config.toml
+cwd: C:\garnet-w2   exit_code=0 expected=0 started=2026-09-26T03:48:55.273208Z duration_s=0.031
+--- stdout (114 bytes, sha256 69eae358dff27402392aeea0461c8af0e9520c5dc556942b65bb952087ba86fb)
+ apps/garnet-studio/src-tauri/AGENTS.md | 39 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 39 insertions(+)
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+==============================================================================
+[D02] Build-input diff, changed paths
+$ git diff --name-status 218d7cfb782e58bf67f3cae90a2f1aacea1b8e04 c91e09f25159e230730ce883d9f1e29eec412c7f -- apps/garnet-studio/ Cargo.toml Cargo.lock .cargo/config.toml
+cwd: C:\garnet-w2   exit_code=0 expected=0 started=2026-09-26T03:48:55.323172Z duration_s=0.031
+--- stdout (41 bytes, sha256 35614708ef1fdf1e842f6a8b0c03d77697884e75541b079133bc9717b54976ad)
+M	apps/garnet-studio/src-tauri/AGENTS.md
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+==============================================================================
+[D03] Build-input diff, full content
+$ git diff 218d7cfb782e58bf67f3cae90a2f1aacea1b8e04 c91e09f25159e230730ce883d9f1e29eec412c7f -- apps/garnet-studio/ Cargo.toml Cargo.lock .cargo/config.toml
+cwd: C:\garnet-w2   exit_code=0 expected=0 started=2026-09-26T03:48:55.375690Z duration_s=0.031
+--- stdout (3671 bytes, sha256 0dd212d8dcdbcd53072945c6b74f3a5e8c4b1f6e29da91ee78260fc73b71e591)
+diff --git a/apps/garnet-studio/src-tauri/AGENTS.md b/apps/garnet-studio/src-tauri/AGENTS.md
+index 1653a8c..1233bd7 100644
+--- a/apps/garnet-studio/src-tauri/AGENTS.md
++++ b/apps/garnet-studio/src-tauri/AGENTS.md
+@@ -31,6 +31,44 @@ checker, parser, or macOS SwiftUI Studio implementation.
+   installer proof status, and notarization preflight status. They must not
+   upgrade platform, package, provider, proof, or notarization claims without
+   separate target-system evidence.
++- **Committed clean-VM proof (T5a, path (a)).**
++  `scripts/garnet_windows_clean_vm_installer_status.py` reads the newest
++  committed bundle under `proofs/windows/studio-clean-vm/`. The Desktop root
++  is only a fallback when no bundle is committed. An explicit root wins over
++  both: `--evidence-root` for the standalone reporter, which is what the
++  Studio installer-status command runs. `GARNET_WINDOWS_CLEAN_VM_EVIDENCE_ROOT`
++  is read only by the aggregate `scripts/garnet_windows_linux_studio_status.py`.
++  A bundle counts only when all of these hold:
++  - its name is `<YYYYMMDD-HHMM>-<host>`;
++  - it holds only regular files, each with one link and a nonzero inode, and
++    each read from the handle it was checked on;
++  - `MANIFEST.sha256` lists every file once and matches;
++  - its JSON is strict (UTF-8, no repeated key, no NaN or Infinity),
++    `verified` is the literal `true`, and `created_at` is a time with a zone;
++  - every gate appears once and passes. Replay checks what it can from
++    committed bytes: the fresh-guest facts and the claim boundary. The
++    installer is recorded only by path and SHA-256, and the `.exe` is not
++    committed, so replay checks the digest's form, not the file. What the
++    install log says and what the screenshot shows are for review;
++  - the guest is x64 and its OS name is the guest's own `systeminfo` OS name:
++    Windows 10, Windows 11 or Windows Server 2016/2019/2022/2025, optionally
++    prefixed `Microsoft`. A hypervisor guest-type identifier is out of
++    contract, and the recorder's fresh-guest gate applies the same rule;
++  - the three evidence files are distinct, manifest-verified files named
++    directly inside the bundle; the install log is not empty, and the
++    screenshot is a truecolour or greyscale PNG, at most 16384 px a side and
++    256 MiB of decoded image data, whose critical chunks, standard ancillary
++    chunks (including their order around `PLTE`) and image data are well
++    formed (`png_screenshot_problem`; other ancillary chunks, such as
++    text, `iCCP`, `sPLT`, `eXIf` and unknown ones, are not interpreted),
++    checked by both the recorder and the reader;
++  - no directory on the way is a link, and each one can be listed.
++
++  A failing newest bundle is reported, never replaced by an older one.
++  **Threat model:** the reader checks committed content. A process that can
++  write the checkout while it runs can write a consistent bundle outright,
++  because the manifest is unsigned, so that process is out of scope; review
++  settles who committed a bundle.
+ - `mac_domain_proofs` is the macOS Studio UI wrapper for
+   `scripts/smoke_garnet_mac_domain_proofs.py`. It may record local Mac S105
+   domain evidence under `target/mac-studio-domain-proofs/`, but it must not
+@@ -77,6 +115,7 @@ cargo fmt --manifest-path apps/garnet-studio/src-tauri/Cargo.toml -- --check
+ cargo test --manifest-path apps/garnet-studio/src-tauri/Cargo.toml
+ python scripts/test_garnet_windows_linux_studio_shell.py
+ python scripts/test_garnet_windows_linux_studio_status.py
++python scripts/test_garnet_windows_clean_vm_installer_status.py
+ npm --prefix apps/garnet-studio run build
+ ```
+ 
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+==============================================================================
+[D04] The Tauri backend's manifest at the recording main (no path dependency on a workspace crate)
+$ git show c91e09f25159e230730ce883d9f1e29eec412c7f:apps/garnet-studio/src-tauri/Cargo.toml
+cwd: C:\garnet-w2   exit_code=0 expected=0 started=2026-09-26T03:48:55.423092Z duration_s=0.031
+--- stdout (872 bytes, sha256 a041899125b0c7206e5a9928ccfe1853f832ad4dd95d9fe699924a3c000903dd)
+# NOTE: this crate is excluded from the workspace (see root Cargo.toml), so it
+# cannot inherit version.workspace. The version below MUST track the workspace
+# release version; commands::tests::crate_version_matches_workspace_release_version
+# is the drift gate that fails the ladder on mismatch.
+[package]
+name = "garnet-studio"
+version = "0.8.2"
+description = "Garnet Studio cross-platform thin desktop shell for the Garnet CLI and advisory pipeline."
+authors = ["Island Development Crew"]
+edition = "2021"
+rust-version = "1.95"
+license = "MIT OR Apache-2.0"
+
+[lib]
+name = "garnet_studio_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+chrono = "0.4"
+dirs = "6"
+sha2 = "0.10"
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+==============================================================================
+[D05] The root workspace's exclude line (the Tauri backend is outside the workspace)
+$ git grep -n ^exclude c91e09f25159e230730ce883d9f1e29eec412c7f -- Cargo.toml
+cwd: C:\garnet-w2   exit_code=0 expected=0 started=2026-09-26T03:48:55.456638Z duration_s=0.031
+--- stdout (128 bytes, sha256 8453a5d31bdf190afdfa74871b3996fc9aeb4bd09697c4dfd869f7851349333c)
+c91e09f25159e230730ce883d9f1e29eec412c7f:Cargo.toml:24:exclude = ["archive/garnet-parser-v0.2", "apps/garnet-studio/src-tauri"]
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+==============================================================================
+[R01] Gate: documentation-only diff; verify the kept outputs; place the installed .exe
+$ python -I -c <doc-only gate, verify kept files, copy the .exe to its repo-relative path>
+cwd: C:\   exit_code=0 expected=0 started=2026-09-26T03:48:55.506713Z duration_s=1.063
+--- stdout (1307 bytes, sha256 1f183c2cf68d6e78609e3877c9731c3145419d86be2d5ef675d3c371f2d3cf7a)
+changed build-input paths: apps/garnet-studio/src-tauri/AGENTS.md
+documentation only: True
+PASS kept install.log unchanged since steps 1-4 (1714 B, sha256 64dc0bddb808557c81a068311d71aa2aeae2c2f3d215c142b3990ce44bfde591)
+PASS kept studio-smoke.json unchanged since steps 1-4 (1331 B, sha256 c987d3b49b98071e4bb71aa322c3f684f466e44db5261b1b0b06dc49b7e6f2c7)
+PASS kept launch.png unchanged since steps 1-4 (485083 B, sha256 175ee5753cb9fa94520a72f9b69ccde6b11e056780da4dcc23fae593b942e644)
+PASS kept guest-systeminfo.txt unchanged since steps 1-4 (3161 B, sha256 ed1ce58de2a0319bb705c6e6209951b9f06f53faeb8da19a42382ac1dc965ae0)
+PASS install.log is not empty
+PASS install.log names the installer sha256 b288930ee841...
+PASS install.log shows installer_exit_code=0 and studio_smoke_exit_code=0
+PASS studio-smoke.json: status passed, source_included false, provider_api_called false
+PASS launch.png is a PNG, colour type 2 (truecolour), 958x998
+PASS guest OS from its own systeminfo: Microsoft Windows 11 Enterprise 10.0.26100 == --guest-os Microsoft Windows 11 Enterprise 10.0.26100
+PASS the installed .exe in the build clone still has sha256 b288930ee841...
+PASS the same .exe placed at the recording clone path target/release/bundle/nsis/Garnet Studio_0.8.2_x64-setup.exe (git-ignored target/)
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+==============================================================================
+[R02] The .exe is git-ignored in the recording clone
+$ git check-ignore -v "target/release/bundle/nsis/Garnet Studio_0.8.2_x64-setup.exe"
+cwd: C:\garnet-w2   exit_code=0 expected=0 started=2026-09-26T03:48:56.573266Z duration_s=0.031
+--- stdout (83 bytes, sha256 d673b22199d8d49f94f3bf079e22df664a50ed69b169c01850779a6eb69495fe)
+.gitignore:60:target/	target/release/bundle/nsis/Garnet Studio_0.8.2_x64-setup.exe
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+==============================================================================
+[R03] Worktree status (nothing tracked changed)
+$ git status --short
+cwd: C:\garnet-w2   exit_code=0 expected=0 started=2026-09-26T03:48:56.624938Z duration_s=0.047
+--- stdout (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stdout
+--- stderr (0 bytes, sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)
+--- end stderr
+
+## Encoding census of the evidence copied into this folder (bytes as copied, unedited)
+install.log: utf8=True bom=utf-8 endings=CRLF lf=0 crlf=37 cr=0 bytes=1714 sha256=64dc0bddb808557c81a068311d71aa2aeae2c2f3d215c142b3990ce44bfde591
+studio-smoke.json: utf8=True bom=none endings=LF lf=66 crlf=0 cr=0 bytes=1331 sha256=c987d3b49b98071e4bb71aa322c3f684f466e44db5261b1b0b06dc49b7e6f2c7
+launch.png: utf8=False bom=none endings=MIXED lf=1550 crlf=8 cr=1853 bytes=485083 sha256=175ee5753cb9fa94520a72f9b69ccde6b11e056780da4dcc23fae593b942e644
+
+## Step 5, run next from the repo root (its output is the recorder's own files in this folder)
+The handoff's command invokes python without -I; it runs as python -I -X utf8, per the brief.
+$ python -I -X utf8 scripts/garnet_windows_clean_vm_installer_status.py --record-proof --mode clean-vm --installer "target/release/bundle/nsis/Garnet Studio_0.8.2_x64-setup.exe" --vm-name "Windows Sandbox" --guest-os "Microsoft Windows 11 Enterprise 10.0.26100" --guest-arch x64 --install-log "proofs/windows/studio-clean-vm/20260926-0349-NUCBOX_M2PRO_S/install.log" --studio-smoke-json "proofs/windows/studio-clean-vm/20260926-0349-NUCBOX_M2PRO_S/studio-smoke.json" --screenshot "proofs/windows/studio-clean-vm/20260926-0349-NUCBOX_M2PRO_S/launch.png" --output-dir proofs/windows/studio-clean-vm/20260926-0349-NUCBOX_M2PRO_S --format json
