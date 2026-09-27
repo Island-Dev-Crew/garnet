@@ -9,6 +9,33 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ## [Unreleased]
 
+### W2 — Windows Studio clean-VM installer proof committed and enforced
+
+- **The proof is in the repository.**
+  `proofs/windows/studio-clean-vm/20260926-0349-NUCBOX_M2PRO_S/` holds a clean-VM
+  installer proof recorded on the Windows NUC with T5a's recorder:
+  - an unsigned Tauri NSIS setup (`Garnet Studio_0.8.2_x64-setup.exe`, sha256
+    `b288930e…1d8e`), installed in a fresh Windows Sandbox guest (Microsoft
+    Windows 11 Enterprise 10.0.26100, x64);
+  - `--studio-smoke` passed with no source included and no provider call, and a
+    launch screenshot was taken;
+  - all six gates pass.
+  With no evidence root, the committed-bundle reader reports
+  `clean-vm-proof-verified` from this bundle. The proof covers the unsigned
+  installer only. A signed MSI, winget, Linux packages and SmartScreen
+  reputation stay forbidden claims.
+- **The dogfood matrix now requires that proof.** The
+  `report-windows-clean-vm-installer-status-script` probe asserted
+  `clean_vm_verified` was false: a "no proof yet" pin that failed on the first
+  real proof and would have stayed green if the proof later went missing or
+  failed the reader. It now requires all three of:
+  - `clean_vm_verified` true;
+  - status `clean-vm-proof-verified`;
+  - `proof_source` equal to `REVIEWED_CLEAN_VM_PROOF`, this bundle.
+  A missing, failing or newer bundle, or host-local evidence, turns it red.
+  Moving the Windows Studio claim to another bundle is a reviewed change to
+  that constant.
+
 ### T5a — evidence tools made correct before 0.8.3 freezes seal/v2
 
 - **Per-function names carry their module path (C1-01).** `module a { def f }`
