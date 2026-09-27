@@ -34,7 +34,9 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   - `proof_source` equal to `REVIEWED_CLEAN_VM_PROOF`, this bundle.
   A missing, failing or newer bundle, or host-local evidence, turns it red.
   Moving the Windows Studio claim to another bundle is a reviewed change to
-  that constant.
+  that constant. The probe and the reporter run in isolated mode (`-I`), and
+  the checks exit explicitly rather than through `assert`, so `PYTHONOPTIMIZE`
+  or `PYTHONPATH` in the environment cannot strip or redirect them.
 
 ### T5a — evidence tools made correct before 0.8.3 freezes seal/v2
 
