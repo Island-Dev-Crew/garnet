@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import os
 import subprocess
 import sys
 import tempfile
@@ -317,7 +318,9 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         self.assertIn("report-windows-clean-vm-proof-boundary", ids)
         self.assertIn("report-windows-clean-vm-studio-action", ids)
 
-    def _clean_vm_status_probe_result(self, status: dict[str, object]) -> subprocess.CompletedProcess[str]:
+    def _clean_vm_status_probe_result(
+        self, status: dict[str, object], env: dict[str, str] | None = None
+    ) -> subprocess.CompletedProcess[str]:
         """Run the clean-VM status probe against a stand-in reporter that prints `status`."""
         real_script = str(matrix.ROOT / "scripts" / "garnet_windows_clean_vm_installer_status.py")
         with tempfile.TemporaryDirectory() as temp:
@@ -334,7 +337,7 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
             code = probe.command[-1]
             self.assertIn(repr(real_script), code)
             command = [*probe.command[:-1], code.replace(repr(real_script), repr(str(fake)))]
-            return subprocess.run(command, capture_output=True, text=True, timeout=60)
+            return subprocess.run(command, capture_output=True, text=True, timeout=60, env={**os.environ, **(env or {})})
 
     def _clean_vm_status(self, **changes: object) -> dict[str, object]:
         status: dict[str, object] = {
@@ -381,6 +384,18 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
             with self.subTest(source):
                 result = self._clean_vm_status_probe_result(self._clean_vm_status(proof_source=source))
                 self.assertNotEqual(0, result.returncode)
+
+    def test_clean_vm_status_probe_holds_under_python_optimization(self) -> None:
+        # PYTHONOPTIMIZE strips `assert`; the matrix runner passes the ambient environment through.
+        optimized = {"PYTHONOPTIMIZE": "1"}
+        unverified = self._clean_vm_status(
+            status="proof-contract-ready-clean-vm-open", clean_vm_verified=False, proof_source="none"
+        )
+        self.assertNotEqual(0, self._clean_vm_status_probe_result(unverified, optimized).returncode)
+        other = self._clean_vm_status(proof_source="committed:proofs/windows/studio-clean-vm/20270101-0000-NEWER_HOST")
+        self.assertNotEqual(0, self._clean_vm_status_probe_result(other, optimized).returncode)
+        reviewed = self._clean_vm_status_probe_result(self._clean_vm_status(), optimized)
+        self.assertEqual(0, reviewed.returncode, reviewed.stderr)
 
     def test_probe_inventory_includes_converter_advisory_bundle(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
