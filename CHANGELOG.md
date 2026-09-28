@@ -37,6 +37,12 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   that constant. The probe and the reporter run in isolated mode (`-I`), and
   the checks exit explicitly rather than through `assert`, so `PYTHONOPTIMIZE`
   or `PYTHONPATH` in the environment cannot strip or redirect them.
+- **The pages cite it (Jon's path (a)).** The Windows Studio sentence on the
+  landing page and on the status page, "verified x64 clean-VM installer proof",
+  now names `proofs/windows/studio-clean-vm/20260926-0349-NUCBOX_M2PRO_S` and says it
+  is an unsigned installer in a fresh Windows Sandbox. The status page no longer
+  lists preserving the clean Windows VM bundle as a next step. The landing page is
+  a playground browser input, so the W-PLAY browser proof is re-recorded.
 
 ### T5a — evidence tools made correct before 0.8.3 freezes seal/v2
 
