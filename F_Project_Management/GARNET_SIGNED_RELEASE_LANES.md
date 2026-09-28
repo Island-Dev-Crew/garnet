@@ -3,14 +3,14 @@
 Garnet's "signed release" posture is not one thing — it is three distinct lanes
 with different owners and maturity. This document makes each explicit; the live
 status is `scripts/garnet_signed_release_lanes.py --format md`, and `--gate`
-(in CI) protects the one lane that is actually ACTIVE.
+(in CI) protects the two lanes that are ACTIVE.
 
 ## The three lanes
 
 | # | Lane | Status | Garnet-owned? |
 |---|---|---|---|
 | 1 | **Program-manifest signing** — `garnet build --sign <key>` (Ed25519 over the deterministic build manifest), verified to `signature valid` in `linux-packages.yml`. | ✅ **active** | yes |
-| 2 | **Release-artifact signing** — a detached signature over `SHA256SUMS`. | ⏸ **deferred** | no (GPG/minisign) |
+| 2 | **Release-artifact signing** — the tagged release job signs `SHA256SUMS` with `gpg --detach-sign` and uploads `SHA256SUMS.asc`; an unsigned tagged release fails closed unless deliberately allowed. Shipped since v0.8.1. | ✅ **active** | no (GPG, key held in CI) |
 | 3 | **Supply-chain attestation** — `garnet seal [--out]` emits an in-toto predicate over the build + capability manifests, for `cosign attest --predicate`. | ◐ **partial** | no (cosign) |
 
 ## S51 changes
@@ -25,16 +25,26 @@ status is `scripts/garnet_signed_release_lanes.py --format md`, and `--gate`
   `signature valid` round-trip disappears from `linux-packages.yml`, the gate
   fails.
 
-## Honest scope (do not soften)
+## T5b change (0.8.3)
+
+- Lane 2 was still reported as **deferred**, keyed on a stale `TODO(release-security)`
+  comment in `linux-packages.yml`, although `SHA256SUMS.asc` has shipped since v0.8.1.
+  The comment is gone. The lane is now **active** and keyed on three pieces of the
+  release job: the `gpg --detach-sign --armor SHA256SUMS` step, the
+  `SHA256SUMS.asc` upload, and the "Require signed SHA256SUMS (fail-closed)" step.
+  If any of them disappears, the lane reports **broken** and `--gate` fails.
+
+## Scope (do not soften)
 
 Garnet does **not** sign its own supply chain and does **not** bundle
-`cosign`/`GPG`/`minisign`. Lanes 2 and 3 are deferred/partial **by design** —
-they depend on external signing tools that are not present in this environment.
-Their status is reported truthfully, never faked. Only lane 1 is gated, because
-it is the lane Garnet owns end-to-end.
+`cosign`/`GPG`/`minisign`. Lane 2 uses GPG in the release job, with the key held
+in CI. Lane 3 is partial **by design**: it depends on an external signing tool that
+is not present in this environment. Every status is reported as it is, never faked.
+Lanes 1 and 2 are gated: lane 1 because Garnet owns it end to end, and lane 2
+because it is what makes a published `SHA256SUMS` trustworthy.
 
 ```sh
 python3 scripts/garnet_signed_release_lanes.py --format md   # this table (live)
-python3 scripts/garnet_signed_release_lanes.py --gate        # active-lane regression guard
+python3 scripts/garnet_signed_release_lanes.py --gate        # active-lanes regression guard
 garnet seal <file.garnet> --out predicate.json               # write the in-toto predicate
 ```
