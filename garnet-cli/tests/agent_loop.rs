@@ -276,7 +276,12 @@ fn run_recorded(baseline_src: &str, proposal_src: &str) -> (Output, tempfile::Te
         .arg(dir.path().join("seal.json"))
         .arg("--record-dir")
         .arg(&record)
-        .args(["--attest", "agent=scripted-agent-v1", "--gate-version", "dogfood-gate-v1"])
+        .args([
+            "--attest",
+            "agent=scripted-agent-v1",
+            "--gate-version",
+            "dogfood-gate-v1",
+        ])
         .output()
         .unwrap();
     (out, dir)
@@ -303,7 +308,10 @@ fn accepted_decision_names_the_program_wide_surface() {
 fn per_function_changes_are_accepted_but_listed_for_review() {
     let (out, dir) = run_recorded(PER_FN_BASELINE, PER_FN_PROPOSAL);
     let stdout = String::from_utf8_lossy(&out.stdout);
-    assert!(out.status.success(), "a per-function gain is not a program-wide widening: {stdout}");
+    assert!(
+        out.status.success(),
+        "a per-function gain is not a program-wide widening: {stdout}"
+    );
     assert!(
         stdout.contains("agent-loop: per-function changes listed for review in diff_caps.txt"),
         "{stdout}"
