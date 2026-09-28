@@ -253,3 +253,69 @@ fn duplicate_attestation_is_rejected_before_run() {
     assert!(!String::from_utf8_lossy(&out.stdout).contains("stage run"));
     assert!(String::from_utf8_lossy(&out.stderr).contains("before run"));
 }
+
+// T5b (C1-02, S37 option (b)): the loop refuses only a program-wide widening or a
+// new wildcard. Per-function changes are accepted but listed for human review.
+const PER_FN_BASELINE: &str = "@caps(fs)\ndef main() { helper() }\n@caps()\ndef helper() { 1 }\n";
+// `helper` gains `fs`, already in the aggregate, and `extra` is new with `fs`:
+// the program-wide surface stays {fs}.
+const PER_FN_PROPOSAL: &str =
+    "@caps(fs)\ndef main() { helper() + extra() }\n@caps(fs)\ndef helper() { 1 }\n@caps(fs)\ndef extra() { 2 }\n";
+
+fn run_recorded(baseline_src: &str, proposal_src: &str) -> (Output, tempfile::TempDir) {
+    let dir = tempfile::TempDir::new().unwrap();
+    let baseline = write(dir.path(), "baseline.garnet", baseline_src);
+    let proposal = write(dir.path(), "proposal.garnet", proposal_src);
+    let record = dir.path().join("record");
+    let out = garnet()
+        .args(["agent-loop", "--baseline"])
+        .arg(&baseline)
+        .arg("--proposal")
+        .arg(&proposal)
+        .arg("--seal-out")
+        .arg(dir.path().join("seal.json"))
+        .arg("--record-dir")
+        .arg(&record)
+        .args(["--attest", "agent=scripted-agent-v1", "--gate-version", "dogfood-gate-v1"])
+        .output()
+        .unwrap();
+    (out, dir)
+}
+
+#[test]
+fn accepted_decision_names_the_program_wide_surface() {
+    let (out, dir) = run_recorded(BASELINE, ACCEPT);
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(out.status.success(), "{stdout}");
+    assert!(
+        stdout.contains("stage diff-caps -> PASS (no program-wide authority expansion, band 5/5)"),
+        "{stdout}"
+    );
+    let decision = std::fs::read_to_string(dir.path().join("record/decision.md")).unwrap();
+    assert!(
+        decision.contains("the program-wide declared capability surface did not widen"),
+        "{decision}"
+    );
+    assert!(!decision.contains("per-function"), "{decision}");
+}
+
+#[test]
+fn per_function_changes_are_accepted_but_listed_for_review() {
+    let (out, dir) = run_recorded(PER_FN_BASELINE, PER_FN_PROPOSAL);
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(out.status.success(), "a per-function gain is not a program-wide widening: {stdout}");
+    assert!(
+        stdout.contains("agent-loop: per-function changes listed for review in diff_caps.txt"),
+        "{stdout}"
+    );
+    let diff = std::fs::read_to_string(dir.path().join("record/diff_caps.txt")).unwrap();
+    assert!(diff.contains("~ helper gained: fs"), "{diff}");
+    let decision = std::fs::read_to_string(dir.path().join("record/decision.md")).unwrap();
+    assert!(
+        decision.contains(
+            "- per-function: 1 existing function(s) gained capabilities and 1 function(s) are new"
+        ),
+        "{decision}"
+    );
+    assert!(decision.contains("for human review"), "{decision}");
+}
