@@ -1,0 +1,59 @@
+{
+  "schema": "garnet.windows_studio.clean_vm_installer_proof.v1",
+  "created_at": "2026-09-26T03:49:24.807228+00:00",
+  "mode": "clean-vm",
+  "verified": true,
+  "installer_path": "target\\release\\bundle\\nsis\\Garnet Studio_0.8.2_x64-setup.exe",
+  "installer_sha256": "b288930ee8412be3aee3876ab49177d6c73d7d2fe10c2c4d0caa5187cfeb1d8e",
+  "vm_name": "Windows Sandbox",
+  "guest_os": "Microsoft Windows 11 Enterprise 10.0.26100",
+  "guest_arch": "x64",
+  "install_log": "proofs\\windows\\studio-clean-vm\\20260926-0349-NUCBOX_M2PRO_S\\install.log",
+  "studio_smoke_json": "proofs\\windows\\studio-clean-vm\\20260926-0349-NUCBOX_M2PRO_S\\studio-smoke.json",
+  "screenshot": "proofs\\windows\\studio-clean-vm\\20260926-0349-NUCBOX_M2PRO_S\\launch.png",
+  "gates": [
+    {
+      "id": "installer-artifact",
+      "label": "Installer Artifact",
+      "status": "pass",
+      "evidence": "target\\release\\bundle\\nsis\\Garnet Studio_0.8.2_x64-setup.exe"
+    },
+    {
+      "id": "fresh-guest",
+      "label": "Fresh Guest",
+      "status": "pass",
+      "evidence": "mode=clean-vm; vm=Windows Sandbox; os=Microsoft Windows 11 Enterprise 10.0.26100; arch=x64"
+    },
+    {
+      "id": "install-log",
+      "label": "Install Log",
+      "status": "pass",
+      "evidence": "proofs\\windows\\studio-clean-vm\\20260926-0349-NUCBOX_M2PRO_S\\install.log"
+    },
+    {
+      "id": "studio-smoke",
+      "label": "Studio Smoke",
+      "status": "pass",
+      "evidence": "proofs\\windows\\studio-clean-vm\\20260926-0349-NUCBOX_M2PRO_S\\studio-smoke.json"
+    },
+    {
+      "id": "launch-screenshot",
+      "label": "Launch Screenshot",
+      "status": "pass",
+      "evidence": "proofs\\windows\\studio-clean-vm\\20260926-0349-NUCBOX_M2PRO_S\\launch.png"
+    },
+    {
+      "id": "claim-boundary",
+      "label": "Claim Boundary",
+      "status": "pass",
+      "evidence": "signed MSI, winget, Linux package, and provider-backed conversion remain forbidden claims."
+    }
+  ],
+  "forbidden_claims": [
+    "signed Windows MSI is available",
+    "winget install path is verified",
+    "Windows clean-machine proof exists without clean-VM evidence",
+    "Linux Studio package is verified",
+    "provider-backed conversion is active"
+  ]
+}

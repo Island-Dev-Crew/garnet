@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import os
 import subprocess
 import sys
 import tempfile
@@ -316,6 +317,85 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         self.assertIn("report-windows-clean-vm-installer-status-script", ids)
         self.assertIn("report-windows-clean-vm-proof-boundary", ids)
         self.assertIn("report-windows-clean-vm-studio-action", ids)
+
+    def _clean_vm_status_probe_result(
+        self, status: dict[str, object], env: dict[str, str] | None = None
+    ) -> subprocess.CompletedProcess[str]:
+        """Run the clean-VM status probe against a stand-in reporter that prints `status`."""
+        real_script = str(matrix.ROOT / "scripts" / "garnet_windows_clean_vm_installer_status.py")
+        with tempfile.TemporaryDirectory() as temp:
+            work = Path(temp)
+            fixtures = matrix.prepare_fixtures(work)
+            probes = matrix.probe_set(self._fake_garnet_path(), work, fixtures, include_app_workbench=False)
+            probe = next(
+                probe
+                for probe in probes
+                if isinstance(probe, matrix.Probe) and probe.id == "report-windows-clean-vm-installer-status-script"
+            )
+            fake = work / "fake_clean_vm_status.py"
+            fake.write_text(f"import json\nprint(json.dumps({status!r}))\n", encoding="utf-8")
+            code = probe.command[-1]
+            self.assertIn(repr(real_script), code)
+            command = [*probe.command[:-1], code.replace(repr(real_script), repr(str(fake)))]
+            return subprocess.run(command, capture_output=True, text=True, timeout=60, env={**os.environ, **(env or {})})
+
+    def _clean_vm_status(self, **changes: object) -> dict[str, object]:
+        status: dict[str, object] = {
+            "status": "clean-vm-proof-verified",
+            "clean_vm_verified": True,
+            "proof_source": "committed:proofs/windows/studio-clean-vm/20260926-0349-NUCBOX_M2PRO_S",
+            "package_targets": [
+                {"id": "studio-windows-x64-nsis", "rust_target": "x86_64-pc-windows-msvc", "status": "first-clean-vm-target"},
+                {"id": "studio-windows-arm64-nsis", "rust_target": "aarch64-pc-windows-msvc", "status": "planned-after-x64-proof"},
+                {"id": "studio-windows-x86-nsis", "rust_target": "i686-pc-windows-msvc", "status": "deferred-until-user-demand"},
+            ],
+        }
+        status.update(changes)
+        return status
+
+    def test_clean_vm_status_probe_passes_only_on_the_reviewed_committed_bundle(self) -> None:
+        result = self._clean_vm_status_probe_result(self._clean_vm_status())
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertIn("windows clean vm installer status contract present", result.stdout)
+
+    def test_clean_vm_status_probe_fails_when_the_proof_is_missing_or_unverified(self) -> None:
+        for label, changes in (
+            ("no proof", {"status": "proof-contract-ready-clean-vm-open", "clean_vm_verified": False, "proof_source": "none"}),
+            (
+                "failing committed bundle",
+                {
+                    "status": "proof-contract-ready-clean-vm-open",
+                    "clean_vm_verified": False,
+                    "proof_source": "committed:proofs/windows/studio-clean-vm/20260926-0349-NUCBOX_M2PRO_S",
+                },
+            ),
+            ("verified flag but open status", {"status": "proof-contract-ready-clean-vm-open"}),
+            ("truthy non-boolean flag", {"clean_vm_verified": "true"}),
+        ):
+            with self.subTest(label):
+                self.assertNotEqual(0, self._clean_vm_status_probe_result(self._clean_vm_status(**changes)).returncode)
+
+    def test_clean_vm_status_probe_fails_for_any_other_proof_source(self) -> None:
+        for source in (
+            "local:/home/runner/Desktop/dogfood/garnet-studio-windows-clean-vm",
+            "committed:proofs/windows/studio-clean-vm/20270101-0000-NEWER_HOST",
+            "committed:proofs/windows/studio-clean-vm",
+        ):
+            with self.subTest(source):
+                result = self._clean_vm_status_probe_result(self._clean_vm_status(proof_source=source))
+                self.assertNotEqual(0, result.returncode)
+
+    def test_clean_vm_status_probe_holds_under_python_optimization(self) -> None:
+        # PYTHONOPTIMIZE strips `assert`; the matrix runner passes the ambient environment through.
+        optimized = {"PYTHONOPTIMIZE": "1"}
+        unverified = self._clean_vm_status(
+            status="proof-contract-ready-clean-vm-open", clean_vm_verified=False, proof_source="none"
+        )
+        self.assertNotEqual(0, self._clean_vm_status_probe_result(unverified, optimized).returncode)
+        other = self._clean_vm_status(proof_source="committed:proofs/windows/studio-clean-vm/20270101-0000-NEWER_HOST")
+        self.assertNotEqual(0, self._clean_vm_status_probe_result(other, optimized).returncode)
+        reviewed = self._clean_vm_status_probe_result(self._clean_vm_status(), optimized)
+        self.assertEqual(0, reviewed.returncode, reviewed.stderr)
 
     def test_probe_inventory_includes_converter_advisory_bundle(self) -> None:
         with tempfile.TemporaryDirectory() as temp:

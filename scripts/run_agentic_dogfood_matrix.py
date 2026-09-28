@@ -23,6 +23,9 @@ from pathlib import Path
 from typing import Callable
 
 ROOT = Path(__file__).resolve().parents[1]
+# The Windows Studio clean-VM proof the public pages cite. Moving the claim to another bundle is a
+# reviewed change to this line; any other source, or a bundle that fails the reader, is red.
+REVIEWED_CLEAN_VM_PROOF = "committed:proofs/windows/studio-clean-vm/20260926-0349-NUCBOX_M2PRO_S"
 _POSIX_SHELL_CACHE: str | bool | None = None
 
 
@@ -2702,19 +2705,27 @@ def probe_set(
         Probe(
             "report-windows-clean-vm-installer-status-script",
             "Windows clean VM installer proof",
-            "Windows Studio clean-VM proof should have a repo-owned status script and target architecture posture",
+            "Windows Studio clean-VM claim should rest on the reviewed committed proof, read by the repo-owned status script, with its target architecture posture",
             [
                 sys.executable,
+                "-I",
                 "-c",
                 (
                     "import json, subprocess, sys\n"
+                    # Isolated mode (-I) ignores PYTHONOPTIMIZE and PYTHONPATH, and the checks exit
+                    # explicitly rather than through `assert`, so the proof requirement cannot be stripped.
+                    "def require(ok, why):\n"
+                    "    if not ok:\n"
+                    "        sys.exit('windows clean vm installer status contract broken: ' + why)\n"
                     f"script = {str(ROOT / 'scripts' / 'garnet_windows_clean_vm_installer_status.py')!r}\n"
-                    "data = json.loads(subprocess.check_output([sys.executable, script, '--format', 'json'], text=True))\n"
+                    "data = json.loads(subprocess.check_output([sys.executable, '-I', script, '--format', 'json'], text=True))\n"
                     "targets = {item['id']: item for item in data['package_targets']}\n"
-                    "assert data['clean_vm_verified'] is False\n"
-                    "assert targets['studio-windows-x64-nsis']['rust_target'] == 'x86_64-pc-windows-msvc'\n"
-                    "assert targets['studio-windows-arm64-nsis']['rust_target'] == 'aarch64-pc-windows-msvc'\n"
-                    "assert targets['studio-windows-x86-nsis']['status'] == 'deferred-until-user-demand'\n"
+                    "require(data['clean_vm_verified'] is True, repr(data['clean_vm_verified']))\n"
+                    "require(data['status'] == 'clean-vm-proof-verified', repr(data['status']))\n"
+                    f"require(data['proof_source'] == {REVIEWED_CLEAN_VM_PROOF!r}, repr(data['proof_source']))\n"
+                    "require(targets['studio-windows-x64-nsis']['rust_target'] == 'x86_64-pc-windows-msvc', 'x64 target')\n"
+                    "require(targets['studio-windows-arm64-nsis']['rust_target'] == 'aarch64-pc-windows-msvc', 'arm64 target')\n"
+                    "require(targets['studio-windows-x86-nsis']['status'] == 'deferred-until-user-demand', 'x86 status')\n"
                     "print('windows clean vm installer status contract present')\n"
                 ),
             ],
