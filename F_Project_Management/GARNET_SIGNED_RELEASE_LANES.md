@@ -10,7 +10,7 @@ status is `scripts/garnet_signed_release_lanes.py --format md`, and `--gate`
 | # | Lane | Status | Garnet-owned? |
 |---|---|---|---|
 | 1 | **Program-manifest signing** — `garnet build --sign <key>` (Ed25519 over the deterministic build manifest), verified to `signature valid` in `linux-packages.yml`. | ✅ **active** | yes |
-| 2 | **Release-artifact signing** — the tagged release job signs `SHA256SUMS` with `gpg --detach-sign` and uploads `SHA256SUMS.asc`; an unsigned tagged release fails closed unless deliberately allowed. Shipped since v0.8.1. | ✅ **active** | no (GPG, key held in CI) |
+| 2 | **Release-artifact signing** — the tagged release job signs `SHA256SUMS` with `gpg --detach-sign` and uploads `SHA256SUMS.asc`; an unsigned tagged release fails closed unless deliberately allowed. Shipped since v0.8.1. | ✅ **active** | no (GPG, key held in the `release` environment) |
 | 3 | **Supply-chain attestation** — `garnet seal [--out]` emits an in-toto predicate over the build + capability manifests, for `cosign attest --predicate`. | ◐ **partial** | no (cosign) |
 
 ## S51 changes

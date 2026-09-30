@@ -753,16 +753,35 @@ jobs:
       - macos-cli-tarballs
       - windows-cli-zip
       - shellcheck-installer
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    # The signing key exists only as secrets of the `release` environment,
+    # which admits v* tag runs after its required reviewer approves.
+    environment: release
     permissions:
       contents: write
     env:
-      # Signing activates only when the repo provides a GPG key; without one a
-      # tagged release fails closed (see the fail-closed step below).
+      # Signing activates only when the environment provides the GPG key;
+      # without it a tagged release fails closed (see the fail-closed step below).
       HAS_GPG: ${{ secrets.GPG_SIGNING_KEY != '' }}
     steps:
       - name: Checkout (for SBOM generation)
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+
+      # The job publishes a release for the tag that started it. It never
+      # creates or moves a tag: the v* tag ruleset leaves that to admins, and
+      # softprops is given no commit to create one from.
+      - name: Require the tag on origin
+        run: git ls-remote --exit-code --tags origin "refs/tags/${GITHUB_REF_NAME}"
+
+      # softprops only warns when body_path cannot be read and then publishes
+      # without the curated body, so the notes are required here first.
+      - name: Require the curated release notes
+        run: |
+          notes=".github/release-notes/${GITHUB_REF_NAME}.md"
+          if [ ! -s "${notes}" ]; then
+            echo "::error::${notes} is missing or empty; commit the curated release notes before tagging."
+            exit 1
+          fi
 
       - name: Install Rust toolchain (stable)
         uses: dtolnay/rust-toolchain@2c7215f132e9ebf062739d9130488b56d53c060c
@@ -872,7 +891,7 @@ jobs:
             release-dist/garnet-sbom-cyclonedx.tgz
             release-dist/SHA256SUMS
           fail_on_unmatched_files: true
-          generate_release_notes: true
+          body_path: .github/release-notes/${{ github.ref_name }}.md
 
       - name: Attach SHA256SUMS signature (only when signed)
         if: env.HAS_GPG == 'true'

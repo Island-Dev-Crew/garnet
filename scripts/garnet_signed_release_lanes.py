@@ -73,7 +73,7 @@ def release_artifact_lane(pkg: str) -> Lane:
         status="active" if present else "broken",
         owned_by_garnet=False,
         evidence="linux-packages.yml: gpg --detach-sign SHA256SUMS → SHA256SUMS.asc uploaded; "
-        "unsigned tagged release fails closed (key held in CI, GPG not bundled)",
+        "unsigned tagged release fails closed (key held in the release environment, GPG not bundled)",
         present=present,
     )
 
