@@ -59,23 +59,26 @@ class LinuxBuildBaseTests(unittest.TestCase):
 
 class OlderDistroSmokeTests(unittest.TestCase):
     def test_the_smoke_covers_each_older_distro_on_both_architectures(self) -> None:
-        text = job("smoke-older-distros")
-        for image in ("debian:12", "ubuntu:22.04", "almalinux:9"):
-            for arch, runner, artifact in (
-                ("x86_64", "ubuntu-24.04", "garnet-linux-packages"),
-                ("arm64", "ubuntu-24.04-arm", "garnet-linux-packages-arm64"),
-            ):
-                with self.subTest(image=image, arch=arch):
-                    self.assertRegex(
-                        text,
-                        rf"- image: {re.escape(image)}\n\s+arch: {arch}\n\s+runner: {re.escape(runner)}\n"
-                        rf"\s+artifact: {re.escape(artifact)}\n",
-                    )
-        self.assertIn("container: ${{ matrix.image }}", text)
-        self.assertIn("garnet check /tmp/bad.garnet", text)
+        for name, runner, build, artifact in (
+            ("smoke-older-distros", "ubuntu-24.04", "build-packages", "garnet-linux-packages"),
+            ("smoke-older-distros-arm64", "ubuntu-24.04-arm", "build-packages-arm64",
+             "garnet-linux-packages-arm64"),
+        ):
+            with self.subTest(job=name):
+                text = job(name)
+                self.assertIn("image: [debian:12, ubuntu:22.04, almalinux:9]", text)
+                self.assertIn(f"\n    runs-on: {runner}\n", text)
+                self.assertIn(f"\n    needs: {build}\n", text)
+                self.assertIn(f"name: {artifact}\n", text)
+                self.assertIn("container: ${{ matrix.image }}", text)
+                self.assertIn("apt-get install -y -qq ./dist/*.deb", text)
+                self.assertIn("dnf install -y -q ./dist/*.rpm", text)
+                self.assertIn("garnet check /tmp/bad.garnet", text)
 
     def test_a_release_waits_for_the_older_distro_smoke(self) -> None:
-        self.assertRegex(job("release"), r"\n      - smoke-older-distros\n")
+        release = job("release")
+        self.assertRegex(release, r"\n      - smoke-older-distros\n")
+        self.assertRegex(release, r"\n      - smoke-older-distros-arm64\n")
 
 
 class MacosInstallerTests(unittest.TestCase):

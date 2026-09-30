@@ -43,10 +43,12 @@ env:
 jobs:
   # ───────────────────────────────────────────────────────────────────
   # 1. Linux x86_64: .deb + .rpm + CLI tarball, and the install.sh
-  #    tarball path run against them.
+  #    tarball path run against them. Built on Ubuntu 22.04 so the binary
+  #    imports nothing newer than GLIBC_2.34 and installs on Debian 12,
+  #    Ubuntu 22.04 and RHEL 9 (smoke-older-distros proves it).
   # ───────────────────────────────────────────────────────────────────
   build-packages:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
@@ -79,8 +81,10 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-
+          # Keyed to the build image: objects cached from a newer image would
+          # carry that image's glibc symbol versions into this build.
+          key: ${{ runner.os }}-ubuntu-22.04-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-ubuntu-22.04-cargo-
 
       - name: Install cargo-deb + cargo-generate-rpm
         run: |
@@ -89,6 +93,9 @@ jobs:
 
       - name: Build release binary
         run: cargo build --release -p garnet-cli
+
+      - name: Check the glibc floor (GLIBC_2.34)
+        run: sh scripts/check_glibc_floor.sh target/release/garnet 2.34
 
       - name: Build .deb
         run: |
@@ -127,7 +134,7 @@ jobs:
   # ───────────────────────────────────────────────────────────────────
   smoke-deb:
     needs: build-packages
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     container: ubuntu:24.04
     steps:
       - name: Fetch artifacts
@@ -180,7 +187,7 @@ jobs:
   # ───────────────────────────────────────────────────────────────────
   smoke-rpm:
     needs: build-packages
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     container: fedora:40
     steps:
       - name: Fetch artifacts
@@ -217,7 +224,7 @@ jobs:
   # ───────────────────────────────────────────────────────────────────
   linux-tarball-x86_64:
     needs: build-packages
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
@@ -269,7 +276,7 @@ jobs:
   #    requests for aarch64.
   # ───────────────────────────────────────────────────────────────────
   build-packages-arm64:
-    runs-on: ubuntu-24.04-arm
+    runs-on: ubuntu-22.04-arm
     steps:
       - name: Checkout
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
@@ -298,8 +305,9 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target
-          key: ${{ runner.os }}-${{ runner.arch }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-${{ runner.arch }}-cargo-
+          # Keyed to the build image, as in build-packages.
+          key: ${{ runner.os }}-${{ runner.arch }}-ubuntu-22.04-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-${{ runner.arch }}-ubuntu-22.04-cargo-
 
       - name: Install cargo-deb + cargo-generate-rpm
         run: |
@@ -310,6 +318,9 @@ jobs:
         run: |
           cargo build --release -p garnet-cli
           file target/release/garnet | tee /dev/stderr | grep -q 'ARM aarch64'
+
+      - name: Check the glibc floor (GLIBC_2.34)
+        run: sh scripts/check_glibc_floor.sh target/release/garnet 2.34
 
       - name: Build .deb
         run: |
@@ -456,6 +467,93 @@ jobs:
           test -f /usr/share/man/man1/garnet.1
 
   # ───────────────────────────────────────────────────────────────────
+  # 6b. Older distributions: the x86_64 and ARM64 packages install and run
+  #     in clean Debian 12, Ubuntu 22.04 and AlmaLinux 9 (RHEL 9 family,
+  #     glibc 2.34) containers.
+  # ───────────────────────────────────────────────────────────────────
+  smoke-older-distros:
+    name: smoke-older-distros (${{ matrix.image }})
+    needs: build-packages
+    runs-on: ubuntu-24.04
+    container: ${{ matrix.image }}
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [debian:12, ubuntu:22.04, almalinux:9]
+    steps:
+      - name: Fetch artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: garnet-linux-packages
+          path: dist/
+
+      - name: Install the package
+        run: |
+          set -eu
+          if command -v apt-get >/dev/null 2>&1; then
+            apt-get update -qq
+            apt-get install -y -qq ./dist/*.deb
+          else
+            dnf install -y -q ./dist/*.rpm
+          fi
+          ldd --version | head -n 1
+
+      - name: Gates — version, parse, capability gap, signed manifest
+        run: |
+          set -eu
+          garnet --version | grep -q "Rust Rigor. Ruby Velocity."
+          garnet new --template cli /tmp/app
+          garnet parse /tmp/app/src/main.garnet | grep -q "parsed"
+          printf '%s\n' '@caps()' 'def main() { read_file("config.toml") }' > /tmp/bad.garnet
+          garnet check /tmp/bad.garnet 2>&1 | grep -q "does not declare .fs."
+          garnet keygen /tmp/k
+          garnet build --deterministic --sign /tmp/k /tmp/app/src/main.garnet
+          garnet verify /tmp/app/src/main.garnet \
+            /tmp/app/src/main.garnet.manifest.json --signature \
+            | grep -q "signature valid"
+
+  smoke-older-distros-arm64:
+    name: smoke-older-distros-arm64 (${{ matrix.image }})
+    needs: build-packages-arm64
+    runs-on: ubuntu-24.04-arm
+    container: ${{ matrix.image }}
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [debian:12, ubuntu:22.04, almalinux:9]
+    steps:
+      - name: Fetch artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: garnet-linux-packages-arm64
+          path: dist/
+
+      - name: Install the package
+        run: |
+          set -eu
+          if command -v apt-get >/dev/null 2>&1; then
+            apt-get update -qq
+            apt-get install -y -qq ./dist/*.deb
+          else
+            dnf install -y -q ./dist/*.rpm
+          fi
+          ldd --version | head -n 1
+
+      - name: Gates — version, parse, capability gap, signed manifest
+        run: |
+          set -eu
+          garnet --version | grep -q "Rust Rigor. Ruby Velocity."
+          garnet new --template cli /tmp/app
+          garnet parse /tmp/app/src/main.garnet | grep -q "parsed"
+          printf '%s\n' '@caps()' 'def main() { read_file("config.toml") }' > /tmp/bad.garnet
+          garnet check /tmp/bad.garnet 2>&1 | grep -q "does not declare .fs."
+          garnet keygen /tmp/k
+          garnet build --deterministic --sign /tmp/k /tmp/app/src/main.garnet
+          garnet verify /tmp/app/src/main.garnet \
+            /tmp/app/src/main.garnet.manifest.json --signature \
+            | grep -q "signature valid"
+
+  # ───────────────────────────────────────────────────────────────────
   # 7. macOS CLI tarballs. No signed/notarized .pkg is published, so the
   #    installer uses these tarballs on macOS.
   # ───────────────────────────────────────────────────────────────────
@@ -532,6 +630,34 @@ jobs:
           else
             echo "Built ${target}; native execution skipped on ${host_target}."
           fi
+
+      # C6-16: the path macOS users take. The staged tarball is unsigned, so
+      # the signature check (D-26) is off here; ci.yml covers it.
+      - name: Installer — install.sh against the staged tarball
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(awk -F'"' '/^version =/ { print $2; exit }' Cargo.toml)"
+          target="${{ matrix.target }}"
+          case "$(uname -m)" in
+            arm64|aarch64) host_target="aarch64-apple-darwin" ;;
+            x86_64) host_target="x86_64-apple-darwin" ;;
+            *) host_target="unknown" ;;
+          esac
+          if [ "${host_target}" != "${target}" ]; then
+            echo "install.sh runs on the native target only; ${target} is not ${host_target}."
+            exit 0
+          fi
+          stage="${RUNNER_TEMP}/garnet-install-stage"
+          prefix="${RUNNER_TEMP}/garnet-install-sh"
+          rm -rf "${stage}" "${prefix}"
+          mkdir -p "${stage}"
+          cp "dist/garnet-${version}-${target}.tar.gz" "${stage}/"
+          (cd "${stage}" && shasum -a 256 "garnet-${version}-${target}.tar.gz" > SHA256SUMS)
+          GARNET_VERSION="${version}" GARNET_BASE_URL="file://${stage}" \
+            GARNET_FORMAT=tar GARNET_INSTALL_MODE=release GARNET_PREFIX="${prefix}" \
+            GARNET_VERIFY_SIGNATURE=0 sh docs/install.sh
+          "${prefix}/bin/garnet" --version | grep -q "garnet ${version}"
 
       - name: Upload macOS tarball artifact
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
@@ -717,7 +843,7 @@ jobs:
   # 9. Verify the universal installer copies stay in sync and lint clean.
   # ───────────────────────────────────────────────────────────────────
   shellcheck-installer:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
       - name: Installer copies stay identical
@@ -729,7 +855,8 @@ jobs:
             koalaman/shellcheck:stable \
             --shell=sh --severity=warning \
             /work/installer/sh.garnet-lang.org/install.sh \
-            /work/docs/install.sh
+            /work/docs/install.sh \
+            /work/scripts/check_glibc_floor.sh
           docker run --rm -v "$PWD:/work" \
             koalaman/shellcheck:stable \
             --shell=bash --severity=warning \
@@ -750,6 +877,8 @@ jobs:
       - linux-tarball-x86_64
       - smoke-deb-arm64
       - smoke-rpm-arm64
+      - smoke-older-distros
+      - smoke-older-distros-arm64
       - macos-cli-tarballs
       - windows-cli-zip
       - shellcheck-installer
