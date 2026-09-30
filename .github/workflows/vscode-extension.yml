@@ -68,6 +68,9 @@ jobs:
     permissions:
       contents: write
     steps:
+      - name: Checkout (package version and the collect script)
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+
       - name: Fetch VSIX artifacts
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
@@ -75,15 +78,16 @@ jobs:
           merge-multiple: true
           path: dist-vsix/
 
-      - name: Collect VSIX assets
-        run: |
-          mkdir -p release-vsix
-          find dist-vsix -name '*.vsix' -type f -exec cp {} release-vsix/ \;
-          ls -la release-vsix
+      # Only this tag's files, one per build-vsix runner, and only when
+      # editors/vscode/package.json carries the tag's version.
+      - name: Collect this tag's VSIX assets
+        run: python3 scripts/collect_garnet_vsix_release_assets.py --tag "${GITHUB_REF_NAME}" --from dist-vsix --to release-vsix --expect 2
 
+      # No release notes here: the body comes from the curated file the
+      # linux-packages release job publishes, and an update without a body
+      # keeps it.
       - name: Publish VSIX assets
         uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           files: release-vsix/*.vsix
           fail_on_unmatched_files: true
-          generate_release_notes: true
