@@ -13,7 +13,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / ".github" / "workflows" / "linux-packages.yml"
-NOTES = "${{ github.ref_name }}.md"
 
 
 def release_job() -> str:
@@ -34,11 +33,26 @@ class ReleaseJobTests(unittest.TestCase):
     def test_the_job_runs_in_the_release_environment(self) -> None:
         self.assertRegex(release_job(), r"\n    environment: release\n")
 
-    def test_the_body_is_one_curated_file(self) -> None:
+    def test_the_body_is_the_curated_notes_and_the_signed_checksums(self) -> None:
         job = release_job()
         self.assertNotIn("generate_release_notes", job)
+        compose = step(job, "Compose the release body")
+        self.assertIn('cat ".github/release-notes/${GITHUB_REF_NAME}.md"', compose)
+        self.assertIn("cat release-dist/SHA256SUMS", compose)
+        self.assertIn("> release-body.md", compose)
+        self.assertLess(job.index("- name: Compose unified SHA256SUMS"), job.index(compose))
         publish = step(job, "Publish release")
-        self.assertIn(f"body_path: .github/release-notes/{NOTES}", publish)
+        self.assertIn("body_path: release-body.md", publish)
+        self.assertLess(job.index(compose), job.index(publish))
+
+    def test_the_workspace_version_has_curated_notes(self) -> None:
+        cargo = (ROOT / "Cargo.toml").read_text(encoding="utf-8")
+        version = re.search(r'\[workspace\.package\]\nversion = "([^"]+)"', cargo).group(1)
+        notes = ROOT / ".github" / "release-notes" / f"v{version}.md"
+        self.assertTrue(notes.is_file(), f"{notes.relative_to(ROOT)} is the v{version} release body")
+        text = notes.read_text(encoding="utf-8")
+        self.assertIn(f"v{version}", text)
+        self.assertIn("docs/release-signing.md", text)
 
     def test_missing_notes_fail_before_publishing(self) -> None:
         # softprops only warns when body_path cannot be read, then publishes

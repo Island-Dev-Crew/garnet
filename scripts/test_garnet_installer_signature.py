@@ -180,6 +180,15 @@ class PinnedKeyTests(unittest.TestCase):
         text = INSTALLER.read_text()
         self.assertRegex(text, r"0\.8\.1\|0\.8\.2\)\s*printf '%s' '" + RELEASE_KEY_0_8 + "'")
 
+    def test_each_installer_default_version_has_a_pinned_key(self) -> None:
+        # A default that moves past the pinned versions would refuse every
+        # install on a host with gpg; the pin moves with the default.
+        sh_default = re.search(r'GARNET_VERSION="\$\{GARNET_VERSION:-([0-9.]+)\}"', INSTALLER.read_text()).group(1)
+        ps1 = (ROOT / "docs" / "install.ps1").read_text()
+        ps1_default = re.search(r"\$version = '([0-9.]+)'", ps1).group(1)
+        self.assertRegex(INSTALLER.read_text(), rf"[|(\s]{re.escape(sh_default)}[|)]\s*printf '%s' '[0-9A-F]{{40}}'")
+        self.assertRegex(ps1, rf"\$Version -eq '{re.escape(ps1_default)}'.*return '[0-9A-F]{{40}}'")
+
     def test_the_published_keyring_holds_the_0_8_key(self) -> None:
         self.assertTrue(KEYRING.is_file(), "docs/garnet-release-keys.asc is what the installer fetches")
         if not GPG:
