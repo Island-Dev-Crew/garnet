@@ -74,33 +74,31 @@ def timeout_output(value: str | bytes | None) -> str:
     return value
 
 
-# Startup hooks of the other interpreters probe checks run in: bash sources BASH_ENV before a
-# non-interactive script, sh sources ENV, bash imports SHELLOPTS and BASHOPTS, and node applies
-# NODE_OPTIONS (--require, --import) and NODE_PATH to every process.
-SHELL_AND_NODE_HOOK_VARIABLES = frozenset({"BASH_ENV", "ENV", "SHELLOPTS", "BASHOPTS", "NODE_OPTIONS", "NODE_PATH"})
-# bash imports BASH_FUNC_<name>%% as a function that replaces the command <name> in a script.
-EXPORTED_BASH_FUNCTION_PREFIX = "BASH_FUNC_"
+# The namespaces of the interpreters probe checks run in. A name list trails each interpreter's
+# releases, so every variable in the namespace goes: PYTHON* (the set `python -E` ignores), node's
+# NODE_* (NODE_OPTIONS preloads code, NODE_COMPILE_CACHE loads cached code) and bash's BASH*
+# (BASH_ENV runs a file first, BASH_FUNC_<name>%% replaces the command <name>).
+INTERPRETER_NAMESPACE_PREFIXES = ("PYTHON", "NODE_", "BASH")
+# Unprefixed variables sh and bash read at startup: sh sources ENV, bash imports SHELLOPTS as
+# shell options, and POSIXLY_CORRECT starts bash in POSIX mode, which expands aliases in scripts.
+SHELL_STARTUP_VARIABLES = frozenset({"ENV", "SHELLOPTS", "POSIXLY_CORRECT"})
 
 
 def is_interpreter_hook(name: str) -> bool:
-    return (
-        name.startswith("PYTHON")
-        or name.startswith(EXPORTED_BASH_FUNCTION_PREFIX)
-        or name in SHELL_AND_NODE_HOOK_VARIABLES
-    )
+    return name.startswith(INTERPRETER_NAMESPACE_PREFIXES) or name in SHELL_STARTUP_VARIABLES
 
 
 def child_environment(env: dict[str, str] | None = None) -> dict[str, str]:
     """The environment every probe runs in, and every process a probe starts inherits.
 
-    Most probes check with Python `assert` in a `python -c` child, so an ambient PYTHON*
-    variable could decide the verdict: PYTHONOPTIMIZE strips the asserts, and PYTHONPATH or
-    PYTHONHOME redirect the imports. The runner drops every PYTHON* variable (exactly the set
-    `python -E` ignores) and the startup hooks of bash, sh and node, which run caller-chosen
-    code ahead of a shell or node check. It names the only two interpreter variables its
-    children get: no user site-packages, so a `.pth` file under a caller-chosen HOME cannot
-    run, and the runner's own UTF-8 mode, so a child encodes its pipes the way `run()` decodes
-    them. A variable a probe sets in `Probe.env` still applies.
+    41 of the 150 CI probes check with Python `assert` in a `python -c` child, so an ambient
+    PYTHON* variable could decide their verdict: PYTHONOPTIMIZE strips the asserts, and
+    PYTHONPATH or PYTHONHOME redirect the imports. Shell and node checks have the same exposure
+    through their own variables. The runner drops every variable for which
+    `is_interpreter_hook()` holds, and names the only two interpreter variables its children
+    get: no user site-packages, so a `.pth` file under a caller-chosen HOME cannot run, and the
+    runner's own UTF-8 mode, so a child encodes its pipes the way `run()` decodes them. A
+    variable a probe sets in `Probe.env` still applies.
     """
     child = {name: value for name, value in os.environ.items() if not is_interpreter_hook(name)}
     child["PYTHONNOUSERSITE"] = "1"
