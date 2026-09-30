@@ -8,8 +8,9 @@
 # package from GitHub Releases, verifies it against SHA256SUMS, installs it, and
 # runs `garnet --version`, failing if the installed binary does not run. If the
 # requested release asset is unavailable, does not run on this host, or the host
-# glibc is older than the 2.39 the Linux assets need, auto mode falls back to a
-# source install through `cargo install --path ... --locked`.
+# glibc is older than the requested release's Linux assets need (2.39 through
+# v0.8.2, 2.34 from v0.8.3), auto mode falls back to a source install through
+# `cargo install --path ... --locked`.
 #
 # Authenticity (D-26): when gpg is installed, SHA256SUMS is trusted only after
 # SHA256SUMS.asc verifies and was made by the release key this script pins for
@@ -244,23 +245,31 @@ pinned_signing_key() {
     esac
 }
 
+# True when version $1 is older than $2.$3.$4. A version that does not parse
+# counts as not older.
+version_before() {
+    _vb_major="${1%%.*}"
+    _vb_rest="${1#*.}"
+    _vb_minor="${_vb_rest%%.*}"
+    case "$_vb_rest" in
+        *.*) _vb_patch="${_vb_rest#*.}" ;;
+        *) _vb_patch=0 ;;
+    esac
+    _vb_patch="${_vb_patch%%[!0-9]*}"
+    case "${_vb_major}.${_vb_minor}.${_vb_patch}" in
+        *[!0-9.]*|.*|*..*|*.) return 1 ;;
+    esac
+    [ "$_vb_major" -lt "$2" ] && return 0
+    [ "$_vb_major" -gt "$2" ] && return 1
+    [ "$_vb_minor" -lt "$3" ] && return 0
+    [ "$_vb_minor" -gt "$3" ] && return 1
+    [ "$_vb_patch" -lt "$4" ]
+}
+
 # True when the version is older than v0.8.1, the first release that shipped
 # SHA256SUMS.asc. A version that does not parse counts as signed (fail closed).
 predates_signed_releases() {
-    _major="${1%%.*}"
-    _rest="${1#*.}"
-    _minor="${_rest%%.*}"
-    case "$_rest" in
-        *.*) _patch="${_rest#*.}" ;;
-        *) _patch=0 ;;
-    esac
-    _patch="${_patch%%[!0-9]*}"
-    case "${_major}.${_minor}.${_patch}" in
-        *[!0-9.]*|.*|*..*|*.) return 1 ;;
-    esac
-    [ "$_major" -eq 0 ] || return 1
-    [ "$_minor" -lt 8 ] && return 0
-    [ "$_minor" -eq 8 ] && [ "$_patch" -lt 1 ]
+    version_before "$1" 0 8 1
 }
 
 verify_sums_signature() {
@@ -392,9 +401,21 @@ run_version_check() {
     printf '%s\n' "$_out" | head -10
 }
 
+# The newest glibc 2.x the requested release's Linux assets may need, as x.
+# v0.8.3 and later are built on Ubuntu 22.04 under a GLIBC_2.34 floor
+# (scripts/check_glibc_floor.sh); earlier releases need 2.39.
+linux_assets_glibc_minor() {
+    if version_before "$GARNET_VERSION" 0 8 3; then
+        printf '39'
+    else
+        printf '34'
+    fi
+}
+
 glibc_too_old() {
     # Succeeds only when the host is Linux, reports a glibc version, and that
-    # version is older than 2.39. musl and unknown hosts are not judged here.
+    # version is older than the requested release's floor. musl and unknown
+    # hosts are not judged here.
     [ "$(uname -s 2>/dev/null || printf unknown)" = "Linux" ] || return 1
     _glibc="$(getconf GNU_LIBC_VERSION 2>/dev/null | awk '{print $2}')"
     [ -n "$_glibc" ] || return 1
@@ -404,7 +425,8 @@ glibc_too_old() {
     case "${_glibc_major}${_glibc_minor}" in
         ''|*[!0-9]*) return 1 ;;
     esac
-    [ "$_glibc_major" -lt 2 ] || { [ "$_glibc_major" -eq 2 ] && [ "$_glibc_minor" -lt 39 ]; }
+    _glibc_floor="$(linux_assets_glibc_minor)"
+    [ "$_glibc_major" -lt 2 ] || { [ "$_glibc_major" -eq 2 ] && [ "$_glibc_minor" -lt "$_glibc_floor" ]; }
 }
 
 source_install() {
@@ -500,7 +522,7 @@ release_install() {
     _format="$(detect_format)" || return 1
 
     if glibc_too_old; then
-        warn "host glibc ${_glibc} is older than 2.39, which the Linux release assets need; skipping them"
+        warn "host glibc ${_glibc} is older than 2.${_glibc_floor}, which the v${GARNET_VERSION} Linux release assets need; skipping them"
         return 1
     fi
 
