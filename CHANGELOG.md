@@ -26,18 +26,21 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
     pipes the way `run()` decodes them;
   - a variable a probe sets in `Probe.env` still applies.
 - **The same holds for the node and shell checks.** Codex's reviews of this
-  change found three more ways in, each turning a failing check into a pass:
+  change found four more ways in, each turning a failing check into a pass:
   - `BASH_ENV`, which bash runs before any non-interactive script;
   - `NODE_COMPILE_CACHE`, which loads prepared cached code into node;
-  - `POSIXLY_CORRECT`, which starts bash in POSIX mode, where scripts expand
-    aliases.
+  - `POSIXLY_CORRECT` and `POSIX_PEDANTIC`, which start bash in POSIX mode,
+    where scripts expand aliases.
 
   The first two turned a failing run of a real web/PWA probe into a pass. A
   list of names trails each interpreter's releases, so `child_environment()`
   drops each interpreter's whole namespace: every `PYTHON*`, `NODE_*` and
-  `BASH*` variable (an exported bash function is `BASH_FUNC_<name>%%`), plus
-  `ENV`, `SHELLOPTS` and `POSIXLY_CORRECT`, which sh and bash can read at
-  startup.
+  `BASH*` variable (an exported bash function is `BASH_FUNC_<name>%%`). It also
+  drops the unprefixed names bash's startup code reads that change what runs,
+  in bash 3.2 and 5.x: `ENV`, `SHELLOPTS`, `POSIXLY_CORRECT`, `POSIX_PEDANTIC`,
+  and `SSH_CLIENT` and `SSH2_CLIENT`, which make macOS and Debian bash run
+  `~/.bashrc` before `bash -c`. Probes also get `/dev/null` as standard input,
+  so none reads the caller's terminal or connection.
 
   The variables are removed from the environment, not ignored by one
   interpreter, so the reporters and other processes a probe starts inherit
@@ -47,11 +50,15 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   Python, bash, sh and node. Other variables those interpreters read while
   running, such as `CDPATH`, are not removed. It does not cover build and
   version-control configuration, such as `RUSTC_WRAPPER`, a cargo target
-  runner, other `CARGO_*` or `GIT_*` variables, or configuration files under
-  `HOME`. It also does not cover native-library loading (`LD_PRELOAD`,
-  `DYLD_*`, `OPENSSL_CONF`), `PATH`, the host's installed tools, or the
-  runner's own interpreter. A caller who controls those controls the tools the
-  matrix runs, as with `PATH`. A `python -c` probe still has its working
+  runner, or other `CARGO_*` or `GIT_*` variables, or configuration files under
+  `HOME`, including a login shell's profile. It also does not cover
+  native-library loading (`LD_PRELOAD`, `DYLD_*`, `OPENSSL_CONF`), `PATH`, the
+  host's installed tools, or the runner's own interpreter. A caller who
+  controls those controls the tools the matrix runs, as with `PATH`. On
+  Windows the web/PWA shell probe runs under WSL, which receives only the
+  variables `WSLENV` names: the removed variables cannot cross into it, and
+  neither do `PYTHONNOUSERSITE` and `PYTHONUTF8`, so Python inside WSL uses
+  that installation's own settings. A `python -c` probe still has its working
   directory, the runner's artifact directory, on `sys.path`. The new tests are
   in `scripts/test_run_agentic_dogfood_matrix.py`, which CI does not run; CI
   runs the matrix itself.
