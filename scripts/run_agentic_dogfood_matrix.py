@@ -79,9 +79,13 @@ def timeout_output(value: str | bytes | None) -> str:
 # NODE_* (NODE_OPTIONS preloads code, NODE_COMPILE_CACHE loads cached code) and bash's BASH*
 # (BASH_ENV runs a file first, BASH_FUNC_<name>%% replaces the command <name>).
 INTERPRETER_NAMESPACE_PREFIXES = ("PYTHON", "NODE_", "BASH")
-# Unprefixed variables sh and bash read at startup: sh sources ENV, bash imports SHELLOPTS as
-# shell options, and POSIXLY_CORRECT starts bash in POSIX mode, which expands aliases in scripts.
-SHELL_STARTUP_VARIABLES = frozenset({"ENV", "SHELLOPTS", "POSIXLY_CORRECT"})
+# Unprefixed variables sh and bash read at startup (bash's shell.c and variables.c, 3.2 and 5.x):
+# sh sources ENV; bash imports SHELLOPTS as shell options; POSIXLY_CORRECT and POSIX_PEDANTIC start
+# bash in POSIX mode, which expands aliases in scripts; and SSH_CLIENT or SSH2_CLIENT makes a bash
+# built with SSH_SOURCE_BASHRC run ~/.bashrc before `bash -c`.
+SHELL_STARTUP_VARIABLES = frozenset(
+    {"ENV", "SHELLOPTS", "POSIXLY_CORRECT", "POSIX_PEDANTIC", "SSH_CLIENT", "SSH2_CLIENT"}
+)
 
 
 def is_interpreter_hook(name: str) -> bool:
@@ -98,7 +102,8 @@ def child_environment(env: dict[str, str] | None = None) -> dict[str, str]:
     `is_interpreter_hook()` holds, and names the only two interpreter variables its children
     get: no user site-packages, so a `.pth` file under a caller-chosen HOME cannot run, and the
     runner's own UTF-8 mode, so a child encodes its pipes the way `run()` decodes them. A
-    variable a probe sets in `Probe.env` still applies.
+    variable a probe sets in `Probe.env` still applies. `run()` also gives every child /dev/null
+    as standard input, so no probe reads the caller's terminal or connection.
     """
     child = {name: value for name, value in os.environ.items() if not is_interpreter_hook(name)}
     child["PYTHONNOUSERSITE"] = "1"
@@ -115,6 +120,7 @@ def run(cmd: list[str], cwd: Path, timeout: int = 120, env: dict[str, str] | Non
             cmd,
             cwd=cwd,
             text=True,
+            stdin=subprocess.DEVNULL,
             capture_output=True,
             timeout=timeout,
             check=False,
