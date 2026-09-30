@@ -9,6 +9,34 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ## [Unreleased]
 
+### Dogfood matrix — probes run with no ambient Python interpreter variable
+
+- **The caller's `PYTHON*` variables no longer reach any probe.** `run()` copied
+  the caller's environment into every probe, and most probes check with
+  `assert` in a `python -c` child. Under `PYTHONOPTIMIZE` those checks were
+  stripped, so a failing probe printed its success marker and was classified
+  passed, and `PYTHONPATH` could shadow the modules a probe imports. OpenAI
+  Codex found this reviewing #604, which isolated only the clean-VM probe.
+  `run()` is the runner's only process spawn, and it now builds every child's
+  environment in `child_environment()`:
+  - every `PYTHON*` variable is dropped, the set `python -E` ignores;
+  - `PYTHONNOUSERSITE=1`, so a `.pth` file in the user site of a
+    caller-chosen `HOME` cannot run;
+  - `PYTHONUTF8` follows the runner's own UTF-8 mode, so a child encodes its
+    pipes the way `run()` decodes them;
+  - a variable a probe sets in `Probe.env` still applies.
+
+  The variables are removed from the environment, not ignored by one
+  interpreter, so the reporters and other processes a probe starts inherit
+  the same environment. The matrix runs the same 150 cases.
+- **Scope.** This covers environment variables. It does not cover the
+  runner's own interpreter, loader variables (`LD_PRELOAD`, `DYLD_*`), `PATH`,
+  or the host's Python installation; a caller who controls those controls every
+  tool the matrix runs. A `python -c` probe still has its working directory,
+  the runner's artifact directory, on `sys.path`. The new tests are in
+  `scripts/test_run_agentic_dogfood_matrix.py`, which CI does not run; CI runs
+  the matrix itself.
+
 ### W2 — Windows Studio clean-VM installer proof committed and enforced
 
 - **The proof is in the repository.**
