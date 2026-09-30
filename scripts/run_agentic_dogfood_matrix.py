@@ -74,10 +74,27 @@ def timeout_output(value: str | bytes | None) -> str:
     return value
 
 
-def run(cmd: list[str], cwd: Path, timeout: int = 120, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
-    process_env = os.environ.copy()
+def child_environment(env: dict[str, str] | None = None) -> dict[str, str]:
+    """The environment every probe runs in, and every process a probe starts inherits.
+
+    Most probes check with Python `assert` in a `python -c` child, so an ambient PYTHON*
+    variable could decide the verdict: PYTHONOPTIMIZE strips the asserts, and PYTHONPATH or
+    PYTHONHOME redirect the imports. The runner drops every PYTHON* variable (exactly the set
+    `python -E` ignores) and names the only two its children get: no user site-packages, so a
+    `.pth` file under a caller-chosen HOME cannot run, and the runner's own UTF-8 mode, so a
+    child encodes its pipes the way `run()` decodes them. A variable a probe sets in
+    `Probe.env` still applies.
+    """
+    child = {name: value for name, value in os.environ.items() if not name.startswith("PYTHON")}
+    child["PYTHONNOUSERSITE"] = "1"
+    child["PYTHONUTF8"] = "1" if sys.flags.utf8_mode else "0"
     if env:
-        process_env.update(env)
+        child.update(env)
+    return child
+
+
+def run(cmd: list[str], cwd: Path, timeout: int = 120, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
+    process_env = child_environment(env)
     try:
         return subprocess.run(
             cmd,
