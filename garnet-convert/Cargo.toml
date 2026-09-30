@@ -5,10 +5,9 @@ edition = "2021"
 rust-version.workspace = true
 authors = ["Island Development Crew"]
 license = "MIT OR Apache-2.0"
-description = "Garnet migration assistant — lifts a stylized subset of Rust / Ruby / Python / Go source into Garnet source via a language-independent Common IR, emitting `MigrateTodo` and `Untranslatable` placeholders for constructs that cannot be mechanically lowered. Output always ships in @sandbox mode (v4.0 SandboxMode default) pending human audit. Not a full transpiler — designed to scaffold a port, not finish one."
+description = "Garnet migration assistant — lifts a stylized subset of Rust / Ruby / Python / Go source into Garnet source via a language-independent Common IR, emitting `MigrateTodo` and `Untranslatable` placeholders for constructs that cannot be mechanically lowered. Output carries an @sandbox reviewer comment and an empty @caps() pending human audit, and always parses as Garnet. Not a full transpiler — designed to scaffold a port, not finish one."
 
 [dependencies]
 blake3 = "1.5"
-
-[dev-dependencies]
+# C1-18: the emitter parses its own output so every file it writes is valid Garnet.
 garnet-parser = { version = "0.3.0", path = "../garnet-parser-v0.3" }

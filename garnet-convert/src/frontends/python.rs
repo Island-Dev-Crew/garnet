@@ -259,6 +259,20 @@ impl<'a> PythonParser<'a> {
                     continue;
                 }
             }
+            // C1-18: a block (`for x in xs:`, `with ...:`, `if ...:` and so on) is
+            // handled whole. Simple `for`/`while` loops are lowered to brace form;
+            // every other block is kept as one whole-statement MigrateTodo, so its
+            // body is never flattened into the enclosing function.
+            if let Some(keyword) = block_keyword(&trimmed) {
+                let end = self.block_end(line_start, indent);
+                if let Some(lowered) = self.lower_loop(keyword, &trimmed, line_start, indent, end) {
+                    body.push(lowered);
+                } else {
+                    body.push(self.block_todo(keyword, line_start, indent, end));
+                    self.line_idx = end;
+                }
+                continue;
+            }
             // Simplified: each physical line is one statement.
             if let Some(stripped) = trimmed.strip_prefix("return") {
                 let expr_src = stripped.trim();
@@ -271,13 +285,6 @@ impl<'a> PythonParser<'a> {
                             self.lineage(line_start),
                         )))
                     },
-                    lineage: self.lineage(line_start),
-                });
-            } else if trimmed.starts_with("if ") {
-                // Very simplified; consume condition and body as idents
-                body.push(Cir::MigrateTodo {
-                    placeholder: Box::new(Cir::Literal(CirLit::Nil, self.lineage(line_start))),
-                    note: format!("Python if: {}", trimmed),
                     lineage: self.lineage(line_start),
                 });
             } else if trimmed.contains(" = ") && trimmed.starts_with("self.") {
@@ -304,6 +311,130 @@ impl<'a> PythonParser<'a> {
     fn current_line(&self) -> &str {
         self.lines.get(self.line_idx).copied().unwrap_or("")
     }
+
+    /// One past the last line of the block whose header is at `header` (indent
+    /// `indent`): every following line indented deeper, blank lines, and any
+    /// `elif`/`else`/`except`/`finally` clause at the header's indent.
+    fn block_end(&self, header: usize, indent: usize) -> usize {
+        let mut idx = header + 1;
+        while idx < self.lines.len() {
+            let line = self.lines[idx];
+            let trimmed = line.trim_start();
+            let line_indent = leading_indent(line);
+            let inside = trimmed.is_empty() || trimmed.starts_with('#') || line_indent > indent;
+            let clause = line_indent == indent && is_continuation_clause(trimmed);
+            if inside || clause {
+                idx += 1;
+            } else {
+                break;
+            }
+        }
+        // Trailing blank or comment lines belong to whatever follows.
+        while idx > header + 1 {
+            let t = self.lines[idx - 1].trim_start();
+            if t.is_empty() || t.starts_with('#') {
+                idx -= 1;
+            } else {
+                break;
+            }
+        }
+        idx
+    }
+
+    /// Lower `for NAME in EXPR:` and `while COND:` (with no `else:` clause) to
+    /// brace form, converting the body recursively.
+    fn lower_loop(
+        &mut self,
+        keyword: &str,
+        header: &str,
+        start: usize,
+        indent: usize,
+        end: usize,
+    ) -> Option<Cir> {
+        if !matches!(keyword, "for" | "while") {
+            return None;
+        }
+        // A loop `else:` clause has no brace form; keep the block whole.
+        let has_clause = (start + 1..end).any(|i| {
+            leading_indent(self.lines[i]) == indent && !self.lines[i].trim_start().is_empty()
+        });
+        if has_clause {
+            return None;
+        }
+        let head = header.strip_suffix(':')?.trim_end();
+        let node = if keyword == "for" {
+            let rest = head.strip_prefix("for ")?;
+            let (var, iter) = rest.split_once(" in ")?;
+            let var = var.trim();
+            if !is_identifier(var) {
+                return None;
+            }
+            self.line_idx = start + 1;
+            let body = self.parse_indented_body(indent);
+            Cir::For {
+                var: var.to_string(),
+                iter: Box::new(Cir::Ident(iter.trim().to_string(), self.lineage(start))),
+                body,
+                lineage: self.lineage(start),
+            }
+        } else {
+            let cond = head.strip_prefix("while ")?.trim();
+            self.line_idx = start + 1;
+            let body = self.parse_indented_body(indent);
+            Cir::While {
+                cond: Box::new(Cir::Ident(cond.to_string(), self.lineage(start))),
+                body,
+                lineage: self.lineage(start),
+            }
+        };
+        self.line_idx = end;
+        Some(node)
+    }
+
+    /// The whole block, header and body, as one MigrateTodo whose note carries
+    /// the source lines (dedented to the header) for hand translation.
+    fn block_todo(&self, keyword: &str, start: usize, indent: usize, end: usize) -> Cir {
+        let text = self.lines[start..end]
+            .iter()
+            .map(|l| l.get(indent.min(leading_indent(l))..).unwrap_or(""))
+            .collect::<Vec<_>>()
+            .join("\n");
+        Cir::MigrateTodo {
+            placeholder: Box::new(Cir::Literal(CirLit::Nil, self.lineage(start))),
+            note: format!("Python `{keyword}` block kept whole for hand translation:\n{text}"),
+            lineage: self.lineage(start),
+        }
+    }
+}
+
+/// The keyword of a statement that opens an indented Python block.
+fn block_keyword(trimmed: &str) -> Option<&'static str> {
+    if !trimmed.trim_end().ends_with(':') {
+        return None;
+    }
+    [
+        "for", "while", "with", "if", "elif", "else", "try", "except", "finally", "async", "match",
+        "case", "class",
+    ]
+    .into_iter()
+    .find(|kw| {
+        trimmed == *kw
+            || trimmed.starts_with(&format!("{kw} "))
+            || trimmed.starts_with(&format!("{kw}:"))
+    })
+}
+
+fn is_continuation_clause(trimmed: &str) -> bool {
+    matches!(
+        block_keyword(trimmed),
+        Some("elif" | "else" | "except" | "finally")
+    )
+}
+
+fn is_identifier(s: &str) -> bool {
+    let mut chars = s.chars();
+    matches!(chars.next(), Some(c) if c == '_' || c.is_ascii_alphabetic())
+        && chars.all(|c| c == '_' || c.is_ascii_alphanumeric())
 }
 
 fn leading_indent(s: &str) -> usize {

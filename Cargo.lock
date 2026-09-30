@@ -798,6 +798,7 @@ name = "garnet-convert"
 version = "0.4.0"
 dependencies = [
  "blake3",
+ "garnet-parser",
 ]
 
 [[package]]

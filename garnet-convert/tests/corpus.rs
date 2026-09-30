@@ -1,9 +1,9 @@
 //! End-to-end conversion tests — source → Garnet round-trip per language.
 //!
 //! Each test drives the full pipeline: parse → lift → idioms → witness
-//! → emit. Assertions verify: the output is marked `@sandbox`, declares
-//! `@caps()` (empty until human audit), and contains the expected
-//! Garnet constructs for the source.
+//! → emit. Assertions verify: the output names the `@sandbox` reviewer marker
+//! (a comment), declares `@caps()` (empty until human audit), and contains the
+//! expected Garnet constructs for the source.
 
 use garnet_convert::{convert, EmitOpts, SourceLang};
 
@@ -232,7 +232,9 @@ fn migrate_todo_md_formatted_as_checklist() {
     let src = "method_missing x\n";
     let (out, _) = convert(src, SourceLang::Ruby, "d.rb", opts("ruby", "d.rb")).unwrap();
     assert!(out.migrate_todo_md.contains("- [ ]"));
-    assert!(out.migrate_todo_md.contains("@sandbox(unquarantine)"));
+    // C1-18: there is no @sandbox(unquarantine); the checklist ends at `garnet check`.
+    assert!(!out.migrate_todo_md.contains("unquarantine"));
+    assert!(out.migrate_todo_md.contains("run `garnet check`"));
 }
 
 #[test]
