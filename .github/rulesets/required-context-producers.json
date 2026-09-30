@@ -20,7 +20,7 @@
       "matrix": {
         "os": "macos-latest"
       },
-      "semantic_sha256": "d9c355e7e35c97a33da70ddf712caf7c2d17a9bb3980b5e6ca0c2de6585d6baf"
+      "semantic_sha256": "2af6ae8b7ec39a26e9fc4c8eec09143be2af936bdc782d3a22dbc54a4d1f5ec5"
     },
     {
       "context": "Build VSIX (ubuntu-latest)",
@@ -30,7 +30,7 @@
       "matrix": {
         "os": "ubuntu-latest"
       },
-      "semantic_sha256": "b8c8d49a61c35fa3ed701ad76eb960618495c74b70f6c8f0c120a7305e404e31"
+      "semantic_sha256": "6f6ab42a1521d084e6a165e875c2b964d20447e7f13ffbd3b21e4f3d71d27a9f"
     },
     {
       "context": "Cross-OS determinism comparison",
@@ -106,21 +106,21 @@
       "workflow": ".github/workflows/ci.yml",
       "event": "pull_request",
       "job": "agent-contracts",
-      "semantic_sha256": "47f818bfda2580fd5783135be91b912fb7f3018e342501f101ca3a92dd5968a4"
+      "semantic_sha256": "6df39a5d2d3dbe54e7ebd05697579998a4b908da43a42fdc4fe84b2d1794d324"
     },
     {
       "context": "build-packages",
       "workflow": ".github/workflows/linux-packages.yml",
       "event": "pull_request",
       "job": "build-packages",
-      "semantic_sha256": "4921264c403881482aefccbdb2e2cd7fd757311ebe238e13714d06978d17b757"
+      "semantic_sha256": "41426f9183d1b830bbc366ca32f4b96a90679324ef0a1cd2477170aadcb60872"
     },
     {
       "context": "canonical MVP examples",
       "workflow": ".github/workflows/ci.yml",
       "event": "pull_request",
       "job": "canonical-examples",
-      "semantic_sha256": "c8863c48c0ccb3d23bcdd7c67a11352362ec1903216f88b27fe72d5bcfe580b8"
+      "semantic_sha256": "f651a7413e3a2b34ad3aa777e7a665d9315eec8d2dd2a4d104ef83e595173ce9"
     },
     {
       "context": "cargo audit",
@@ -141,7 +141,7 @@
       "workflow": ".github/workflows/ci.yml",
       "event": "pull_request",
       "job": "docs",
-      "semantic_sha256": "c92ca22d6ce6e5de07a7d2955c312a684b73b1e8859614ed3eed2f3f36b38d50"
+      "semantic_sha256": "147391731700367783cbb388dbfcfc061d50776e9578a4796707135baa73c701"
     },
     {
       "context": "cargo test (macos-latest)",
@@ -151,7 +151,7 @@
       "matrix": {
         "os": "macos-latest"
       },
-      "semantic_sha256": "927e716aba11c9c524e369f1fbe734e58ecdc5bafc307c970627d59b390b1083"
+      "semantic_sha256": "6b5ca2180a6837129c64fb8300d8e40944d90b49d280971dce56d310bbc5eb19"
     },
     {
       "context": "cargo test (ubuntu-latest)",
@@ -161,7 +161,7 @@
       "matrix": {
         "os": "ubuntu-latest"
       },
-      "semantic_sha256": "1a9d7d4f3f5006162eeeb9132cca201ab97194795177f21a53dc2738e2571d08"
+      "semantic_sha256": "f3c8720825634b5a8c413b3f52cad5d6e19b6eb5624ea34c10adbe0be2067ab3"
     },
     {
       "context": "cargo test (windows-latest)",
@@ -171,7 +171,7 @@
       "matrix": {
         "os": "windows-latest"
       },
-      "semantic_sha256": "366f5c24be327d593843aaf8b110966c72b05f1992faae7948c524fe91cbab2a"
+      "semantic_sha256": "1409fde1b26e0011e5134918e2c6607d9cc061350601ed50b87b9f3d685085a0"
     },
     {
       "context": "cargo-deny check",
@@ -185,7 +185,7 @@
       "workflow": ".github/workflows/ci.yml",
       "event": "pull_request",
       "job": "clippy",
-      "semantic_sha256": "672340724e6120bcacc08e787b1e22c599133db98404a326c7c7b0092f4f21f0"
+      "semantic_sha256": "89f6275cb97ccd12a8b18e80190150b1e021d4fd37a36f01b5564046342d527e"
     },
     {
       "context": "machine-truth drift guard",
@@ -209,7 +209,7 @@
       "matrix": {
         "target": "aarch64-apple-darwin"
       },
-      "semantic_sha256": "3ffa9da6506ce11fe60e027ca66317014a82f3a6e4468af2ed3926e48ee52eb7"
+      "semantic_sha256": "caf7da4e21a986afd77d2d8e83f78672dfe007e1ea4611b0d4ac0fb112d882bb"
     },
     {
       "context": "macos-cli-tarballs (x86_64-apple-darwin)",
@@ -219,35 +219,35 @@
       "matrix": {
         "target": "x86_64-apple-darwin"
       },
-      "semantic_sha256": "113c7146d502b5302a88fcff0f9d1bf7ab4b9ee22ffa69e1477bddc174f4ecf9"
+      "semantic_sha256": "588e64722a6bf99537e5d47c73d0926f268d22155b5137add7421491b24dde69"
     },
     {
       "context": "rustfmt",
       "workflow": ".github/workflows/ci.yml",
       "event": "pull_request",
       "job": "fmt",
-      "semantic_sha256": "b2359e33d30844e25874bda5b860a7b2b43d0f8820ee4ec5a96f258c4248623c"
+      "semantic_sha256": "28ae0628b9207c31a9638308f919d3bbd7c004bd1e495a713b1678fb2159c7c4"
     },
     {
       "context": "shellcheck-installer",
       "workflow": ".github/workflows/linux-packages.yml",
       "event": "pull_request",
       "job": "shellcheck-installer",
-      "semantic_sha256": "3dc842a0ded1df89d574ce2a130377f3d9566f186ed12336a3dc154e24dfcad8"
+      "semantic_sha256": "1816bc79597412cd8ddac48b03f7aeb02b503a8596c5e43fe51fac44ad33c4d2"
     },
     {
       "context": "smoke-deb",
       "workflow": ".github/workflows/linux-packages.yml",
       "event": "pull_request",
       "job": "smoke-deb",
-      "semantic_sha256": "f299a4dd2a9248562ccd5e1336594dc8973774da9d7322fa543488ac1876cba6"
+      "semantic_sha256": "7af3c52dcd10d49d9baa258e22eea40595e540bf05550133a54c63af6fea0878"
     },
     {
       "context": "smoke-rpm",
       "workflow": ".github/workflows/linux-packages.yml",
       "event": "pull_request",
       "job": "smoke-rpm",
-      "semantic_sha256": "9dff3504c554b91b509c538cb7916e6bbfa4f5837b9bd30fc5b2813bb5e8f111"
+      "semantic_sha256": "3465bb80e3dfa288233615ee9202fe2befa877042a78cc8d1b699ec52a118fc7"
     },
     {
       "context": "Base-controlled trust policy",
