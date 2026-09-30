@@ -18,7 +18,7 @@ built for the code agents write and humans accept.</strong></p>
   <a href="FAQ.md">FAQ</a>
 </p>
 
-<p align="center"><sub>Source on <code>main</code> is <!-- truth:version -->0.8.2<!-- /truth -->; the last release is <!-- truth:latest_tag -->v0.8.2<!-- /truth -->.</sub></p>
+<p align="center"><sub>Source on <code>main</code> is <!-- truth:version -->0.8.3<!-- /truth -->; the last release is <!-- truth:latest_tag -->v0.8.2<!-- /truth -->.</sub></p>
 
 <p align="center"><sub>The v0.8.2 binary lags <code>main</code>: it gates 15 host primitives, has no <code>mem</code> capability gate and emits seal/v1. The 24-row gate, <code>mem</code> and seal/v2 described below are on <code>main</code> and not yet in a release.</sub></p>
 

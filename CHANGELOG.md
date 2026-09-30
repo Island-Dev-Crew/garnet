@@ -7,7 +7,27 @@ This file is updated in the same PR as the work it tracks (per the v0.5 slice
 contract). Lines added here are part of the calibrated record — if a
 slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
-## [Unreleased]
+## [0.8.3] — not yet tagged (the workspace moved to 0.8.3 on 2026-09-30)
+
+> Cut truth: the in-tree version is 0.8.3, so the release candidate reports
+> it. The `v0.8.3` tag is the maintainer's act and has not been cut; until it
+> is, the published release is v0.8.2. The sections below are everything merged
+> to `main` since v0.8.2, in their original order.
+
+### Limits in 0.8.3
+
+- Only `@caps` and `@max_depth` trap at run time. `@bounded` step budgets,
+  memory and time ceilings, `@mailbox`, and OS-sandbox application on macOS and
+  Windows are declared, not enforced; seccomp is applied on Linux only.
+- The Rust and Go converter frontends drop binary operators: the output parses
+  but does not compute the same thing (Q48; after R2).
+- WV-6 (native-Windows acceptance) ships as a disclosed partial.
+  `python3 -I scripts/garnet_wv_acceptance_status.py --wv WV-6` reports
+  `partial`: its five checks pass, but the recorded product digest predates
+  the current tree.
+- The installers check the release signature only when `gpg` is installed.
+- The binaries are not code-signed, and Garnet Studio is not a release asset.
+- Garnet is research-grade (v0.x), not production or 1.0.
 
 ### T5b — the 0.8.3 release candidate
 

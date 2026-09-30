@@ -978,6 +978,18 @@ jobs:
           sha256sum *.deb *.rpm *.tar.gz *.zip *.tgz > SHA256SUMS
           cat SHA256SUMS
 
+      # The curated notes, then the SHA-256 of every asset from the manifest
+      # this job signs. Written outside release-dist so no asset glob takes it.
+      - name: Compose the release body
+        run: |
+          set -euo pipefail
+          {
+            cat ".github/release-notes/${GITHUB_REF_NAME}.md"
+            printf '\n## SHA-256\n\n```\n'
+            cat release-dist/SHA256SUMS
+            printf '```\n'
+          } > release-body.md
+
       - name: Sign SHA256SUMS (activates when GPG_SIGNING_KEY secret is set)
         if: env.HAS_GPG == 'true'
         env:
@@ -1020,7 +1032,7 @@ jobs:
             release-dist/garnet-sbom-cyclonedx.tgz
             release-dist/SHA256SUMS
           fail_on_unmatched_files: true
-          body_path: .github/release-notes/${{ github.ref_name }}.md
+          body_path: release-body.md
 
       - name: Attach SHA256SUMS signature (only when signed)
         if: env.HAS_GPG == 'true'
