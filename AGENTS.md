@@ -175,8 +175,10 @@ as `CDPATH`; build and version-control configuration (`RUSTC_WRAPPER`, cargo
 runners, `CARGO_*`, `GIT_*`); configuration files under `HOME`, including a
 login shell's profile; `PATH`; native-library loading (`LD_PRELOAD`, `DYLD_*`,
 `OPENSSL_CONF`); installed tools; the runner's own interpreter; and, on Windows,
-the environment inside WSL, which receives only the variables `WSLENV` names, so
-`PYTHONNOUSERSITE` and `PYTHONUTF8` do not cross into it. Run
+the environment inside WSL. WSL takes a Windows variable only when `WSLENV`
+names it (and `PATH` by default), so a removed variable cannot cross, and
+`PYTHONNOUSERSITE` and `PYTHONUTF8` cross only when the caller's `WSLENV` names
+them. Run
 `python3 scripts/test_run_agentic_dogfood_matrix.py` after changing the runner.
 
 ## WV-6 / WV-7 Acceptance Gates

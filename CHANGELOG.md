@@ -50,18 +50,20 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   Python, bash, sh and node. Other variables those interpreters read while
   running, such as `CDPATH`, are not removed. It does not cover build and
   version-control configuration, such as `RUSTC_WRAPPER`, a cargo target
-  runner, or other `CARGO_*` or `GIT_*` variables, or configuration files under
-  `HOME`, including a login shell's profile. It also does not cover
+  runner, or other `CARGO_*` or `GIT_*` variables, or configuration files
+  under `HOME`, including a login shell's profile. It also does not cover
   native-library loading (`LD_PRELOAD`, `DYLD_*`, `OPENSSL_CONF`), `PATH`, the
   host's installed tools, or the runner's own interpreter. A caller who
   controls those controls the tools the matrix runs, as with `PATH`. On
-  Windows the web/PWA shell probe runs under WSL, which receives only the
-  variables `WSLENV` names: the removed variables cannot cross into it, and
-  neither do `PYTHONNOUSERSITE` and `PYTHONUTF8`, so Python inside WSL uses
-  that installation's own settings. A `python -c` probe still has its working
-  directory, the runner's artifact directory, on `sys.path`. The new tests are
-  in `scripts/test_run_agentic_dogfood_matrix.py`, which CI does not run; CI
-  runs the matrix itself.
+  Windows the web/PWA shell probe runs under WSL, which takes a Windows
+  variable only when `WSLENV` names it (and `PATH` by default). A removed
+  variable is absent from the probe's environment, so it cannot cross.
+  `PYTHONNOUSERSITE` and `PYTHONUTF8` cross only if the caller's `WSLENV`
+  names them; otherwise Python inside WSL uses that installation's own
+  settings. A `python -c` probe still has its working directory, the runner's
+  artifact directory, on `sys.path`. The new tests are in
+  `scripts/test_run_agentic_dogfood_matrix.py`, which CI does not run; CI runs
+  the matrix itself.
 
 ### W2 — Windows Studio clean-VM installer proof committed and enforced
 
