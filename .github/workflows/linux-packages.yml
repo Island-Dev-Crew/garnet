@@ -661,6 +661,8 @@ jobs:
           $env:GARNET_BASE_URL = ([Uri](Resolve-Path dist).Path).AbsoluteUri
           $env:GARNET_PREFIX = Join-Path $env:RUNNER_TEMP 'garnet-ps-install'
           $env:GARNET_NO_MODIFY_PATH = '1'
+          # The staged SHA256SUMS is unsigned; the next step checks signatures.
+          $env:GARNET_VERIFY_SIGNATURE = '0'
           ./docs/install.ps1
           $out = & (Join-Path $env:GARNET_PREFIX 'bin\garnet.exe') --version
           if (-not ($out -match "garnet $([regex]::Escape($version))")) { throw "installed garnet.exe reported: $out" }
@@ -683,9 +685,26 @@ jobs:
             Write-Host "install.ps1 said: $message"
             if (-not $message -or $message -notmatch $Pattern) { throw "expected a failure matching '$Pattern'" }
           }
-          Expect-Failure @{ GARNET_VERSION = '0.8.1' } 'lists no garnet-0\.8\.1-x86_64-pc-windows-msvc\.zip'
+          # v0.8.1's real SHA256SUMS.asc verifies first when gpg is on PATH. The
+          # keys come from this checkout, since garnet-lang.org serves them only
+          # after this change deploys.
+          $keys = ([Uri](Resolve-Path docs/garnet-release-keys.asc).Path).AbsoluteUri
+          Expect-Failure @{ GARNET_VERSION = '0.8.1'; GARNET_SIGNING_KEYS_URL = $keys } 'lists no garnet-0\.8\.1-x86_64-pc-windows-msvc\.zip'
           Expect-Failure @{ GARNET_BASE_URL = 'http://example.com/garnet' } 'refusing a non-https download URL'
           Expect-Failure @{ GARNET_BASE_URL = 'file:////server/share/garnet' } 'not a local path'
+
+      # D-26: install.ps1 checks SHA256SUMS.asc when gpg is on PATH. v0.8.2 is a
+      # real release signed by the 0.8 key, so the first case is a real
+      # end-to-end install through that signature. The refusals use the same
+      # signature against the staged, unsigned SHA256SUMS. Windows PowerShell
+      # 5.1 runs it too, because `irm | iex` there is the common path.
+      - name: Installer — install.ps1 checks SHA256SUMS.asc (PowerShell 7)
+        shell: pwsh
+        run: ./scripts/ci_install_ps1_signature.ps1
+
+      - name: Installer — install.ps1 checks SHA256SUMS.asc (Windows PowerShell 5.1)
+        shell: powershell
+        run: ./scripts/ci_install_ps1_signature.ps1
 
       - name: Upload Windows zip artifact
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
