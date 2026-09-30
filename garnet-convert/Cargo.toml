@@ -9,3 +9,6 @@ description = "Garnet migration assistant — lifts a stylized subset of Rust / 
 
 [dependencies]
 blake3 = "1.5"
+
+[dev-dependencies]
+garnet-parser = { version = "0.3.0", path = "../garnet-parser-v0.3" }
