@@ -158,6 +158,23 @@ readiness-sensitive paths, so a change to the producer of the required
 `PR dogfood evidence` context must carry that evidence. Both are trust-kernel
 paths as well, so such a change also needs a structured review record.
 
+## Agentic Dogfood Matrix Child Environment
+
+`scripts/run_agentic_dogfood_matrix.py` starts every process through `run()`,
+which builds the environment with `child_environment()`. No probe, and no
+process a probe starts, sees the caller's variables for the interpreters the
+checks run in: every `PYTHON*`, `NODE_*` and `BASH*` variable (an exported bash
+function is `BASH_FUNC_<name>%%`), plus `ENV`, `SHELLOPTS` and
+`POSIXLY_CORRECT`. Children get `PYTHONNOUSERSITE=1` and the runner's own UTF-8
+mode as `PYTHONUTF8`, and `Probe.env` applies last. Start processes only through
+`run()`, and keep `assert` out of the runner's own logic. Outside this rule, and
+the caller's: variables the interpreters read while running, such as `CDPATH`;
+build and version-control configuration (`RUSTC_WRAPPER`, cargo runners,
+`CARGO_*`, `GIT_*`, configuration files under `HOME`); `PATH`; native-library
+loading (`LD_PRELOAD`, `DYLD_*`, `OPENSSL_CONF`); installed tools; and the
+runner's own interpreter. Run `python3 scripts/test_run_agentic_dogfood_matrix.py`
+after changing the runner.
+
 ## WV-6 / WV-7 Acceptance Gates
 
 `F_Project_Management/LAUNCH/WV6_WV7_ACCEPTANCE_CONTRACTS.json` preserves the

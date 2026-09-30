@@ -9,46 +9,52 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ## [Unreleased]
 
-### Dogfood matrix — probes run without the caller's interpreter hooks
+### Dogfood matrix — probes run without the caller's interpreter variables
 
 - **The caller's `PYTHON*` variables no longer reach any probe.** `run()` copied
-  the caller's environment into every probe, and most probes check with
-  `assert` in a `python -c` child. Under `PYTHONOPTIMIZE` those checks were
+  the caller's environment into every probe. 41 of the 150 CI cases check with
+  `assert` in a `python -c` child, and under `PYTHONOPTIMIZE` those checks were
   stripped, so a failing probe printed its success marker and was classified
-  passed, and `PYTHONPATH` could shadow the modules a probe imports. OpenAI
-  Codex found this reviewing #604, which isolated only the clean-VM probe.
-  `run()` is the runner's only process spawn, and it now builds every child's
-  environment in `child_environment()`:
+  passed. `PYTHONPATH` could shadow the modules a probe imports. OpenAI Codex
+  found this reviewing #604, which isolated only the clean-VM probe. `run()` is
+  the runner's only process spawn, and it now builds every child's environment
+  in `child_environment()`:
   - every `PYTHON*` variable is dropped, the set `python -E` ignores;
   - `PYTHONNOUSERSITE=1`, so a `.pth` file in the user site of a
     caller-chosen `HOME` cannot run;
   - `PYTHONUTF8` follows the runner's own UTF-8 mode, so a child encodes its
     pipes the way `run()` decodes them;
   - a variable a probe sets in `Probe.env` still applies.
-- **Nor do the startup hooks of bash, sh and node.** Codex's first review of
-  this change found that `BASH_ENV` survived: bash sources it before any
-  non-interactive script, so it turned a failing run of the real
-  `smoke-web-pwa-local-readiness` probe into a pass and put `PYTHONOPTIMIZE`
-  back for a Python check run under bash. `child_environment()` also drops
-  `BASH_ENV`, `ENV`, `SHELLOPTS`, `BASHOPTS`, every exported bash function
-  (`BASH_FUNC_<name>%%`, which replaces the command `<name>` in a script),
-  `NODE_OPTIONS` and `NODE_PATH`.
+- **The same holds for the node and shell checks.** Codex's reviews of this
+  change found three more ways in, each turning a failing check into a pass:
+  - `BASH_ENV`, which bash runs before any non-interactive script;
+  - `NODE_COMPILE_CACHE`, which loads prepared cached code into node;
+  - `POSIXLY_CORRECT`, which starts bash in POSIX mode, where scripts expand
+    aliases.
+
+  The first two turned a failing run of a real web/PWA probe into a pass. A
+  list of names trails each interpreter's releases, so `child_environment()`
+  drops each interpreter's whole namespace: every `PYTHON*`, `NODE_*` and
+  `BASH*` variable (an exported bash function is `BASH_FUNC_<name>%%`), plus
+  `ENV`, `SHELLOPTS` and `POSIXLY_CORRECT`, which sh and bash can read at
+  startup.
 
   The variables are removed from the environment, not ignored by one
   interpreter, so the reporters and other processes a probe starts inherit
-  the same environment. The matrix runs the same 150 cases.
-- **Scope.** This covers the startup hooks of the interpreters the checks run
-  in: Python, bash, sh and node. Other variables those interpreters read while
+  the same environment. The CI matrix (`--skip-app-workbench`) runs the same
+  150 cases. The rule is recorded in `AGENTS.md`.
+- **Scope.** This covers the variables of the interpreters the checks run in:
+  Python, bash, sh and node. Other variables those interpreters read while
   running, such as `CDPATH`, are not removed. It does not cover build and
-  version-control tool configuration, such as `RUSTC_WRAPPER`, a cargo target
+  version-control configuration, such as `RUSTC_WRAPPER`, a cargo target
   runner, other `CARGO_*` or `GIT_*` variables, or configuration files under
-  `HOME`. It also does not cover the runner's own interpreter, loader variables
-  (`LD_PRELOAD`, `DYLD_*`), `PATH`, or the host's installed tools. A caller who
-  controls those controls the tools the matrix runs, as with `PATH`. A
-  `python -c` probe still has its working directory, the runner's artifact
-  directory, on `sys.path`. The new tests are in
-  `scripts/test_run_agentic_dogfood_matrix.py`, which CI does not run; CI runs
-  the matrix itself.
+  `HOME`. It also does not cover native-library loading (`LD_PRELOAD`,
+  `DYLD_*`, `OPENSSL_CONF`), `PATH`, the host's installed tools, or the
+  runner's own interpreter. A caller who controls those controls the tools the
+  matrix runs, as with `PATH`. A `python -c` probe still has its working
+  directory, the runner's artifact directory, on `sys.path`. The new tests are
+  in `scripts/test_run_agentic_dogfood_matrix.py`, which CI does not run; CI
+  runs the matrix itself.
 
 ### W2 — Windows Studio clean-VM installer proof committed and enforced
 
