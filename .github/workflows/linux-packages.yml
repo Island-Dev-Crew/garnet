@@ -34,7 +34,7 @@ on:
   workflow_dispatch: {}
 
 env:
-  # Garnet is dual-licensed MIT OR Apache-2.0; both notices ship in LICENSE.
+  # Garnet is dual-licensed MIT OR Apache-2.0: LICENSE-MIT and LICENSE-APACHE.
   CARGO_TERM_COLOR: always
   # The workspace root for the Rust side — cargo-deb / cargo-generate-rpm
   # run from here.
@@ -771,7 +771,7 @@ jobs:
           Remove-Item -Recurse -Force dist, package -ErrorAction SilentlyContinue
           New-Item -ItemType Directory -Force -Path dist, package | Out-Null
           Copy-Item target/x86_64-pc-windows-msvc/release/garnet.exe package/
-          Copy-Item LICENSE, README.md package/
+          Copy-Item LICENSE-MIT, LICENSE-APACHE, README.md package/
           Compress-Archive -Path package/* -DestinationPath "dist/$asset"
           $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath "dist/$asset").Hash.ToLowerInvariant()
           # sha256sum format (two spaces), written with LF endings.

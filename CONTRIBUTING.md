@@ -207,4 +207,4 @@ By contributing to Garnet, you agree that your contributions will be licensed un
 
 *"A man that hath friends must shew himself friendly." — Proverbs 18:24 (KJV)*
 
-Garnet is dual-licensed under Apache-2.0 and MIT. See `LICENSE` for details.
+Garnet is dual-licensed under Apache-2.0 and MIT. See `LICENSE-APACHE` and `LICENSE-MIT`.
