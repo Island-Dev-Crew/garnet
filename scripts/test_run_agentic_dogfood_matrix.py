@@ -1047,12 +1047,13 @@ class ChildInterpreterEnvironmentTests(unittest.TestCase):
         "NODE_V8_COVERAGE", "NODE_GARNET_MATRIX_UNDOCUMENTED",
     )
     # What bash and sh read at startup: bash's own BASH* names (an exported function is
-    # BASH_FUNC_<name>%%), plus one it does not define, and the unprefixed ENV, SHELLOPTS and
-    # POSIXLY_CORRECT.
+    # BASH_FUNC_<name>%%), plus one it does not define, and the unprefixed names bash's shell.c
+    # reads before running a script (bash 3.2 and 5.x): ENV, SHELLOPTS, POSIXLY_CORRECT,
+    # POSIX_PEDANTIC, SSH_CLIENT and SSH2_CLIENT.
     SHELL_VARIABLES = (
         "BASH_ENV", "BASHOPTS", "BASH_COMPAT", "BASH_XTRACEFD", "BASH_LOADABLES_PATH",
         "BASH_FUNC_garnet_matrix_probe%%", "BASH_GARNET_MATRIX_UNDOCUMENTED",
-        "ENV", "SHELLOPTS", "POSIXLY_CORRECT",
+        "ENV", "SHELLOPTS", "POSIXLY_CORRECT", "POSIX_PEDANTIC", "SSH_CLIENT", "SSH2_CLIENT",
     )
 
     def test_child_environment_carries_no_ambient_interpreter_variable(self) -> None:
@@ -1138,12 +1139,63 @@ class ChildInterpreterEnvironmentTests(unittest.TestCase):
 
     @unittest.skipUnless(shutil.which("bash"), "bash is not on PATH")
     def test_posix_mode_from_the_environment_cannot_change_a_shell_probe(self) -> None:
-        # POSIXLY_CORRECT starts bash in POSIX mode, which expands aliases in a script.
+        # POSIXLY_CORRECT and POSIX_PEDANTIC start bash in POSIX mode, which expands aliases in a script.
+        bash = shutil.which("bash")
         script = "check() { return 1; }\nalias check=':'\nif check; then echo 'shell check passed'; else exit 1; fi\n"
-        result = self._run_command(
-            [shutil.which("bash"), "-c", script], "shell check passed", {"POSIXLY_CORRECT": "1"}
+        from_python = (
+            "import subprocess, sys\n"
+            f"sys.exit(subprocess.run([{bash!r}, '-c', {script!r}]).returncode)\n"
         )
-        self.assertEqual("failed", result.status, result.stdout_excerpt)
+        for variable in ("POSIXLY_CORRECT", "POSIX_PEDANTIC"):
+            for label, command in (
+                ("bash probe", [bash, "-c", script]),
+                ("bash started by a Python probe", [sys.executable, "-c", from_python]),
+            ):
+                with self.subTest(variable=variable, path=label):
+                    result = self._run_command(command, "shell check passed", {variable: "1"})
+                    self.assertEqual("failed", result.status, result.stdout_excerpt)
+
+    @unittest.skipUnless(shutil.which("bash"), "bash is not on PATH")
+    def test_ssh_client_cannot_make_bash_source_a_home_startup_file(self) -> None:
+        # A bash built with SSH_SOURCE_BASHRC (macOS /bin/bash, Debian) runs ~/.bashrc before
+        # `bash -c` when SSH_CLIENT or SSH2_CLIENT is set and SHLVL is unset or 0.
+        bash = shutil.which("bash")
+        with tempfile.TemporaryDirectory() as home_temp:
+            home = Path(home_temp)
+            (home / ".bashrc").write_text("echo 'shell check passed'\nexit 0\n", encoding="utf-8")
+            for variable in ("SSH_CLIENT", "SSH2_CLIENT"):
+                ambient = {"HOME": str(home), variable: "192.0.2.1 50000 22", "SHLVL": "0"}
+                direct = subprocess.run(
+                    [bash, "-c", "exit 1"],
+                    env={"PATH": os.environ.get("PATH", ""), **ambient},
+                    stdin=subprocess.DEVNULL,
+                    capture_output=True,
+                    text=True,
+                    timeout=30,
+                )
+                if "shell check passed" not in direct.stdout:
+                    self.skipTest(f"this bash does not source ~/.bashrc under {variable}")
+                with self.subTest(variable=variable):
+                    result = self._run_command([bash, "-c", "exit 1"], "shell check passed", ambient)
+                    self.assertEqual("failed", result.status, result.stdout_excerpt)
+
+    def test_probes_read_an_empty_standard_input(self) -> None:
+        # bash also runs ~/.bashrc when its standard input is a network connection, and an
+        # interactive interpreter would read the caller's terminal; probes get /dev/null instead.
+        code = (
+            "import importlib.util, os, sys\n"
+            f"spec = importlib.util.spec_from_file_location('run_agentic_dogfood_matrix', {str(SCRIPT)!r})\n"
+            "module = importlib.util.module_from_spec(spec)\n"
+            "sys.modules['run_agentic_dogfood_matrix'] = module\n"
+            "spec.loader.exec_module(module)\n"
+            "probe = 'import os, sys; print(os.path.samestat(os.fstat(0), os.stat(os.devnull)), repr(sys.stdin.read()))'\n"
+            "print(module.run([sys.executable, '-c', probe], module.ROOT).stdout.strip())\n"
+        )
+        completed = subprocess.run(
+            [sys.executable, "-I", "-c", code], input="caller input\n", capture_output=True, text=True, timeout=60
+        )
+        self.assertEqual(0, completed.returncode, completed.stderr)
+        self.assertEqual("True ''", completed.stdout.strip())
 
     @unittest.skipUnless(shutil.which("node"), "node is not on PATH")
     def test_node_options_cannot_preload_code_into_a_node_probe(self) -> None:
