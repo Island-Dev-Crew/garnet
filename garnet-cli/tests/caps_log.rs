@@ -86,3 +86,61 @@ fn tampering_breaks_the_chain() {
     let err = String::from_utf8(verify.stderr).unwrap();
     assert!(err.contains("CHAIN BROKEN"), "{err}");
 }
+
+#[test]
+fn an_existing_log_it_cannot_read_is_never_overwritten() {
+    // C5-12: an unreadable log used to count as empty, so the append wrote a
+    // fresh genesis entry over the old chain.
+    let log = fresh_log("unreadable");
+    let original: Vec<u8> = b"{\"index\":0,\"prev_blake3\":\"genesis\"}\n\xff\xfe not utf-8\n".to_vec();
+    std::fs::write(&log, &original).unwrap();
+
+    let out = garnet()
+        .arg("caps-log")
+        .arg(example("hello.garnet"))
+        .arg("--log")
+        .arg(&log)
+        .output()
+        .unwrap();
+    let err = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        !out.status.success(),
+        "append over an unreadable log must fail"
+    );
+    assert!(err.contains("refusing to overwrite"), "{err}");
+    assert_eq!(
+        std::fs::read(&log).unwrap(),
+        original,
+        "the existing log must be left byte-for-byte unchanged"
+    );
+}
+
+#[test]
+fn a_log_path_that_is_not_a_file_is_refused() {
+    let dir = fresh_log("dir-as-log");
+    std::fs::create_dir_all(&dir).unwrap();
+    let out = garnet()
+        .arg("caps-log")
+        .arg(example("hello.garnet"))
+        .arg("--log")
+        .arg(&dir)
+        .output()
+        .unwrap();
+    assert!(!out.status.success(), "a directory is not a log");
+    assert!(dir.is_dir(), "the directory must be left in place");
+}
+
+#[test]
+fn the_help_line_says_it_is_a_local_stub() {
+    let out = garnet().arg("--help").output().unwrap();
+    let text = String::from_utf8_lossy(&out.stdout);
+    let line = text
+        .lines()
+        .find(|l| l.trim_start().starts_with("caps-log "))
+        .unwrap_or_else(|| panic!("no caps-log line in --help:\n{text}"));
+    assert!(
+        line.contains("local hash-chained capability log (stub)"),
+        "{line}"
+    );
+    assert!(!line.contains("transparency log"), "{line}");
+}
