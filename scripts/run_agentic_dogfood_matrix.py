@@ -2082,19 +2082,19 @@ def probe_set(
         Probe(
             "convert-rust-score",
             "migration assistant",
-            "Rust source should convert cleanly for simple function shapes",
+            "Rust source should convert to Garnet that parses; constructs are counted, not called clean",
             [str(garnet), "convert", "rust", str(fixtures["rust"])],
             True,
-            ("100.0% clean translation",),
+            ("constructs mapped without a migration to-do", "output parses: yes"),
             security_domain="sandbox",
         ),
         Probe(
             "convert-go-score",
             "migration assistant",
-            "Go source should convert cleanly for simple function shapes",
+            "Go source should convert to Garnet that parses; constructs are counted, not called clean",
             [str(garnet), "convert", "go", str(fixtures["go"])],
             True,
-            ("100.0% clean translation",),
+            ("constructs mapped without a migration to-do", "output parses: yes"),
             security_domain="sandbox",
         ),
         Probe(

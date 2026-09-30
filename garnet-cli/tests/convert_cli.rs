@@ -47,14 +47,24 @@ fn summary_counts_constructs_reports_parsing_and_prints_once() {
     let stdout = String::from_utf8_lossy(&out.stdout);
     assert!(out.status.success(), "{stdout}");
     assert_eq!(
-        stdout.lines().filter(|l| l.starts_with("converted")).count(),
+        stdout
+            .lines()
+            .filter(|l| l.starts_with("converted"))
+            .count(),
         1,
         "one summary: {stdout}"
     );
-    assert!(stdout.contains("constructs mapped without a migration to-do"), "{stdout}");
+    assert!(
+        stdout.contains("constructs mapped without a migration to-do"),
+        "{stdout}"
+    );
     assert!(stdout.contains("output parses: yes"), "{stdout}");
     assert!(stdout.contains("run garnet check"), "{stdout}");
-    for stale in ["clean translation", "clean-translate", "remove the @sandbox"] {
+    for stale in [
+        "clean translation",
+        "clean-translate",
+        "remove the @sandbox",
+    ] {
         assert!(!stdout.contains(stale), "{stale:?} in {stdout}");
     }
 }

@@ -1,7 +1,9 @@
 //! `garnet convert <lang> <file>` subcommand wiring.
 //!
 //! Phase 5F integration: reads the source file, runs the v4.1 converter
-//! pipeline, writes `<file>.garnet` + `.lineage.json` + `.migrate_todo.md`.
+//! pipeline, and writes `<stem>.<lang>.garnet` plus its `.lineage.json`,
+//! `.migrate_todo.md` and `.metrics.json`. The language is part of the name, so
+//! converting `sample.py` and `sample.rb` side by side keeps both (C1-18).
 
 use garnet_convert::{convert, EmitOpts, SourceLang};
 use std::fs;
@@ -25,7 +27,8 @@ pub struct ConvertOutcome {
     pub total_nodes: usize,
     pub migrate_todo_count: usize,
     pub untranslatable_count: usize,
-    pub clean_percent: f64,
+    /// Checked with the Garnet parser after writing; `run` fails otherwise.
+    pub output_parses: bool,
 }
 
 pub fn run(args: ConvertArgs) -> Result<ConvertOutcome, String> {
@@ -61,10 +64,11 @@ pub fn run(args: ConvertArgs) -> Result<ConvertOutcome, String> {
         .unwrap_or("converted")
         .to_string();
 
-    let target_path = out_dir.join(format!("{basename}.garnet"));
-    let lineage_path = out_dir.join(format!("{basename}.garnet.lineage.json"));
-    let migrate_todo_path = out_dir.join(format!("{basename}.garnet.migrate_todo.md"));
-    let metrics_path = out_dir.join(format!("{basename}.garnet.metrics.json"));
+    let stem = format!("{basename}.{}", lang.as_str());
+    let target_path = out_dir.join(format!("{stem}.garnet"));
+    let lineage_path = out_dir.join(format!("{stem}.garnet.lineage.json"));
+    let migrate_todo_path = out_dir.join(format!("{stem}.garnet.migrate_todo.md"));
+    let metrics_path = out_dir.join(format!("{stem}.garnet.metrics.json"));
 
     let opts = EmitOpts {
         source_lang: lang.as_str().to_string(),
@@ -91,6 +95,15 @@ pub fn run(args: ConvertArgs) -> Result<ConvertOutcome, String> {
         .map_err(|e| format!("write migrate_todo: {e}"))?;
     fs::write(&metrics_path, metrics.to_json()).map_err(|e| format!("write metrics: {e}"))?;
 
+    // The converter already refuses to emit a file that does not parse; checking
+    // the written bytes here is what backs the "output parses" line.
+    garnet_parser::parse_source(&emitted.garnet).map_err(|e| {
+        format!(
+            "converter bug: {} does not parse as Garnet: {e:?}",
+            target_path.display()
+        )
+    })?;
+
     let outcome = ConvertOutcome {
         target_path: target_path.clone(),
         lineage_path,
@@ -99,7 +112,7 @@ pub fn run(args: ConvertArgs) -> Result<ConvertOutcome, String> {
         total_nodes: metrics.total_cir_nodes,
         migrate_todo_count: metrics.migrate_todo_count,
         untranslatable_count: metrics.untranslatable_count,
-        clean_percent: metrics.clean_translation_percent(),
+        output_parses: true,
     };
 
     if !args.quiet {
@@ -111,19 +124,28 @@ pub fn run(args: ConvertArgs) -> Result<ConvertOutcome, String> {
 
 fn render_summary(o: &ConvertOutcome) {
     println!(
-        "converted: {} (starts with @sandbox + @caps() reviewer notes)",
+        "converted: {} (unreviewed: an @sandbox comment and an empty @caps() mark it)",
         o.target_path.display()
     );
-    println!("  - {} CIR nodes emitted", o.total_nodes);
+    let mapped = o
+        .total_nodes
+        .saturating_sub(o.migrate_todo_count + o.untranslatable_count);
+    println!(
+        "  - {mapped} of {} constructs mapped without a migration to-do",
+        o.total_nodes
+    );
     println!("  - {} @migrate_todo annotations", o.migrate_todo_count);
     println!("  - {} @untranslatable constructs", o.untranslatable_count);
-    println!("  - {:.1}% clean translation", o.clean_percent);
+    println!(
+        "  - output parses: {}",
+        if o.output_parses { "yes" } else { "no" }
+    );
     println!("  - lineage: {}", o.lineage_path.display());
     println!("  - checklist: {}", o.migrate_todo_path.display());
     println!("  - metrics: {}", o.metrics_path.display());
     println!();
-    println!("  review the file, remove the @sandbox line (the parser does not accept it),");
-    println!("  then add the @caps(...) the code needs and run garnet check.");
+    println!("  parsing is not correctness: review the file, resolve each @migrate_todo,");
+    println!("  declare the @caps(...) it needs, then run garnet check.");
 }
 
 #[cfg(test)]
