@@ -9,6 +9,103 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ## [Unreleased]
 
+### T5b — the 0.8.3 release candidate
+
+- **The installers check the release signature (D-26).** When `gpg` is on
+  `PATH`, `install.sh` and `install.ps1` download `SHA256SUMS.asc` and
+  `docs/garnet-release-keys.asc` (served at
+  `garnet-lang.org/garnet-release-keys.asc`) and verify the signature in a
+  throwaway keyring. The signature must be detached, and its `VALIDSIG`
+  fingerprint must be the key the installer pins for the requested version,
+  not merely a key in the file. Only then do they trust `SHA256SUMS`.
+  - A missing, mismatched or wrong-key signature stops the install, and
+    `install.sh` never falls back to a source build after one.
+  - Without `gpg` they warn and check integrity only; on Windows, Gpg4win
+    provides `gpg`. Releases before v0.8.1 were never signed and also warn.
+  - `GARNET_VERIFY_SIGNATURE=0` turns the check off with a warning, and
+    `GARNET_SIGNING_KEYS_URL` / `GARNET_SIGNING_KEY_FPR` point it at a mirror
+    you sign yourself.
+  - v0.8.1 and v0.8.2 pin `04D5 6F91 F038 17DD FFEB  C62A C14D F6E7 1395 6ED1`.
+  - The installer, its pins and the keys file all come from `garnet-lang.org`,
+    so the check stops a substituted release asset, not a substituted installer;
+    `docs/release-signing.md` says how to verify by hand.
+  - Tests: `scripts/test_garnet_installer_signature.py` (10, throwaway keys,
+    in CI). The Windows job runs `scripts/ci_install_ps1_signature.ps1` under
+    PowerShell 7 and Windows PowerShell 5.1. It installs the real v0.8.2
+    release through its real signature, then refuses another pinned key, a
+    missing `.asc` and a real `.asc` over a different `SHA256SUMS`, and warns
+    without `gpg`.
+- **The signing key moves into the `release` environment (C4-02).** The
+  tagged `release` job declares `environment: release`, which admits only `v*`
+  tag runs after its required reviewer approves, and holds `GPG_SIGNING_KEY`
+  and `GPG_PASSPHRASE`. Without the key a tagged release still fails closed
+  unless `ALLOW_UNSIGNED_RELEASE=true`. The job first checks that the tag exists
+  on origin; it never creates or moves a tag. The workflow schema policy
+  accepts one static environment name on a job and nothing else there.
+- **One curated release body (C6-13).** The release job publishes
+  `.github/release-notes/<tag>.md` and fails first if that file is missing,
+  because `softprops/action-gh-release` only warns when it cannot read a
+  `body_path`. Neither release workflow generates notes any more.
+- **Only this release's VSIX files (C6-06).** A restored build cache put two
+  stale 0.8.1 VSIX files on the v0.8.2 release. The package script now clears
+  its own earlier outputs. `release-vsix` copies only
+  `garnet-<tag version>-lsp-mvp-*.vsix` through
+  `scripts/collect_garnet_vsix_release_assets.py`, which requires
+  `editors/vscode/package.json` to carry the tag's version and exactly two files.
+- **Linux packages for older distributions (C6-04).** Both Linux builds run on
+  Ubuntu 22.04 (`ubuntu-22.04`, `ubuntu-22.04-arm`), and
+  `scripts/check_glibc_floor.sh` fails the build if the binary imports a glibc
+  symbol newer than `GLIBC_2.34`. The build caches are keyed to the image.
+  - New `smoke-older-distros` jobs install the packages in clean `debian:12`,
+    `ubuntu:22.04` and `almalinux:9` containers for x86_64 and ARM64 and run the
+    version, parse, capability-gap and signed-manifest gates. The release waits
+    for them.
+  - `install.sh` now judges the host glibc against the requested release: 2.39
+    through v0.8.2, 2.34 from v0.8.3.
+  - The remaining `ubuntu-latest` jobs are pinned to `ubuntu-24.04`, and the
+    macOS job runs `install.sh` against its own tarball (C6-16).
+- **CI plumbing.** `build-vsix` moves to `actions/setup-node` v6 (node24,
+  C4-16/C6-07). The 16 required-context producers these changes touch are
+  re-pinned, with the 31- and 32-context aggregates. The new values were
+  computed with the repository's own functions after the same computation
+  reproduced every existing pin on main.
+- **The release-lanes reporter is truthful (C5-16b, C6-19).** Release-artifact
+  signing is an active lane keyed on the `gpg --detach-sign` step, the
+  `SHA256SUMS.asc` upload and the fail-closed step. The stale
+  `TODO(release-security)` comment is gone.
+- **`garnet agent-loop` says what it checked (C1-02).** The decision reads
+  "program-wide declared capability surface did not widen", and functions that
+  gained capabilities or are new are counted in the decision and listed in
+  `diff_caps.txt` for review.
+- **Every converter output parses (C1-18, Q48).**
+  - `@sandbox` is named in a comment; `@caps()` stays.
+  - Python `for` / `while` (without `else`) and Ruby `.each do |x|` are lowered
+    to brace form, and any other statement that would not parse becomes a
+    whole-statement `@migrate_todo` carrying its source lines. A final
+    full-file parse turns any remaining failure into an error, not a file.
+  - A safe `fn` with no stated return type is emitted `-> ()`.
+  - The checklist no longer suggests the nonexistent `@sandbox(unquarantine)`.
+  - `garnet convert` names its output `<stem>.<lang>.garnet`, re-parses the file
+    it wrote, and prints "N of M constructs mapped without a migration to-do"
+    and "output parses: yes", followed by "parsing is not correctness"
+    (C5-12). The percentage "clean translation" line and the duplicate
+    summary are gone.
+- **`garnet caps-log` fails closed (C5-12).** An existing log it cannot read
+  (not text, unreadable, or not a file) stops the append and is left untouched;
+  it used to be rewritten with a fresh genesis entry. `--help` calls it "a local
+  hash-chained capability log (stub)".
+- **Licensing (C7-25).** `LICENSE` is split into `LICENSE-MIT` and
+  `LICENSE-APACHE`, the full Apache-2.0 text. The packages and the Windows zip
+  ship both, and the dual-license notice is in the README.
+- **Limits, stated plainly.**
+  - The Rust and Go converter frontends still drop binary operators: Rust
+    `if x > 3 { x * 2 }` comes out as `if x { nil 3 nil x nil 2 ... }`. The output
+    parses, but it does not compute the same thing. Every converted Rust or Go
+    function needs a line-by-line rewrite. The fix is deferred until after R2
+    (Q48).
+  - The installers check the signature only when `gpg` is installed.
+  - The macOS and Windows binaries are not code-signed.
+
 ### W2 — Windows Studio clean-VM installer proof committed and enforced
 
 - **The proof is in the repository.**
