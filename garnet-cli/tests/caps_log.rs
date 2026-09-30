@@ -92,7 +92,8 @@ fn an_existing_log_it_cannot_read_is_never_overwritten() {
     // C5-12: an unreadable log used to count as empty, so the append wrote a
     // fresh genesis entry over the old chain.
     let log = fresh_log("unreadable");
-    let original: Vec<u8> = b"{\"index\":0,\"prev_blake3\":\"genesis\"}\n\xff\xfe not utf-8\n".to_vec();
+    let original: Vec<u8> =
+        b"{\"index\":0,\"prev_blake3\":\"genesis\"}\n\xff\xfe not utf-8\n".to_vec();
     std::fs::write(&log, &original).unwrap();
 
     let out = garnet()
