@@ -2,7 +2,9 @@
 """Regression tests for the agentic dogfood matrix inventory."""
 from __future__ import annotations
 
+import ast
 import importlib.util
+import json
 import os
 import subprocess
 import sys
@@ -11,6 +13,7 @@ import unittest
 from collections import Counter
 from pathlib import Path
 from textwrap import dedent
+from unittest import mock
 
 SCRIPT = Path(__file__).with_name("run_agentic_dogfood_matrix.py")
 SPEC = importlib.util.spec_from_file_location("run_agentic_dogfood_matrix", SCRIPT)
@@ -914,6 +917,147 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         self.assertIn('"needs-expansion"', data)
         self.assertIn("## Domain Coverage Adequacy", report)
         self.assertIn("web/PWA productization", report)
+
+
+class ChildInterpreterEnvironmentTests(unittest.TestCase):
+    """The runner, not the caller's environment, decides how a probe's Python runs."""
+
+    def _probe(self, code: str, marker: str, env: dict[str, str] | None = None) -> object:
+        return matrix.Probe(
+            "child-interpreter-environment",
+            "runner isolation",
+            "a probe's Python checks run as written, whatever the caller's environment holds",
+            [sys.executable, "-c", code],
+            True,
+            (marker,),
+            env=env or {},
+        )
+
+    def _run_probe(self, code: str, marker: str, ambient: dict[str, str], env: dict[str, str] | None = None) -> object:
+        with tempfile.TemporaryDirectory() as temp, mock.patch.dict(os.environ, ambient):
+            return matrix.run_probe(self._probe(code, marker, env), Path(temp))
+
+    def test_ambient_optimization_cannot_strip_a_failing_probe_check(self) -> None:
+        failing = "assert 1 == 2, 'probe check failed'\nprint('probe check passed')\n"
+        for level in ("1", "2"):
+            with self.subTest(PYTHONOPTIMIZE=level):
+                result = self._run_probe(failing, "probe check passed", {"PYTHONOPTIMIZE": level})
+                self.assertEqual("failed", result.status, result.stdout_excerpt)
+                self.assertIn("probe check failed", result.stderr_excerpt)
+            with self.subTest(PYTHONOPTIMIZE=level, path="run() without a probe env, as the builder probes call it"):
+                with tempfile.TemporaryDirectory() as temp, mock.patch.dict(os.environ, {"PYTHONOPTIMIZE": level}):
+                    completed = matrix.run([sys.executable, "-c", failing], Path(temp))
+                self.assertNotEqual(0, completed.returncode, completed.stdout)
+                self.assertNotIn("probe check passed", completed.stdout)
+        passing = "assert 1 == 1, 'probe check failed'\nprint('probe check passed')\n"
+        self.assertEqual("passed", self._run_probe(passing, "probe check passed", {"PYTHONOPTIMIZE": "1"}).status)
+
+    def test_ambient_optimization_does_not_reach_a_probes_own_python_child(self) -> None:
+        code = (
+            "import subprocess, sys\n"
+            "rc = subprocess.run([sys.executable, '-c', 'assert 1 == 2']).returncode\n"
+            "if rc == 0:\n"
+            "    sys.exit('the grandchild assert was stripped')\n"
+            "print('grandchild assert held')\n"
+        )
+        result = self._run_probe(code, "grandchild assert held", {"PYTHONOPTIMIZE": "1"})
+        self.assertEqual("passed", result.status, result.stderr_excerpt)
+
+    def test_pythonpath_shim_cannot_redirect_a_probe_import(self) -> None:
+        with tempfile.TemporaryDirectory() as shim_temp:
+            shim = Path(shim_temp)
+            sentinel = shim / "shim-imported"
+            (shim / "json.py").write_text(
+                "from pathlib import Path\n"
+                f"Path({str(sentinel)!r}).write_text('imported')\n"
+                "def loads(text):\n"
+                "    return {'verified': True}\n",
+                encoding="utf-8",
+            )
+            code = (
+                "import json, sys\n"
+                "if json.loads('{\"verified\": false}')['verified'] is not True:\n"
+                "    sys.exit('proof not verified')\n"
+                "print('proof verified')\n"
+            )
+            result = self._run_probe(code, "proof verified", {"PYTHONPATH": str(shim)})
+            self.assertEqual("failed", result.status, result.stdout_excerpt)
+            self.assertIn("proof not verified", result.stderr_excerpt)
+            self.assertFalse(sentinel.exists(), "the PYTHONPATH shim module was imported")
+
+    def test_user_site_reached_through_home_cannot_inject_startup_code(self) -> None:
+        with tempfile.TemporaryDirectory() as home_temp:
+            home = Path(home_temp).resolve()
+            ambient = {"HOME": str(home), "APPDATA": str(home / "AppData")}
+            lookup_env = {name: value for name, value in os.environ.items() if not name.startswith("PYTHON")}
+            lookup_env.update(ambient)
+            enabled, user_site = subprocess.run(
+                [sys.executable, "-c", "import site\nprint(site.ENABLE_USER_SITE)\nprint(site.getusersitepackages())\n"],
+                capture_output=True,
+                text=True,
+                check=True,
+                env=lookup_env,
+            ).stdout.splitlines()
+            user_site_path = Path(user_site).resolve()
+            if enabled != "True" or home not in user_site_path.parents:
+                self.skipTest(f"this interpreter's user site is not under HOME: {enabled} {user_site}")
+            user_site_path.mkdir(parents=True)
+            sentinel = home / "user-site-loaded"
+            (user_site_path / "zz_garnet_matrix_shim.pth").write_text(
+                f"import pathlib, sys; pathlib.Path({str(sentinel)!r}).write_text('loaded'); sys.exit = lambda *args: None\n",
+                encoding="utf-8",
+            )
+            code = "import sys\nsys.exit('proof not verified')\nprint('proof verified')\n"
+            result = self._run_probe(code, "proof verified", ambient)
+            self.assertEqual("failed", result.status, result.stdout_excerpt)
+            self.assertFalse(sentinel.exists(), "a .pth file in the HOME user site ran in the probe")
+
+    def test_child_environment_carries_no_ambient_interpreter_variable(self) -> None:
+        ambient = {
+            "PYTHONOPTIMIZE": "2",
+            "PYTHONPATH": "/nonexistent/garnet-matrix-shim",
+            "PYTHONHOME": "/nonexistent/garnet-matrix-home",
+            "PYTHONSTARTUP": "/nonexistent/garnet-matrix-startup.py",
+            "PYTHONINSPECT": "1",
+            "PYTHONUSERBASE": "/nonexistent/garnet-matrix-userbase",
+            "PYTHONWARNINGS": "error",
+            "PYTHONBREAKPOINT": "os.abort",
+            "PYTHONIOENCODING": "ascii",
+            "PYTHONSAFEPATH": "1",
+            "PYTHON_COLORS": "1",
+            "GARNET_MATRIX_UNRELATED": "kept",
+        }
+        code = (
+            "import json, os, sys\n"
+            "seen = {name: value for name, value in os.environ.items() if name.startswith('PYTHON')}\n"
+            "print(json.dumps({'python': seen, 'unrelated': os.environ.get('GARNET_MATRIX_UNRELATED'),"
+            " 'optimize': sys.flags.optimize, 'no_user_site': sys.flags.no_user_site}, sort_keys=True))\n"
+        )
+        result = self._run_probe(code, '"unrelated": "kept"', ambient)
+        self.assertEqual("passed", result.status, result.stderr_excerpt)
+        data = json.loads(result.stdout_excerpt.strip().splitlines()[-1])
+        self.assertEqual(
+            {"PYTHONNOUSERSITE": "1", "PYTHONUTF8": "1" if sys.flags.utf8_mode else "0"},
+            data["python"],
+        )
+        self.assertEqual(0, data["optimize"])
+        self.assertEqual(1, data["no_user_site"])
+
+    def test_child_encodes_pipes_in_the_runners_utf8_mode(self) -> None:
+        opposite = "0" if sys.flags.utf8_mode else "1"
+        code = "import sys\nprint('utf8_mode=%d' % sys.flags.utf8_mode)\n"
+        result = self._run_probe(code, f"utf8_mode={sys.flags.utf8_mode}", {"PYTHONUTF8": opposite})
+        self.assertEqual("passed", result.status, result.stdout_excerpt)
+
+    def test_probe_env_still_sets_an_interpreter_variable_explicitly(self) -> None:
+        code = "import sys\nprint('optimize=%d' % sys.flags.optimize)\n"
+        result = self._run_probe(code, "optimize=1", {"PYTHONOPTIMIZE": "2"}, env={"PYTHONOPTIMIZE": "1"})
+        self.assertEqual("passed", result.status, result.stdout_excerpt)
+
+    def test_runner_itself_has_no_assert_statement(self) -> None:
+        # The runner's own logic must not depend on `assert`, which `-O` strips from the runner.
+        tree = ast.parse(SCRIPT.read_text(encoding="utf-8"))
+        self.assertEqual([], [node.lineno for node in ast.walk(tree) if isinstance(node, ast.Assert)])
 
 
 if __name__ == "__main__":
