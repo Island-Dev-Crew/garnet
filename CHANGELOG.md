@@ -9,7 +9,7 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ## [Unreleased]
 
-### Dogfood matrix — probes run with no ambient Python interpreter variable
+### Dogfood matrix — probes run without the caller's interpreter hooks
 
 - **The caller's `PYTHON*` variables no longer reach any probe.** `run()` copied
   the caller's environment into every probe, and most probes check with
@@ -25,15 +25,28 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   - `PYTHONUTF8` follows the runner's own UTF-8 mode, so a child encodes its
     pipes the way `run()` decodes them;
   - a variable a probe sets in `Probe.env` still applies.
+- **Nor do the startup hooks of bash, sh and node.** Codex's first review of
+  this change found that `BASH_ENV` survived: bash sources it before any
+  non-interactive script, so it turned a failing run of the real
+  `smoke-web-pwa-local-readiness` probe into a pass and put `PYTHONOPTIMIZE`
+  back for a Python check run under bash. `child_environment()` also drops
+  `BASH_ENV`, `ENV`, `SHELLOPTS`, `BASHOPTS`, every exported bash function
+  (`BASH_FUNC_<name>%%`, which replaces the command `<name>` in a script),
+  `NODE_OPTIONS` and `NODE_PATH`.
 
   The variables are removed from the environment, not ignored by one
   interpreter, so the reporters and other processes a probe starts inherit
   the same environment. The matrix runs the same 150 cases.
-- **Scope.** This covers environment variables. It does not cover the
-  runner's own interpreter, loader variables (`LD_PRELOAD`, `DYLD_*`), `PATH`,
-  or the host's Python installation; a caller who controls those controls every
-  tool the matrix runs. A `python -c` probe still has its working directory,
-  the runner's artifact directory, on `sys.path`. The new tests are in
+- **Scope.** This covers the startup hooks of the interpreters the checks run
+  in: Python, bash, sh and node. Other variables those interpreters read while
+  running, such as `CDPATH`, are not removed. It does not cover build and
+  version-control tool configuration, such as `RUSTC_WRAPPER`, a cargo target
+  runner, other `CARGO_*` or `GIT_*` variables, or configuration files under
+  `HOME`. It also does not cover the runner's own interpreter, loader variables
+  (`LD_PRELOAD`, `DYLD_*`), `PATH`, or the host's installed tools. A caller who
+  controls those controls the tools the matrix runs, as with `PATH`. A
+  `python -c` probe still has its working directory, the runner's artifact
+  directory, on `sys.path`. The new tests are in
   `scripts/test_run_agentic_dogfood_matrix.py`, which CI does not run; CI runs
   the matrix itself.
 
