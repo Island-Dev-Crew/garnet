@@ -76,6 +76,12 @@ jobs:
       - run: python3 scripts/test_garnet_signed_release_lanes.py
       # D-26: install.sh verifies SHA256SUMS.asc against the pinned key when gpg exists.
       - run: python3 scripts/test_garnet_installer_signature.py
+      # T5b release contracts: the host glibc floor per release, the Linux build
+      # base and older-distro smokes, the release job, and the VSIX assets.
+      - run: python3 scripts/test_garnet_installer_glibc.py
+      - run: python3 scripts/test_garnet_linux_packages_contract.py
+      - run: python3 scripts/test_garnet_release_job.py
+      - run: python3 scripts/test_garnet_vscode_release_assets.py
       - run: python3 scripts/test_garnet_install_readme_check.py
       - run: python3 scripts/test_garnet_tree_sitter_check.py
       - run: python3 scripts/test_garnet_vscode_publish_readiness.py
