@@ -937,7 +937,9 @@ class ChildInterpreterEnvironmentTests(unittest.TestCase):
             env=env or {},
         )
         with tempfile.TemporaryDirectory() as temp, mock.patch.dict(os.environ, ambient):
-            return matrix.run_probe(probe, Path(temp))
+            result = matrix.run_probe(probe, Path(temp))
+            self.full_stdout = Path(result.stdout_log).read_text(encoding="utf-8")
+            return result
 
     def _run_probe(self, code: str, marker: str, ambient: dict[str, str], env: dict[str, str] | None = None) -> object:
         return self._run_command([sys.executable, "-c", code], marker, ambient, env)
@@ -1017,40 +1019,57 @@ class ChildInterpreterEnvironmentTests(unittest.TestCase):
             self.assertEqual("failed", result.status, result.stdout_excerpt)
             self.assertFalse(sentinel.exists(), "a .pth file in the HOME user site ran in the probe")
 
-    # Every variable CPython 3.14 documents, plus one it does not, so the prefix rule is what is tested.
+    # The 50 variables https://docs.python.org/3.14/using/cmdline.html documents (read 2026-09-30),
+    # PYTHONTHREADDEBUG from earlier versions, and one undocumented name, so the prefix rule is tested.
     DOCUMENTED_PYTHON_VARIABLES = (
-        "PYTHONHOME", "PYTHONPATH", "PYTHONSAFEPATH", "PYTHONPLATLIBDIR", "PYTHONSTARTUP",
-        "PYTHONOPTIMIZE", "PYTHONBREAKPOINT", "PYTHONDEBUG", "PYTHONINSPECT", "PYTHONUNBUFFERED",
-        "PYTHONVERBOSE", "PYTHONCASEOK", "PYTHONDONTWRITEBYTECODE", "PYTHONPYCACHEPREFIX",
-        "PYTHONHASHSEED", "PYTHONINTMAXSTRDIGITS", "PYTHONIOENCODING", "PYTHONNOUSERSITE",
-        "PYTHONUSERBASE", "PYTHONEXECUTABLE", "PYTHONWARNINGS", "PYTHONFAULTHANDLER",
-        "PYTHONTRACEMALLOC", "PYTHONPROFILEIMPORTTIME", "PYTHONASYNCIODEBUG", "PYTHONMALLOC",
-        "PYTHONMALLOCSTATS", "PYTHONLEGACYWINDOWSFSENCODING", "PYTHONLEGACYWINDOWSSTDIO",
-        "PYTHONCOERCECLOCALE", "PYTHONDEVMODE", "PYTHONUTF8", "PYTHONWARNDEFAULTENCODING",
-        "PYTHONNODEBUGRANGES", "PYTHONPERFSUPPORT", "PYTHON_PERF_JIT_SUPPORT", "PYTHON_CPU_COUNT",
-        "PYTHON_FROZEN_MODULES", "PYTHON_COLORS", "PYTHON_BASIC_REPL", "PYTHON_HISTORY", "PYTHON_GIL",
-        "PYTHON_JIT", "PYTHON_PRESITE", "PYTHONTHREADDEBUG", "PYTHONDUMPREFS", "PYTHONDUMPREFSFILE",
-        "PYTHONGARNETMATRIXUNDOCUMENTED",
+        "PYTHONASYNCIODEBUG", "PYTHONBREAKPOINT", "PYTHONCASEOK", "PYTHONCOERCECLOCALE", "PYTHONDEBUG",
+        "PYTHONDEVMODE", "PYTHONDONTWRITEBYTECODE", "PYTHONDUMPREFS", "PYTHONDUMPREFSFILE",
+        "PYTHONEXECUTABLE", "PYTHONFAULTHANDLER", "PYTHONHASHSEED", "PYTHONHOME", "PYTHONINSPECT",
+        "PYTHONINTMAXSTRDIGITS", "PYTHONIOENCODING", "PYTHONLEGACYWINDOWSFSENCODING",
+        "PYTHONLEGACYWINDOWSSTDIO", "PYTHONMALLOC", "PYTHONMALLOCSTATS", "PYTHONNODEBUGRANGES",
+        "PYTHONNOUSERSITE", "PYTHONOPTIMIZE", "PYTHONPATH", "PYTHONPERFSUPPORT", "PYTHONPLATLIBDIR",
+        "PYTHONPROFILEIMPORTTIME", "PYTHONPYCACHEPREFIX", "PYTHONSAFEPATH", "PYTHONSTARTUP",
+        "PYTHONTRACEMALLOC", "PYTHONUNBUFFERED", "PYTHONUSERBASE", "PYTHONUTF8", "PYTHONVERBOSE",
+        "PYTHONWARNDEFAULTENCODING", "PYTHONWARNINGS", "PYTHON_BASIC_REPL", "PYTHON_COLORS",
+        "PYTHON_CONTEXT_AWARE_WARNINGS", "PYTHON_CPU_COUNT", "PYTHON_DISABLE_REMOTE_DEBUG",
+        "PYTHON_FROZEN_MODULES", "PYTHON_GIL", "PYTHON_HISTORY", "PYTHON_JIT", "PYTHON_PERF_JIT_SUPPORT",
+        "PYTHON_PRESITE", "PYTHON_THREAD_INHERIT_CONTEXT", "PYTHON_TLBC",
+        "PYTHONTHREADDEBUG", "PYTHONGARNETMATRIXUNDOCUMENTED",
     )
-    SHELL_AND_NODE_HOOKS = ("BASH_ENV", "ENV", "SHELLOPTS", "BASHOPTS", "NODE_OPTIONS", "NODE_PATH")
-    EXPORTED_BASH_FUNCTION = "BASH_FUNC_garnet_matrix_probe%%"
+    # node's documented NODE_* variables (its --help list and its CLI documentation), plus one it
+    # does not document.
+    NODE_VARIABLES = (
+        "NODE_COMPILE_CACHE", "NODE_DEBUG", "NODE_DEBUG_NATIVE", "NODE_DISABLE_COLORS",
+        "NODE_DISABLE_COMPILE_CACHE", "NODE_EXTRA_CA_CERTS", "NODE_ICU_DATA", "NODE_NO_WARNINGS",
+        "NODE_OPTIONS", "NODE_PATH", "NODE_PENDING_DEPRECATION", "NODE_PENDING_PIPE_INSTANCES",
+        "NODE_PRESERVE_SYMLINKS", "NODE_REDIRECT_WARNINGS", "NODE_REPL_EXTERNAL_MODULE",
+        "NODE_REPL_HISTORY", "NODE_SKIP_PLATFORM_CHECK", "NODE_TEST_CONTEXT", "NODE_TLS_REJECT_UNAUTHORIZED",
+        "NODE_V8_COVERAGE", "NODE_GARNET_MATRIX_UNDOCUMENTED",
+    )
+    # What bash and sh read at startup: bash's own BASH* names (an exported function is
+    # BASH_FUNC_<name>%%), plus one it does not define, and the unprefixed ENV, SHELLOPTS and
+    # POSIXLY_CORRECT.
+    SHELL_VARIABLES = (
+        "BASH_ENV", "BASHOPTS", "BASH_COMPAT", "BASH_XTRACEFD", "BASH_LOADABLES_PATH",
+        "BASH_FUNC_garnet_matrix_probe%%", "BASH_GARNET_MATRIX_UNDOCUMENTED",
+        "ENV", "SHELLOPTS", "POSIXLY_CORRECT",
+    )
 
     def test_child_environment_carries_no_ambient_interpreter_variable(self) -> None:
-        ambient = {name: "/nonexistent/garnet-matrix" for name in self.DOCUMENTED_PYTHON_VARIABLES}
-        ambient.update({name: "/nonexistent/garnet-matrix" for name in self.SHELL_AND_NODE_HOOKS})
-        ambient[self.EXPORTED_BASH_FUNCTION] = "() {  :\n}"
+        watched = (*self.DOCUMENTED_PYTHON_VARIABLES, *self.NODE_VARIABLES, *self.SHELL_VARIABLES)
+        ambient = {name: "x" for name in watched}
         ambient["GARNET_MATRIX_UNRELATED"] = "kept"
         code = (
             "import json, os, sys\n"
-            f"hooks = {self.SHELL_AND_NODE_HOOKS!r}\n"
+            f"watched = set({sorted(watched)!r})\n"
             "seen = {name: value for name, value in os.environ.items()\n"
-            "        if name.startswith(('PYTHON', 'BASH_FUNC_')) or name in hooks}\n"
+            "        if name in watched or name.startswith(('PYTHON', 'NODE_', 'BASH'))}\n"
             "print(json.dumps({'seen': seen, 'unrelated': os.environ.get('GARNET_MATRIX_UNRELATED'),"
             " 'optimize': sys.flags.optimize, 'no_user_site': sys.flags.no_user_site}, sort_keys=True))\n"
         )
         result = self._run_probe(code, '"unrelated": "kept"', ambient)
         self.assertEqual("passed", result.status, result.stderr_excerpt)
-        data = json.loads(result.stdout_excerpt.strip().splitlines()[-1])
+        data = json.loads(self.full_stdout.strip().splitlines()[-1])
         self.assertEqual(
             {"PYTHONNOUSERSITE": "1", "PYTHONUTF8": "1" if sys.flags.utf8_mode else "0"},
             data["seen"],
@@ -1116,6 +1135,15 @@ class ChildInterpreterEnvironmentTests(unittest.TestCase):
                 [shutil.which("bash"), str(script)], "shell check passed", {"BASH_FUNC_false%%": "() {  return 0\n}"}
             )
             self.assertEqual("failed", result.status, result.stdout_excerpt)
+
+    @unittest.skipUnless(shutil.which("bash"), "bash is not on PATH")
+    def test_posix_mode_from_the_environment_cannot_change_a_shell_probe(self) -> None:
+        # POSIXLY_CORRECT starts bash in POSIX mode, which expands aliases in a script.
+        script = "check() { return 1; }\nalias check=':'\nif check; then echo 'shell check passed'; else exit 1; fi\n"
+        result = self._run_command(
+            [shutil.which("bash"), "-c", script], "shell check passed", {"POSIXLY_CORRECT": "1"}
+        )
+        self.assertEqual("failed", result.status, result.stdout_excerpt)
 
     @unittest.skipUnless(shutil.which("node"), "node is not on PATH")
     def test_node_options_cannot_preload_code_into_a_node_probe(self) -> None:
