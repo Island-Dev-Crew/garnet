@@ -74,6 +74,8 @@ jobs:
       - run: python3 scripts/test_garnet_pr_review_wedge.py
       - run: python3 scripts/test_garnet_v0_8_beta_gate.py
       - run: python3 scripts/test_garnet_signed_release_lanes.py
+      # D-26: install.sh verifies SHA256SUMS.asc against the pinned key when gpg exists.
+      - run: python3 scripts/test_garnet_installer_signature.py
       - run: python3 scripts/test_garnet_install_readme_check.py
       - run: python3 scripts/test_garnet_tree_sitter_check.py
       - run: python3 scripts/test_garnet_vscode_publish_readiness.py
@@ -115,7 +117,8 @@ jobs:
       # and the band's sub-gates still hold. A checkpoint, not a release.
       - run: python3 scripts/garnet_v0_8_beta_gate.py --gate
       # S51: signed-release-lanes — fails if the ACTIVE lane (program-manifest
-      # signing) is no longer wired in CI. Lanes 2/3 are deferred/partial by design.
+      # signing) or release-artifact signing (SHA256SUMS.asc) is no longer wired in
+      # CI. Lane 3 is partial by design.
       - run: python3 scripts/garnet_signed_release_lanes.py --gate
       # S52: install/readme consistency — fails if the README one-line install
       # command or URL drifts from installer/sh.garnet-lang.org/install.sh.

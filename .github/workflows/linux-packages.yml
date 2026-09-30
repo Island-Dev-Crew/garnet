@@ -249,9 +249,11 @@ jobs:
           set -euo pipefail
           version="$(awk -F'"' '/^version =/ { print $2; exit }' Cargo.toml)"
           prefix="${RUNNER_TEMP}/garnet-tar-install"
+          # Local unsigned test assets: signature verification (D-26) is off here
+          # and covered by scripts/test_garnet_installer_signature.py in ci.yml.
           GARNET_VERSION="${version}" GARNET_BASE_URL="file://${PWD}/dist" \
             GARNET_FORMAT=tar GARNET_INSTALL_MODE=release GARNET_PREFIX="${prefix}" \
-            sh docs/install.sh
+            GARNET_VERIFY_SIGNATURE=0 sh docs/install.sh
           "${prefix}/bin/garnet" --version | grep -q "garnet ${version}"
 
       - name: Upload artifact
@@ -346,9 +348,11 @@ jobs:
           set -euo pipefail
           version="$(awk -F'"' '/^version =/ { print $2; exit }' Cargo.toml)"
           prefix="${RUNNER_TEMP}/garnet-tar-install"
+          # Local unsigned test assets: signature verification (D-26) is off here
+          # and covered by scripts/test_garnet_installer_signature.py in ci.yml.
           GARNET_VERSION="${version}" GARNET_BASE_URL="file://${PWD}/dist" \
             GARNET_FORMAT=tar GARNET_INSTALL_MODE=release GARNET_PREFIX="${prefix}" \
-            sh docs/install.sh
+            GARNET_VERIFY_SIGNATURE=0 sh docs/install.sh
           "${prefix}/bin/garnet" --version | grep -q "garnet ${version}"
 
       # No SHA256SUMS in this artifact: the release job composes the one
