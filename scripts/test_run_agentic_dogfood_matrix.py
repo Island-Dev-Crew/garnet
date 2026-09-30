@@ -6,6 +6,8 @@ import ast
 import importlib.util
 import json
 import os
+import shlex
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -920,22 +922,25 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
 
 
 class ChildInterpreterEnvironmentTests(unittest.TestCase):
-    """The runner, not the caller's environment, decides how a probe's Python runs."""
+    """The runner, not the caller's environment, decides how a probe's checks run."""
 
-    def _probe(self, code: str, marker: str, env: dict[str, str] | None = None) -> object:
-        return matrix.Probe(
+    def _run_command(
+        self, command: list[str], marker: str, ambient: dict[str, str], env: dict[str, str] | None = None
+    ) -> object:
+        probe = matrix.Probe(
             "child-interpreter-environment",
             "runner isolation",
-            "a probe's Python checks run as written, whatever the caller's environment holds",
-            [sys.executable, "-c", code],
+            "a probe's checks run as written, whatever the caller's environment holds",
+            command,
             True,
             (marker,),
             env=env or {},
         )
+        with tempfile.TemporaryDirectory() as temp, mock.patch.dict(os.environ, ambient):
+            return matrix.run_probe(probe, Path(temp))
 
     def _run_probe(self, code: str, marker: str, ambient: dict[str, str], env: dict[str, str] | None = None) -> object:
-        with tempfile.TemporaryDirectory() as temp, mock.patch.dict(os.environ, ambient):
-            return matrix.run_probe(self._probe(code, marker, env), Path(temp))
+        return self._run_command([sys.executable, "-c", code], marker, ambient, env)
 
     def test_ambient_optimization_cannot_strip_a_failing_probe_check(self) -> None:
         failing = "assert 1 == 2, 'probe check failed'\nprint('probe check passed')\n"
@@ -1012,25 +1017,35 @@ class ChildInterpreterEnvironmentTests(unittest.TestCase):
             self.assertEqual("failed", result.status, result.stdout_excerpt)
             self.assertFalse(sentinel.exists(), "a .pth file in the HOME user site ran in the probe")
 
+    # Every variable CPython 3.14 documents, plus one it does not, so the prefix rule is what is tested.
+    DOCUMENTED_PYTHON_VARIABLES = (
+        "PYTHONHOME", "PYTHONPATH", "PYTHONSAFEPATH", "PYTHONPLATLIBDIR", "PYTHONSTARTUP",
+        "PYTHONOPTIMIZE", "PYTHONBREAKPOINT", "PYTHONDEBUG", "PYTHONINSPECT", "PYTHONUNBUFFERED",
+        "PYTHONVERBOSE", "PYTHONCASEOK", "PYTHONDONTWRITEBYTECODE", "PYTHONPYCACHEPREFIX",
+        "PYTHONHASHSEED", "PYTHONINTMAXSTRDIGITS", "PYTHONIOENCODING", "PYTHONNOUSERSITE",
+        "PYTHONUSERBASE", "PYTHONEXECUTABLE", "PYTHONWARNINGS", "PYTHONFAULTHANDLER",
+        "PYTHONTRACEMALLOC", "PYTHONPROFILEIMPORTTIME", "PYTHONASYNCIODEBUG", "PYTHONMALLOC",
+        "PYTHONMALLOCSTATS", "PYTHONLEGACYWINDOWSFSENCODING", "PYTHONLEGACYWINDOWSSTDIO",
+        "PYTHONCOERCECLOCALE", "PYTHONDEVMODE", "PYTHONUTF8", "PYTHONWARNDEFAULTENCODING",
+        "PYTHONNODEBUGRANGES", "PYTHONPERFSUPPORT", "PYTHON_PERF_JIT_SUPPORT", "PYTHON_CPU_COUNT",
+        "PYTHON_FROZEN_MODULES", "PYTHON_COLORS", "PYTHON_BASIC_REPL", "PYTHON_HISTORY", "PYTHON_GIL",
+        "PYTHON_JIT", "PYTHON_PRESITE", "PYTHONTHREADDEBUG", "PYTHONDUMPREFS", "PYTHONDUMPREFSFILE",
+        "PYTHONGARNETMATRIXUNDOCUMENTED",
+    )
+    SHELL_AND_NODE_HOOKS = ("BASH_ENV", "ENV", "SHELLOPTS", "BASHOPTS", "NODE_OPTIONS", "NODE_PATH")
+    EXPORTED_BASH_FUNCTION = "BASH_FUNC_garnet_matrix_probe%%"
+
     def test_child_environment_carries_no_ambient_interpreter_variable(self) -> None:
-        ambient = {
-            "PYTHONOPTIMIZE": "2",
-            "PYTHONPATH": "/nonexistent/garnet-matrix-shim",
-            "PYTHONHOME": "/nonexistent/garnet-matrix-home",
-            "PYTHONSTARTUP": "/nonexistent/garnet-matrix-startup.py",
-            "PYTHONINSPECT": "1",
-            "PYTHONUSERBASE": "/nonexistent/garnet-matrix-userbase",
-            "PYTHONWARNINGS": "error",
-            "PYTHONBREAKPOINT": "os.abort",
-            "PYTHONIOENCODING": "ascii",
-            "PYTHONSAFEPATH": "1",
-            "PYTHON_COLORS": "1",
-            "GARNET_MATRIX_UNRELATED": "kept",
-        }
+        ambient = {name: "/nonexistent/garnet-matrix" for name in self.DOCUMENTED_PYTHON_VARIABLES}
+        ambient.update({name: "/nonexistent/garnet-matrix" for name in self.SHELL_AND_NODE_HOOKS})
+        ambient[self.EXPORTED_BASH_FUNCTION] = "() {  :\n}"
+        ambient["GARNET_MATRIX_UNRELATED"] = "kept"
         code = (
             "import json, os, sys\n"
-            "seen = {name: value for name, value in os.environ.items() if name.startswith('PYTHON')}\n"
-            "print(json.dumps({'python': seen, 'unrelated': os.environ.get('GARNET_MATRIX_UNRELATED'),"
+            f"hooks = {self.SHELL_AND_NODE_HOOKS!r}\n"
+            "seen = {name: value for name, value in os.environ.items()\n"
+            "        if name.startswith(('PYTHON', 'BASH_FUNC_')) or name in hooks}\n"
+            "print(json.dumps({'seen': seen, 'unrelated': os.environ.get('GARNET_MATRIX_UNRELATED'),"
             " 'optimize': sys.flags.optimize, 'no_user_site': sys.flags.no_user_site}, sort_keys=True))\n"
         )
         result = self._run_probe(code, '"unrelated": "kept"', ambient)
@@ -1038,7 +1053,7 @@ class ChildInterpreterEnvironmentTests(unittest.TestCase):
         data = json.loads(result.stdout_excerpt.strip().splitlines()[-1])
         self.assertEqual(
             {"PYTHONNOUSERSITE": "1", "PYTHONUTF8": "1" if sys.flags.utf8_mode else "0"},
-            data["python"],
+            data["seen"],
         )
         self.assertEqual(0, data["optimize"])
         self.assertEqual(1, data["no_user_site"])
@@ -1048,6 +1063,71 @@ class ChildInterpreterEnvironmentTests(unittest.TestCase):
         code = "import sys\nprint('utf8_mode=%d' % sys.flags.utf8_mode)\n"
         result = self._run_probe(code, f"utf8_mode={sys.flags.utf8_mode}", {"PYTHONUTF8": opposite})
         self.assertEqual("passed", result.status, result.stdout_excerpt)
+
+    def test_child_utf8_mode_follows_the_runner_in_either_mode(self) -> None:
+        # The host decides the runner's own mode, so run the runner's module under both.
+        code = (
+            "import importlib.util, sys\n"
+            f"spec = importlib.util.spec_from_file_location('run_agentic_dogfood_matrix', {str(SCRIPT)!r})\n"
+            "module = importlib.util.module_from_spec(spec)\n"
+            "sys.modules['run_agentic_dogfood_matrix'] = module\n"
+            "spec.loader.exec_module(module)\n"
+            "print(module.child_environment()['PYTHONUTF8'])\n"
+        )
+        for mode in ("0", "1"):
+            with self.subTest(runner_utf8_mode=mode):
+                completed = subprocess.run(
+                    [sys.executable, "-I", "-X", f"utf8={mode}", "-c", code],
+                    capture_output=True,
+                    text=True,
+                    timeout=60,
+                )
+                self.assertEqual(0, completed.returncode, completed.stderr)
+                self.assertEqual(mode, completed.stdout.strip())
+
+    @unittest.skipUnless(shutil.which("bash"), "bash is not on PATH")
+    def test_bash_startup_file_cannot_forge_a_shell_probe(self) -> None:
+        bash = shutil.which("bash")
+        with tempfile.TemporaryDirectory() as script_temp:
+            scripts = Path(script_temp)
+            (scripts / "forge.sh").write_text("echo 'shell check passed'\nexit 0\n", encoding="utf-8")
+            (scripts / "optimize.sh").write_text("export PYTHONOPTIMIZE=2\n", encoding="utf-8")
+            (scripts / "check.sh").write_text("exit 1\n", encoding="utf-8")
+            (scripts / "python_check.sh").write_text(
+                f"{shlex.quote(sys.executable)} -c 'assert 1 == 2' || exit 1\necho 'shell check passed'\n",
+                encoding="utf-8",
+            )
+            for label, startup, script in (
+                ("startup file forges the marker", "forge.sh", "check.sh"),
+                ("startup file re-exports PYTHONOPTIMIZE to a Python check", "optimize.sh", "python_check.sh"),
+            ):
+                with self.subTest(label):
+                    result = self._run_command(
+                        [bash, str(scripts / script)], "shell check passed", {"BASH_ENV": str(scripts / startup)}
+                    )
+                    self.assertEqual("failed", result.status, result.stdout_excerpt)
+
+    @unittest.skipUnless(shutil.which("bash"), "bash is not on PATH")
+    def test_exported_bash_function_cannot_replace_a_command_in_a_shell_probe(self) -> None:
+        with tempfile.TemporaryDirectory() as script_temp:
+            script = Path(script_temp) / "check.sh"
+            script.write_text("false || exit 1\necho 'shell check passed'\n", encoding="utf-8")
+            result = self._run_command(
+                [shutil.which("bash"), str(script)], "shell check passed", {"BASH_FUNC_false%%": "() {  return 0\n}"}
+            )
+            self.assertEqual("failed", result.status, result.stdout_excerpt)
+
+    @unittest.skipUnless(shutil.which("node"), "node is not on PATH")
+    def test_node_options_cannot_preload_code_into_a_node_probe(self) -> None:
+        with tempfile.TemporaryDirectory() as script_temp:
+            preload = Path(script_temp) / "preload.js"
+            preload.write_text("console.log('node check passed');\nprocess.exit(0);\n", encoding="utf-8")
+            result = self._run_command(
+                [shutil.which("node"), "-e", "process.exit(1)"],
+                "node check passed",
+                {"NODE_OPTIONS": f'--require "{preload.as_posix()}"'},
+            )
+            self.assertEqual("failed", result.status, result.stdout_excerpt)
 
     def test_probe_env_still_sets_an_interpreter_variable_explicitly(self) -> None:
         code = "import sys\nprint('optimize=%d' % sys.flags.optimize)\n"
