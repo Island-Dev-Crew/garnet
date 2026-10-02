@@ -1044,7 +1044,7 @@
   <div class="hero-foot">
     <div class="container">
       <span>no authority without evidence</span>
-      <span>research-grade · source v<!-- truth:version -->0.8.2<!-- /truth --></span>
+      <span>research-grade · source v<!-- truth:version -->0.8.3<!-- /truth --></span>
       <span>last tag <!-- truth:latest_tag -->v0.8.2<!-- /truth --></span>
       <span>built by <b>Island Dev Crew</b></span>
     </div>
@@ -1447,8 +1447,7 @@ def main() {
   <span class="k">end</span>.to_h
 <span class="k">end</span></pre></div>
       <div class="code-col garnet"><div class="head"><div class="swatch"></div>GARNET — converted, then reviewer-finished</div>
-<pre><span class="a">@sandbox</span>
-<span class="a">@caps()</span>
+<pre><span class="a">@caps()</span>
 <span class="k">module</span> Config {
 
 <span class="k">def</span> parse_config(text) {
@@ -1464,7 +1463,7 @@ def main() {
 
 }</pre></div>
     </div>
-    <p class="evidence-note">The right pane is reviewer-finished, not raw tool output. <code>garnet convert</code> copies the Ruby <code>do |line| … end</code> block unchanged and leaves two migration to-dos; a reviewer rewrote the block as the <code>for</code> loop shown. The <code>@sandbox</code> line is the tool's, and with it removed this file passes <code>garnet check</code>.</p>
+    <p class="evidence-note">The right pane is reviewer-finished, not raw tool output. <code>garnet convert</code> keeps the Ruby <code>do |line| … end.to_h</code> block whole as a migration to-do comment, so its raw output parses but does not yet build the map; a reviewer rewrote the block as the <code>for</code> loop shown. This file passes <code>garnet check</code>.</p>
 
     <div class="lang-badges">
       <div class="lang-badge">Active conversion: Rust · Ruby · Python · Go</div>
@@ -1763,7 +1762,7 @@ dist/Garnet Studio.app</pre>
       <a href="status.html" class="btn btn-primary">Open the status page <span aria-hidden="true">&rarr;</span></a>
       <a href="governance.html" class="btn btn-ghost">How a change gets accepted <span aria-hidden="true">&rarr;</span></a>
     </div>
-    <p class="evidence-note">Objective accounting: the tracked implementation plan is complete, but that is not full MIT/productization completion: platform distribution, provider-backed assist, backend lowering, proof, and empirical validation remain separately gated. Garnet is research-grade v<!-- truth:version -->0.8.2<!-- /truth --> and not production or 1.0.</p>
+    <p class="evidence-note">Objective accounting: the tracked implementation plan is complete, but that is not full MIT/productization completion: platform distribution, provider-backed assist, backend lowering, proof, and empirical validation remain separately gated. Garnet is research-grade v<!-- truth:version -->0.8.3<!-- /truth --> and not production or 1.0.</p>
   </div>
 </section>
 

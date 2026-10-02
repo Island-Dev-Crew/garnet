@@ -92,6 +92,12 @@ OUTPUT_DIR="$(cd "${ROOT}" && mkdir -p "${OUTPUT_DIR}" && cd "${OUTPUT_DIR}" && 
 VSIX_PATH="${OUTPUT_DIR}/${VSIX_NAME}"
 EVIDENCE_DIR="${OUTPUT_DIR}/garnet-vscode-release-assets-${STAMP}"
 
+# A restored target/ cache can hold this script's outputs from an earlier
+# version, and the release job publishes every VSIX it is handed. Only this
+# script's own output names are removed.
+rm -f "${OUTPUT_DIR}"/garnet-*-lsp-mvp-*.vsix
+rm -rf "${OUTPUT_DIR}"/garnet-vscode-release-assets-*
+
 if [[ "${COPY_TO_DESKTOP}" -eq 1 ]]; then
   EVIDENCE_DIR="${HOME}/Desktop/dogfood/garnet-vscode-release-assets-${STAMP}"
   mkdir -p "${EVIDENCE_DIR}"

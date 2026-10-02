@@ -1,11 +1,11 @@
 //! `garnet convert <lang> <file>` — run the migration assistant. Writes
-//! `<file>.garnet` + `.lineage.json` + `.migrate_todo.md` + `.metrics.json`
-//! beside the source, or under `--out <dir>` if supplied. Output is a
-//! scaffolded port (sandbox-on, with `MigrateTodo`/`Untranslatable`
-//! placeholders) — see `garnet-convert` crate docs for the scope
-//! caveats.
+//! `<stem>.<lang>.garnet` + `.lineage.json` + `.migrate_todo.md` +
+//! `.metrics.json` beside the source, or under `--out <dir>` if supplied.
+//! Output is a scaffolded port that parses but is unreviewed (an `@sandbox`
+//! comment, an empty `@caps()`, and `MigrateTodo`/`Untranslatable`
+//! placeholders) — see `garnet-convert` crate docs for the scope caveats.
 
-use crate::convert_cmd::{self, ConvertArgs, ConvertOutcome};
+use crate::convert_cmd::{self, ConvertArgs};
 use std::path::PathBuf;
 use std::process::ExitCode;
 
@@ -93,35 +93,12 @@ pub fn run(args: &[String]) -> ExitCode {
         quiet,
     };
 
+    // `convert_cmd::run` prints the one summary; this wrapper only sets the exit code.
     match convert_cmd::run(convert_args) {
-        Ok(outcome) => {
-            if !quiet {
-                println!("converted {}", file);
-                println!("  source_lang   = {}", outcome_source_lang_label(&outcome));
-                println!("  target        = {}", outcome.target_path.display());
-                println!("  lineage       = {}", outcome.lineage_path.display());
-                println!("  migrate_todo  = {}", outcome.migrate_todo_path.display());
-                println!("  metrics       = {}", outcome.metrics_path.display());
-                println!("  total_nodes   = {}", outcome.total_nodes);
-                println!(
-                    "  migrate_todo  = {} ({:.1}% clean-translate)",
-                    outcome.migrate_todo_count, outcome.clean_percent,
-                );
-                println!("  untranslatable= {}", outcome.untranslatable_count);
-            }
-            ExitCode::SUCCESS
-        }
+        Ok(_) => ExitCode::SUCCESS,
         Err(e) => {
             eprintln!("garnet convert failed: {e}");
             ExitCode::from(1)
         }
     }
-}
-
-/// Best-effort label recovered from the output target path (convert_cmd
-/// doesn't carry the selected language on the outcome, but it's embedded
-/// in the `lineage.json`; for the console summary we just surface "ok"
-/// since the CLI already echoed the user's argument).
-fn outcome_source_lang_label(_outcome: &ConvertOutcome) -> &'static str {
-    "ok"
 }

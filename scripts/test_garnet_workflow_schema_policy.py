@@ -41,10 +41,13 @@ def snapshot(*contents: str) -> object:
     ) for index, content in enumerate(contents))
     return policy.yaml_policy.WorkflowYamlSnapshot(documents, ())
 class WorkflowSchemaPolicyTests(unittest.TestCase):
-    def test_current_index_projects_39_ordered_contexts(self) -> None:
+    def test_current_index_projects_45_ordered_contexts(self) -> None:
         result = policy.workflow_projection(PATH.parents[1])
         contexts = [item.context for workflow in result.workflows for item in workflow.contexts]
-        self.assertEqual((result.problems, len(result.workflows), len(contexts)), ((), 12, 39))
+        self.assertEqual((result.problems, len(result.workflows), len(contexts)), ((), 12, 45))
+        for image in ("debian:12", "ubuntu:22.04", "almalinux:9"):
+            self.assertIn(f"smoke-older-distros ({image})", contexts)
+            self.assertIn(f"smoke-older-distros-arm64 ({image})", contexts)
         self.assertIn("cargo test (windows-latest)", contexts)
         self.assertIn("Publish VSIX release assets", contexts)
         for release_job in ("build-packages-arm64", "smoke-deb-arm64", "smoke-rpm-arm64",
@@ -94,6 +97,22 @@ class WorkflowSchemaPolicyTests(unittest.TestCase):
         for variant in variants:
             with self.subTest(variant=variant[:60]):
                 result = policy.project_snapshot(snapshot(WORKFLOW, variant))
+                self.assertTrue(result.problems)
+                self.assertEqual(result.workflows, ())
+    def test_a_job_may_name_one_static_environment(self) -> None:
+        # T5b: the release job reads its signing key from the `release` environment.
+        named = WORKFLOW.replace("    name: Static check\n", "    name: Static check\n    environment: release\n", 1)
+        result = policy.project_snapshot(snapshot(named))
+        self.assertEqual(result.problems, ())
+        self.assertEqual([item.context for item in result.workflows[0].contexts][0], "Static check")
+    def test_environment_must_be_one_static_name(self) -> None:
+        for environment in ("${{ github.ref_name }}", "'${{ vars.ENV }}'", "\n      name: release",
+                            "\n      name: release\n      url: https://example.com", '""', "[release]",
+                            "release prod", "true"):
+            with self.subTest(environment=environment):
+                variant = WORKFLOW.replace("    name: Static check\n",
+                                          f"    name: Static check\n    environment: {environment}\n", 1)
+                result = policy.project_snapshot(snapshot(variant))
                 self.assertTrue(result.problems)
                 self.assertEqual(result.workflows, ())
     def test_duplicate_context_occurrences_are_not_deduplicated(self) -> None:

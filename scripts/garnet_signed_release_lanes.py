@@ -8,9 +8,10 @@ actually ACTIVE so it cannot silently regress:
 1. **Program-manifest signing** — `garnet build --sign <key>` produces an Ed25519
    signature over the deterministic build manifest, verified to "signature valid"
    in `linux-packages.yml`. This lane is **ACTIVE** and gated here.
-2. **Release-artifact signing** — the `SHA256SUMS` over release assets is computed
-   but NOT signed (a documented `TODO(release-security)` in `linux-packages.yml`).
-   **DEFERRED**: needs a GPG/minisign key in CI.
+2. **Release-artifact signing** — the tagged release job signs `SHA256SUMS` with
+   `gpg --detach-sign` and uploads `SHA256SUMS.asc`; an unsigned tagged release
+   fails closed unless it is a recorded, deliberate act. **ACTIVE** since v0.8.1
+   and gated here. The key lives in CI; Garnet does not bundle GPG.
 3. **Supply-chain attestation** — `garnet seal [--out]` emits an in-toto predicate
    over the build + capability manifests, meant for `cosign attest --predicate`.
    **PARTIAL**: Garnet produces (and now writes) the predicate; `cosign` is
@@ -18,9 +19,9 @@ actually ACTIVE so it cannot silently regress:
 
 ## Scope (do not soften)
 Garnet does **not** sign its own supply chain and does **not** bundle
-cosign/GPG/minisign. Lanes 2 and 3 are deferred/partial by design; their status
-is reported, not faked. Only lane 1 (in-language manifest signing, which Garnet
-fully owns) is gated.
+cosign/GPG/minisign. Lane 3 is partial by design; its status is reported, not
+faked. Lanes 1 and 2 are gated: lane 1 is in-language manifest signing, which
+Garnet fully owns; lane 2 is the release pipeline's own GPG signature.
 """
 from __future__ import annotations
 
@@ -37,7 +38,7 @@ ROOT = Path(__file__).resolve().parents[1]
 class Lane:
     id: str
     name: str
-    status: str  # active | deferred | partial
+    status: str  # active | broken | partial
     owned_by_garnet: bool
     evidence: str
     present: bool
@@ -55,12 +56,33 @@ def _read(rel: str) -> str:
     return p.read_text(encoding="utf-8") if p.is_file() else ""
 
 
+# Every piece must be present in linux-packages.yml for release-artifact signing to
+# count as wired: the detached signature, its upload, and the unsigned-release guard.
+RELEASE_ARTIFACT_EVIDENCE = (
+    "--detach-sign --armor SHA256SUMS",
+    "files: release-dist/SHA256SUMS.asc",
+    "name: Require signed SHA256SUMS (fail-closed)",
+)
+
+
+def release_artifact_lane(pkg: str) -> Lane:
+    present = all(piece in pkg for piece in RELEASE_ARTIFACT_EVIDENCE)
+    return Lane(
+        id="release-artifact",
+        name="Release-artifact signing (SHA256SUMS detached signature)",
+        status="active" if present else "broken",
+        owned_by_garnet=False,
+        evidence="linux-packages.yml: gpg --detach-sign SHA256SUMS → SHA256SUMS.asc uploaded; "
+        "unsigned tagged release fails closed (key held in the release environment, GPG not bundled)",
+        present=present,
+    )
+
+
 def read_lanes() -> SignedReleaseLanes:
     pkg = _read(".github/workflows/linux-packages.yml")
     seal = _read("garnet-cli/src/cmd/seal.rs")
 
     lane1_present = "--sign" in pkg and "signature valid" in pkg
-    lane2_deferred_ack = "TODO(release-security)" in pkg and "SHA256SUMS" in pkg
     lane3_present = "garnet seal" in seal and "--out" in seal and "cosign" in seal
 
     lanes = [
@@ -72,14 +94,7 @@ def read_lanes() -> SignedReleaseLanes:
             evidence="linux-packages.yml: --sign round-trip → 'signature valid'",
             present=lane1_present,
         ),
-        Lane(
-            id="release-artifact",
-            name="Release-artifact signing (SHA256SUMS detached signature)",
-            status="deferred",
-            owned_by_garnet=False,
-            evidence="linux-packages.yml: TODO(release-security) — computed, not signed (needs GPG/minisign key)",
-            present=lane2_deferred_ack,
-        ),
+        release_artifact_lane(pkg),
         Lane(
             id="supply-chain-attestation",
             name="Supply-chain attestation (garnet seal → cosign attest)",
@@ -89,7 +104,7 @@ def read_lanes() -> SignedReleaseLanes:
             present=lane3_present,
         ),
     ]
-    active_lane_ok = next(l.present for l in lanes if l.id == "program-manifest")
+    active_lane_ok = all(l.present for l in lanes if l.id in ("program-manifest", "release-artifact"))
     return SignedReleaseLanes(
         schema="garnet.signed_release_lanes/v1",
         lanes=lanes,
@@ -107,20 +122,20 @@ def render_markdown(s: SignedReleaseLanes) -> str:
         "|---|---|---|---|",
     ]
     for l in s.lanes:
-        mark = {"active": "✅ active", "deferred": "⏸ deferred", "partial": "◐ partial"}.get(
+        mark = {"active": "✅ active", "broken": "✗ broken", "partial": "◐ partial"}.get(
             l.status, l.status
         )
         owned = "yes" if l.owned_by_garnet else "no (external tool)"
         lines.append(f"| {l.name} | {mark} | {owned} | {l.evidence} |")
     lines += [
         "",
-        f"**Active lane (program-manifest signing) wired: "
+        f"**Active lanes (program-manifest and release-artifact signing) wired: "
         f"{'yes' if s.active_lane_ok else 'NO'}.**",
         "",
         "Scope: Garnet does not sign its own supply chain or bundle "
-        "cosign/GPG/minisign. Lanes 2 (release-artifact) and 3 (supply-chain) are "
-        "deferred/partial by design — external signing tools. Only lane 1, which "
-        "Garnet fully owns, is gated.",
+        "cosign/GPG/minisign. Lane 3 (supply-chain) is partial by design — an "
+        "external signing tool. Lanes 1 (program-manifest) and 2 (release-artifact, "
+        "the release job's GPG signature) are gated.",
         "",
     ]
     return "\n".join(lines)
@@ -132,7 +147,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--gate",
         action="store_true",
-        help="exit non-zero if the ACTIVE lane (program-manifest signing) is not wired",
+        help="exit non-zero if an ACTIVE lane (program-manifest or release-artifact signing) is not wired",
     )
     args = parser.parse_args(list(argv) if argv is not None else None)
 
@@ -145,7 +160,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.gate and not status.active_lane_ok:
         print(
             "signed-release-lanes gate FAILED: program-manifest signing "
-            "(`garnet build --sign` → 'signature valid') is no longer wired in CI",
+            "(`garnet build --sign` → 'signature valid') or release-artifact signing "
+            "(gpg --detach-sign SHA256SUMS → SHA256SUMS.asc, fail-closed) is no longer wired in CI",
             file=sys.stderr,
         )
         return 1

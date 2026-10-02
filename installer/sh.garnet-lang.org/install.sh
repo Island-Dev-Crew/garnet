@@ -8,14 +8,22 @@
 # package from GitHub Releases, verifies it against SHA256SUMS, installs it, and
 # runs `garnet --version`, failing if the installed binary does not run. If the
 # requested release asset is unavailable, does not run on this host, or the host
-# glibc is older than the 2.39 the Linux assets need, auto mode falls back to a
-# source install through `cargo install --path ... --locked`.
+# glibc is older than the requested release's Linux assets need (2.39 through
+# v0.8.2, 2.34 from v0.8.3), auto mode falls back to a source install through
+# `cargo install --path ... --locked`.
 #
-# Integrity, not authenticity: the asset is checked against SHA256SUMS, but
-# SHA256SUMS.asc (the GPG signature over it) is not verified here. To check
-# authenticity, follow docs/release-signing.md. GARNET_BASE_URL and
-# GARNET_CHECKSUM_URL move the asset source and the checksum source together;
-# point them only at a mirror you trust.
+# Authenticity (D-26): when gpg is installed, SHA256SUMS is trusted only after
+# SHA256SUMS.asc verifies and was made by the release key this script pins for
+# the requested version. The public keys are fetched from
+# GARNET_SIGNING_KEYS_URL, but a signature by any other key is refused, so a
+# swapped keys file cannot pass. A missing, tampered or wrong-key signature
+# stops the install; it never falls back to a source build. Without gpg the
+# installer warns and trusts SHA256SUMS on integrity only; releases before
+# v0.8.1 were never signed. GARNET_VERIFY_SIGNATURE=0 turns the check off (for
+# local test assets). GARNET_SIGNING_KEY_FPR pins a different key, for a mirror
+# you sign yourself. GARNET_BASE_URL and GARNET_CHECKSUM_URL move the asset
+# source and the checksum source together; point them only at a mirror you
+# trust. See docs/release-signing.md.
 
 set -eu
 
@@ -35,6 +43,12 @@ GARNET_INSTALL_MODE="${GARNET_INSTALL_MODE:-auto}"
 GARNET_SOURCE_FALLBACK="${GARNET_SOURCE_FALLBACK:-1}"
 GARNET_SOURCE_REF="${GARNET_SOURCE_REF:-}"
 GARNET_SOURCE_REPO_URL="${GARNET_SOURCE_REPO_URL:-https://github.com/${GARNET_REPO}.git}"
+GARNET_VERIFY_SIGNATURE="${GARNET_VERIFY_SIGNATURE:-1}"
+GARNET_SIGNING_KEYS_URL="${GARNET_SIGNING_KEYS_URL:-https://garnet-lang.org/garnet-release-keys.asc}"
+GARNET_SIGNING_KEY_FPR="${GARNET_SIGNING_KEY_FPR:-}"
+# The rotated release key, pinned for v0.8.3 and later. Empty until the new key
+# exists; while it is empty, a later version is refused when gpg is present.
+GARNET_RELEASE_KEY_0_8_3=''
 GARNET_INSTALLED_BIN=""
 
 say_banner() {
@@ -206,16 +220,10 @@ verify_sha256() {
     say "SHA-256 verified"
 }
 
-lookup_expected_sha256() {
-    _asset="$1"
-    _sums_url="${GARNET_CHECKSUM_URL:-${GARNET_BASE_URL}/SHA256SUMS}"
-    _tmp="$(mktemp_file sums)"
-
-    try_download "$_sums_url" "$_tmp" || {
-        rm -f "$_tmp"
-        return 1
-    }
-    _sha="$(awk -v f="$_asset" '
+expected_sha256() {
+    _sums="$1"
+    _asset="$2"
+    awk -v f="$_asset" '
         {
             name = $2
             sub(/^\*/, "", name)
@@ -226,11 +234,90 @@ lookup_expected_sha256() {
                 exit
             }
         }
-    ' "$_tmp")"
-    rm -f "$_tmp"
+    ' "$_sums"
+}
 
-    [ -n "$_sha" ] || return 1
-    printf '%s' "$_sha"
+# The release signing key pinned for a version (D-26), or nothing.
+pinned_signing_key() {
+    case "$1" in
+        0.8.1|0.8.2) printf '%s' '04D56F91F03817DDFFEBC62AC14DF6E713956ED1' ;;
+        *) printf '%s' "$GARNET_RELEASE_KEY_0_8_3" ;;
+    esac
+}
+
+# True when version $1 is older than $2.$3.$4. A version that does not parse
+# counts as not older.
+version_before() {
+    _vb_major="${1%%.*}"
+    _vb_rest="${1#*.}"
+    _vb_minor="${_vb_rest%%.*}"
+    case "$_vb_rest" in
+        *.*) _vb_patch="${_vb_rest#*.}" ;;
+        *) _vb_patch=0 ;;
+    esac
+    _vb_patch="${_vb_patch%%[!0-9]*}"
+    case "${_vb_major}.${_vb_minor}.${_vb_patch}" in
+        *[!0-9.]*|.*|*..*|*.) return 1 ;;
+    esac
+    [ "$_vb_major" -lt "$2" ] && return 0
+    [ "$_vb_major" -gt "$2" ] && return 1
+    [ "$_vb_minor" -lt "$3" ] && return 0
+    [ "$_vb_minor" -gt "$3" ] && return 1
+    [ "$_vb_patch" -lt "$4" ]
+}
+
+# True when the version is older than v0.8.1, the first release that shipped
+# SHA256SUMS.asc. A version that does not parse counts as signed (fail closed).
+predates_signed_releases() {
+    version_before "$1" 0 8 1
+}
+
+verify_sums_signature() {
+    _sums="$1"
+    _sig_url="$2"
+
+    if [ "$GARNET_VERIFY_SIGNATURE" = "0" ]; then
+        warn "signature verification is off (GARNET_VERIFY_SIGNATURE=0); SHA256SUMS is trusted on integrity only"
+        return 0
+    fi
+    if [ -z "$GARNET_SIGNING_KEY_FPR" ] && predates_signed_releases "$GARNET_VERSION"; then
+        warn "v${GARNET_VERSION} predates signed releases (the first is v0.8.1); SHA256SUMS is trusted on integrity only"
+        return 0
+    fi
+    if ! command -v gpg >/dev/null 2>&1; then
+        warn "gpg not found: SHA256SUMS.asc is not verified, so SHA256SUMS is trusted on integrity only; install gpg to check authenticity (docs/release-signing.md)"
+        return 0
+    fi
+
+    _fpr="${GARNET_SIGNING_KEY_FPR:-$(pinned_signing_key "$GARNET_VERSION")}"
+    [ -n "$_fpr" ] || err "no release signing key is pinned for v${GARNET_VERSION} in this installer; refusing to trust SHA256SUMS (GARNET_VERIFY_SIGNATURE=0 proceeds on integrity only)"
+
+    _keyring="$(mktemp -d 2>/dev/null)" || err "cannot create a temporary keyring"
+    if ! try_download "$_sig_url" "$_keyring/SHA256SUMS.asc"; then
+        rm -rf "$_keyring"
+        err "SHA256SUMS.asc is missing for v${GARNET_VERSION} (${_sig_url}); refusing an unsigned SHA256SUMS"
+    fi
+    if ! try_download "$GARNET_SIGNING_KEYS_URL" "$_keyring/keys.asc"; then
+        rm -rf "$_keyring"
+        err "cannot fetch the release signing keys from ${GARNET_SIGNING_KEYS_URL}"
+    fi
+    if ! gpg --homedir "$_keyring" --batch --quiet --import "$_keyring/keys.asc" >/dev/null 2>&1; then
+        rm -rf "$_keyring"
+        err "cannot import the release signing keys from ${GARNET_SIGNING_KEYS_URL}"
+    fi
+    # A detached signature is required: gpg refuses an inline-signed message when
+    # given the data file, so another signed text cannot stand in for this one.
+    if ! _status="$(gpg --homedir "$_keyring" --batch --status-fd 1 --verify "$_keyring/SHA256SUMS.asc" "$_sums" 2>/dev/null)"; then
+        rm -rf "$_keyring"
+        err "SHA256SUMS.asc does not verify against SHA256SUMS; refusing to install"
+    fi
+    rm -rf "$_keyring"
+    # VALIDSIG carries the signing key's fingerprint and, last, its primary key's.
+    printf '%s\n' "$_status" | awk -v fpr="$_fpr" '
+        $1 == "[GNUPG:]" && $2 == "VALIDSIG" && ($3 == fpr || $NF == fpr) { found = 1 }
+        END { exit !found }
+    ' || err "SHA256SUMS.asc is not signed by the pinned release key ${_fpr}; refusing to install"
+    say "SHA256SUMS signature verified (key ${_fpr})"
 }
 
 install_deb() {
@@ -314,9 +401,21 @@ run_version_check() {
     printf '%s\n' "$_out" | head -10
 }
 
+# The newest glibc 2.x the requested release's Linux assets may need, as x.
+# v0.8.3 and later are built on Ubuntu 22.04 under a GLIBC_2.34 floor
+# (scripts/check_glibc_floor.sh); earlier releases need 2.39.
+linux_assets_glibc_minor() {
+    if version_before "$GARNET_VERSION" 0 8 3; then
+        printf '39'
+    else
+        printf '34'
+    fi
+}
+
 glibc_too_old() {
     # Succeeds only when the host is Linux, reports a glibc version, and that
-    # version is older than 2.39. musl and unknown hosts are not judged here.
+    # version is older than the requested release's floor. musl and unknown
+    # hosts are not judged here.
     [ "$(uname -s 2>/dev/null || printf unknown)" = "Linux" ] || return 1
     _glibc="$(getconf GNU_LIBC_VERSION 2>/dev/null | awk '{print $2}')"
     [ -n "$_glibc" ] || return 1
@@ -326,7 +425,8 @@ glibc_too_old() {
     case "${_glibc_major}${_glibc_minor}" in
         ''|*[!0-9]*) return 1 ;;
     esac
-    [ "$_glibc_major" -lt 2 ] || { [ "$_glibc_major" -eq 2 ] && [ "$_glibc_minor" -lt 39 ]; }
+    _glibc_floor="$(linux_assets_glibc_minor)"
+    [ "$_glibc_major" -lt 2 ] || { [ "$_glibc_major" -eq 2 ] && [ "$_glibc_minor" -lt "$_glibc_floor" ]; }
 }
 
 source_install() {
@@ -379,18 +479,28 @@ release_install_for_format() {
     _triple="$1"
     _format="$2"
     _asset="$(asset_name "$_triple" "$_format")"
-    _url="${GARNET_BASE_URL}/${_asset}"
+    # Not `_url`: try_download sets that global, and the signature check below
+    # downloads the .asc and the keys through it.
+    _asset_url="${GARNET_BASE_URL}/${_asset}"
     _dest="$(mktemp_file "$_asset")"
 
-    trap 'rm -f "$_dest"' EXIT INT HUP TERM
+    _sums="$(mktemp_file sums)"
+    _sums_url="${GARNET_CHECKSUM_URL:-${GARNET_BASE_URL}/SHA256SUMS}"
+
+    trap 'rm -f "$_dest" "$_sums"' EXIT INT HUP TERM
 
     say "detected = ${_triple} / ${_format}"
     say "asset    = ${_asset}"
     say "fetching SHA256SUMS"
-    _expected_sha="$(lookup_expected_sha256 "$_asset")" || return 1
+    try_download "$_sums_url" "$_sums" || return 1
+    # Runs in this shell, not a $(...) subshell: a signature failure exits the
+    # installer instead of reading as "assets unavailable" and falling back.
+    verify_sums_signature "$_sums" "${GARNET_SIGNATURE_URL:-${_sums_url}.asc}"
+    _expected_sha="$(expected_sha256 "$_sums" "$_asset")"
+    [ -n "$_expected_sha" ] || return 1
 
-    say "downloading ${_url}"
-    try_download "$_url" "$_dest" || return 1
+    say "downloading ${_asset_url}"
+    try_download "$_asset_url" "$_dest" || return 1
     verify_sha256 "$_dest" "$_expected_sha"
 
     # A caller's `if` suspends errexit, so failures are returned explicitly.
@@ -412,7 +522,7 @@ release_install() {
     _format="$(detect_format)" || return 1
 
     if glibc_too_old; then
-        warn "host glibc ${_glibc} is older than 2.39, which the Linux release assets need; skipping them"
+        warn "host glibc ${_glibc} is older than 2.${_glibc_floor}, which the v${GARNET_VERSION} Linux release assets need; skipping them"
         return 1
     fi
 

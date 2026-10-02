@@ -30,14 +30,39 @@ class SignedReleaseLanesTests(unittest.TestCase):
         self.assertTrue(program.owned_by_garnet)
         self.assertTrue(s.active_lane_ok, "program-manifest signing must be wired in CI")
 
-    def test_deferred_and_partial_lanes_are_honest(self) -> None:
+    def test_release_artifact_lane_is_active_and_partial_lane_stays_partial(self) -> None:
         s = lanes.read_lanes()
         by_id = {l.id: l for l in s.lanes}
-        self.assertEqual(by_id["release-artifact"].status, "deferred")
+        # SHA256SUMS.asc has shipped since v0.8.1: the lane is active, not deferred.
+        self.assertEqual(by_id["release-artifact"].status, "active")
+        self.assertTrue(by_id["release-artifact"].present)
         self.assertEqual(by_id["supply-chain-attestation"].status, "partial")
         # External-tool lanes are explicitly NOT claimed as Garnet-owned.
         self.assertFalse(by_id["release-artifact"].owned_by_garnet)
         self.assertFalse(by_id["supply-chain-attestation"].owned_by_garnet)
+
+    def test_release_artifact_lane_keys_on_the_signing_step_not_the_old_todo(self) -> None:
+        workflow = lanes._read(".github/workflows/linux-packages.yml")
+        self.assertNotIn("TODO(release-security)", workflow)
+        stale = "# TODO(release-security): SHA256SUMS is computed but not signed.\nsha256sum * > SHA256SUMS\n"
+        self.assertEqual(lanes.release_artifact_lane(stale).status, "broken")
+        for piece in lanes.RELEASE_ARTIFACT_EVIDENCE:
+            with self.subTest(missing=piece):
+                self.assertIn(piece, workflow)
+                self.assertEqual(lanes.release_artifact_lane(workflow.replace(piece, "")).status, "broken")
+
+    def test_gate_fails_when_release_artifact_signing_is_unwired(self) -> None:
+        original = lanes._read
+
+        def without_asc_upload(rel: str) -> str:
+            text = original(rel)
+            return text.replace("files: release-dist/SHA256SUMS.asc", "") if rel.endswith("linux-packages.yml") else text
+
+        lanes._read = without_asc_upload
+        try:
+            self.assertEqual(lanes.main(["--gate", "--format", "json"]), 1)
+        finally:
+            lanes._read = original
 
     def test_supply_chain_lane_notes_out_flag(self) -> None:
         s = lanes.read_lanes()

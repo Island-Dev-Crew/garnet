@@ -4,9 +4,11 @@
 //!
 //!   1. **check** — the proposal must pass the static language/checker gate before
 //!      later gates can run or seal it.
-//!   2. **diff-caps** (S37) — the declared capability surface must NOT widen. A
-//!      widening proposal is a true gate **failure** (Rule 2): it is REFUSED and
-//!      never reaches the kernel or the seal.
+//!   2. **diff-caps** (S37) — the program-wide declared capability surface must NOT
+//!      widen and no wildcard may appear. A widening proposal is a true gate
+//!      **failure** (Rule 2): it is REFUSED and never reaches the kernel or the seal.
+//!      Per-function changes (an existing function gaining a capability already in
+//!      the aggregate, or a new function) do not refuse; they are listed for review.
 //!   3. **the enforced kernel** (S99 `@max_depth` + S100 `@caps` traps) — the
 //!      proposal must run without tripping an enforced ceiling.
 //!   4. **seal** (S38) — an accepted proposal is attested, recording the autonomous
@@ -187,6 +189,21 @@ fn garnet_exe() -> Result<PathBuf, ExitCode> {
     })
 }
 
+/// Per-function changes in diff-caps' text output: existing functions that gained
+/// capabilities (`  ~ name gained: …` lines) and new functions (the
+/// `  + functions: a, b` line). Under S37 they are listed for review, not refused.
+fn per_function_changes(diff_stdout: &[u8]) -> (usize, usize) {
+    let text = String::from_utf8_lossy(diff_stdout);
+    let gained = text.lines().filter(|l| l.starts_with("  ~ ")).count();
+    let added = text
+        .lines()
+        .find_map(|l| l.strip_prefix("  + functions:"))
+        .map_or(0, |names| {
+            names.split(',').filter(|n| !n.trim().is_empty()).count()
+        });
+    (gained, added)
+}
+
 /// The loop's verdict on a proposal, used to write the S103 dossier.
 enum Outcome<'a> {
     Accepted {
@@ -221,11 +238,23 @@ fn write_record(a: &Args, exe: &std::path::Path, diff_stdout: &[u8], outcome: &O
     // Artifact 2 — the diff-caps capability-surface decision (always captured).
     let _ = std::fs::write(dir.join("diff_caps.txt"), diff_stdout);
 
+    let (gained, added) = per_function_changes(diff_stdout);
+    let per_function = if gained + added > 0 {
+        format!(
+            "- per-function: {gained} existing function(s) gained capabilities and {added} \
+             function(s) are new — listed in `diff_caps.txt` for human review. Under S37 they \
+             do not block acceptance; only a program-wide widening or a new wildcard is refused.\n"
+        )
+    } else {
+        String::new()
+    };
     let decision = match outcome {
         Outcome::Accepted { value, .. } => format!(
             "# Agent-loop decision: ACCEPTED\n\n\
              Proposal `{}` (vs baseline `{}`) was ACCEPTED on capability+depth evidence.\n\n\
-             - diff-caps: no authority expansion — the declared capability surface did not widen.\n\
+             - diff-caps: no authority expansion — the program-wide declared capability surface \
+             did not widen.\n\
+             {per_function}\
              - enforced kernel ({}): ran without tripping an enforced ceiling ({value}).\n\
              - sealed: attested in `seal.json` with autonomous-acceptance provenance.\n\n\
              The 4 trust artifacts: `capability_manifest.json` (S36), `diff_caps.txt` (S37), \
@@ -247,7 +276,7 @@ fn write_record(a: &Args, exe: &std::path::Path, diff_stdout: &[u8], outcome: &O
         Outcome::RejectedDiffCaps => format!(
             "# Agent-loop decision: REJECTED (capability widening)\n\n\
              Proposal `{}` (vs baseline `{}`) was REFUSED at the diff-caps gate: it WIDENED the \
-             declared capability surface (see `diff_caps.txt`). It never ran and was never sealed \
+             program-wide declared capability surface or introduced a wildcard (see `diff_caps.txt`). It never ran and was never sealed \
              — the negative proof. A widening is a true gate FAILURE (Rule 2), not a warning.\n",
             a.proposal.display(),
             a.baseline.display(),
@@ -373,7 +402,11 @@ pub fn run(args: &[String]) -> ExitCode {
         write_record(&a, &exe, &diff.stdout, &Outcome::RejectedDiffCaps);
         return ExitCode::from(1);
     }
-    println!("agent-loop: stage diff-caps -> PASS (no authority expansion, band 5/5)");
+    println!("agent-loop: stage diff-caps -> PASS (no program-wide authority expansion, band 5/5)");
+    let (gained, added) = per_function_changes(&diff.stdout);
+    if gained + added > 0 {
+        println!("agent-loop: per-function changes listed for review in diff_caps.txt");
+    }
 
     // STAGE 3 — the ENFORCED kernel (S99 @max_depth + S100 @caps). A proposal that
     // trips an enforced ceiling is REFUSED even though diff-caps passed.

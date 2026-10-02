@@ -253,6 +253,13 @@ impl<'a> RubyParser<'a> {
                 break;
             }
             let start = self.pos;
+            // A method inside a class body (or a nested def) is parsed as a real
+            // function, so its own `end` does not close the enclosing body.
+            if self.peek_keyword("def") {
+                self.eat("def ");
+                stmts.push(self.parse_def(start)?);
+                continue;
+            }
             let line = self.read_until_newline();
             let line = line.trim().to_string();
             if line.is_empty() {
@@ -260,6 +267,51 @@ impl<'a> RubyParser<'a> {
             }
             if line == "end" {
                 break;
+            }
+            // C1-18: a `do ... end` block or a keyword block (`if`, `while`, `case`,
+            // ...) is handled whole, up to its matching `end`. `EXPR.each do |x|`
+            // is lowered to `for x in EXPR { ... }`; every other block is kept as
+            // one whole-statement MigrateTodo, so neither its body nor its `end`
+            // (for example `end.to_h`) spills into the enclosing def.
+            if let Some(kind) = block_opener(&line) {
+                if let Some((close, after)) = self.matching_end() {
+                    match each_header(&line) {
+                        Some((iter, var)) if close == "end" => {
+                            let body = self.parse_body_until_end()?;
+                            stmts.push(Cir::For {
+                                var,
+                                iter: Box::new(Cir::Ident(iter, self.lineage(start))),
+                                body,
+                                lineage: self.lineage(start),
+                            });
+                        }
+                        _ => {
+                            let line_begin = self.source[..start].rfind('\n').map_or(0, |i| i + 1);
+                            let indent = start - line_begin;
+                            let text = self.source[line_begin..after]
+                                .lines()
+                                .map(|l| {
+                                    l.get(indent.min(l.len() - l.trim_start().len())..)
+                                        .unwrap_or("")
+                                })
+                                .collect::<Vec<_>>()
+                                .join("\n");
+                            self.pos = after;
+                            stmts.push(Cir::MigrateTodo {
+                                placeholder: Box::new(Cir::Literal(
+                                    CirLit::Nil,
+                                    self.lineage(start),
+                                )),
+                                note: format!(
+                                    "Ruby `{kind}` block kept whole for hand translation:\n{}",
+                                    text.trim_end()
+                                ),
+                                lineage: self.lineage(start),
+                            });
+                        }
+                    }
+                    continue;
+                }
             }
             // Recognize a handful of common forms; everything else is
             // a bare ident expression (fall back to Ident CIR).
@@ -370,6 +422,30 @@ impl<'a> RubyParser<'a> {
         })
     }
 
+    /// Where the block whose header was just read ends: the trimmed closing line
+    /// and the byte offset just past it. Nested blocks are counted, so an inner
+    /// `end` does not close the outer block.
+    fn matching_end(&self) -> Option<(String, usize)> {
+        let mut depth = 1usize;
+        let mut pos = self.pos;
+        for line in self.source[self.pos..].split_inclusive('\n') {
+            pos += line.len();
+            let t = line.trim();
+            if t.is_empty() || t.starts_with('#') {
+                continue;
+            }
+            if block_opener(t).is_some() {
+                depth += 1;
+            } else if is_block_close(t) {
+                depth -= 1;
+                if depth == 0 {
+                    return Some((t.to_string(), pos));
+                }
+            }
+        }
+        None
+    }
+
     fn read_until_newline(&mut self) -> String {
         let rem = self.remaining();
         match rem.find('\n') {
@@ -418,6 +494,46 @@ fn derive_module_name(filename: &str) -> String {
     } else {
         out
     }
+}
+
+/// The kind of block a Ruby line opens: `do` for `... do` / `... do |x|`, or the
+/// keyword of a multi-line `if`/`unless`/`while`/`until`/`case`/`begin`/`for`/
+/// `def`/`class`/`module`. A one-line form that closes with `end` opens nothing.
+fn block_opener(t: &str) -> Option<&'static str> {
+    if t == "do" || t.ends_with(" do") || (t.ends_with('|') && t.contains(" do |")) {
+        return Some("do");
+    }
+    let first = t.split_whitespace().next().unwrap_or("");
+    let kind = [
+        "if", "unless", "while", "until", "case", "begin", "for", "def", "class", "module",
+    ]
+    .into_iter()
+    .find(|k| *k == first)?;
+    if t.split_whitespace().last() == Some("end") {
+        return None;
+    }
+    Some(kind)
+}
+
+fn is_block_close(t: &str) -> bool {
+    t == "end"
+        || ["end.", "end ", "end)", "end,"]
+            .iter()
+            .any(|p| t.starts_with(p))
+}
+
+/// `EXPR.each do |NAME|` → `(EXPR, NAME)`.
+fn each_header(line: &str) -> Option<(String, String)> {
+    let (head, params) = line.strip_suffix('|')?.split_once(" do |")?;
+    let iter = head.strip_suffix(".each")?.trim();
+    let var = params.trim();
+    let valid = !iter.is_empty()
+        && var
+            .chars()
+            .next()
+            .is_some_and(|c| c == '_' || c.is_ascii_alphabetic())
+        && var.chars().all(|c| c == '_' || c.is_ascii_alphanumeric());
+    valid.then(|| (iter.to_string(), var.to_string()))
 }
 
 #[cfg(test)]
