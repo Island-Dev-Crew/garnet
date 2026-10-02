@@ -74,15 +74,53 @@ def timeout_output(value: str | bytes | None) -> str:
     return value
 
 
-def run(cmd: list[str], cwd: Path, timeout: int = 120, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
-    process_env = os.environ.copy()
+# The namespaces of the interpreters probe checks run in. A name list trails each interpreter's
+# releases, so every variable in the namespace goes: PYTHON* (the set `python -E` ignores), node's
+# NODE_* (NODE_OPTIONS preloads code, NODE_COMPILE_CACHE loads cached code) and bash's BASH*
+# (BASH_ENV runs a file first, BASH_FUNC_<name>%% replaces the command <name>).
+INTERPRETER_NAMESPACE_PREFIXES = ("PYTHON", "NODE_", "BASH")
+# Unprefixed variables sh and bash read at startup (bash's shell.c and variables.c, 3.2 and 5.x):
+# sh sources ENV; bash imports SHELLOPTS as shell options; POSIXLY_CORRECT and POSIX_PEDANTIC start
+# bash in POSIX mode, which expands aliases in scripts; and SSH_CLIENT or SSH2_CLIENT makes a bash
+# built with SSH_SOURCE_BASHRC run ~/.bashrc before `bash -c`.
+SHELL_STARTUP_VARIABLES = frozenset(
+    {"ENV", "SHELLOPTS", "POSIXLY_CORRECT", "POSIX_PEDANTIC", "SSH_CLIENT", "SSH2_CLIENT"}
+)
+
+
+def is_interpreter_hook(name: str) -> bool:
+    return name.startswith(INTERPRETER_NAMESPACE_PREFIXES) or name in SHELL_STARTUP_VARIABLES
+
+
+def child_environment(env: dict[str, str] | None = None) -> dict[str, str]:
+    """The environment every probe runs in, and every process a probe starts inherits.
+
+    41 of the 150 CI probes check with Python `assert` in a `python -c` child, so an ambient
+    PYTHON* variable could decide their verdict: PYTHONOPTIMIZE strips the asserts, and
+    PYTHONPATH or PYTHONHOME redirect the imports. Shell and node checks have the same exposure
+    through their own variables. The runner drops every variable for which
+    `is_interpreter_hook()` holds, and names the only two interpreter variables its children
+    get: no user site-packages, so a `.pth` file under a caller-chosen HOME cannot run, and the
+    runner's own UTF-8 mode, so a child encodes its pipes the way `run()` decodes them. A
+    variable a probe sets in `Probe.env` still applies. `run()` also gives every child /dev/null
+    as standard input, so no probe reads the caller's terminal or connection.
+    """
+    child = {name: value for name, value in os.environ.items() if not is_interpreter_hook(name)}
+    child["PYTHONNOUSERSITE"] = "1"
+    child["PYTHONUTF8"] = "1" if sys.flags.utf8_mode else "0"
     if env:
-        process_env.update(env)
+        child.update(env)
+    return child
+
+
+def run(cmd: list[str], cwd: Path, timeout: int = 120, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
+    process_env = child_environment(env)
     try:
         return subprocess.run(
             cmd,
             cwd=cwd,
             text=True,
+            stdin=subprocess.DEVNULL,
             capture_output=True,
             timeout=timeout,
             check=False,
