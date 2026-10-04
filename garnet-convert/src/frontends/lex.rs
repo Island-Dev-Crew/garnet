@@ -6,8 +6,10 @@
 //!
 //! - **Python**: a logical line. Physical lines join while a bracket is open, a
 //!   line ends in `\`, or a triple-quoted string is open, as in the language
-//!   reference's line structure. Every string form is lexed; an f-string whose
-//!   replacement field holds the f-string's own quote (Python 3.12) is refused.
+//!   reference's line structure. Every string form is lexed, f-strings and
+//!   t-strings with their replacement fields; a field holding the string's own
+//!   quote, a comment or a backslash outside a nested string (Python 3.12) is
+//!   refused.
 //! - **Go**: lines up to the point where Go inserts a semicolon (after an
 //!   identifier, a literal, `break`, `continue`, `fallthrough`, `return`, `++`,
 //!   `--`, `)`, `]` or `}` at a line end), once every bracket, block comment and
@@ -31,6 +33,8 @@ pub struct GoLex {
     in_raw_string: bool,
     /// The last token seen is one after which Go inserts a semicolon.
     last_ends: bool,
+    /// A `;` appeared outside strings and comments.
+    semicolon: bool,
 }
 
 /// What one line contributes to a Go statement.
@@ -91,6 +95,10 @@ impl GoLex {
                     depth += 1;
                     self.last_ends = false;
                 }
+                b';' => {
+                    self.semicolon = true;
+                    self.last_ends = false;
+                }
                 b')' | b']' | b'}' => {
                     if depth == 0 {
                         return GoLine {
@@ -133,6 +141,12 @@ impl GoLex {
     /// Whether Go inserts a semicolon at the end of the lines scanned so far.
     pub fn ends_statement(&self) -> bool {
         self.last_ends
+    }
+
+    /// Whether a `;` appeared, outside strings and comments, in the lines
+    /// scanned so far.
+    pub fn semicolon(&self) -> bool {
+        self.semicolon
     }
 }
 
@@ -181,55 +195,91 @@ pub struct PyLine {
     pub continues: bool,
     /// Where a trailing `#` comment starts, if there is one.
     pub comment_at: Option<usize>,
+    /// A `;` statement separator appears outside strings and comments.
+    pub semicolon: bool,
 }
 
+/// A replacement field of an f-string or t-string being scanned.
+#[derive(Debug, Clone, Copy)]
+struct Field {
+    /// Brackets open in the field's expression.
+    brackets: u32,
+    /// Past the format spec's `:`.
+    spec: bool,
+}
+
+/// A string being scanned, which a triple-quoted one keeps open across lines.
+#[derive(Debug, Clone)]
+struct OpenString {
+    quote: u8,
+    triple: bool,
+    /// An f-string or t-string: `{` opens a replacement field.
+    fields_allowed: bool,
+    fields: Vec<Field>,
+}
+
+const FIELD_QUOTE: &str = "an f-string or t-string whose replacement field contains its own quote";
+const FIELD_COMMENT: &str = "an f-string or t-string whose replacement field contains a comment";
+const FIELD_BACKSLASH: &str =
+    "an f-string or t-string whose replacement field contains a backslash";
+const OPEN_STRING: &str = "a string that is still open at the end of its line";
+
 /// Python lexing state that can span lines: a triple-quoted string.
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Default, Clone)]
 pub struct PyLex {
-    triple: Option<u8>,
+    open: Option<OpenString>,
 }
 
 impl PyLex {
     /// Scan one physical line. `Err` names a construct the frontend does not lex:
-    /// an f-string whose replacement field holds the f-string's own quote (Python
-    /// 3.12 syntax), or a one-line string left open at the line end.
+    /// an f-string or t-string whose replacement field holds its own quote, a
+    /// comment or a backslash outside a nested string (Python 3.12 syntax), or a
+    /// one-line string left open at the line end.
     pub fn scan(&mut self, line: &str) -> Result<PyLine, &'static str> {
         let b = line.as_bytes();
         let mut out = PyLine::default();
         let mut i = 0;
-        while i < b.len() {
-            if let Some(q) = self.triple {
-                match find_triple(b, i, q) {
-                    Some(end) => {
-                        self.triple = None;
-                        i = end;
-                        continue;
-                    }
-                    None => return Ok(out),
+        if let Some(open) = self.open.as_mut() {
+            match scan_string(b, 0, open)? {
+                Some(end) => {
+                    self.open = None;
+                    i = end;
                 }
+                None => return Ok(out),
             }
+        }
+        while i < b.len() {
             match b[i] {
                 b'#' => {
                     out.comment_at = Some(i);
                     break;
                 }
-                q @ (b'"' | b'\'') => {
-                    let is_f = string_prefix(b, i).iter().any(|c| matches!(c, b'f' | b'F'));
-                    if b.get(i + 1) == Some(&q) && b.get(i + 2) == Some(&q) {
-                        match find_triple(b, i + 3, q) {
-                            Some(end) => i = end,
-                            None => {
-                                self.triple = Some(q);
-                                return Ok(out);
-                            }
+                quote @ (b'"' | b'\'') => {
+                    let prefix = string_prefix(b, i);
+                    let triple = b.get(i + 1) == Some(&quote) && b.get(i + 2) == Some(&quote);
+                    let mut open = OpenString {
+                        quote,
+                        triple,
+                        fields_allowed: prefix
+                            .iter()
+                            .any(|c| matches!(c, b'f' | b'F' | b't' | b'T')),
+                        fields: Vec::new(),
+                    };
+                    let from = if triple { i + 3 } else { i + 1 };
+                    match scan_string(b, from, &mut open)? {
+                        Some(end) => {
+                            i = end;
+                            continue;
                         }
-                        continue;
+                        None => {
+                            self.open = Some(open);
+                            return Ok(out);
+                        }
                     }
-                    i = scan_py_string(b, i + 1, q, is_f)?;
-                    continue;
                 }
                 b'(' | b'[' | b'{' => out.delta += 1,
                 b')' | b']' | b'}' => out.delta -= 1,
+                b';' => out.semicolon = true,
                 b'\\' if i + 1 == b.len() => out.continues = true,
                 _ => {}
             }
@@ -240,18 +290,18 @@ impl PyLex {
 
     /// True while a triple-quoted string is still open.
     pub fn open(&self) -> bool {
-        self.triple.is_some()
+        self.open.is_some()
     }
 }
 
-/// The string prefix letters (`r`, `b`, `f`, `u` in either case) just before
-/// the quote at `quote`.
+/// The string prefix letters (`r`, `b`, `f`, `t`, `u` in either case) just
+/// before the quote at `quote`.
 fn string_prefix(b: &[u8], quote: usize) -> &[u8] {
     let mut start = quote;
     while start > 0
         && matches!(
             b[start - 1],
-            b'r' | b'R' | b'b' | b'B' | b'f' | b'F' | b'u' | b'U'
+            b'r' | b'R' | b'b' | b'B' | b'f' | b'F' | b't' | b'T' | b'u' | b'U'
         )
     {
         start -= 1;
@@ -263,59 +313,92 @@ fn string_prefix(b: &[u8], quote: usize) -> &[u8] {
     &b[start..quote]
 }
 
-/// The index just past the closing `qqq` at or after `from`.
-fn find_triple(b: &[u8], from: usize, q: u8) -> Option<usize> {
-    let mut i = from;
-    while i + 3 <= b.len() {
-        if b[i] == b'\\' {
-            i += 2;
+/// Scan the string `open` from `i`. Returns the index just past its closing
+/// quote, or `None` when the line ends inside a triple-quoted string. In an
+/// f-string or t-string each replacement field is scanned: a nested string in
+/// the other quote is skipped, and the string's own quote, a comment or a
+/// backslash in the field's expression is refused.
+fn scan_string(
+    b: &[u8],
+    mut i: usize,
+    open: &mut OpenString,
+) -> Result<Option<usize>, &'static str> {
+    while i < b.len() {
+        let c = b[i];
+        if let Some(field) = open.fields.last_mut() {
+            if field.spec {
+                match c {
+                    b'{' => open.fields.push(Field {
+                        brackets: 0,
+                        spec: false,
+                    }),
+                    b'}' => {
+                        open.fields.pop();
+                    }
+                    c if c == open.quote => return Err(FIELD_QUOTE),
+                    _ => {}
+                }
+                i += 1;
+                continue;
+            }
+            match c {
+                c if c == open.quote => return Err(FIELD_QUOTE),
+                b'#' => return Err(FIELD_COMMENT),
+                b'\\' => return Err(FIELD_BACKSLASH),
+                nested @ (b'"' | b'\'') => {
+                    i += 1;
+                    while i < b.len() && b[i] != nested {
+                        if b[i] == b'\\' {
+                            i += 1;
+                        }
+                        i += 1;
+                    }
+                    if i >= b.len() {
+                        return Err(OPEN_STRING);
+                    }
+                }
+                b'(' | b'[' | b'{' => field.brackets += 1,
+                b')' | b']' => field.brackets = field.brackets.saturating_sub(1),
+                b'}' if field.brackets > 0 => field.brackets -= 1,
+                b'}' => {
+                    open.fields.pop();
+                }
+                b':' if field.brackets == 0 => field.spec = true,
+                _ => {}
+            }
+            i += 1;
             continue;
         }
-        if b[i] == q && b.get(i + 1) == Some(&q) && b.get(i + 2) == Some(&q) {
-            return Some(i + 3);
+        match c {
+            b'\\' => {
+                i += 2;
+                continue;
+            }
+            b'{' if open.fields_allowed && b.get(i + 1) == Some(&b'{') => {
+                i += 2;
+                continue;
+            }
+            b'{' if open.fields_allowed => open.fields.push(Field {
+                brackets: 0,
+                spec: false,
+            }),
+            c if c == open.quote => {
+                if !open.triple {
+                    return Ok(Some(i + 1));
+                }
+                if b.get(i + 1) == Some(&c) && b.get(i + 2) == Some(&c) {
+                    return Ok(Some(i + 3));
+                }
+            }
+            _ => {}
         }
         i += 1;
     }
-    None
-}
-
-/// Scan a one-line string from just after its opening quote `q`; returns the
-/// index just past the closing quote. In an f-string, a replacement field is
-/// scanned too: a nested string in the other quote is skipped, and the
-/// f-string's own quote inside a field is refused.
-fn scan_py_string(b: &[u8], mut i: usize, q: u8, is_f: bool) -> Result<usize, &'static str> {
-    while i < b.len() {
-        match b[i] {
-            b'\\' => i += 2,
-            c if c == q => return Ok(i + 1),
-            b'{' if is_f && b.get(i + 1) == Some(&b'{') => i += 2,
-            b'{' if is_f => {
-                let mut depth = 1;
-                i += 1;
-                while i < b.len() && depth > 0 {
-                    match b[i] {
-                        b'{' => depth += 1,
-                        b'}' => depth -= 1,
-                        c if c == q => {
-                            return Err(
-                                "an f-string whose replacement field contains its own quote",
-                            );
-                        }
-                        n @ (b'"' | b'\'') => {
-                            i += 1;
-                            while i < b.len() && b[i] != n {
-                                i += 1;
-                            }
-                        }
-                        _ => {}
-                    }
-                    i += 1;
-                }
-            }
-            _ => i += 1,
-        }
+    if open.triple {
+        Ok(None)
+    } else {
+        Err(OPEN_STRING)
     }
-    Err("a string that is still open at the end of its line")
 }
 
 // ─── Ruby ────────────────────────────────────────────────────────────
@@ -331,6 +414,8 @@ pub struct RubyLine<'a> {
     pub blocks: i64,
     /// The line ends in an operator, a comma or `\`, so the statement goes on.
     pub continues: bool,
+    /// A `;` statement separator appears outside strings and comments.
+    pub semicolon: bool,
 }
 
 /// Lex one line of the Ruby subset: comments, quoted and backtick strings (with
@@ -352,6 +437,7 @@ pub fn ruby_line(line: &str) -> Result<RubyLine<'_>, &'static str> {
         brackets: 0,
         blocks: 0,
         continues: false,
+        semicolon: false,
     };
     // The token before ends an expression: `if` after it is a modifier.
     let mut after_value = false;
@@ -388,27 +474,33 @@ pub fn ruby_line(line: &str) -> Result<RubyLine<'_>, &'static str> {
                 continue;
             }
             b'%' => {
-                let next = b.get(i + 1).copied();
-                let delim = match next {
-                    Some(b'q' | b'Q' | b'w' | b'W' | b'i' | b'I' | b'r' | b's' | b'x') => {
-                        b.get(i + 2).copied()
-                    }
-                    other => other,
-                };
-                if let Some(d) = delim {
-                    if !d.is_ascii_alphanumeric() && !d.is_ascii_whitespace() && d != b'=' {
-                        return Err("a percent literal");
-                    }
+                // Where an operand starts, `%` begins a percent literal whatever
+                // follows it; after a spaced identifier with no space after it,
+                // Ruby reads one too. Elsewhere it is the modulo operator.
+                if operand_position(b, i) {
+                    return Err("a percent literal");
+                }
+                let spaced_after_word = i > 0
+                    && b[i - 1] == b' '
+                    && previous_word_is_identifier(b, i)
+                    && !b
+                        .get(i + 1)
+                        .is_some_and(|c| c.is_ascii_whitespace() || *c == b'=');
+                if spaced_after_word {
+                    return Err("an ambiguous % that may start a percent literal");
                 }
                 after_value = false;
             }
             b'<' if b.get(i + 1) == Some(&b'<')
-                && matches!(
-                    b.get(i + 2),
-                    Some(b'~' | b'-' | b'"' | b'\'' | b'A'..=b'Z' | b'_')
-                ) =>
+                && b.get(i + 2).is_some_and(|c| {
+                    matches!(c, b'~' | b'-' | b'"' | b'\'' | b'`' | b'_') || c.is_ascii_alphabetic()
+                }) =>
             {
-                return Err("a heredoc");
+                return Err("a heredoc, or a << written without a space after it");
+            }
+            b';' => {
+                out.semicolon = true;
+                after_value = false;
             }
             b'?' if operand_position(b, i)
                 && b.get(i + 1).is_some_and(|c| !c.is_ascii_whitespace())
@@ -610,7 +702,7 @@ fn method_name_end(b: &[u8], i: usize) -> usize {
 /// Whether the `def` that ends just before `i` is an endless method
 /// (`def name(args) = expr`), which has no `end`.
 fn endless_def(b: &[u8], mut i: usize) -> bool {
-    while b.get(i) == Some(&b' ') {
+    while matches!(b.get(i), Some(b' ' | b'\t')) {
         i += 1;
     }
     let name = i;
@@ -637,7 +729,7 @@ fn endless_def(b: &[u8], mut i: usize) -> bool {
             i += 1;
         }
     }
-    while b.get(i) == Some(&b' ') {
+    while matches!(b.get(i), Some(b' ' | b'\t')) {
         i += 1;
     }
     b.get(i) == Some(&b'=') && !matches!(b.get(i + 1), Some(b'=' | b'~' | b'>'))
@@ -807,6 +899,8 @@ mod tests {
             "s = 'open",
             "def one = 1",
             "def self.two() = 2",
+            "def one\t= 1",
+            "def one()\t=\t1",
         ] {
             assert!(ruby_line(refused).is_err(), "{refused}");
         }

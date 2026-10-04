@@ -165,7 +165,12 @@ impl<'a> RubyParser<'a> {
         let text = self.source[start..end].trim_end().to_string();
         self.pos = end;
         let first = first_word(&text);
-        if matches!(first, "require" | "require_relative") {
+        // A require is skipped only when it is the whole statement: anything
+        // after a `;` on its line is kept as a to-do with it.
+        let separated = text
+            .lines()
+            .any(|line| ruby_line(line).is_ok_and(|l| l.semicolon));
+        if matches!(first, "require" | "require_relative") && !separated {
             return self.parse_item();
         }
         if first == "method_missing" {
@@ -222,7 +227,7 @@ impl<'a> RubyParser<'a> {
     }
 
     /// Whether the rest of the current line holds no code.
-    fn header_ends_here(&self) -> bool {
+    fn rest_of_line_is_blank(&self) -> bool {
         let rest = self.remaining();
         let line = &rest[..rest.find('\n').unwrap_or(rest.len())];
         ruby_code(line).is_empty()
@@ -250,13 +255,18 @@ impl<'a> RubyParser<'a> {
         // The header must end here. A receiver (`def self.x`), an operator or
         // setter name, parameters without parentheses, or a body on the header
         // line are not read: the definition is kept whole.
-        if name.is_empty() || !self.header_ends_here() {
+        if name.is_empty() || !self.rest_of_line_is_blank() {
             self.pos = start;
             return Ok(self.whole_todo(start, "def"));
         }
-        let Some(body) = self.parse_body_until_end(true)? else {
-            self.pos = start;
-            return Ok(self.whole_todo(start, "def"));
+        // The closing `end` must end its line too: `end if cond` or `end; more`
+        // makes the definition conditional or shares its line, so it is kept whole.
+        let body = match self.parse_body_until_end(true)? {
+            Some(body) if self.rest_of_line_is_blank() => body,
+            _ => {
+                self.pos = start;
+                return Ok(self.whole_todo(start, "def"));
+            }
         };
         Ok(Cir::Func {
             name,
@@ -415,15 +425,27 @@ impl<'a> RubyParser<'a> {
     fn statement_end(&self, from: usize) -> usize {
         let mut brackets = 0;
         let mut blocks = 0;
+        let mut continues = false;
         let mut pos = from;
         for line in self.source[from..].split_inclusive('\n') {
             pos += line.len();
-            if let Ok(l) = ruby_line(line.trim_end_matches(['\n', '\r'])) {
-                brackets += l.brackets;
-                blocks += l.blocks;
-                if brackets > 0 || blocks > 0 || l.continues {
-                    continue;
+            match ruby_line(line.trim_end_matches(['\n', '\r'])) {
+                // A blank or comment line neither opens nor closes anything, and
+                // does not end a statement that is still open.
+                Ok(l) if l.code.trim().is_empty() => {
+                    if brackets > 0 || blocks > 0 || continues {
+                        continue;
+                    }
                 }
+                Ok(l) => {
+                    brackets += l.brackets;
+                    blocks += l.blocks;
+                    continues = l.continues;
+                    if brackets > 0 || blocks > 0 || continues {
+                        continue;
+                    }
+                }
+                Err(_) => {}
             }
             let chained = self.source[pos..]
                 .lines()
@@ -456,14 +478,17 @@ impl<'a> RubyParser<'a> {
         }
         // `class << self`, a superclass expression or code after the header is
         // not read: the class is kept whole.
-        if name.is_empty() || !self.header_ends_here() {
+        if name.is_empty() || !self.rest_of_line_is_blank() {
             self.pos = start;
             return Ok(self.whole_todo(start, "class"));
         }
         // Body contains attr_accessor / def / instance variables
-        let Some(body) = self.parse_body_until_end(false)? else {
-            self.pos = start;
-            return Ok(self.whole_todo(start, "class"));
+        let body = match self.parse_body_until_end(false)? {
+            Some(body) if self.rest_of_line_is_blank() => body,
+            _ => {
+                self.pos = start;
+                return Ok(self.whole_todo(start, "class"));
+            }
         };
         // Emit a struct + impl pair (Phase 2F finding)
         let lineage = self.lineage(start);
@@ -527,13 +552,16 @@ impl<'a> RubyParser<'a> {
         self.pos += "module".len();
         self.skip_blanks();
         let name = self.read_ident().unwrap_or_default();
-        if name.is_empty() || !self.header_ends_here() {
+        if name.is_empty() || !self.rest_of_line_is_blank() {
             self.pos = start;
             return Ok(self.whole_todo(start, "module"));
         }
-        let Some(body) = self.parse_body_until_end(false)? else {
-            self.pos = start;
-            return Ok(self.whole_todo(start, "module"));
+        let body = match self.parse_body_until_end(false)? {
+            Some(body) if self.rest_of_line_is_blank() => body,
+            _ => {
+                self.pos = start;
+                return Ok(self.whole_todo(start, "module"));
+            }
         };
         let items = body
             .into_iter()

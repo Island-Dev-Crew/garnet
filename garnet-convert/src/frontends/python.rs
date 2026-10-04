@@ -30,6 +30,8 @@ struct PythonParser<'a> {
     ends: Vec<usize>,
     /// Each physical line's code: its length without a trailing comment.
     code_len: Vec<usize>,
+    /// Each physical line holds a `;` outside strings and comments.
+    semicolon: Vec<bool>,
     filename: String,
     line_idx: usize,
     global_byte_offset: Vec<usize>, // per-line byte offset within source
@@ -55,11 +57,12 @@ impl<'a> PythonParser<'a> {
             offsets.push(off);
             off += l.len() + 1; // +1 for newline
         }
-        let (ends, code_len) = logical_lines(&lines)?;
+        let (ends, code_len, semicolon) = logical_lines(&lines)?;
         Ok(Self {
             lines,
             ends,
             code_len,
+            semicolon,
             filename: filename.to_string(),
             line_idx: 0,
             global_byte_offset: offsets,
@@ -172,7 +175,10 @@ impl<'a> PythonParser<'a> {
         }
         let end = self.end_of(start);
         self.line_idx = end;
-        if code.starts_with("import ") || code.starts_with("from ") {
+        // An import is skipped only when it is the whole statement: anything after
+        // a `;` on its line is kept as a to-do with it.
+        let statement_separator = (start..end).any(|i| self.semicolon[i]);
+        if (code.starts_with("import ") || code.starts_with("from ")) && !statement_separator {
             return Ok(None);
         }
         if code.starts_with("eval(") || code.starts_with("exec(") {
@@ -260,7 +266,8 @@ impl<'a> PythonParser<'a> {
                     body: ref fb,
                     ..
                 } if fname == "__init__" => {
-                    // Try to extract self.x = y assignments as fields
+                    // Try to extract self.x = y assignments as fields; the
+                    // constructor itself is kept as a method, not dropped.
                     for s in fb {
                         if let Cir::Assign { lhs, .. } = s {
                             if let Cir::FieldAccess { name: fname, .. } = &**lhs {
@@ -272,6 +279,7 @@ impl<'a> PythonParser<'a> {
                             }
                         }
                     }
+                    methods.push(b);
                 }
                 Cir::Func { .. } => methods.push(b),
                 Cir::Ident(text, lineage) => kept.push(Cir::MigrateTodo {
@@ -537,24 +545,35 @@ impl<'a> PythonParser<'a> {
 }
 
 /// Split the file into logical lines with `lex::PyLex`: for each logical line's
-/// first physical line, one past its last; and each physical line's code length.
-/// Refuses tab indentation, a construct the lexer does not read, and a string,
+/// first physical line, one past its last; each physical line's code length; and
+/// whether each physical line holds a `;` statement separator.
+/// Refuses tab or form-feed indentation, a construct the lexer does not read, and a string,
 /// bracket or `\` continuation still open at the end of the file.
-fn logical_lines(lines: &[&str]) -> Result<(Vec<usize>, Vec<usize>), ConvertError> {
+type LogicalLines = (Vec<usize>, Vec<usize>, Vec<bool>);
+
+fn logical_lines(lines: &[&str]) -> Result<LogicalLines, ConvertError> {
     let mut ends = vec![0; lines.len()];
     let mut code_len = vec![0; lines.len()];
+    let mut semicolon = vec![false; lines.len()];
     let mut lex = PyLex::default();
     let mut i = 0;
     while i < lines.len() {
         let start = i;
         let line = lines[i];
-        if line[..line.len() - line.trim_start().len()].contains('\t') && !line.trim().is_empty() {
-            return Err(refuse(i, "tab indentation"));
+        let indentation = &line[..line.len() - line.trim_start().len()];
+        if !line.trim().is_empty() {
+            if indentation.contains('\t') {
+                return Err(refuse(i, "tab indentation"));
+            }
+            if indentation.contains('\x0c') {
+                return Err(refuse(i, "a form feed in its indentation"));
+            }
         }
         let mut depth = 0i64;
         loop {
             let scanned = lex.scan(lines[i]).map_err(|why| refuse(i, why))?;
             code_len[i] = scanned.comment_at.unwrap_or(lines[i].len());
+            semicolon[i] = scanned.semicolon;
             depth += scanned.delta;
             i += 1;
             if depth <= 0 && !scanned.continues && !lex.open() {
@@ -571,28 +590,29 @@ fn logical_lines(lines: &[&str]) -> Result<(Vec<usize>, Vec<usize>), ConvertErro
         }
         ends[start] = i;
     }
-    Ok((ends, code_len))
+    Ok((ends, code_len, semicolon))
 }
 
 /// The keyword of a compound statement, whether its header ends on this line
 /// (`if x:`), spans lines (`if (`), or carries its body (`if x: y`). `match` and
 /// `case` are soft keywords: they open a statement only when it ends in `:`.
 fn header_keyword(code: &str) -> Option<&'static str> {
-    let starts = |kw: &str| {
-        code.strip_prefix(kw).is_some_and(|rest| {
-            rest.is_empty() || rest.starts_with([' ', '(', ':', '[', '"', '\''])
-        })
-    };
+    // A keyword is the statement's whole leading identifier: whatever follows it
+    // (a space, a tab, `(`, `{`, `*`, `:` ...) is not part of it.
+    let word_end = code
+        .find(|c: char| !(c.is_alphanumeric() || c == '_'))
+        .unwrap_or(code.len());
+    let word = &code[..word_end];
     [
         "for", "while", "with", "if", "elif", "else", "try", "except", "finally", "async", "class",
         "def",
     ]
     .into_iter()
-    .find(|kw| starts(kw))
+    .find(|kw| *kw == word)
     .or_else(|| {
         ["match", "case"]
             .into_iter()
-            .find(|kw| code.ends_with(':') && starts(kw))
+            .find(|kw| code.ends_with(':') && *kw == word)
     })
 }
 

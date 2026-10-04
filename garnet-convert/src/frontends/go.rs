@@ -140,8 +140,17 @@ impl<'a> GoParser<'a> {
             return self.parse_item();
         }
         if self.eat("import ") {
-            let _ = self.read_statement();
-            return self.parse_item();
+            // An import is skipped only when it is the whole statement: anything
+            // after a `;` on its line is kept as a to-do with it.
+            let lines = self.read_statement();
+            if !has_semicolon(&lines) {
+                return self.parse_item();
+            }
+            return Ok(Some(Cir::MigrateTodo {
+                placeholder: Box::new(Cir::Literal(CirLit::Nil, self.lineage(start))),
+                note: format!("unparsed Go item: import {}", lines.join("\n").trim()),
+                lineage: self.lineage(start),
+            }));
         }
         if self.eat("func ") {
             return Ok(Some(self.parse_func(start)?));
@@ -263,11 +272,15 @@ impl<'a> GoParser<'a> {
                 lineage: self.lineage(start),
             });
         }
-        // type alias, interface or other type — skip the whole declaration
-        let _ = self.read_statement();
+        // type alias, interface or other type — kept whole as a to-do
+        let text = self.read_statement().join("\n");
         Ok(Cir::MigrateTodo {
             placeholder: Box::new(Cir::Literal(CirLit::Nil, self.lineage(start))),
-            note: format!("Go type alias '{}' not yet translated", name),
+            note: format!(
+                "Go type alias '{}' not yet translated: {}",
+                name,
+                text.trim()
+            ),
             lineage: self.lineage(start),
         })
     }
@@ -392,6 +405,17 @@ impl<'a> GoParser<'a> {
         }
         s
     }
+}
+
+/// Whether a `;` statement separator appears, outside strings and comments,
+/// in `lines`.
+fn has_semicolon(lines: &[String]) -> bool {
+    let mut lex = GoLex::default();
+    let mut depth = 0;
+    for line in lines {
+        depth = lex.scan(line, depth).depth;
+    }
+    lex.semicolon()
 }
 
 /// A one-line statement whose brackets close on the line.

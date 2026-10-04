@@ -22,11 +22,13 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 - Converter output parses but does not keep the source's meaning. The Rust
   frontend drops binary operators (`a + b` comes out as `a nil b`). The Go
   frontend keeps a `return` expression's text but turns a `:=` declaration into
-  a placeholder and every block into a whole-statement to-do, so later lines
-  can name variables that no longer exist (Q48; after R2).
+  a placeholder and every block that spans lines into a whole-statement to-do,
+  so later lines can name variables that no longer exist; a block on one line
+  is copied through as one statement (Q48; after R2).
 - The Ruby converter reads a lexical subset and refuses a file outside it
   (heredocs, percent literals and the like). The Python converter refuses tab
-  indentation.
+  or form-feed indentation and f-strings whose replacement fields hold their
+  own quote, a comment or a backslash.
 - WV-6 (native-Windows acceptance) ships as a disclosed partial.
   `python3 -I scripts/garnet_wv_acceptance_status.py --wv WV-6` reports
   `partial`: its five checks pass, but the recorded product digest predates
@@ -125,8 +127,9 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   gained capabilities or are new are counted in the decision and listed for
   review on stdout, and in `diff_caps.txt` with `--record-dir`. A
   `--record-dir` artifact that cannot be written is named on stderr and the
-  loop exits 2. `decision.md` is written last: it names only artifacts that
-  were written and lists any that could not be.
+  loop exits 2. `decision.md` is written last: every mention of an artifact
+  that could not be written is marked "(not written)", and the missing ones
+  are listed.
 - **Every converter output parses (C1-18, Q48).**
   - `@sandbox` is named in a comment; `@caps()` stays.
   - Python `for` / `while` (without `else`) and Ruby `.each do |x|` are lowered
@@ -139,8 +142,10 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
     - Python: the logical line (brackets, `\`, triple-quoted strings). A
       compound statement is its header plus its deeper-indented lines and
       `elif`/`else`/`except`/`finally` clauses, at module level as in a
-      function. A def header may span lines, and a decorated definition is
-      kept whole.
+      function; its keyword is the statement's whole leading word, whatever
+      follows it (`if\t`, `if{`, `except*`). A def header may span lines, a
+      decorated definition is kept whole, and `__init__` is kept as a
+      method.
     - Go: lines up to where Go inserts a semicolon, once every bracket, block
       comment and raw string is closed; a line ending in `go`, `defer` or
       another keyword outside `break`/`continue`/`fallthrough`/`return` takes
@@ -149,15 +154,20 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
     - Ruby: a lexical subset. Lines join while a bracket or keyword block is
       open (`if` and its kin count only where an expression starts), after a
       trailing operator, comma or modifier (`if`, `unless`, `rescue` ...), or
-      before a line that starts with `.`. A
-      def or class whose header the frontend does not read, or whose body
-      has a `rescue`/`ensure`/`else` clause, is kept whole.
+      before a line that starts with `.`; a blank or comment line does not
+      end an open statement. A def, class or module whose header the
+      frontend does not read, whose body has a `rescue`/`ensure`/`else`
+      clause, or whose `end` shares its line with more code, is kept whole.
     Only a statement on one line becomes code. Class-level statements become
-    to-dos instead of being dropped. What a frontend does not lex is refused
-    with its line number: Python tab indentation, an f-string that reuses its
-    own quote inside a field, and a string or bracket left open at the end of
-    the file; Ruby heredocs, percent literals, character literals, `=begin`
-    comments, endless methods and the rest outside the subset.
+    to-dos instead of being dropped, and an import or `require` is skipped
+    only when it is the whole statement (anything after a `;` on its line is
+    kept). What a frontend does not lex is refused with its line number:
+    Python tab or form-feed indentation, an f-string or t-string whose
+    replacement field holds its own quote, a comment or a backslash outside a
+    nested string, and a string or bracket left open at the end of the file;
+    Ruby heredocs (and a `<<` with no space after it), percent literals (a `%`
+    where an operand starts), character literals, `=begin` comments, endless
+    methods and the rest outside the subset.
   - A safe `fn` with no stated return type is emitted `-> ()`.
   - The checklist no longer suggests the nonexistent `@sandbox(unquarantine)`.
   - `garnet convert` names its output `<stem>.<lang>.garnet`. It refuses an
@@ -181,11 +191,13 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
     frontend still drops binary operators: `if x > 3 { x * 2 }` comes out as
     `if x { nil 3 nil x nil 2 ... }`. The Go frontend keeps `return a + b` as
     written, but `y := x * 2` becomes a placeholder, so a later `return y - 1`
-    names a variable that no longer exists, and every Go block becomes a
-    whole-statement to-do. Every converted Rust or Go function needs a
+    names a variable that no longer exists, and every Go block that spans
+    lines becomes a whole-statement to-do (a block on one line is copied
+    through as one statement). Every converted Rust or Go function needs a
     line-by-line rewrite. The fix is deferred until after R2 (Q48).
   - The Ruby converter reads a lexical subset and refuses a file outside it;
-    the Python converter refuses tab indentation.
+    the Python converter refuses tab or form-feed indentation and the
+    f-strings described above.
   - The installers check the signature only when `gpg` is installed.
   - The macOS and Windows binaries are not code-signed.
 

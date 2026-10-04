@@ -66,8 +66,8 @@ Owns the `garnet` binary, subcommand routing, template embedding, deterministic 
   with `--record-dir`, also written to `diff_caps.txt`; stdout does not name
   the file. Every `--record-dir` artifact is checked: one that cannot be
   written is named on stderr and the loop exits 2. `decision.md` is written
-  last and names only artifacts that were written, listing any that could not
-  be.
+  last: every mention of an artifact that could not be written is marked
+  "(not written)", and the missing ones are listed.
 - `garnet convert` writes `<stem>.<lang>.garnet` and its three sidecars. It
   refuses an existing output path that is not a regular file, and any output
   that is the same file as the source or another output (compared by file

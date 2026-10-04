@@ -247,10 +247,11 @@ fn write_record(a: &Args, exe: &std::path::Path, diff_stdout: &[u8], outcome: &O
         );
         return false;
     }
-    let mut failed: Vec<String> = Vec::new();
-    let mut put = |name: &str, result: std::io::Result<()>| -> bool {
+    // (artifact, error) for every artifact that could not be written.
+    let mut failed: Vec<(&str, String)> = Vec::new();
+    let mut put = |name: &'static str, result: std::io::Result<()>| -> bool {
         result
-            .map_err(|e| failed.push(format!("`{name}` ({e})")))
+            .map_err(|e| failed.push((name, e.to_string())))
             .is_ok()
     };
     // Artifact 2 — the diff-caps capability-surface decision (always captured).
@@ -328,7 +329,7 @@ fn write_record(a: &Args, exe: &std::path::Path, diff_stdout: &[u8], outcome: &O
     let listed = if diff_written {
         "listed in `diff_caps.txt` for human review"
     } else {
-        "printed on stdout for human review; `diff_caps.txt` could not be written"
+        "printed on stdout for human review"
     };
     let per_function = if gained + added > 0 {
         format!(
@@ -383,17 +384,26 @@ fn write_record(a: &Args, exe: &std::path::Path, diff_stdout: &[u8], outcome: &O
             a.backend,
         ),
     };
+    // Every mention of an artifact that could not be written is marked, so the
+    // decision never sends a reader to a file that is not there.
+    for (name, _) in &failed {
+        decision = decision.replace(&format!("`{name}`"), &format!("`{name}` (not written)"));
+    }
     if !failed.is_empty() {
+        let missing: Vec<String> = failed
+            .iter()
+            .map(|(name, e)| format!("`{name}` (not written: {e})"))
+            .collect();
         decision.push_str(&format!(
-            "\nRecord incomplete: these artifacts could not be written: {}. The loop exited 2.\n",
-            failed.join(", ")
+            "\nRecord incomplete: {}. The loop exited 2.\n",
+            missing.join(", ")
         ));
     }
     if let Err(e) = std::fs::write(dir.join("decision.md"), decision) {
-        failed.push(format!("`decision.md` ({e})"));
+        failed.push(("decision.md", e.to_string()));
     }
-    for f in &failed {
-        eprintln!("garnet agent-loop: cannot write --record-dir artifact {f}");
+    for (name, e) in &failed {
+        eprintln!("garnet agent-loop: cannot write --record-dir artifact `{name}` ({e})");
     }
     failed.is_empty()
 }

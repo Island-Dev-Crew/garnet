@@ -446,7 +446,7 @@ fn a_record_never_names_an_artifact_it_did_not_write() {
             );
         }
         assert!(
-            decision.contains("could not be written") && decision.contains(blocked),
+            decision.contains("not written") && decision.contains(blocked),
             "{blocked}: decision.md names what is missing: {decision}"
         );
     }

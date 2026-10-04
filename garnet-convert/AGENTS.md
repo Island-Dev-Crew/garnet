@@ -21,13 +21,17 @@ Owns migration frontends and conversion helpers for lifting Rust, Ruby, Python, 
   commas and modifiers, and a leading `.`. Only a statement on one line becomes
   code.
 - What a frontend does not lex is refused with its line number, never guessed:
-  Python tab indentation and Python 3.12 f-strings that reuse their quote; Ruby
-  outside the subset (heredocs, percent literals, character literals, `=begin`,
-  endless methods, multi-line strings). To support a construct, extend `lex.rs`
+  Python tab or form-feed indentation, and f-strings or t-strings whose
+  replacement fields hold their own quote, a comment or a backslash; Ruby
+  outside the subset (heredocs and a `<<` with no space after it, percent
+  literals, character literals, `=begin`, endless methods, multi-line
+  strings). To support a construct, extend `lex.rs`
   and the unit, not one frontend's heuristic, and cover it in `tests/parses.rs`
   with a test that asserts its fragments are not active (`assert_inactive`).
 - A definition or class-level statement the frontend does not read is kept as a
-  to-do, never dropped.
+  to-do, never dropped: `__init__` stays a method, a Ruby definition whose `end`
+  shares its line with more code is kept whole, and an import or `require` is
+  skipped only when nothing follows it on its line.
 
 ## Required Checks
 
