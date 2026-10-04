@@ -1294,3 +1294,79 @@ fn every_line_of_a_kept_note_is_a_comment_whatever_its_line_ends() {
         );
     }
 }
+
+// Codex lane B, round 12 on #607 (7542330d): parameter lists were read by
+// characters, so a string, regex or form feed in a signature could turn text into
+// parameters, functions or a dropped definition. Only a plain parameter list is
+// converted; otherwise the whole definition is kept.
+
+#[test]
+fn a_parameter_list_that_is_not_plain_keeps_its_definition_whole() {
+    for (src, lang, name, file) in [
+        (
+            "def save(value=\"x, hidden()):\\ndef other(y\"):\n    keep()\n",
+            SourceLang::Python,
+            "python",
+            "save.py",
+        ),
+        (
+            "def save(value=(1, 2)):\n    keep()\n",
+            SourceLang::Python,
+            "python",
+            "save.py",
+        ),
+        (
+            "def save(value = /x, hidden=1/)\n  keep()\nend\n",
+            SourceLang::Ruby,
+            "ruby",
+            "save.rb",
+        ),
+        (
+            "def\x0c\nouter(x = def save; persist; end)\nend\n",
+            SourceLang::Ruby,
+            "ruby",
+            "save.rb",
+        ),
+        (
+            "def\x0b\nouter(x = def save; persist; end)\nend\n",
+            SourceLang::Ruby,
+            "ruby",
+            "save.rb",
+        ),
+    ] {
+        let (garnet, checklist) = convert_src(src, lang, name, file);
+        assert_parses(&garnet);
+        assert_inactive(&garnet, "keep()");
+        assert_inactive(&garnet, "persist");
+        assert_inactive(&garnet, "hidden");
+        assert_inactive(&garnet, "other");
+        assert!(
+            checklist.contains("def "),
+            "kept as a to-do: {src:?}\n{checklist}"
+        );
+    }
+    // Plain parameter lists still convert.
+    for (src, lang, name, file, header) in [
+        (
+            "def save(a: int, b=1, *rest):\n    return a\n",
+            SourceLang::Python,
+            "python",
+            "save.py",
+            "def save(",
+        ),
+        (
+            "def save(a, b = 1, *rest)\n  a\nend\n",
+            SourceLang::Ruby,
+            "ruby",
+            "save.rb",
+            "def save(",
+        ),
+    ] {
+        let (garnet, _) = convert_src(src, lang, name, file);
+        assert_parses(&garnet);
+        assert!(
+            code_lines(&garnet).iter().any(|l| l.starts_with(header)),
+            "{src:?}\n{garnet}"
+        );
+    }
+}
