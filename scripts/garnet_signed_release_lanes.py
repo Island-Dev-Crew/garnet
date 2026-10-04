@@ -26,7 +26,9 @@ Garnet fully owns; lane 2 is the release pipeline's own GPG signature.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import re
 import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -126,6 +128,22 @@ PUBLISH_STEP_LINES = (
 RELEASE_JOB_HEAD = "\n  release:\n"
 HAS_GPG_LINE = "      HAS_GPG: ${{ secrets.GPG_SIGNING_KEY != '' }}\n"
 
+# SHA-256 of the reviewed `release` job's text, as `_release_job` returns it. Any
+# edit to the job (a step added, named or not, a command changed, a condition
+# moved) breaks the lane until a reviewed change updates this pin with the job.
+# A list of publishing commands is never complete; the reviewed job is.
+RELEASE_JOB_SHA256 = "c8f598f0a4008d6072581c31e6033984a5484ad5531bf7e4f09a663bcc03ef26"
+
+# Outside the release job, nothing in the workflow may hold a token that can
+# write a release. The repository's default workflow token is read-only (the
+# governance gate records that setting), so a writer needs a write permission
+# or a secret.
+OTHER_JOB_WRITERS = (
+    re.compile(r"\bcontents\s*:\s*['\"]?write"),
+    re.compile(r"\bwrite-all\b"),
+    re.compile(r"\bsecrets\b"),
+)
+
 
 def _step_block(text: str, name: str) -> tuple[int, str] | None:
     """The step named `name` (at the release job's step indent) and where it starts."""
@@ -164,18 +182,37 @@ def release_signing_steps_pinned(pkg: str) -> bool:
     return release_job_cannot_publish_past_the_refusal(pkg)
 
 
-def _release_job(pkg: str) -> str | None:
-    """The text of the `release` job, up to the next top-level job."""
+def _split_release_job(pkg: str) -> tuple[str, str] | None:
+    """The text of the `release` job, up to the next top-level job, and the rest
+    of the workflow without it."""
     if pkg.count(RELEASE_JOB_HEAD) != 1:
         return None
     start = pkg.index(RELEASE_JOB_HEAD) + 1
     lines = pkg[start:].split("\n")
-    job = [lines[0]]
+    n = 1
     for line in lines[1:]:
         if line.startswith("  ") and not line.startswith("   ") and line.strip() and not line.lstrip().startswith("#"):
             break
-        job.append(line)
-    return "\n".join(job) + "\n"
+        n += 1
+    return "\n".join(lines[:n]) + "\n", pkg[:start] + "\n".join(lines[n:])
+
+
+def _release_job(pkg: str) -> str | None:
+    """The text of the `release` job, up to the next top-level job."""
+    split = _split_release_job(pkg)
+    return None if split is None else split[0]
+
+
+def release_job_is_the_reviewed_one(pkg: str) -> bool:
+    """The release job is byte for byte the reviewed job, and no other job in the
+    workflow declares a write permission or reads a secret."""
+    split = _split_release_job(pkg)
+    if split is None:
+        return False
+    job, rest = split
+    if hashlib.sha256(job.encode("utf-8")).hexdigest() != RELEASE_JOB_SHA256:
+        return False
+    return not any(pattern.search(rest) for pattern in OTHER_JOB_WRITERS)
 
 
 def release_job_cannot_publish_past_the_refusal(pkg: str) -> bool:
@@ -212,7 +249,12 @@ def release_job_cannot_publish_past_the_refusal(pkg: str) -> bool:
 
 
 def release_artifact_lane(pkg: str) -> Lane:
-    present = all(piece in pkg for piece in RELEASE_ARTIFACT_EVIDENCE) and release_signing_steps_pinned(pkg)
+    # The job pin is what binds; the step checks name what the reviewed job does.
+    present = (
+        all(piece in pkg for piece in RELEASE_ARTIFACT_EVIDENCE)
+        and release_signing_steps_pinned(pkg)
+        and release_job_is_the_reviewed_one(pkg)
+    )
     return Lane(
         id="release-artifact",
         name="Release-artifact signing (SHA256SUMS detached signature)",

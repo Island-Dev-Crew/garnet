@@ -104,15 +104,18 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   computed with the repository's own functions after the same computation
   reproduced every existing pin on main.
 - **The release-lanes reporter is truthful (C5-16b, C6-19).** Release-artifact
-  signing is an active lane only while the release job's signing steps are the
-  reviewed ones: the `gpg --detach-sign` step and the fail-closed refusal match
-  pinned text, the `SHA256SUMS.asc` attach step keeps its condition and file,
-  `HAS_GPG` follows the signing key, and the steps run sign, refuse, publish,
-  attach. Nothing in the job may publish past the refusal: neither the job
-  nor any step continues on error, `Publish release` has no condition of its
-  own and only the attach step follows it, and no other step calls the
-  release action or `gh release`. A refusal that no longer refuses, or a release published around
-  it, reads broken. The stale `TODO(release-security)` comment is gone.
+  signing is an active lane only while the `release` job in
+  `linux-packages.yml` is the reviewed one, pinned by the SHA-256 of its text,
+  and no other job in that workflow declares a `contents: write` or
+  `write-all` permission or reads a secret. Any edit to the job, including a
+  step added with or without a name, breaks the lane until a reviewed change
+  moves the pin with it. The repository's default workflow token is read-only,
+  as the governance gate records, so no other job holds a token that can write
+  a release. The reviewed job runs sign, refuse, publish, attach: the
+  `gpg --detach-sign` step and the fail-closed refusal match pinned text, the
+  `SHA256SUMS.asc` attach step keeps its condition and file, `HAS_GPG` follows
+  the signing key, nothing continues on error, and `Publish release` has no
+  condition of its own. The stale `TODO(release-security)` comment is gone.
 - **`garnet agent-loop` says what it checked (C1-02).** The decision reads
   "program-wide declared capability surface did not widen", and functions that
   gained capabilities or are new are counted in the decision and listed for

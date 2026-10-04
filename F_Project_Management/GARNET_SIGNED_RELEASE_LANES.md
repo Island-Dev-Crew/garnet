@@ -29,10 +29,15 @@ status is `scripts/garnet_signed_release_lanes.py --format md`, and `--gate`
 
 - Lane 2 was still reported as **deferred**, keyed on a stale `TODO(release-security)`
   comment in `linux-packages.yml`, although `SHA256SUMS.asc` has shipped since v0.8.1.
-  The comment is gone. The lane is now **active** and keyed on three pieces of the
-  release job: the `gpg --detach-sign --armor SHA256SUMS` step, the
-  `SHA256SUMS.asc` upload, and the "Require signed SHA256SUMS (fail-closed)" step.
-  If any of them disappears, the lane reports **broken** and `--gate` fails.
+  The comment is gone. The lane is now **active** only while the `release` job is
+  the reviewed one: its text matches the SHA-256 pinned in the reporter
+  (`RELEASE_JOB_SHA256`), and no other job in `linux-packages.yml` declares a
+  `contents: write` or `write-all` permission or reads a secret. The reviewed job
+  signs with `gpg --detach-sign --armor SHA256SUMS`, refuses an unsigned tagged
+  release ("Require signed SHA256SUMS (fail-closed)"), publishes, then attaches
+  `SHA256SUMS.asc`. Any edit to the job, or a writer elsewhere in the workflow,
+  makes the lane report **broken** and `--gate` fail until a reviewed change moves
+  the pin with the job.
 
 ## Scope (do not soften)
 
