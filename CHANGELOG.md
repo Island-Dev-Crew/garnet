@@ -176,7 +176,8 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
       outside a string, regular expression or comment refuses the file).
       Lines join while a bracket or keyword block is
       open (`if` and its kin count only where an expression starts), after a
-      trailing operator, comma or modifier (`if`, `unless`, `rescue` ...), or
+      trailing operator, comma or modifier (`if`, `unless`, `rescue`, a
+      pattern's `in` ...), or
       before a line that starts with `.`; a blank or comment line does not
       end an open statement, a word after `.` at the end of the line before is
       a method name, not a keyword, and so are the operands of `alias` and
@@ -190,9 +191,10 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
       in a default: no string, regex, comment, block or nested call) is kept
       whole, and so is a def, class or module whose header
       the frontend does not read, whose body has a `rescue`/`ensure`/`else`
-      clause, whose body holds a statement that closes a block opened before
-      it or starts a clause of one after a `;` (`0; end; def other`,
-      `nil; ensure`), or whose `end` is followed by more of its statement (code
+      clause, whose body holds a statement (a nested definition included)
+      that closes a block opened before it or starts a clause of one after a
+      `;` (`0; end; def other`, `nil; ensure`), or whose `end` is followed by
+      more of its statement (code
       on the line, or a `.` chain on the next). A number is not a method name:
       in `1?` the `?` is the ternary operator.
     Only a statement on one line becomes code, and never one whose code holds

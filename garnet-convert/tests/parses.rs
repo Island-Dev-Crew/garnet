@@ -1614,3 +1614,33 @@ fn a_ruby_statement_stays_inside_its_block() {
         assert!(code.contains(&active), "{src:?}\n{garnet}");
     }
 }
+
+/// Codex round 17: the rule holds for a nested definition too (one whose body
+/// closes the enclosing block as well keeps that block whole), and a trailing
+/// `in` (a pattern match) takes the next line, like any operator.
+#[test]
+fn a_nested_ruby_definition_and_a_trailing_in_stay_contained() {
+    for src in [
+        "def outer\n  def inner\n    0; end; end; def second\n  persist()\nend\n",
+        "class Box\n  def inner\n    0; end; end; def second\n  persist()\nend\n",
+        "def save\n  x in\n    persist()\nend\n",
+        "def save\n  x in # a pattern\n\n    # on the next code line\n    persist()\nend\n",
+    ] {
+        let (garnet, _) = convert_src(src, SourceLang::Ruby, "ruby", "save.rb");
+        assert_parses(&garnet);
+        assert_inactive(&garnet, "persist()");
+    }
+    // A nested definition closed on its own line keeps the enclosing one read,
+    // and the statement after it active (Garnet has no nested `def`, so the
+    // emitter keeps `inner` itself as a to-do).
+    let (garnet, _) = convert_src(
+        "def outer\n  def inner\n    0\n  end\n  persist()\nend\n",
+        SourceLang::Ruby,
+        "ruby",
+        "save.rb",
+    );
+    assert_parses(&garnet);
+    let code = code_lines(&garnet);
+    assert!(code.contains(&"def outer() {"), "{garnet}");
+    assert!(code.contains(&"persist()"), "{garnet}");
+}

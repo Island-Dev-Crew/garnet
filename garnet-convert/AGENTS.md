@@ -18,10 +18,10 @@ Owns migration frontends and conversion helpers for lifting Rust, Ruby, Python, 
   indented body and clauses), Go lines up to where Go inserts a semicolon (none
   after an operand-taking keyword such as `go` or `defer`), and for Ruby a
   lexical subset joined by brackets, keyword blocks, trailing operators,
-  commas and modifiers, and a leading `.`. A Ruby body statement must stay
-  inside its block: one that closes a block opened before it, or starts a
-  clause of one (`RubyLine::min_blocks`, `RubyLine::clause_at`), keeps the
-  definition whole. Only a statement on one line becomes code.
+  commas and modifiers, and a leading `.`. A Ruby body statement, a nested
+  definition included, must stay inside its block: one that closes a block
+  opened before it, or starts a clause of one (`RubyLine::min_blocks`,
+  `RubyLine::clause_at`), keeps the definition whole. Only a statement on one line becomes code.
 - What a frontend does not lex is refused with its line number, never guessed:
   Python tab or form-feed indentation, a carriage return without a line feed,
   and f-strings or t-strings whose replacement fields hold their own quote, a

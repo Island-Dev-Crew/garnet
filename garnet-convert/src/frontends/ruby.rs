@@ -429,18 +429,19 @@ impl<'a> RubyParser<'a> {
                 return Ok(None);
             }
             let start = self.pos;
+            let end = self.statement_end(start);
+            // A statement that closes a block opened before it, or starts a
+            // clause of one (`0; end; def other`, `nil; ensure`), changes the
+            // enclosing structure: the body is not read. A nested definition is
+            // checked the same way before it is read.
+            if self.leaves_its_block(start, end) {
+                return Ok(None);
+            }
             // A method inside a class body (or a nested def) is parsed as a real
             // function, so its own `end` does not close the enclosing body.
             if self.peek_keyword("def") {
                 stmts.push(self.parse_def(start)?);
                 continue;
-            }
-            let end = self.statement_end(start);
-            // A statement that closes a block opened before it, or starts a
-            // clause of one (`0; end; def other`, `nil; ensure`), changes the
-            // enclosing structure: the body is not read.
-            if self.leaves_its_block(start, end) {
-                return Ok(None);
             }
             let text = self.source[start..end].trim_end();
             let lines: Vec<&str> = text.lines().collect();

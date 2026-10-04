@@ -796,7 +796,9 @@ pub fn ruby_line_after(line: &str, name_first: bool) -> Result<RubyLine<'_>, &'s
                                 Some(out.clause_at.map_or(out.blocks, |d| d.min(out.blocks)));
                         }
                         after_value = false;
-                        last_op = !matches!(&line[start..i], "in");
+                        // Each takes an operand, so at a line end it takes the
+                        // next line (`x in` then a pattern).
+                        last_op = true;
                     }
                     "then" | "else" | "elsif" | "when" | "ensure" => {
                         out.clause_at =
