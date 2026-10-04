@@ -110,6 +110,20 @@ ATTACH_STEP_LINES = (
 )
 ATTACH_ACTION_PREFIX = "        uses: softprops/action-gh-release@"
 PUBLISH_STEP_HEAD = "      - name: Publish release\n"
+PUBLISH_STEP_NAME = "Publish release"
+PUBLISH_STEP_LINES = (
+    '        with:',
+    '          files: |',
+    '            release-dist/*.deb',
+    '            release-dist/*.rpm',
+    '            release-dist/*.tar.gz',
+    '            release-dist/*.zip',
+    '            release-dist/garnet-sbom-cyclonedx.tgz',
+    '            release-dist/SHA256SUMS',
+    '          fail_on_unmatched_files: true',
+    '          body_path: release-body.md',
+)
+RELEASE_JOB_HEAD = "\n  release:\n"
 HAS_GPG_LINE = "      HAS_GPG: ${{ secrets.GPG_SIGNING_KEY != '' }}\n"
 
 
@@ -145,7 +159,56 @@ def release_signing_steps_pinned(pkg: str) -> bool:
     rest = tuple(line for line in attach_lines if not line.startswith("        uses:"))
     if len(uses) != 1 or not uses[0].startswith(ATTACH_ACTION_PREFIX) or rest != ATTACH_STEP_LINES:
         return False
-    return sign[0] < refusal[0] < pkg.index(PUBLISH_STEP_HEAD) < attach[0]
+    if not sign[0] < refusal[0] < pkg.index(PUBLISH_STEP_HEAD) < attach[0]:
+        return False
+    return release_job_cannot_publish_past_the_refusal(pkg)
+
+
+def _release_job(pkg: str) -> str | None:
+    """The text of the `release` job, up to the next top-level job."""
+    if pkg.count(RELEASE_JOB_HEAD) != 1:
+        return None
+    start = pkg.index(RELEASE_JOB_HEAD) + 1
+    lines = pkg[start:].split("\n")
+    job = [lines[0]]
+    for line in lines[1:]:
+        if line.startswith("  ") and not line.startswith("   ") and line.strip() and not line.lstrip().startswith("#"):
+            break
+        job.append(line)
+    return "\n".join(job) + "\n"
+
+
+def release_job_cannot_publish_past_the_refusal(pkg: str) -> bool:
+    """Once the refusal fails, nothing in the release job may still publish.
+
+    The job never continues on error; after the refusal come exactly Publish
+    release (unconditional, so it is skipped when the refusal fails) and the
+    attach step; and no other step publishes (`action-gh-release` or
+    `gh release`).
+    """
+    job = _release_job(pkg)
+    if job is None or "continue-on-error" in job:
+        return False
+    names = [line[len("      - name: "):] for line in job.split("\n") if line.startswith("      - name: ")]
+    if REFUSAL_STEP_NAME not in names:
+        return False
+    if names[names.index(REFUSAL_STEP_NAME) + 1:] != [PUBLISH_STEP_NAME, ATTACH_STEP_NAME]:
+        return False
+    publish = _step_block(job, PUBLISH_STEP_NAME)
+    if publish is None:
+        return False
+    publish_lines = publish[1].splitlines()[1:]
+    uses = [line for line in publish_lines if line.startswith("        uses:")]
+    rest = tuple(line for line in publish_lines if not line.startswith("        uses:"))
+    if len(uses) != 1 or not uses[0].startswith(ATTACH_ACTION_PREFIX) or rest != PUBLISH_STEP_LINES:
+        return False
+    for name in names:
+        if name in (PUBLISH_STEP_NAME, ATTACH_STEP_NAME):
+            continue
+        block = _step_block(job, name)
+        if block is None or "action-gh-release" in block[1] or "gh release" in block[1]:
+            return False
+    return True
 
 
 def release_artifact_lane(pkg: str) -> Lane:
