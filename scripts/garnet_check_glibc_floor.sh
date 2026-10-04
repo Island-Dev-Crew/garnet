@@ -1,7 +1,7 @@
 #!/bin/sh
 # Fail when a binary imports a glibc symbol version newer than the floor.
 #
-#   scripts/check_glibc_floor.sh <binary> <floor, e.g. 2.34>
+#   scripts/garnet_check_glibc_floor.sh <binary> <floor, e.g. 2.34>
 #
 # Debian 12, Ubuntu 22.04 and RHEL 9 ship glibc 2.36, 2.35 and 2.34, so the
 # Linux release assets use a 2.34 floor. Finding no GLIBC_ versions at all is

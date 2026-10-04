@@ -18,7 +18,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / ".github" / "workflows" / "linux-packages.yml"
-FLOOR_SCRIPT = ROOT / "scripts" / "check_glibc_floor.sh"
+FLOOR_SCRIPT = ROOT / "scripts" / "garnet_check_glibc_floor.sh"
 
 
 def job(name: str) -> str:
@@ -48,9 +48,9 @@ class LinuxBuildBaseTests(unittest.TestCase):
         for name in ("build-packages", "build-packages-arm64"):
             with self.subTest(job=name):
                 text = job(name)
-                self.assertIn("scripts/check_glibc_floor.sh target/release/garnet 2.34", text)
+                self.assertIn("scripts/garnet_check_glibc_floor.sh target/release/garnet 2.34", text)
                 self.assertLess(
-                    text.index("check_glibc_floor.sh"), text.index("- name: Build .deb")
+                    text.index("garnet_check_glibc_floor.sh"), text.index("- name: Build .deb")
                 )
 
     def test_no_linux_job_floats_on_ubuntu_latest(self) -> None:
@@ -90,7 +90,7 @@ class MacosInstallerTests(unittest.TestCase):
 
 
 class GlibcFloorScriptTests(unittest.TestCase):
-    """check_glibc_floor.sh reads `objdump -T`; a stub objdump feeds it."""
+    """garnet_check_glibc_floor.sh reads `objdump -T`; a stub objdump feeds it."""
 
     def run_floor(self, versions: list[str], floor: str = "2.34") -> subprocess.CompletedProcess[str]:
         with tempfile.TemporaryDirectory() as tmp:

@@ -55,7 +55,7 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
     so the check stops a substituted release asset, not a substituted installer;
     `docs/release-signing.md` says how to verify by hand.
   - Tests: `scripts/test_garnet_installer_signature.py` (11, throwaway keys,
-    in CI). The Windows job runs `scripts/ci_install_ps1_signature.ps1` under
+    in CI). The Windows job runs `scripts/garnet_ci_install_ps1_signature.ps1` under
     PowerShell 7 and Windows PowerShell 5.1. It installs the real v0.8.2
     release through its real signature, then refuses another pinned key, a
     missing `.asc` and a real `.asc` over a different `SHA256SUMS`, and warns
@@ -75,11 +75,11 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   stale 0.8.1 VSIX files on the v0.8.2 release. The package script now clears
   its own earlier outputs. `release-vsix` copies only
   `garnet-<tag version>-lsp-mvp-*.vsix` through
-  `scripts/collect_garnet_vsix_release_assets.py`, which requires
+  `scripts/garnet_collect_vsix_release_assets.py`, which requires
   `editors/vscode/package.json` to carry the tag's version and exactly two files.
 - **Linux packages for older distributions (C6-04).** Both Linux builds run on
   Ubuntu 22.04 (`ubuntu-22.04`, `ubuntu-22.04-arm`), and
-  `scripts/check_glibc_floor.sh` fails the build if the binary imports a glibc
+  `scripts/garnet_check_glibc_floor.sh` fails the build if the binary imports a glibc
   symbol newer than `GLIBC_2.34`. The build caches are keyed to the image.
   - New `smoke-older-distros` jobs install the packages in clean `debian:12`,
     `ubuntu:22.04` and `almalinux:9` containers for x86_64 and ARM64 and run the

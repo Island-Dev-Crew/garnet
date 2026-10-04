@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PACKAGE_SCRIPT = ROOT / "scripts" / "package_garnet_vscode_extension.sh"
 SMOKE_SCRIPT = ROOT / "scripts" / "verify_org_release_smoke.sh"
 WORKFLOW = ROOT / ".github" / "workflows" / "vscode-extension.yml"
-COLLECT_SCRIPT = ROOT / "scripts" / "collect_garnet_vsix_release_assets.py"
+COLLECT_SCRIPT = ROOT / "scripts" / "garnet_collect_vsix_release_assets.py"
 
 
 class GarnetVSCodeReleaseAssetsTests(unittest.TestCase):
@@ -44,7 +44,7 @@ class GarnetVSCodeReleaseAssetsTests(unittest.TestCase):
             text,
         )
         self.assertIn(
-            'python3 scripts/collect_garnet_vsix_release_assets.py --tag "${GITHUB_REF_NAME}"',
+            'python3 scripts/garnet_collect_vsix_release_assets.py --tag "${GITHUB_REF_NAME}"',
             text,
         )
         self.assertIn("release-vsix/*.vsix", text)

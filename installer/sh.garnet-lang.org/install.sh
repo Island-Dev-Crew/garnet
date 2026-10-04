@@ -403,7 +403,7 @@ run_version_check() {
 
 # The newest glibc 2.x the requested release's Linux assets may need, as x.
 # v0.8.3 and later are built on Ubuntu 22.04 under a GLIBC_2.34 floor
-# (scripts/check_glibc_floor.sh); earlier releases need 2.39.
+# (scripts/garnet_check_glibc_floor.sh); earlier releases need 2.39.
 linux_assets_glibc_minor() {
     if version_before "$GARNET_VERSION" 0 8 3; then
         printf '39'

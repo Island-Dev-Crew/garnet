@@ -113,7 +113,7 @@
       "workflow": ".github/workflows/linux-packages.yml",
       "event": "pull_request",
       "job": "build-packages",
-      "semantic_sha256": "41426f9183d1b830bbc366ca32f4b96a90679324ef0a1cd2477170aadcb60872"
+      "semantic_sha256": "fea4a6ce30dfff68c8dd273aa3912bb4ac0e7e74185211faeafe5624d8cd4cf5"
     },
     {
       "context": "canonical MVP examples",
@@ -233,21 +233,21 @@
       "workflow": ".github/workflows/linux-packages.yml",
       "event": "pull_request",
       "job": "shellcheck-installer",
-      "semantic_sha256": "1816bc79597412cd8ddac48b03f7aeb02b503a8596c5e43fe51fac44ad33c4d2"
+      "semantic_sha256": "2e65e92cbbba03585164f4c89cff7af9e00566e40629a21a9e50b615049dfc84"
     },
     {
       "context": "smoke-deb",
       "workflow": ".github/workflows/linux-packages.yml",
       "event": "pull_request",
       "job": "smoke-deb",
-      "semantic_sha256": "7af3c52dcd10d49d9baa258e22eea40595e540bf05550133a54c63af6fea0878"
+      "semantic_sha256": "0afd588f16128ccc3a70be0b88ad531f3390a9891a70d992b74c96ce5d49097a"
     },
     {
       "context": "smoke-rpm",
       "workflow": ".github/workflows/linux-packages.yml",
       "event": "pull_request",
       "job": "smoke-rpm",
-      "semantic_sha256": "3465bb80e3dfa288233615ee9202fe2befa877042a78cc8d1b699ec52a118fc7"
+      "semantic_sha256": "cf3d9a27ade148c664e1c41b02620aed4296521b5d6adc060522a38d16e799b8"
     },
     {
       "context": "Base-controlled trust policy",

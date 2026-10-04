@@ -3,7 +3,7 @@
 
 Releases through v0.8.2 were built on Ubuntu 24.04 and need glibc 2.39. From
 v0.8.3 the Linux assets are built on Ubuntu 22.04 under a GLIBC_2.34 floor
-(scripts/check_glibc_floor.sh), so Debian 12, Ubuntu 22.04 and RHEL 9 get the
+(scripts/garnet_check_glibc_floor.sh), so Debian 12, Ubuntu 22.04 and RHEL 9 get the
 release assets. Stub `uname` and `getconf` make the real installer see a Linux
 host with a chosen glibc; the release directory is empty, so every case stops
 after the glibc decision.

@@ -95,7 +95,7 @@ jobs:
         run: cargo build --release -p garnet-cli
 
       - name: Check the glibc floor (GLIBC_2.34)
-        run: sh scripts/check_glibc_floor.sh target/release/garnet 2.34
+        run: sh scripts/garnet_check_glibc_floor.sh target/release/garnet 2.34
 
       - name: Build .deb
         run: |
@@ -320,7 +320,7 @@ jobs:
           file target/release/garnet | tee /dev/stderr | grep -q 'ARM aarch64'
 
       - name: Check the glibc floor (GLIBC_2.34)
-        run: sh scripts/check_glibc_floor.sh target/release/garnet 2.34
+        run: sh scripts/garnet_check_glibc_floor.sh target/release/garnet 2.34
 
       - name: Build .deb
         run: |
@@ -829,11 +829,11 @@ jobs:
       # 5.1 runs it too, because `irm | iex` there is the common path.
       - name: Installer — install.ps1 checks SHA256SUMS.asc (PowerShell 7)
         shell: pwsh
-        run: ./scripts/ci_install_ps1_signature.ps1
+        run: ./scripts/garnet_ci_install_ps1_signature.ps1
 
       - name: Installer — install.ps1 checks SHA256SUMS.asc (Windows PowerShell 5.1)
         shell: powershell
-        run: ./scripts/ci_install_ps1_signature.ps1
+        run: ./scripts/garnet_ci_install_ps1_signature.ps1
 
       - name: Upload Windows zip artifact
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
@@ -859,7 +859,7 @@ jobs:
             --shell=sh --severity=warning \
             /work/installer/sh.garnet-lang.org/install.sh \
             /work/docs/install.sh \
-            /work/scripts/check_glibc_floor.sh
+            /work/scripts/garnet_check_glibc_floor.sh
           docker run --rm -v "$PWD:/work" \
             koalaman/shellcheck:stable \
             --shell=bash --severity=warning \
