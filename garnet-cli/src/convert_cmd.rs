@@ -89,15 +89,31 @@ pub fn run(args: ConvertArgs) -> Result<ConvertOutcome, String> {
     .map_err(|e| e.to_string())?;
 
     fs::create_dir_all(&out_dir).map_err(|e| format!("create out dir: {e}"))?;
+    let outputs = [
+        &target_path,
+        &lineage_path,
+        &migrate_todo_path,
+        &metrics_path,
+    ];
+    refuse_linked_outputs(&outputs)?;
     fs::write(&target_path, &emitted.garnet).map_err(|e| format!("write garnet: {e}"))?;
     fs::write(&lineage_path, &emitted.lineage_json).map_err(|e| format!("write lineage: {e}"))?;
     fs::write(&migrate_todo_path, &emitted.migrate_todo_md)
         .map_err(|e| format!("write migrate_todo: {e}"))?;
     fs::write(&metrics_path, metrics.to_json()).map_err(|e| format!("write metrics: {e}"))?;
 
-    // The converter already refuses to emit a file that does not parse; checking
-    // the written bytes here is what backs the "output parses" line.
-    garnet_parser::parse_source(&emitted.garnet).map_err(|e| {
+    // The converter already refuses to emit text that does not parse. The
+    // "output parses" line is backed by the file as it is on disk after every
+    // output was written: it must read back unchanged, and it must parse.
+    let written = fs::read_to_string(&target_path)
+        .map_err(|e| format!("read back {}: {e}", target_path.display()))?;
+    if written != emitted.garnet {
+        return Err(format!(
+            "{} changed after it was written; another output shares the file",
+            target_path.display()
+        ));
+    }
+    garnet_parser::parse_source(&written).map_err(|e| {
         format!(
             "converter bug: {} does not parse as Garnet: {e:?}",
             target_path.display()
@@ -146,6 +162,41 @@ fn render_summary(o: &ConvertOutcome) {
     println!();
     println!("  parsing is not correctness: review the file, resolve each @migrate_todo,");
     println!("  declare the @caps(...) it needs, then run garnet check.");
+}
+
+/// Refuse to write through an output path that already exists as anything but a
+/// regular file of its own: a symlink, a directory, or a file hard-linked to
+/// another output would let one output overwrite another after it was written.
+/// The read-back after writing catches any sharing this check cannot see.
+fn refuse_linked_outputs(outputs: &[&PathBuf]) -> Result<(), String> {
+    #[cfg(unix)]
+    let mut seen: Vec<(u64, u64)> = Vec::new();
+    for path in outputs {
+        let meta = match fs::symlink_metadata(path) {
+            Ok(meta) => meta,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => continue,
+            Err(e) => return Err(format!("cannot inspect {}: {e}", path.display())),
+        };
+        if !meta.file_type().is_file() {
+            return Err(format!(
+                "refusing to write {}: it exists and is not a regular file",
+                path.display()
+            ));
+        }
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::MetadataExt;
+            let id = (meta.dev(), meta.ino());
+            if seen.contains(&id) {
+                return Err(format!(
+                    "refusing to write {}: it is the same file as another output",
+                    path.display()
+                ));
+            }
+            seen.push(id);
+        }
+    }
+    Ok(())
 }
 
 #[cfg(test)]

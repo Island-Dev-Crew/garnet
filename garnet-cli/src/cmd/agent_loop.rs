@@ -192,6 +192,16 @@ fn garnet_exe() -> Result<PathBuf, ExitCode> {
 /// Per-function changes in diff-caps' text output: existing functions that gained
 /// capabilities (`  ~ name gained: …` lines) and new functions (the
 /// `  + functions: a, b` line). Under S37 they are listed for review, not refused.
+/// The diff-caps lines that name per-function changes: `~ f gained: ...` and
+/// `+ functions: ...`.
+fn per_function_lines(diff_stdout: &[u8]) -> Vec<String> {
+    String::from_utf8_lossy(diff_stdout)
+        .lines()
+        .filter(|l| l.starts_with("  ~ ") || l.starts_with("  + functions:"))
+        .map(|l| l.trim().to_string())
+        .collect()
+}
+
 fn per_function_changes(diff_stdout: &[u8]) -> (usize, usize) {
     let text = String::from_utf8_lossy(diff_stdout);
     let gained = text.lines().filter(|l| l.starts_with("  ~ ")).count();
@@ -405,7 +415,17 @@ pub fn run(args: &[String]) -> ExitCode {
     println!("agent-loop: stage diff-caps -> PASS (no program-wide authority expansion, band 5/5)");
     let (gained, added) = per_function_changes(&diff.stdout);
     if gained + added > 0 {
-        println!("agent-loop: per-function changes listed for review in diff_caps.txt");
+        if a.record_dir.is_some() {
+            println!("agent-loop: per-function changes listed for review in diff_caps.txt");
+        } else {
+            // Nothing is written without --record-dir, so the changes are named here.
+            println!(
+                "agent-loop: per-function changes for review ({gained} gained, {added} new; --record-dir saves them):"
+            );
+            for line in per_function_lines(&diff.stdout) {
+                println!("agent-loop:   {line}");
+            }
+        }
     }
 
     // STAGE 3 — the ENFORCED kernel (S99 @max_depth + S100 @caps). A proposal that
