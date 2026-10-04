@@ -106,8 +106,9 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 - **The release-lanes reporter is truthful (C5-16b, C6-19).** Release-artifact
   signing is an active lane only while the `release` job in
   `linux-packages.yml` is the reviewed one, pinned by the SHA-256 of its text,
-  and no other job in that workflow declares a `contents: write` or
-  `write-all` permission or reads a secret. Any edit to the job, including a
+  and no other job, nor the workflow's top level, has a `permissions` key or
+  mentions `secrets`, read from the decoded YAML so that a quoted key or an
+  escaped value counts the same. Any edit to the job, including a
   step added with or without a name, breaks the lane until a reviewed change
   moves the pin with it. The repository's default workflow token is read-only,
   as the governance gate records, so no other job holds a token that can write

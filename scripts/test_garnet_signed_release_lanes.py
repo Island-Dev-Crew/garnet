@@ -183,6 +183,32 @@ class SignedReleaseLanesTests(unittest.TestCase):
                 )
                 + release_job,
             ),
+            # The YAML is read decoded, so another spelling of the same key or
+            # value counts: a quoted key, an escape in a double-quoted value, a
+            # differently cased context name, or permissions for the whole workflow.
+            "another job quotes its permission key": workflow.replace(
+                release_job,
+                early_job.replace("      contents: write\n", '      "contents": write\n') + release_job,
+            ),
+            "another job reads an escaped secret": workflow.replace(
+                release_job,
+                early_job.replace(
+                    "    permissions:\n      contents: write\n",
+                    '    env:\n      GH_TOKEN: "${{ s\\x65crets.RELEASE_PAT }}"\n',
+                )
+                + release_job,
+            ),
+            "another job reads SECRETS": workflow.replace(
+                release_job,
+                early_job.replace(
+                    "    permissions:\n      contents: write\n",
+                    "    env:\n      GH_TOKEN: ${{ SECRETS.RELEASE_PAT }}\n",
+                )
+                + release_job,
+            ),
+            "the workflow grants write to every job": workflow.replace(
+                "\njobs:\n", "\npermissions:\n  contents: write\n\njobs:\n", 1
+            ),
         }
         for label, text in cases.items():
             with self.subTest(label):

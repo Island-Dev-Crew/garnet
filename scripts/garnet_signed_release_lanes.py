@@ -136,13 +136,10 @@ RELEASE_JOB_SHA256 = "c8f598f0a4008d6072581c31e6033984a5484ad5531bf7e4f09a663bcc
 
 # Outside the release job, nothing in the workflow may hold a token that can
 # write a release. The repository's default workflow token is read-only (the
-# governance gate records that setting), so a writer needs a write permission
-# or a secret.
-OTHER_JOB_WRITERS = (
-    re.compile(r"\bcontents\s*:\s*['\"]?write"),
-    re.compile(r"\bwrite-all\b"),
-    re.compile(r"\bsecrets\b"),
-)
+# governance gate records that setting), so a writer needs a `permissions` key
+# or a secret. The workflow is read as decoded YAML, so a quoted key, an escape
+# in a double-quoted value or another casing of `secrets` counts the same.
+SECRETS_RE = re.compile(r"\bsecrets\b", re.IGNORECASE)
 
 
 def _step_block(text: str, name: str) -> tuple[int, str] | None:
@@ -209,10 +206,56 @@ def release_job_is_the_reviewed_one(pkg: str) -> bool:
     split = _split_release_job(pkg)
     if split is None:
         return False
-    job, rest = split
+    job, _rest = split
     if hashlib.sha256(job.encode("utf-8")).hexdigest() != RELEASE_JOB_SHA256:
         return False
-    return not any(pattern.search(rest) for pattern in OTHER_JOB_WRITERS)
+    return no_other_writer(pkg)
+
+
+def no_other_writer(pkg: str) -> bool:
+    """No job but `release`, and not the workflow's own top level, has a
+    `permissions` key or mentions `secrets`, in any key or value of the decoded
+    YAML. Without PyYAML, or for YAML that does not compose to one document with
+    exactly one `release` job, the lane cannot be read and is not active."""
+    try:
+        import yaml
+    except ImportError:
+        return False
+    try:
+        root = yaml.compose(pkg, Loader=yaml.BaseLoader)
+    except yaml.YAMLError:
+        return False
+    if not isinstance(root, yaml.MappingNode):
+        return False
+    jobs = [value for key, value in root.value if getattr(key, "value", None) == "jobs"]
+    if len(jobs) != 1 or not isinstance(jobs[0], yaml.MappingNode):
+        return False
+    job_ids = [getattr(key, "value", None) for key, _ in jobs[0].value]
+    if job_ids.count("release") != 1:
+        return False
+    scanned = [pair for pair in root.value if getattr(pair[0], "value", None) != "jobs"]
+    scanned += [pair for pair in jobs[0].value if getattr(pair[0], "value", None) != "release"]
+    seen: set[int] = set()
+
+    def writer(node: object) -> bool:
+        if id(node) in seen:
+            return False
+        seen.add(id(node))
+        if isinstance(node, yaml.ScalarNode):
+            return bool(SECRETS_RE.search(node.value))
+        if isinstance(node, yaml.SequenceNode):
+            return any(writer(item) for item in node.value)
+        if isinstance(node, yaml.MappingNode):
+            return any(
+                getattr(key, "value", None) == "permissions" or writer(key) or writer(value)
+                for key, value in node.value
+            )
+        return True
+
+    return not any(
+        getattr(key, "value", None) == "permissions" or writer(key) or writer(value)
+        for key, value in scanned
+    )
 
 
 def release_job_cannot_publish_past_the_refusal(pkg: str) -> bool:

@@ -31,8 +31,9 @@ status is `scripts/garnet_signed_release_lanes.py --format md`, and `--gate`
   comment in `linux-packages.yml`, although `SHA256SUMS.asc` has shipped since v0.8.1.
   The comment is gone. The lane is now **active** only while the `release` job is
   the reviewed one: its text matches the SHA-256 pinned in the reporter
-  (`RELEASE_JOB_SHA256`), and no other job in `linux-packages.yml` declares a
-  `contents: write` or `write-all` permission or reads a secret. The reviewed job
+  (`RELEASE_JOB_SHA256`), and no other job in `linux-packages.yml`, nor its top
+  level, has a `permissions` key or mentions `secrets` in the decoded YAML (read
+  with PyYAML; without it the lane is not active). The reviewed job
   signs with `gpg --detach-sign --armor SHA256SUMS`, refuses an unsigned tagged
   release ("Require signed SHA256SUMS (fail-closed)"), publishes, then attaches
   `SHA256SUMS.asc`. Any edit to the job, or a writer elsewhere in the workflow,
