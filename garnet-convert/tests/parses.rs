@@ -1077,16 +1077,24 @@ fn a_statement_sharing_a_line_with_eval_is_kept() {
 // cases are from its drafted checks).
 
 #[test]
-fn ruby_alias_and_undef_operands_continued_on_the_next_line_are_names() {
+fn ruby_alias_or_undef_operands_on_another_line_are_refused() {
+    // Round 8 carried the operand mode over `,` and `\`; round 9 found Ruby also
+    // takes operands after a bare newline. The subset now requires an `alias` or
+    // `undef` to complete its operands on its own line.
     for line in [
         "undef foo,\n      end",
         "undef foo, # comment\n      end",
         "alias foo \\\n      end",
+        "alias foo\n      end",
+        "alias\n      foo end",
+        "undef\n      end",
     ] {
         let src = format!("def save\n  if false\n    {line}\n    persist()\n  end\nend\n");
-        let (garnet, _) = convert_src(&src, SourceLang::Ruby, "ruby", "save.rb");
-        assert_parses(&garnet);
-        assert_inactive(&garnet, "persist()");
+        let err = try_convert(&src, SourceLang::Ruby, "ruby", "save.rb").unwrap_err();
+        assert!(
+            err.contains("alias or undef") && err.contains("line 3"),
+            "{line:?}: {err}"
+        );
     }
 }
 
@@ -1113,51 +1121,96 @@ fn go_block_comment_holding_a_newline_ends_a_statement() {
     ] {
         let (garnet, _) = convert_src(src, SourceLang::Go, "go", "save.go");
         assert_parses(&garnet);
-        assert!(
-            code_lines(&garnet)
-                .iter()
-                .any(|l| l.starts_with("fn save(")),
-            "save is converted, not skipped with the import: {src:?}\n{garnet}"
+        let code = code_lines(&garnet);
+        let at = code
+            .iter()
+            .position(|l| l.starts_with("fn save("))
+            .unwrap_or_else(|| {
+                panic!("save is converted, not skipped with the import: {src:?}\n{garnet}")
+            });
+        assert_eq!(
+            code[at + 1],
+            "println(7)",
+            "the body stays inside save: {src:?}\n{garnet}"
         );
     }
 }
 
 #[test]
 fn eval_stands_for_its_statement_only_as_a_single_call() {
-    for (src, lang, name, file) in [
+    for (src, lang, name, file, kept) in [
         (
             "eval(\"1\") and def save() persist() end\n",
             SourceLang::Ruby,
             "ruby",
             "save.rb",
+            "def save",
         ),
         (
             "eval(\"1\") { def save; persist(); end }\n",
             SourceLang::Ruby,
             "ruby",
             "save.rb",
+            "def save",
         ),
         (
             "method_missing(def save() persist() end)\n",
             SourceLang::Ruby,
             "ruby",
             "save.rb",
+            "def save",
         ),
         (
             "eval(\"1\") or persist()\n",
             SourceLang::Python,
             "python",
             "save.py",
+            "or persist()",
         ),
         (
             "exec(\n\"1\"\n); value = persist()\n",
             SourceLang::Python,
             "python",
             "save.py",
+            "value = persist()",
         ),
     ] {
-        let (garnet, _) = convert_src(src, lang, name, file);
+        let (garnet, checklist) = convert_src(src, lang, name, file);
         assert_parses(&garnet);
-        assert!(garnet.contains("persist()"), "kept: {src:?}\n{garnet}");
+        // The rest of the statement is kept as a to-do, never active or dropped.
+        assert_inactive(&garnet, "persist()");
+        assert!(
+            checklist.contains(kept),
+            "to-do keeps `{kept}`: {src:?}\n{checklist}"
+        );
     }
+}
+
+// Codex lane B, round 9 on #607 (3b6d1254).
+
+#[test]
+fn ruby_special_forms_never_swallow_a_following_statement() {
+    for line in [
+        "puts 1; def save; persist(); end",
+        "print 1; def save; persist(); end",
+        "yield; def save; persist(); end",
+        "yielding(def save; persist(); end)",
+    ] {
+        let src = format!("def outer\n  {line}\nend\n");
+        let (garnet, checklist) = convert_src(&src, SourceLang::Ruby, "ruby", "outer.rb");
+        assert_parses(&garnet);
+        assert_inactive(&garnet, "persist()");
+        assert!(
+            checklist.contains("def save"),
+            "kept as a to-do: {line}\n{checklist}"
+        );
+    }
+}
+
+#[test]
+fn python_fstring_inside_a_replacement_field_is_refused() {
+    let src =
+        "def save():\n    value = f\"\"\"{f'{''' } \"\"\"#\n    persist()\n    # '''}'}\"\"\"\n";
+    let err = try_convert(src, SourceLang::Python, "python", "save.py").unwrap_err();
+    assert!(err.contains("f-string") && err.contains("line 2"), "{err}");
 }
