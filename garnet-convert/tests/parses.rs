@@ -1235,3 +1235,24 @@ fn ruby_definition_inside_another_statement_is_never_lost() {
         );
     }
 }
+
+// Codex lane B, round 11 on #607 (a366caed).
+
+#[test]
+fn ruby_definition_header_or_chain_across_lines_is_kept_whole() {
+    for src in [
+        "def\n  outer(x = def save; persist; end)\n  0\nend\n",
+        "def save\n  persist()\nend\n  .to_s\n",
+        "def save\n  persist()\nend\n  &.to_s\n",
+        "class Store\n  def m\n    persist()\n  end\nend\n  .freeze\n",
+        "module Tools\n  def m\n    persist()\n  end\nend\n  .freeze\n",
+    ] {
+        let (garnet, checklist) = convert_src(src, SourceLang::Ruby, "ruby", "save.rb");
+        assert_parses(&garnet);
+        assert_inactive(&garnet, "persist");
+        assert!(
+            checklist.contains("persist"),
+            "kept as a to-do: {src:?}\n{checklist}"
+        );
+    }
+}
