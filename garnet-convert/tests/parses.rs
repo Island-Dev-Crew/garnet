@@ -1893,11 +1893,64 @@ fn an_operator_symbol_argument_does_not_hide_a_block() {
     ] {
         let src = format!("def save\n  {head} do 1/2\n    persist()\n  end\nend\n");
         match try_convert(&src, SourceLang::Ruby, "ruby", "save.rb") {
-            Err(e) => assert!(e.contains("character literal"), "{src:?}: {e}"),
+            Err(e) => assert!(
+                e.contains("character literal") || e.contains("ternary colon"),
+                "{src:?}: {e}"
+            ),
             Ok(garnet) => {
                 assert_parses(&garnet);
                 assert_inactive(&garnet, "persist()");
             }
         }
+    }
+}
+
+/// Codex round 25 (from the draft of a run stopped by a content filter): after
+/// an identifier and a blank, Ruby reads `:` as a symbol after a method name
+/// but as a ternary colon after a local variable, which the converter cannot
+/// tell apart. Where the two readings differ in structure (an operator that
+/// starts a literal, `:/` `:%` `` :` ``, or a keyword that opens a block, `:if`)
+/// the file is refused; after a value the `:` is a ternary colon. `?` followed
+/// by `\` is a character literal (`?\C-/`), refused.
+#[test]
+fn an_ambiguous_ruby_colon_is_refused() {
+    let in_block =
+        |line: &str| format!("def save\n  use do |local|\n    {line}\n    persist()\n  end\nend\n");
+    let mut refused = vec![
+        in_block("x = (true ? local :/end/)"),
+        in_block("(true ? local :%r{end})"),
+        in_block("(true ? local :%q{end})"),
+        in_block("(true ? local\r:/end/)"),
+        in_block("x = (true ? local :if true then 1 end)"),
+    ];
+    for head in ["use ?\\C-/", "use ?\\M-/", "x = ?\\C-/ ; work"] {
+        refused.push(format!(
+            "def save\n  {head} do 1/2\n    persist()\n  end\nend\n"
+        ));
+    }
+    for src in &refused {
+        match try_convert(src, SourceLang::Ruby, "ruby", "save.rb") {
+            Err(e) => assert!(
+                e.contains("ternary colon") || e.contains("character literal"),
+                "{src:?}: {e}"
+            ),
+            Ok(garnet) => panic!("converted: {src:?}\n{garnet}"),
+        }
+    }
+    // Not ambiguous: after a value, or with a blank after `:`, it is a ternary
+    // colon; a symbol that no ternary reading could change is read as one.
+    for src in [
+        in_block("(true ? (local) :/end/)"),
+        in_block("(true ? local : /end/)"),
+    ] {
+        let (garnet, _) = convert_src(&src, SourceLang::Ruby, "ruby", "save.rb");
+        assert_parses(&garnet);
+        assert_inactive(&garnet, "persist()");
+    }
+    for src in [
+        "class Box\n  alias_method :<<, :push\nend\n",
+        "class Box\n  attr_accessor :next\nend\n",
+    ] {
+        try_convert(src, SourceLang::Ruby, "ruby", "box.rb").unwrap();
     }
 }

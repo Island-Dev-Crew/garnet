@@ -701,9 +701,10 @@ pub fn ruby_line_from(line: &str, start: RubyState) -> Result<RubyLine<'_>, &'st
             }
             b'?' if (operand || spaced_ident)
                 && b.get(i + 1).is_some_and(|c| !c.is_ascii_whitespace())
-                && !b
-                    .get(i + 2)
-                    .is_some_and(|c| c.is_ascii_alphanumeric() || *c == b'_') =>
+                && (b.get(i + 1) == Some(&b'\\')
+                    || !b
+                        .get(i + 2)
+                        .is_some_and(|c| c.is_ascii_alphanumeric() || *c == b'_')) =>
             {
                 return Err("a character literal");
             }
@@ -782,8 +783,14 @@ pub fn ruby_line_from(line: &str, start: RubyState) -> Result<RubyLine<'_>, &'st
             }
             // An operator symbol (`:/`, `:<=>`, `:[]`) where an operand starts, or
             // after an identifier and a blank (a method call's first argument,
-            // `use :/`), is one token: its `/` or `%` opens no literal.
+            // `use :/`), is one token: its `/` or `%` opens no literal. After an
+            // identifier and a blank Ruby reads a ternary colon instead when the
+            // identifier is a local variable; where that reading starts a
+            // literal (`local :/x/`, `:%r{}`, `` :`x` ``) the file is refused.
             b':' if (operand || spaced_ident) && operator_method_name(&b[i + 1..]).is_some() => {
+                if !operand && matches!(b.get(i + 1), Some(b'/' | b'%' | b'`')) {
+                    return Err(AMBIGUOUS_COLON);
+                }
                 if names_rest {
                     operands += 1;
                 }
@@ -792,8 +799,31 @@ pub fn ruby_line_from(line: &str, start: RubyState) -> Result<RubyLine<'_>, &'st
                 last_op = false;
                 continue;
             }
-            b':' if b.get(i + 1).is_some_and(|c| is_rb_word_byte(*c)) => {
-                // A symbol: `:end` is a value, not `end`.
+            // A symbol where an operand starts or after an identifier and a blank:
+            // `:end` is a value, not `end`. After a value the `:` is a ternary
+            // colon. After an identifier and a blank, a keyword that opens a
+            // block where an expression starts (`local :if x then y end`) is
+            // read differently by the two readings: the file is refused.
+            b':' if (operand || spaced_ident)
+                && b.get(i + 1).is_some_and(|c| is_rb_word_byte(*c)) =>
+            {
+                if !operand
+                    && matches!(
+                        &b[i + 1..word_end(b, i + 1)],
+                        b"if"
+                            | b"unless"
+                            | b"while"
+                            | b"until"
+                            | b"case"
+                            | b"begin"
+                            | b"class"
+                            | b"module"
+                            | b"def"
+                            | b"for"
+                    )
+                {
+                    return Err(AMBIGUOUS_COLON);
+                }
                 if names_rest {
                     operands += 1;
                 }
@@ -1038,6 +1068,11 @@ const ALIAS_OPERANDS: &str = "an alias or undef whose operands are not complete 
 /// Ruby code (outside strings, regular expressions and comments) is read as
 /// ASCII.
 const NON_ASCII: &str = "a non-ASCII character outside a string or comment";
+
+/// After an identifier and a blank, a `:` Ruby reads as a symbol after a method
+/// name and as a ternary colon after a local variable, where the two readings
+/// differ in structure.
+const AMBIGUOUS_COLON: &str = "a `:` after an identifier that may be a symbol or a ternary colon";
 
 /// Ruby code holds no control character but tab and carriage return.
 const CONTROL: &str = "a control character outside a string or comment";

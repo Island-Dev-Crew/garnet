@@ -186,9 +186,13 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
       the file is refused. An operator method name after `.`, `&.`, `::` or
       `def` (`obj.!`, `def ==`) and an operator symbol (`:/`, `:<=>`) are one
       token each, and a `\` that ends a line is a blank: the next line starts
-      in the state the line before ended in. After an identifier and a blank,
-      where Ruby reads a method call's first argument, `:/` is a symbol and
-      `?/` a character literal (refused).
+      in the state the line before ended in. After an identifier and a blank
+      Ruby reads `:` as a symbol after a method name but as a ternary colon
+      after a local variable, which the converter cannot tell apart: where the
+      two readings differ in structure (`:/`, `:%`, `` :` `` or a keyword that
+      opens a block, such as `:if`) the file is refused, and otherwise it is a
+      symbol; after a value it is a ternary colon. `?` with a character there,
+      or `?` before a `\` anywhere, is a character literal (refused).
       Lines join while a bracket or keyword block is
       open (`if` and its kin count only where an expression starts; a `do` is
       a loop's separator only while the loop's condition is open, which ends
@@ -241,7 +245,9 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
     comment, heredocs (and a `<<` with no space after it), regular expressions
     with interpolation, interpolation beyond plain expressions (a string,
     regex, literal, `/`, `?`, comment or heredoc inside `#{...}`), an `alias`
-    or `undef` whose operands are not complete on its line, percent literals
+    or `undef` whose operands are not complete on its line, a `:` after an
+    identifier and a blank whose symbol and ternary-colon readings differ in
+    structure, percent literals
     (a `%`
     where an operand starts, or after an identifier and spaces with none
     after it, as for `/`), character literals, `=begin` comments, endless
