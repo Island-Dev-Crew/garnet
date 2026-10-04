@@ -901,6 +901,45 @@ def run_probe(probe: Probe, work: Path) -> ProbeResult:
     )
 
 
+def build_convert_parses_probe(
+    garnet: Path, work: Path, probe_id: str, label: str, lang: str, source: Path
+) -> ProbeResult:
+    """Convert, then parse the file the converter wrote with a separate `garnet parse`.
+
+    The converter's own "output parses: yes" line is not taken on trust: the probe
+    passes only if the written .garnet file parses on its own.
+    """
+    out_dir = work / f"convert-{lang}"
+    probe = Probe(
+        probe_id,
+        "migration assistant",
+        f"{label} source should convert to Garnet whose written file parses; constructs are counted, not called clean",
+        [str(garnet), "convert", "--out", str(out_dir), lang, str(source)],
+        True,
+        ("constructs mapped without a migration to-do", "output parses: yes", "parsed "),
+        security_domain="sandbox",
+    )
+    start = time.monotonic()
+    completed = run(probe.command, work)
+    stdout = [completed.stdout]
+    stderr = [completed.stderr]
+    exit_code = completed.returncode
+    if exit_code == 0:
+        written = out_dir / f"{source.stem}.{lang}.garnet"
+        parsed = run([str(garnet), "parse", str(written)], work)
+        stdout.append(parsed.stdout)
+        stderr.append(parsed.stderr)
+        exit_code = parsed.returncode
+    return classify_result(
+        probe,
+        exit_code,
+        "\n".join(stdout),
+        "\n".join(stderr),
+        int((time.monotonic() - start) * 1000),
+        work,
+    )
+
+
 def build_assist_plan_manifest_probe(work: Path, source: Path) -> ProbeResult:
     output_dir = work / "assist-plan"
     probe = Probe(
@@ -2117,24 +2156,8 @@ def probe_set(
             ("converted", "migrate_todo"),
             security_domain="sandbox",
         ),
-        Probe(
-            "convert-rust-score",
-            "migration assistant",
-            "Rust source should convert to Garnet that parses; constructs are counted, not called clean",
-            [str(garnet), "convert", "rust", str(fixtures["rust"])],
-            True,
-            ("constructs mapped without a migration to-do", "output parses: yes"),
-            security_domain="sandbox",
-        ),
-        Probe(
-            "convert-go-score",
-            "migration assistant",
-            "Go source should convert to Garnet that parses; constructs are counted, not called clean",
-            [str(garnet), "convert", "go", str(fixtures["go"])],
-            True,
-            ("constructs mapped without a migration to-do", "output parses: yes"),
-            security_domain="sandbox",
-        ),
+        lambda: build_convert_parses_probe(garnet, work, "convert-rust-score", "Rust", "rust", fixtures["rust"]),
+        lambda: build_convert_parses_probe(garnet, work, "convert-go-score", "Go", "go", fixtures["go"]),
         Probe(
             "convert-unsupported-language",
             "migration assistant",
