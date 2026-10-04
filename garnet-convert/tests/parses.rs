@@ -273,3 +273,83 @@ fn go_closure_block_is_kept_whole_and_does_not_close_the_function() {
     assert!(!garnet.contains("unparsed Go item: return 0"), "{garnet}");
     assert!(code_lines(&garnet).contains(&"return 0"), "{garnet}");
 }
+
+// Codex delta review on #607 (3d77d8e9): variants of the same class. Python and Go
+// are lexed fully; Ruby outside the lexed subset is refused, never half-converted.
+
+fn try_convert(src: &str, lang: SourceLang, lang_name: &str, file: &str) -> Result<String, String> {
+    let opts = EmitOpts {
+        source_lang: lang_name.into(),
+        source_file: file.into(),
+        target_file: format!("{file}.garnet"),
+        source_loc: src.lines().count(),
+        strict: false,
+        fail_on_todo: false,
+        fail_on_untranslatable: false,
+    };
+    convert(src, lang, file, opts).map(|(out, _)| out.garnet).map_err(|e| e.to_string())
+}
+
+#[test]
+fn python_block_whose_header_spans_lines_is_kept_whole() {
+    let src = "def save(enabled):\n    if (\n        enabled\n    ):\n        persist()\n    return 0\n";
+    let (garnet, _) = convert_src(src, SourceLang::Python, "python", "save.py");
+    assert_parses(&garnet);
+    assert_inactive(&garnet, "persist()");
+    assert!(code_lines(&garnet).contains(&"return 0"), "{garnet}");
+}
+
+#[test]
+fn python_code_inside_a_multiline_string_is_never_active() {
+    let src = "def run():\n    \"\"\"Docs.\n\npersist()\n    \"\"\"\n    return 0\n";
+    let (garnet, _) = convert_src(src, SourceLang::Python, "python", "run.py");
+    assert_parses(&garnet);
+    assert_inactive(&garnet, "persist()");
+}
+
+#[test]
+fn python_fstring_with_its_own_quote_in_a_field_is_refused() {
+    let src = "def run(d):\n    return f\"{d[\"k\"]}\"\n";
+    let err = try_convert(src, SourceLang::Python, "python", "run.py").unwrap_err();
+    assert!(err.contains("f-string"), "{err}");
+}
+
+#[test]
+fn go_braces_inside_comments_and_raw_strings_do_not_count() {
+    let cases = [
+        "\tif enabled { /* } */\n\t\tpersist()\n\t}\n",
+        "\t/*\n\tpersist()\n\t*/\n",
+        "\ts := `{\n\tpersist()\n\t`\n\t_ = s\n",
+    ];
+    for body in cases {
+        let src = format!("package main\n\nfunc run(enabled bool) int {{\n{body}\treturn 0\n}}\n");
+        let (garnet, _) = convert_src(&src, SourceLang::Go, "go", "run.go");
+        assert_parses(&garnet);
+        assert_inactive(&garnet, "persist()");
+        assert!(!garnet.contains("unparsed Go item: return 0"), "{body}:\n{garnet}");
+        assert!(code_lines(&garnet).contains(&"return 0"), "{body}:\n{garnet}");
+    }
+}
+
+#[test]
+fn ruby_outside_the_lexed_subset_is_refused() {
+    for (line, what) in [
+        ("  %w[#].each do |item|", "percent literal"),
+        ("  text = <<~EOS", "heredoc"),
+        ("  c = ?#", "character literal"),
+        ("  puts \"#{h[\"k\"]}\"", "interpolation"),
+    ] {
+        let src = format!("def run(items)\n{line}\n    persist(item)\n  end\n  return 0\nend\n");
+        let err = try_convert(&src, SourceLang::Ruby, "ruby", "run.rb").unwrap_err();
+        assert!(err.contains(what) && err.contains("line 2"), "{what}: {err}");
+    }
+}
+
+#[test]
+fn ruby_regex_with_a_hash_does_not_hide_a_block_header() {
+    let src = "def run(line)\n  if line =~ /#/\n    persist()\n  end\n  return 0\nend\n";
+    let (garnet, _) = convert_src(src, SourceLang::Ruby, "ruby", "run.rb");
+    assert_parses(&garnet);
+    assert_inactive(&garnet, "persist()");
+    assert!(code_lines(&garnet).contains(&"return 0"), "{garnet}");
+}
