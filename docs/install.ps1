@@ -148,12 +148,19 @@
     # Windows PowerShell 5.1 turns a native command's redirected stderr into
     # errors under 'Stop', so the preference is relaxed inside this function
     # only. The status lines come back; the exit code decides.
-    # stdout carries the status lines; gpg's own messages (stderr) are kept so a
-    # refusal can say why gpg failed.
-    function Invoke-Gpg([string]$GpgPath, [string]$GnupgHome, [string[]]$Arguments) {
+    # gpg runs inside the work directory and is given only names relative to it:
+    # the gpg in Git for Windows is an MSYS program that reads C:\... as a relative
+    # POSIX path. stdout carries the status lines; gpg's own messages (stderr) are
+    # kept so a refusal can say why gpg failed.
+    function Invoke-Gpg([string]$GpgPath, [string]$Work, [string[]]$Arguments) {
         $ErrorActionPreference = 'Continue'
-        $output = @(& $GpgPath --homedir $GnupgHome --batch --no-tty @Arguments 2>&1)
-        $code = $LASTEXITCODE
+        Push-Location -LiteralPath $Work
+        try {
+            $output = @(& $GpgPath --homedir gnupg --batch --no-tty @Arguments 2>&1)
+            $code = $LASTEXITCODE
+        } finally {
+            Pop-Location
+        }
         $lines = @($output | Where-Object { $_ -isnot [System.Management.Automation.ErrorRecord] } | ForEach-Object { "$_" })
         $messages = @($output | Where-Object { $_ -is [System.Management.Automation.ErrorRecord] } | ForEach-Object { "$_".Trim() } | Where-Object { $_ })
         return [pscustomobject]@{ ExitCode = $code; Lines = $lines; Messages = $messages }
@@ -197,13 +204,14 @@
         } catch {
             Fail "cannot fetch the release signing keys from $keysUrl"
         }
-        $import = Invoke-Gpg $gpg.Path $gnupg @('--quiet', '--import', $keys)
+        $import = Invoke-Gpg $gpg.Path $Work @('--quiet', '--import', (Split-Path -Leaf $keys))
         if ($import.ExitCode -ne 0) {
             Fail "cannot import the release signing keys from $keysUrl ($(Format-GpgMessages $import))"
         }
         # A detached signature is required: gpg refuses an inline-signed message
         # when given the data file, so another signed text cannot stand in.
-        $result = Invoke-Gpg $gpg.Path $gnupg @('--status-fd', '1', '--verify', $signature, $Sums)
+        if ((Split-Path -Parent $Sums) -ne $Work) { Fail "SHA256SUMS is outside the work directory ($Sums); refusing to verify it" }
+        $result = Invoke-Gpg $gpg.Path $Work @('--status-fd', '1', '--verify', (Split-Path -Leaf $signature), (Split-Path -Leaf $Sums))
         if ($result.ExitCode -ne 0) { Fail "SHA256SUMS.asc does not verify against SHA256SUMS; refusing to install ($(Format-GpgMessages $result))" }
         # VALIDSIG carries the signing key's fingerprint and, last, its primary key's.
         $signedByPin = $false
