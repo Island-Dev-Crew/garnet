@@ -353,3 +353,168 @@ fn ruby_regex_with_a_hash_does_not_hide_a_block_header() {
     assert_inactive(&garnet, "persist()");
     assert!(code_lines(&garnet).contains(&"return 0"), "{garnet}");
 }
+
+// The statement is a defined unit per language, so no variant of a split
+// statement, block or definition can leave a fragment active:
+// - Python: a logical line (brackets, `\`, triple-quoted strings) and, for a
+//   compound statement, its indented body and clauses;
+// - Go: lines up to where Go inserts a semicolon, once every bracket, block
+//   comment and raw string is closed;
+// - Ruby (the lexed subset): lines up to where every bracket and keyword block
+//   is closed, the line does not end in an operator, and the next line does not
+//   start with `.`.
+
+/// No line of active code is exactly `line`.
+fn assert_no_code_line(garnet: &str, line: &str) {
+    assert!(
+        !code_lines(garnet).contains(&line),
+        "`{line}` must not be a line of active code:\n{garnet}"
+    );
+}
+
+#[test]
+fn python_def_whose_signature_spans_lines_keeps_only_its_body_active() {
+    let src = "def save(\n    path,\n    data,\n):\n    persist(data)\n    return 0\n";
+    let (garnet, _) = convert_src(src, SourceLang::Python, "python", "save.py");
+    assert_parses(&garnet);
+    for fragment in ["path,", "data,", "):"] {
+        assert_no_code_line(&garnet, fragment);
+    }
+    let code = code_lines(&garnet);
+    assert!(code.iter().any(|l| l.starts_with("def save(")), "{garnet}");
+    assert!(code.contains(&"return 0"), "{garnet}");
+}
+
+#[test]
+fn python_decorated_definition_is_kept_whole() {
+    let src = "@cached\ndef load():\n    def inner():\n        return persist()\n    return inner()\n";
+    let (garnet, _) = convert_src(src, SourceLang::Python, "python", "load.py");
+    assert_parses(&garnet);
+    assert_inactive(&garnet, "persist()");
+    assert_inactive(&garnet, "inner()");
+}
+
+#[test]
+fn python_decorated_method_is_kept_whole_and_not_dropped() {
+    let src = "class Store:\n    @staticmethod\n    def build():\n        return persist()\n";
+    let (garnet, _) = convert_src(src, SourceLang::Python, "python", "store.py");
+    assert_parses(&garnet);
+    assert_inactive(&garnet, "persist()");
+    assert!(garnet.contains("@staticmethod"), "the decorated method survives as a todo:\n{garnet}");
+}
+
+#[test]
+fn python_module_level_block_keeps_its_definitions_inside() {
+    let src = "if FAST:\n    def run():\n        return persist()\n";
+    let (garnet, _) = convert_src(src, SourceLang::Python, "python", "fast.py");
+    assert_parses(&garnet);
+    assert_inactive(&garnet, "persist()");
+}
+
+// A guard, not a red test: the emitter already quarantines `if x: ...` because it
+// does not parse as Garnet. The frontend now keeps it whole itself.
+#[test]
+fn python_compound_statement_on_one_line_is_not_active() {
+    let src = "def run(x):\n    if x: persist()\n    return 0\n";
+    let (garnet, _) = convert_src(src, SourceLang::Python, "python", "run.py");
+    assert_parses(&garnet);
+    assert_inactive(&garnet, "persist()");
+    assert!(code_lines(&garnet).contains(&"return 0"), "{garnet}");
+}
+
+#[test]
+fn python_tab_indentation_is_refused() {
+    let err = try_convert("def run():\n\treturn persist()\n", SourceLang::Python, "python", "run.py")
+        .unwrap_err();
+    assert!(err.contains("tab") && err.contains("line 2"), "{err}");
+}
+
+#[test]
+fn go_one_line_function_ends_where_its_brace_closes() {
+    let src = "package main\n\nfunc one() int { return 1 }\n\nfunc run() int {\n\treturn persist()\n}\n";
+    let (garnet, _) = convert_src(src, SourceLang::Go, "go", "one.go");
+    assert_parses(&garnet);
+    let code = code_lines(&garnet);
+    assert!(code.contains(&"return 1"), "{garnet}");
+    assert!(code.contains(&"return persist()"), "{garnet}");
+    assert!(code.iter().any(|l| l.starts_with("def run(")), "{garnet}");
+}
+
+#[test]
+fn go_comment_or_raw_string_at_top_level_hides_its_functions() {
+    let src = "package main\n\n/*\nfunc old() int {\n\treturn persist()\n}\n*/\n\nvar tmpl = `\nfunc gen() int {\n\treturn persist()\n}\n`\n\nfunc run() int {\n\treturn 0\n}\n";
+    let (garnet, _) = convert_src(src, SourceLang::Go, "go", "tmpl.go");
+    assert_parses(&garnet);
+    assert_inactive(&garnet, "persist()");
+    assert!(code_lines(&garnet).contains(&"return 0"), "{garnet}");
+}
+
+#[test]
+fn go_statement_continued_by_a_trailing_operator_is_kept_whole() {
+    let src = "package main\n\nfunc run() int {\n\ttotal := 1 +\n\t\tpersist()\n\treturn total\n}\n";
+    let (garnet, _) = convert_src(src, SourceLang::Go, "go", "run.go");
+    assert_parses(&garnet);
+    assert_inactive(&garnet, "persist()");
+    assert!(code_lines(&garnet).contains(&"return total"), "{garnet}");
+}
+
+#[test]
+fn go_bare_block_is_kept_whole() {
+    let src = "package main\n\nfunc run() int {\n\tx := 0\n\t{\n\t\tx = persist()\n\t}\n\treturn x\n}\n";
+    let (garnet, _) = convert_src(src, SourceLang::Go, "go", "run.go");
+    assert_parses(&garnet);
+    assert_inactive(&garnet, "persist()");
+    assert!(code_lines(&garnet).contains(&"return x"), "{garnet}");
+}
+
+#[test]
+fn ruby_block_opened_in_expression_position_is_kept_whole() {
+    let src = "def run(ready)\n  x = if ready\n    persist()\n  else\n    0\n  end\n  return x\nend\n";
+    let (garnet, _) = convert_src(src, SourceLang::Ruby, "ruby", "run.rb");
+    assert_parses(&garnet);
+    assert_inactive(&garnet, "persist()");
+    assert!(code_lines(&garnet).contains(&"return x"), "{garnet}");
+}
+
+#[test]
+fn ruby_statement_spanning_lines_is_kept_whole() {
+    let cases = [
+        "  x = compute(\n    persist()\n  )\n",
+        "  items.map { |i|\n    persist(i)\n  }\n",
+        "  total = 1 +\n    persist()\n",
+        "  result = items\n    .map(&:persist)\n",
+    ];
+    for body in cases {
+        let src = format!("def run(items)\n{body}  return 0\nend\n");
+        let (garnet, _) = convert_src(&src, SourceLang::Ruby, "ruby", "run.rb");
+        assert_parses(&garnet);
+        assert_inactive(&garnet, "persist");
+        assert!(code_lines(&garnet).contains(&"return 0"), "{body}:\n{garnet}");
+    }
+}
+
+#[test]
+fn ruby_def_header_the_frontend_does_not_read_is_kept_whole() {
+    for src in [
+        "def self.build(x)\n  persist(x)\nend\n",
+        "def build x\n  persist(x)\nend\n",
+    ] {
+        let (garnet, _) = convert_src(src, SourceLang::Ruby, "ruby", "build.rb");
+        assert_parses(&garnet);
+        assert_inactive(&garnet, "persist(x)");
+    }
+}
+
+#[test]
+fn ruby_endless_method_is_refused() {
+    let err = try_convert("def one = persist()\n", SourceLang::Ruby, "ruby", "one.rb").unwrap_err();
+    assert!(err.contains("endless") && err.contains("line 1"), "{err}");
+}
+
+#[test]
+fn ruby_top_level_block_keeps_its_definitions_inside() {
+    let src = "if ENV[\"FAST\"]\n  def run\n    persist()\n  end\nend\n";
+    let (garnet, _) = convert_src(src, SourceLang::Ruby, "ruby", "fast.rb");
+    assert_parses(&garnet);
+    assert_inactive(&garnet, "persist()");
+}
