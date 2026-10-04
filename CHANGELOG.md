@@ -31,7 +31,8 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   (heredocs, percent literals, interpolation beyond plain expressions and the
   like). The Python converter refuses tab
   or form-feed indentation and f-strings whose replacement fields hold their
-  own quote, a comment or a backslash.
+  own quote, a comment, a backslash outside a nested string, or a nested
+  triple-quoted string or f-string.
 - WV-6 (native-Windows acceptance) ships as a disclosed partial.
   `python3 -I scripts/garnet_wv_acceptance_status.py --wv WV-6` reports
   `partial`: its five checks pass, but the recorded product digest predates
@@ -168,8 +169,10 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
       end an open statement, a word after `.` at the end of the line before is
       a method name, not a keyword, and so are the operands of `alias` and
       `undef`, which must be complete on their own line. A statement holding
-      `;` is kept whole rather than read by `puts`, `print`, `yield` or
-      another special form. A def, class or module whose header the
+      `;` or a keyword block (even one closed on its line, such as
+      `puts def x() ... end`) is kept whole rather than read by `puts`,
+      `print`, `yield` or another special form, and a `def` whose header
+      opens another block (a `def` in a parameter default) is kept whole. A def, class or module whose header the
       frontend does not read, whose body has a `rescue`/`ensure`/`else`
       clause, or whose `end` shares its line with more code, is kept whole.
     Only a statement on one line becomes code, and never one whose code holds

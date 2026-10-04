@@ -23,7 +23,8 @@ Owns migration frontends and conversion helpers for lifting Rust, Ruby, Python, 
 - What a frontend does not lex is refused with its line number, never guessed:
   Python tab or form-feed indentation, a carriage return without a line feed,
   and f-strings or t-strings whose replacement fields hold their own quote, a
-  comment, a backslash, a triple-quoted string or another f-string or t-string; Ruby outside the subset (heredocs and a `<<` with no
+  comment, a backslash outside a nested string, a triple-quoted string or
+  another f-string or t-string; Ruby outside the subset (heredocs and a `<<` with no
   space after it, regular expressions with interpolation, interpolation beyond
   plain expressions, an `alias` or `undef` with operands on another line,
   percent literals, character literals, `=begin`, endless

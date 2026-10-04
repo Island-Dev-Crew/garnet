@@ -244,6 +244,24 @@ impl<'a> RubyParser<'a> {
     }
 
     fn parse_def(&mut self, start: usize) -> Result<Cir, ConvertError> {
+        // A header that opens a block besides its own (a `def` in a parameter
+        // default) is not read: the definition is kept whole. The header runs
+        // until its parameter parentheses close.
+        let mut openers = 0;
+        let mut brackets = 0;
+        for line in self.remaining().split_inclusive('\n') {
+            let Ok(l) = ruby_line(line.trim_end_matches(['\n', '\r'])) else {
+                break;
+            };
+            openers += l.openers;
+            brackets += l.brackets;
+            if brackets <= 0 {
+                break;
+            }
+        }
+        if openers > 1 {
+            return Ok(self.whole_todo(start, "def"));
+        }
         self.pos += "def".len();
         self.skip_blanks();
         let name = self.read_ident().unwrap_or_default();
@@ -355,7 +373,9 @@ impl<'a> RubyParser<'a> {
             // neither its body nor its `end` spills into the enclosing def.
             // A statement holding `;` is never read by a special form (`puts`,
             // `yield`, `return` ...), which would take the rest as its argument.
-            let separated = ruby_line(lines[0]).is_ok_and(|l| l.semicolon);
+            // Nor is one that opens a keyword block, even one closed on its
+            // line (`puts def save() ... end`).
+            let separated = ruby_line(lines[0]).is_ok_and(|l| l.semicolon || l.openers > 0);
             if lines.len() > 1 || !complete(lines[0]) || separated {
                 let last = lines.last().map_or("", |l| ruby_code(l));
                 if let (true, Some((iter, var))) =

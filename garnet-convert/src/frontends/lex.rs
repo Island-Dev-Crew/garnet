@@ -471,6 +471,8 @@ pub struct RubyLine<'a> {
     pub brackets: i64,
     /// Keyword blocks opened minus `end`s.
     pub blocks: i64,
+    /// Keyword blocks opened on the line, whether or not they close on it.
+    pub openers: u32,
     /// The line ends in an operator, a comma or `\`, so the statement goes on.
     pub continues: bool,
     /// A `;` statement separator appears outside strings and comments.
@@ -507,6 +509,7 @@ pub fn ruby_line_after(line: &str, name_first: bool) -> Result<RubyLine<'_>, &'s
         code: line,
         brackets: 0,
         blocks: 0,
+        openers: 0,
         continues: false,
         semicolon: false,
         name_pending: false,
@@ -716,6 +719,7 @@ pub fn ruby_line_after(line: &str, name_first: bool) -> Result<RubyLine<'_>, &'s
                     "if" | "unless" | "while" | "until" => {
                         if !after_value {
                             out.blocks += 1;
+                            out.openers += 1;
                             loop_do |= matches!(&line[start..i], "while" | "until");
                         }
                         // As a modifier at a line end it takes the next line.
@@ -724,11 +728,13 @@ pub fn ruby_line_after(line: &str, name_first: bool) -> Result<RubyLine<'_>, &'s
                     }
                     "for" => {
                         out.blocks += 1;
+                        out.openers += 1;
                         loop_do = true;
                         after_value = false;
                     }
                     "case" | "begin" | "class" | "module" => {
                         out.blocks += 1;
+                        out.openers += 1;
                         after_value = false;
                     }
                     "def" => {
@@ -736,6 +742,7 @@ pub fn ruby_line_after(line: &str, name_first: bool) -> Result<RubyLine<'_>, &'s
                             return Err("an endless method definition");
                         }
                         out.blocks += 1;
+                        out.openers += 1;
                         name_next = true;
                         after_value = false;
                     }
@@ -744,6 +751,7 @@ pub fn ruby_line_after(line: &str, name_first: bool) -> Result<RubyLine<'_>, &'s
                             loop_do = false;
                         } else {
                             out.blocks += 1;
+                            out.openers += 1;
                         }
                         after_value = false;
                     }

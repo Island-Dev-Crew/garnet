@@ -1223,6 +1223,7 @@ fn ruby_definition_inside_another_statement_is_never_lost() {
         "def outer\n  puts def save() persist() end\nend\n",
         "def outer\n  print def save() persist() end\nend\n",
         "def outer(x = def save; persist; end)\n  0\nend\n",
+        "def outer(x =\n  def save; persist; end)\n  0\nend\n",
         "def outer\n  return def save() persist() end\nend\n",
     ] {
         let (garnet, checklist) = convert_src(src, SourceLang::Ruby, "ruby", "outer.rb");
