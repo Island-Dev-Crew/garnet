@@ -553,3 +553,36 @@ fn ruby_top_level_block_keeps_its_definitions_inside() {
     assert_parses(&garnet);
     assert_inactive(&garnet, "persist()");
 }
+
+// Codex delta round 3 on #607: a line ending in a keyword that takes an operand
+// continues the statement. Go inserts no semicolon after `go`, `defer` or the
+// other keywords outside break/continue/fallthrough/return; a Ruby modifier
+// (`if`, `unless`, `while`, `until`, `rescue`) at a line end takes the next line.
+
+#[test]
+fn go_line_ending_in_a_keyword_continues_its_statement() {
+    for keyword in ["go", "defer"] {
+        let src = format!(
+            "package main\n\nfunc run() int {{\n\t{keyword}\n\t\tpersist()\n\treturn 0\n}}\n"
+        );
+        let (garnet, _) = convert_src(&src, SourceLang::Go, "go", "run.go");
+        assert_parses(&garnet);
+        assert_inactive(&garnet, "persist()");
+        assert!(code_lines(&garnet).contains(&"return 0"), "{keyword}:\n{garnet}");
+    }
+}
+
+#[test]
+fn ruby_line_ending_in_a_modifier_continues_its_statement() {
+    for body in [
+        "  return 7 if\n    persist()\n",
+        "  x = 1 unless\n    persist()\n",
+        "  x = fetch rescue\n    persist()\n",
+    ] {
+        let src = format!("def run\n{body}  return 0\nend\n");
+        let (garnet, _) = convert_src(&src, SourceLang::Ruby, "ruby", "run.rb");
+        assert_parses(&garnet);
+        assert_inactive(&garnet, "persist()");
+        assert!(code_lines(&garnet).contains(&"return 0"), "{body}:\n{garnet}");
+    }
+}

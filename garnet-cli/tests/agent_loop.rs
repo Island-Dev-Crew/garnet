@@ -404,3 +404,50 @@ fn a_record_artifact_that_cannot_be_written_fails_the_loop() {
         "the changes are still named: {stdout}"
     );
 }
+
+// Codex delta round 3 on #607: with diff_caps.txt unwritable the loop exited 2, but
+// stdout and decision.md still said the changes were listed in diff_caps.txt.
+#[test]
+fn a_record_never_names_an_artifact_it_did_not_write() {
+    for blocked in ["diff_caps.txt", "seal.json"] {
+        let dir = tempfile::TempDir::new().unwrap();
+        let baseline = write(dir.path(), "baseline.garnet", PER_FN_BASELINE);
+        let proposal = write(dir.path(), "proposal.garnet", PER_FN_PROPOSAL);
+        let record = dir.path().join("record");
+        std::fs::create_dir_all(record.join(blocked)).unwrap();
+        let out = garnet()
+            .args(["agent-loop", "--baseline"])
+            .arg(&baseline)
+            .arg("--proposal")
+            .arg(&proposal)
+            .arg("--seal-out")
+            .arg(dir.path().join("seal.json"))
+            .arg("--record-dir")
+            .arg(&record)
+            .args([
+                "--attest",
+                "agent=scripted-agent-v1",
+                "--gate-version",
+                "dogfood-gate-v1",
+            ])
+            .output()
+            .unwrap();
+        let stdout = String::from_utf8_lossy(&out.stdout);
+        assert_eq!(Some(2), out.status.code(), "{blocked}: {stdout}");
+        assert!(
+            !stdout.contains("in diff_caps.txt"),
+            "{blocked}: stdout must not promise the record: {stdout}"
+        );
+        let decision = std::fs::read_to_string(record.join("decision.md")).unwrap();
+        if blocked == "diff_caps.txt" {
+            assert!(
+                !decision.contains("listed in `diff_caps.txt`"),
+                "{blocked}: {decision}"
+            );
+        }
+        assert!(
+            decision.contains("could not be written") && decision.contains(blocked),
+            "{blocked}: decision.md names what is missing: {decision}"
+        );
+    }
+}
