@@ -7,7 +7,240 @@ This file is updated in the same PR as the work it tracks (per the v0.5 slice
 contract). Lines added here are part of the calibrated record — if a
 slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
-## [Unreleased]
+## [0.8.3] — not yet tagged (the workspace moved to 0.8.3 on 2026-09-30)
+
+> Cut truth: the in-tree version is 0.8.3, so the release candidate reports
+> it. The `v0.8.3` tag is the maintainer's act and has not been cut; until it
+> is, the published release is v0.8.2. The sections below are everything merged
+> to `main` since v0.8.2, in their original order.
+
+### Limits in 0.8.3
+
+- Only `@caps` and `@max_depth` trap at run time. `@bounded` step budgets,
+  memory and time ceilings, `@mailbox`, and OS-sandbox application on macOS and
+  Windows are declared, not enforced; seccomp is applied on Linux only.
+- Converter output parses but does not keep the source's meaning. The Rust
+  frontend drops binary operators (`a + b` comes out as `a nil b`). The Go
+  frontend keeps a `return` expression's text but turns a `:=` declaration into
+  a placeholder and every block that spans lines into a whole-statement to-do,
+  so later lines can name variables that no longer exist; a block on one line
+  is copied through as one statement (Q48; after R2). In the Python, Go and
+  Ruby frontends a statement copied through as text that holds a string or
+  character literal is kept as a to-do.
+- The Ruby converter reads a lexical subset and refuses a file outside it
+  (heredocs, percent literals, interpolation beyond plain expressions and the
+  like). The Python converter refuses tab
+  or form-feed indentation and f-strings whose replacement fields hold their
+  own quote, a comment, a backslash in the field's expression outside a
+  nested string, or a nested
+  triple-quoted string or f-string.
+- WV-6 (native-Windows acceptance) ships as a disclosed partial.
+  `python3 -I scripts/garnet_wv_acceptance_status.py --wv WV-6` reports
+  `partial`: its five checks pass, but the recorded product digest predates
+  the current tree.
+- The installers check the release signature only when `gpg` is installed.
+- The binaries are not code-signed, and Garnet Studio is not a release asset.
+- Garnet is research-grade (v0.x), not production or 1.0.
+
+### T5b — the 0.8.3 release candidate
+
+- **The installers check the release signature (D-26).** When `gpg` is on
+  `PATH`, `install.sh` and `install.ps1` download `SHA256SUMS.asc` and
+  `docs/garnet-release-keys.asc` (served at
+  `garnet-lang.org/garnet-release-keys.asc`) and verify the signature in a
+  throwaway keyring. The signature must be detached, and its `VALIDSIG`
+  fingerprint must be the key the installer pins for the requested version,
+  not merely a key in the file. Only then do they trust `SHA256SUMS`.
+  - A missing, mismatched or wrong-key signature stops the install, and
+    `install.sh` never falls back to a source build after one. When `gpg`
+    cannot import the keys or verify the signature, `install.ps1` quotes
+    `gpg`'s own messages in the refusal.
+  - Without `gpg` they warn and check integrity only. On Windows, the `gpg`
+    from Gpg4win works, and so does the one in Git for Windows, MSYS2 or
+    Cygwin: that `gpg` reads `C:\...` as a relative path, so `install.ps1`
+    gives it POSIX paths through the `cygpath` beside it. `gpg` starts an
+    agent even to import public keys, and the agent's socket paths have a
+    length limit, so `install.ps1` gives `gpg` a short throwaway home of its
+    own and stops the agent afterwards. Releases before v0.8.1 were never
+    signed and also warn.
+  - `GARNET_VERIFY_SIGNATURE=0` turns the check off with a warning, and
+    `GARNET_SIGNING_KEYS_URL` / `GARNET_SIGNING_KEY_FPR` point it at a mirror
+    you sign yourself.
+  - v0.8.1 and v0.8.2 pin `04D5 6F91 F038 17DD FFEB  C62A C14D F6E7 1395 6ED1`.
+  - The installer, its pins and the keys file all come from `garnet-lang.org`,
+    so the check stops a substituted release asset, not a substituted installer;
+    `docs/release-signing.md` says how to verify by hand.
+  - Tests: `scripts/test_garnet_installer_signature.py` (11, throwaway keys,
+    in CI). The Windows job runs `scripts/garnet_ci_install_ps1_signature.ps1` under
+    PowerShell 7 and Windows PowerShell 5.1. It installs the real v0.8.2
+    release through its real signature, then refuses another pinned key, a
+    missing `.asc` and a real `.asc` over a different `SHA256SUMS`, and warns
+    without `gpg`.
+- **The signing key moves into the `release` environment (C4-02).** The
+  tagged `release` job declares `environment: release`, which admits only `v*`
+  tag runs after its required reviewer approves, and holds `GPG_SIGNING_KEY`
+  and `GPG_PASSPHRASE`. Without the key a tagged release still fails closed
+  unless `ALLOW_UNSIGNED_RELEASE=true`. The job first checks that the tag exists
+  on origin; it never creates or moves a tag. The workflow schema policy
+  accepts one static environment name on a job and nothing else there.
+- **One curated release body (C6-13).** The release job publishes
+  `.github/release-notes/<tag>.md` and fails first if that file is missing,
+  because `softprops/action-gh-release` only warns when it cannot read a
+  `body_path`. Neither release workflow generates notes any more.
+- **Only this release's VSIX files (C6-06).** A restored build cache put two
+  stale 0.8.1 VSIX files on the v0.8.2 release. The package script now clears
+  its own earlier outputs. `release-vsix` copies only
+  `garnet-<tag version>-lsp-mvp-*.vsix` through
+  `scripts/garnet_collect_vsix_release_assets.py`, which requires
+  `editors/vscode/package.json` to carry the tag's version and exactly two files.
+- **Linux packages for older distributions (C6-04).** Both Linux builds run on
+  Ubuntu 22.04 (`ubuntu-22.04`, `ubuntu-22.04-arm`), and
+  `scripts/garnet_check_glibc_floor.sh` fails the build if the binary imports a glibc
+  symbol newer than `GLIBC_2.34`. The build caches are keyed to the image.
+  - New `smoke-older-distros` jobs install the packages in clean `debian:12`,
+    `ubuntu:22.04` and `almalinux:9` containers for x86_64 and ARM64 and run the
+    version, parse, capability-gap and signed-manifest gates. The release waits
+    for them.
+  - `install.sh` now judges the host glibc against the requested release: 2.39
+    through v0.8.2, 2.34 from v0.8.3.
+  - The remaining `ubuntu-latest` jobs are pinned to `ubuntu-24.04`, and the
+    macOS job runs `install.sh` against its own tarball (C6-16).
+- **CI plumbing.** `build-vsix` moves to `actions/setup-node` v6 (node24,
+  C4-16/C6-07). The 16 required-context producers these changes touch are
+  re-pinned, with the 31- and 32-context aggregates. The new values were
+  computed with the repository's own functions after the same computation
+  reproduced every existing pin on main.
+- **The release-lanes reporter is truthful (C5-16b, C6-19).** Release-artifact
+  signing is an active lane only while the `release` job in
+  `linux-packages.yml` is the reviewed one, pinned by the SHA-256 of its text;
+  the settings it inherits from the workflow's top level (`on`, `env`, any
+  `defaults`) are pinned as decoded YAML, so a default shell or a workflow
+  variable cannot change the job without breaking the lane; and no other job,
+  nor the workflow's top level, has a `permissions` key or
+  mentions `secrets`, read from the decoded YAML so that a quoted key or an
+  escaped value counts the same. Any edit to the job, including a
+  step added with or without a name, breaks the lane until a reviewed change
+  moves the pin with it. The repository's default workflow token is read-only,
+  as the governance gate records, so no other job holds a token that can write
+  a release. The reviewed job runs sign, refuse, publish, attach: the
+  `gpg --detach-sign` step and the fail-closed refusal match pinned text, the
+  `SHA256SUMS.asc` attach step keeps its condition and file, `HAS_GPG` follows
+  the signing key, nothing continues on error, and `Publish release` has no
+  condition of its own. The stale `TODO(release-security)` comment is gone.
+- **`garnet agent-loop` says what it checked (C1-02).** The decision reads
+  "program-wide declared capability surface did not widen", and functions that
+  gained capabilities or are new are counted in the decision and listed for
+  review on stdout, and in `diff_caps.txt` with `--record-dir`. A
+  `--record-dir` artifact that cannot be written is named on stderr and the
+  loop exits 2. `decision.md` is written last: every mention of an artifact
+  that could not be written is marked "(not written)", and the missing ones
+  are listed.
+- **Every converter output parses (C1-18, Q48).**
+  - `@sandbox` is named in a comment; `@caps()` stays.
+  - Python `for` / `while` (without `else`) and Ruby `.each do |x|` are lowered
+    to brace form, and any other statement that would not parse becomes a
+    whole-statement `@migrate_todo` carrying its source lines. A final
+    full-file parse turns any remaining failure into an error, not a file.
+  - Each frontend reads a statement as a defined unit of its language, lexed
+    by one shared module, so no fragment of a longer statement stays active
+    code:
+    - Python: the logical line (brackets, `\`, triple-quoted strings). A
+      compound statement is its header plus its deeper-indented lines and
+      `elif`/`else`/`except`/`finally` clauses, at module level as in a
+      function; its keyword is the statement's whole leading word, whatever
+      follows it (`if\t`, `if{`, `except*`). A def header may span lines; one
+      that is not plain (a string, call, brace or lambda among its parameters)
+      keeps the definition whole. A decorated definition is kept whole, and
+      `__init__` is kept as a method.
+    - Go: lines up to where Go inserts a semicolon, once every bracket, block
+      comment and raw string is closed (a block comment holding a newline
+      ends a statement, as a newline would); a line ending in `go`, `defer` or
+      another keyword outside `break`/`continue`/`fallthrough`/`return` takes
+      the next line. A one-line function keeps its body, and a function
+      inside a block comment or raw string is not converted. A function's
+      header is read lexically up to the brace that opens its body (comments,
+      strings and `struct`/`interface` braces skipped); a header that does not
+      read as `[(receiver)] name(params) [result]` keeps the function whole,
+      and a declaration without a body ends at its `;` or line end. A struct's
+      fields are converted only when each reads as `Name Type [tag]`, one per
+      line or `;`-separated; otherwise the type is kept whole.
+    - Ruby: a lexical subset. Lines join while a bracket or keyword block is
+      open (`if` and its kin count only where an expression starts), after a
+      trailing operator, comma or modifier (`if`, `unless`, `rescue` ...), or
+      before a line that starts with `.`; a blank or comment line does not
+      end an open statement, a word after `.` at the end of the line before is
+      a method name, not a keyword, and so are the operands of `alias` and
+      `undef`, which must be complete on their own line. A statement holding
+      `;` or a keyword block (even one closed on its line, such as
+      `puts def x() ... end`) is kept whole rather than read by `puts`,
+      `print`, `yield` or another special form. A `def` whose header opens
+      another block (a `def` in a parameter default), starts its name on the
+      next line, or whose parameter list is not plain (names and simple
+      defaults only: no string, regex, comment, block or nested call) is kept
+      whole, and so is a def, class or module whose header
+      the frontend does not read, whose body has a `rescue`/`ensure`/`else`
+      clause, or whose `end` is followed by more of its statement (code on the
+      line, or a `.` chain on the next).
+    Only a statement on one line becomes code, and never one whose code holds
+    `#{`: text that was inert in the source, such as `"#{x}"` in a Python or Go
+    string or `'#{x}'` in Ruby, would run as Garnet interpolation, so it is kept
+    as a to-do. Nor does a statement the Python, Go or Ruby frontend copies
+    through as source text when that text holds a quote character: Garnet may
+    read its quoting (triple quotes, single quotes, raw strings, runes)
+    differently, so string contents could become code. String values the
+    converter builds itself, such as Ruby `puts "x"`, are escaped and stay. Class-level statements become
+    to-dos instead of being dropped, and an import is skipped only when it is
+    the whole statement (anything after a `;` on its line is kept; a Ruby
+    `require` only in its exact form, `require "x"` or `require("x")`), and
+    an `eval`, `exec` or `instance_eval` becomes an untranslatable note only
+    as a single call with one string literal (anything else in its statement
+    is kept as a to-do). What a frontend does not lex is refused with its line number:
+    Python tab or form-feed indentation, an f-string or t-string whose
+    replacement field holds its own quote, a comment, a backslash in the
+    field's expression outside a nested string, a triple-quoted string or another f-string or t-string (an
+    escape before `{` does not hide a field), a carriage
+    return without a line feed, and a string or bracket left open at the end
+    of the file;
+    Ruby heredocs (and a `<<` with no space after it), regular expressions
+    with interpolation, interpolation beyond plain expressions (a string,
+    regex, literal, `/`, `?`, comment or heredoc inside `#{...}`), an `alias`
+    or `undef` whose operands are not complete on its line, percent literals
+    (a `%`
+    where an operand starts, or after an identifier and spaces with none
+    after it, as for `/`), character literals, `=begin` comments, endless
+    methods and the rest outside the subset.
+  - A safe `fn` with no stated return type is emitted `-> ()`.
+  - The checklist no longer suggests the nonexistent `@sandbox(unquarantine)`.
+  - `garnet convert` names its output `<stem>.<lang>.garnet`. It refuses an
+    output path that exists as anything but a regular file, and any output
+    that is the same file as the source or another output, compared by file
+    identity on every platform, so a hard link or another spelling of the
+    source counts. After writing it reads the `.garnet` file back, checks it
+    is what was emitted, and parses it. It prints "N of M constructs mapped without a migration
+    to-do" and "output parses: yes", followed by "parsing is not correctness"
+    (C5-12). The percentage "clean translation" line and the duplicate
+    summary are gone.
+- **`garnet caps-log` fails closed (C5-12).** An existing log it cannot read
+  (not text, unreadable, or not a file) stops the append and is left untouched;
+  it used to be rewritten with a fresh genesis entry. `--help` calls it "a local
+  hash-chained capability log (stub)".
+- **Licensing (C7-25).** `LICENSE` is split into `LICENSE-MIT` and
+  `LICENSE-APACHE`, the full Apache-2.0 text. The packages and the Windows zip
+  ship both, and the dual-license notice is in the README.
+- **Limits, stated plainly.**
+  - Converter output parses but does not compute the same thing. The Rust
+    frontend still drops binary operators: `if x > 3 { x * 2 }` comes out as
+    `if x { nil 3 nil x nil 2 ... }`. The Go frontend keeps `return a + b` as
+    written, but `y := x * 2` becomes a placeholder, so a later `return y - 1`
+    names a variable that no longer exists, and every Go block that spans
+    lines becomes a whole-statement to-do (a block on one line is copied
+    through as one statement). Every converted Rust or Go function needs a
+    line-by-line rewrite. The fix is deferred until after R2 (Q48).
+  - The Ruby converter reads a lexical subset and refuses a file outside it;
+    the Python converter refuses tab or form-feed indentation and the
+    f-strings described above.
+  - The installers check the signature only when `gpg` is installed.
+  - The macOS and Windows binaries are not code-signed.
 
 ### Dogfood matrix — probes run without the caller's interpreter variables
 

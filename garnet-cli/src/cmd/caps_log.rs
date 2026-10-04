@@ -118,16 +118,37 @@ fn caps_for(file: &str) -> Result<(String, Vec<String>, String), ExitCode> {
     Ok((program, caps, caps_blake3))
 }
 
+/// The log's current content: empty for a path that does not exist yet. Any
+/// other path it cannot read as text is an error, never an empty log, so an
+/// append cannot replace an existing chain with a fresh genesis entry.
+fn existing_log(path: &Path) -> Result<String, String> {
+    match std::fs::symlink_metadata(path) {
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(String::new()),
+        Err(e) => Err(format!(
+            "cannot inspect the existing log {}: {e}",
+            path.display()
+        )),
+        Ok(_) if !path.is_file() => Err(format!("{} exists and is not a log file", path.display())),
+        Ok(_) => read_file(path).map_err(|e| format!("cannot read the existing log: {e}")),
+    }
+}
+
 fn append_entry(file: &str, log: Option<&Path>) -> ExitCode {
     let (program, caps, caps_blake3) = match caps_for(file) {
         Ok(v) => v,
         Err(code) => return code,
     };
 
-    let existing = log
-        .filter(|p| p.is_file())
-        .and_then(|p| read_file(p).ok())
-        .unwrap_or_default();
+    let existing = match log {
+        Some(path) => match existing_log(path) {
+            Ok(content) => content,
+            Err(e) => {
+                eprintln!("garnet caps-log: {e}; refusing to overwrite it");
+                return ExitCode::from(1);
+            }
+        },
+        None => String::new(),
+    };
     let lines: Vec<&str> = existing.lines().filter(|l| !l.trim().is_empty()).collect();
     let index = lines.len();
     let prev = match lines.last() {

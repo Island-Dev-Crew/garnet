@@ -13,6 +13,7 @@
 //! exports `parse_and_lift(source, filename) -> Result<Cir, ConvertError>`).
 
 pub mod go;
+pub(crate) mod lex;
 pub mod python;
 pub mod ruby;
 pub mod rust;

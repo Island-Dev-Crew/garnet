@@ -24,9 +24,16 @@
 //!   wrapped in an `Untranslatable` node. Strict mode
 //!   (`fail_on_untranslatable`) turns these into hard errors; default
 //!   mode emits them as commented stubs the human must replace.
-//! - **Sandbox-on-by-default.** Every emitted file starts with `@sandbox`
-//!   (v4.0 SandboxMode default). The converter cannot emit
-//!   `@sandbox(unquarantine)` — that escape hatch requires human audit.
+//! - **Unreviewed by default.** Every emitted file starts with an `@sandbox`
+//!   reviewer comment and an empty `@caps()`. Garnet has no `@sandbox`
+//!   annotation, so the marker is a comment: the reviewer resolves every
+//!   `@migrate_todo`, declares the capabilities the code needs, and runs
+//!   `garnet check`.
+//! - **Every output parses (C1-18).** Simple Python `for`/`while` loops and
+//!   Ruby `EXPR.each do |x|` blocks are lowered to brace form; any other block
+//!   is kept whole as one `@migrate_todo` comment. The emitter parses each
+//!   statement and the finished file with `garnet-parser`, and a statement
+//!   that would not parse becomes a `@migrate_todo` comment instead.
 //!
 //! ## Pipeline
 //!

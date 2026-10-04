@@ -80,7 +80,7 @@ Garnet is the gemstone that emerges from metamorphic pressure — it forms exact
 
 ## What's the license?
 
-Dual-licensed under MIT OR Apache-2.0 (your choice). See [LICENSE](LICENSE). Either license is fine for commercial use, including building proprietary applications on top of Garnet.
+Dual-licensed under MIT OR Apache-2.0 (your choice). See [LICENSE-APACHE](LICENSE-APACHE) and [LICENSE-MIT](LICENSE-MIT). Either license is fine for commercial use, including building proprietary applications on top of Garnet.
 
 ## Can I use it commercially?
 

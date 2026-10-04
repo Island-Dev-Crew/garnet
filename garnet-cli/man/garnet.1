@@ -207,9 +207,11 @@ and print the public key.
 .TP
 .B convert \fILANG\fR \fIFILE\fR
 Convert Rust, Ruby, Python or Go source to Garnet.
-Writes the converted \fI.garnet\fR file with a \fI.lineage.json\fR,
+Writes \fISTEM.LANG.garnet\fR with a \fI.lineage.json\fR,
 a \fI.migrate_todo.md\fR checklist and a \fI.metrics.json\fR summary.
-The output carries \fI@sandbox\fR; lifting it is a human decision.
+The output parses as Garnet; it starts with an \fI@sandbox\fR reviewer
+comment and an empty \fI@caps()\fR, and each statement the tool cannot lower
+is kept as a \fI@migrate_todo\fR comment. Review it, then run \fBgarnet check\fR.
 
 .SS Information
 
