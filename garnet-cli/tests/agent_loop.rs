@@ -327,3 +327,38 @@ fn per_function_changes_are_accepted_but_listed_for_review() {
     );
     assert!(decision.contains("for human review"), "{decision}");
 }
+
+// Codex lane B on #607 (01751aca): without --record-dir nothing is written, yet the
+// loop said the per-function changes were "listed for review in diff_caps.txt".
+#[test]
+fn per_function_changes_without_a_record_dir_are_printed_not_promised() {
+    let dir = tempfile::TempDir::new().unwrap();
+    let baseline = write(dir.path(), "baseline.garnet", PER_FN_BASELINE);
+    let proposal = write(dir.path(), "proposal.garnet", PER_FN_PROPOSAL);
+    let out = garnet()
+        .args(["agent-loop", "--baseline"])
+        .arg(&baseline)
+        .arg("--proposal")
+        .arg(&proposal)
+        .arg("--seal-out")
+        .arg(dir.path().join("seal.json"))
+        .args([
+            "--attest",
+            "agent=scripted-agent-v1",
+            "--gate-version",
+            "dogfood-gate-v1",
+        ])
+        .output()
+        .unwrap();
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(out.status.success(), "{stdout}");
+    assert!(
+        !stdout.contains("diff_caps.txt"),
+        "nothing is written without --record-dir: {stdout}"
+    );
+    assert!(
+        stdout.contains("~ helper gained: fs"),
+        "the changes are named: {stdout}"
+    );
+    assert!(!dir.path().join("diff_caps.txt").exists());
+}

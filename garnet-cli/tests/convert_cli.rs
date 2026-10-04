@@ -68,3 +68,31 @@ fn summary_counts_constructs_reports_parsing_and_prints_once() {
         assert!(!stdout.contains(stale), "{stale:?} in {stdout}");
     }
 }
+
+// Codex lane B on #607 (01751aca): "output parses: yes" was checked on the
+// in-memory text. With sample.python.garnet a symlink to its own metrics
+// sidecar, the metrics JSON overwrote the Garnet output after it was written,
+// and the file on disk no longer parsed.
+#[cfg(unix)]
+#[test]
+fn an_output_that_is_a_link_to_another_output_is_refused() {
+    for kind in ["symlink", "hard link"] {
+        let dir = tempfile::TempDir::new().unwrap();
+        std::fs::write(dir.path().join("sample.py"), "def one():\n    return 1\n").unwrap();
+        let target = dir.path().join("sample.python.garnet");
+        let metrics = dir.path().join("sample.python.garnet.metrics.json");
+        std::fs::write(&metrics, "{}\n").unwrap();
+        if kind == "symlink" {
+            std::os::unix::fs::symlink("sample.python.garnet.metrics.json", &target).unwrap();
+        } else {
+            std::fs::hard_link(&metrics, &target).unwrap();
+        }
+        let out = convert(dir.path(), "python", "sample.py");
+        let stdout = String::from_utf8_lossy(&out.stdout);
+        assert!(
+            !out.status.success(),
+            "{kind}: the conversion must fail:\n{stdout}"
+        );
+        assert!(!stdout.contains("output parses: yes"), "{kind}: {stdout}");
+    }
+}
