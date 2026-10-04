@@ -25,10 +25,11 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   a placeholder and every block that spans lines into a whole-statement to-do,
   so later lines can name variables that no longer exist; a block on one line
   is copied through as one statement (Q48; after R2). In the Python, Go and
-  Ruby frontends a statement that holds a string or character literal is
-  kept as a to-do.
+  Ruby frontends a statement copied through as text that holds a string or
+  character literal is kept as a to-do.
 - The Ruby converter reads a lexical subset and refuses a file outside it
-  (heredocs, percent literals and the like). The Python converter refuses tab
+  (heredocs, percent literals, interpolation beyond plain expressions and the
+  like). The Python converter refuses tab
   or form-feed indentation and f-strings whose replacement fields hold their
   own quote, a comment or a backslash.
 - WV-6 (native-Windows acceptance) ships as a disclosed partial.
@@ -163,27 +164,33 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
       open (`if` and its kin count only where an expression starts), after a
       trailing operator, comma or modifier (`if`, `unless`, `rescue` ...), or
       before a line that starts with `.`; a blank or comment line does not
-      end an open statement, and a word after `.` at the end of the line
-      before is a method name, not a keyword. A def, class or module whose header the
+      end an open statement, a word after `.` at the end of the line before is
+      a method name, not a keyword, and so are the operands of `alias` and
+      `undef`. A def, class or module whose header the
       frontend does not read, whose body has a `rescue`/`ensure`/`else`
       clause, or whose `end` shares its line with more code, is kept whole.
     Only a statement on one line becomes code, and never one whose code holds
     `#{`: text that was inert in the source, such as `"#{x}"` in a Python or Go
     string or `'#{x}'` in Ruby, would run as Garnet interpolation, so it is kept
-    as a to-do. Nor does a Python, Go or Ruby statement that holds a quote
-    character: those frontends copy statement text through, and Garnet may
+    as a to-do. Nor does a statement the Python, Go or Ruby frontend copies
+    through as source text when that text holds a quote character: Garnet may
     read its quoting (triple quotes, single quotes, raw strings, runes)
-    differently, so string contents could become code. Class-level statements become
+    differently, so string contents could become code. String values the
+    converter builds itself, such as Ruby `puts "x"`, are escaped and stay. Class-level statements become
     to-dos instead of being dropped, and an import is skipped only when it is
     the whole statement (anything after a `;` on its line is kept; a Ruby
-    `require` only in its exact form, `require "x"` or `require("x")`). What a frontend does not lex is refused with its line number:
+    `require` only in its exact form, `require "x"` or `require("x")`), and
+    an `eval`, `exec` or `instance_eval` becomes an untranslatable note only
+    when nothing shares its statement. What a frontend does not lex is refused with its line number:
     Python tab or form-feed indentation, an f-string or t-string whose
     replacement field holds its own quote, a comment or a backslash outside a
     nested string (an escape before `{` does not hide a field), a carriage
     return without a line feed, and a string or bracket left open at the end
     of the file;
     Ruby heredocs (and a `<<` with no space after it), regular expressions
-    with interpolation, percent literals (a `%`
+    with interpolation, interpolation beyond plain expressions (a string,
+    regex, literal, `/`, `?`, comment or heredoc inside `#{...}`), percent
+    literals (a `%`
     where an operand starts, or after an identifier and spaces with none
     after it, as for `/`), character literals, `=begin` comments, endless
     methods and the rest outside the subset.

@@ -487,6 +487,9 @@ pub fn ruby_line_after(line: &str, name_first: bool) -> Result<RubyLine<'_>, &'s
     let mut loop_do = false;
     // The next word is a method name (after `def`, `.` or `::`), not a keyword.
     let mut name_next = name_first;
+    // The rest of the statement holds method names (the operands of `alias`
+    // and `undef`), not keywords.
+    let mut names_rest = false;
     // The last token is an operator, a comma or `\`.
     let mut last_op = false;
     let mut code_end = b.len();
@@ -541,6 +544,7 @@ pub fn ruby_line_after(line: &str, name_first: bool) -> Result<RubyLine<'_>, &'s
             b';' => {
                 out.semicolon = true;
                 after_value = false;
+                names_rest = false;
             }
             b'?' if operand_position(b, i)
                 && b.get(i + 1).is_some_and(|c| !c.is_ascii_whitespace())
@@ -659,7 +663,7 @@ pub fn ruby_line_after(line: &str, name_first: bool) -> Result<RubyLine<'_>, &'s
                     continue;
                 }
                 last_op = false;
-                if name_next || c.is_ascii_digit() {
+                if name_next || names_rest || c.is_ascii_digit() {
                     name_next = false;
                     after_value = true;
                     continue;
@@ -702,6 +706,10 @@ pub fn ruby_line_after(line: &str, name_first: bool) -> Result<RubyLine<'_>, &'s
                     "end" => {
                         out.blocks -= 1;
                         after_value = true;
+                    }
+                    "alias" | "undef" => {
+                        names_rest = true;
+                        after_value = false;
                     }
                     "and" | "or" | "not" | "rescue" => {
                         after_value = false;
@@ -789,22 +797,55 @@ fn scan_rb_single(b: &[u8], mut i: usize) -> Result<usize, &'static str> {
     }
 }
 
+const INTERPOLATION: &str =
+    "interpolation beyond plain expressions (a string, regex, percent or character literal, `/`, `?`, a comment or a heredoc)";
+
 /// Scan a double-quoted or backtick Ruby string from just after its quote `q`.
 fn scan_rb_double(b: &[u8], mut i: usize, q: u8) -> Result<usize, &'static str> {
     while i < b.len() {
         match b[i] {
             b'\\' => i += 2,
             b'#' if b.get(i + 1) == Some(&b'{') => {
+                // Interpolation holds plain expressions only (names, numbers,
+                // calls, indexing, arithmetic): a string, regex, percent or
+                // character literal, comment or heredoc inside it could hide
+                // where it ends.
                 let mut depth = 1;
                 i += 2;
                 while i < b.len() && depth > 0 {
                     match b[i] {
                         b'{' => depth += 1,
                         b'}' => depth -= 1,
-                        b'"' | b'\'' | b'`' => {
-                            return Err("interpolation that contains a quoted string")
+                        b'<' if b.get(i + 1) == Some(&b'<') => return Err(INTERPOLATION),
+                        // A predicate method name such as `empty?`.
+                        b'?' if i > 0 && (b[i - 1].is_ascii_alphanumeric() || b[i - 1] == b'_') => {
                         }
-                        _ => {}
+                        c if c.is_ascii_alphanumeric()
+                            || c >= 0x80
+                            || matches!(
+                                c,
+                                b' ' | b'\t'
+                                    | b'_'
+                                    | b'.'
+                                    | b'@'
+                                    | b'$'
+                                    | b':'
+                                    | b'('
+                                    | b')'
+                                    | b'['
+                                    | b']'
+                                    | b','
+                                    | b'+'
+                                    | b'-'
+                                    | b'*'
+                                    | b'='
+                                    | b'!'
+                                    | b'<'
+                                    | b'>'
+                                    | b'&'
+                                    | b'|'
+                            ) => {}
+                        _ => return Err(INTERPOLATION),
                     }
                     i += 1;
                 }

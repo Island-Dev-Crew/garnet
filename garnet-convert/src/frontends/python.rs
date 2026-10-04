@@ -191,7 +191,10 @@ impl<'a> PythonParser<'a> {
         if (code.starts_with("import ") || code.starts_with("from ")) && !statement_separator {
             return Ok(None);
         }
-        if code.starts_with("eval(") || code.starts_with("exec(") {
+        if (code.starts_with("eval(") || code.starts_with("exec("))
+            && !statement_separator
+            && end == start + 1
+        {
             return Ok(Some(Cir::Untranslatable {
                 reason: "Python eval/exec — Garnet has no runtime source evaluation".into(),
                 lineage: self.lineage(start),

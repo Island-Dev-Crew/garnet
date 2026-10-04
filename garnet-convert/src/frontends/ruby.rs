@@ -170,13 +170,16 @@ impl<'a> RubyParser<'a> {
         if text.lines().count() == 1 && is_plain_require(ruby_code(&text)) {
             return self.parse_item();
         }
-        if first == "method_missing" {
+        // `method_missing` and `eval` stand for their whole statement only when
+        // nothing else shares it; otherwise the statement is kept as a to-do.
+        let alone = text.lines().count() == 1 && !ruby_line(&text).is_ok_and(|l| l.semicolon);
+        if first == "method_missing" && alone {
             return Ok(Some(self.todo(
                 start,
                 "Ruby method_missing — use Garnet @dynamic per Mini-Spec v1.0 §11.7".into(),
             )));
         }
-        if matches!(first, "eval" | "instance_eval") {
+        if matches!(first, "eval" | "instance_eval") && alone {
             return Ok(Some(Cir::Untranslatable {
                 reason: "Ruby eval / instance_eval — Garnet has no runtime source evaluation"
                     .into(),
