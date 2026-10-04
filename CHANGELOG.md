@@ -172,8 +172,9 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
       `;` or a keyword block (even one closed on its line, such as
       `puts def x() ... end`) is kept whole rather than read by `puts`,
       `print`, `yield` or another special form. A `def` whose header opens
-      another block (a `def` in a parameter default) or starts its name on the
-      next line is kept whole, and so is a def, class or module whose header
+      another block (a `def` in a parameter default), starts its name on the
+      next line, or holds a string or comment in its parameter list is kept
+      whole, and so is a def, class or module whose header
       the frontend does not read, whose body has a `rescue`/`ensure`/`else`
       clause, or whose `end` is followed by more of its statement (code on the
       line, or a `.` chain on the next).

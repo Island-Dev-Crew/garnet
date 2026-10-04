@@ -135,6 +135,18 @@ impl EmitState {
         self.push(s);
     }
 
+    /// Push `text` as comment lines: the first after `first`, the rest after
+    /// `rest`. Lines break at `\n` and at a bare `\r`, so no part of the text
+    /// lands outside a comment, whatever a reader treats as a line end.
+    fn push_comment(&mut self, first: &str, rest: &str, text: &str) {
+        let text = text.replace("\r\n", "\n");
+        let mut lines = text.split(['\n', '\r']);
+        self.push_line(&format!("{first}{}", lines.next().unwrap_or("")));
+        for line in lines {
+            self.push_line(&format!("{rest}{line}"));
+        }
+    }
+
     fn witness(&mut self, cir: &Cir, kind: &str) {
         self.cir_index += 1;
         let lin = cir.lineage();
@@ -390,11 +402,11 @@ fn emit_cir(s: &mut EmitState, cir: &Cir) {
                 emit_line: s.line,
             });
             // A note may carry a whole block of source; every line stays a comment.
-            let mut lines = note.lines();
-            s.push_line(&format!("# @migrate_todo: {}", lines.next().unwrap_or("")));
-            for line in lines {
-                s.push_line(&format!("#   {line}"));
-            }
+            s.push_comment(
+                "# @migrate_todo: ",
+                "#   ",
+                note.trim_end_matches(['\n', '\r']),
+            );
             // In a function body, still emit the placeholder so there is a value to
             // work with. Module and impl level take items only.
             if s.stmt_depth > 0 {
@@ -403,7 +415,11 @@ fn emit_cir(s: &mut EmitState, cir: &Cir) {
         }
         Cir::Untranslatable { reason, .. } => {
             s.witness(cir, "Untranslatable");
-            s.push_line(&format!("# @untranslatable: {}", reason));
+            s.push_comment(
+                "# @untranslatable: ",
+                "#   ",
+                reason.trim_end_matches(['\n', '\r']),
+            );
             s.push_line("# (the original construct has no Garnet equivalent; refactor required)");
         }
         // Expressions rendered on their own line as statements

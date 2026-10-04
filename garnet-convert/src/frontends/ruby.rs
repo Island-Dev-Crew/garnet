@@ -264,19 +264,26 @@ impl<'a> RubyParser<'a> {
         // A header that opens a block besides its own (a `def` in a parameter
         // default) is not read: the definition is kept whole. The header runs
         // until its parameter parentheses close.
+        // Nor is one whose parameter list holds a string, or a comment before
+        // it closes: the parameters are read by characters, and a `)` there
+        // could end them early.
         let mut openers = 0;
         let mut brackets = 0;
+        let mut unread = false;
         for line in self.remaining().split_inclusive('\n') {
-            let Ok(l) = ruby_line(line.trim_end_matches(['\n', '\r'])) else {
+            let line = line.trim_end_matches(['\n', '\r']);
+            let Ok(l) = ruby_line(line) else {
                 break;
             };
             openers += l.openers;
             brackets += l.brackets;
+            unread |= l.code.contains(['"', '\'', '`']);
+            unread |= brackets > 0 && l.code.len() < line.trim_end().len();
             if brackets <= 0 {
                 break;
             }
         }
-        if openers > 1 {
+        if openers > 1 || unread {
             return Ok(self.whole_todo(start, "def"));
         }
         self.pos += "def".len();

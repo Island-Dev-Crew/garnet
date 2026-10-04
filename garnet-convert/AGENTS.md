@@ -29,6 +29,9 @@ Owns migration frontends and conversion helpers for lifting Rust, Ruby, Python, 
   plain expressions, an `alias` or `undef` with operands on another line,
   percent literals, character literals, `=begin`, endless
   methods, multi-line strings).
+- Every line of a kept note or untranslatable reason is emitted as a comment;
+  the text is split at `\n` and at a bare `\r`, so none of it lands outside a
+  comment whatever a reader treats as a line end.
 - No emitted code line holds `#{`: the emitter keeps any construct whose code
   (not its comments) contains it as a to-do, because source text that was inert
   would run as Garnet string interpolation. Likewise any construct that copies
