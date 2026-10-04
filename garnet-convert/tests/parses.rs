@@ -174,3 +174,102 @@ fn checklist_without_todos_does_not_claim_a_clean_conversion() {
         "{checklist}"
     );
 }
+
+// Codex lane B on #607 (01751aca): a trailing comment on a block header, a
+// statement that spans physical lines, or a Go block read line by line left
+// fragments of the statement active while its header became a comment.
+
+fn assert_inactive(garnet: &str, fragment: &str) {
+    assert!(
+        !code_lines(garnet).iter().any(|l| l.contains(fragment)),
+        "`{fragment}` must not be active code:\n{garnet}"
+    );
+}
+
+#[test]
+fn ruby_each_with_a_trailing_comment_is_still_lowered_inside_its_def() {
+    let src = "def save_all(items)\n  items.each do |item| # each enabled item\n    persist(item)\n  end\n  return 0\nend\n";
+    let (garnet, _) = convert_src(src, SourceLang::Ruby, "ruby", "save_all.rb");
+    assert_parses(&garnet);
+    assert!(
+        !garnet.contains("unparsed Ruby statement: return 0"),
+        "the def must not close early:\n{garnet}"
+    );
+    let code = code_lines(&garnet);
+    assert!(
+        code.iter().any(|l| l.starts_with("for item in items")),
+        "{garnet}"
+    );
+    assert!(code.contains(&"return 0"), "{garnet}");
+}
+
+#[test]
+fn ruby_keyword_block_with_a_trailing_comment_is_kept_whole() {
+    let src =
+        "def save(ready)\n  if ready # only when ready\n    persist()\n  end\n  return 0\nend\n";
+    let (garnet, _) = convert_src(src, SourceLang::Ruby, "ruby", "save.rb");
+    assert_parses(&garnet);
+    assert_inactive(&garnet, "persist()");
+    assert!(
+        !garnet.contains("unparsed Ruby statement: return 0"),
+        "{garnet}"
+    );
+}
+
+#[test]
+fn python_block_header_with_a_trailing_comment_is_kept_whole() {
+    let src =
+        "def save(enabled):\n    if enabled:  # optional save\n        persist()\n    return 0\n";
+    let (garnet, _) = convert_src(src, SourceLang::Python, "python", "save.py");
+    assert_parses(&garnet);
+    assert_inactive(&garnet, "persist()");
+    assert!(garnet.contains("if enabled:  # optional save"), "{garnet}");
+}
+
+#[test]
+fn python_statement_spanning_lines_is_kept_whole() {
+    let src = "def run():\n    result = process(\n        persist()\n    )\n    return result\n";
+    let (garnet, _) = convert_src(src, SourceLang::Python, "python", "run.py");
+    assert_parses(&garnet);
+    assert_inactive(&garnet, "persist()");
+    assert!(garnet.contains("result = process("), "{garnet}");
+}
+
+#[test]
+fn go_block_is_kept_whole_and_does_not_close_the_function() {
+    for header in ["if enabled {", "if enabled { // optional save"] {
+        let src = format!(
+            "package main\n\nfunc save(enabled bool) int {{\n\t{header}\n\t\treturn persist()\n\t}}\n\treturn 0\n}}\n"
+        );
+        let (garnet, _) = convert_src(&src, SourceLang::Go, "go", "save.go");
+        assert_parses(&garnet);
+        assert_inactive(&garnet, "persist()");
+        assert!(
+            !garnet.contains("unparsed Go item: return 0"),
+            "{header}:\n{garnet}"
+        );
+        assert!(
+            code_lines(&garnet).contains(&"return 0"),
+            "{header}:\n{garnet}"
+        );
+    }
+}
+
+#[test]
+fn go_statement_spanning_lines_is_kept_whole() {
+    let src = "package main\n\nfunc run() int {\n\tresult := process(\n\t\tpersist(),\n\t)\n\treturn result\n}\n";
+    let (garnet, _) = convert_src(src, SourceLang::Go, "go", "run.go");
+    assert_parses(&garnet);
+    assert_inactive(&garnet, "persist()");
+}
+
+#[test]
+fn go_closure_block_is_kept_whole_and_does_not_close_the_function() {
+    let src =
+        "package main\n\nfunc run() int {\n\tdefer func() {\n\t\tpersist()\n\t}()\n\treturn 0\n}\n";
+    let (garnet, _) = convert_src(src, SourceLang::Go, "go", "run.go");
+    assert_parses(&garnet);
+    assert_inactive(&garnet, "persist()");
+    assert!(!garnet.contains("unparsed Go item: return 0"), "{garnet}");
+    assert!(code_lines(&garnet).contains(&"return 0"), "{garnet}");
+}
