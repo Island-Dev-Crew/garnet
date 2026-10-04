@@ -178,6 +178,12 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
       regular expression or comment refuses the file: Ruby reads a form feed
       as a blank and stops at `^D`, `^Z` or NUL). Its blanks are those Ruby
       reads in a line, space, tab and carriage return, in every check.
+      Whether a `/`, `%` or `?` opens a literal is decided from the token
+      before as the lexer read it: after a value (`ok?`, `$!`, `x.if`) it is
+      an operator; after an operator, a keyword that takes an operand, or
+      `return`, `break` or `next`, it opens one; after an identifier and a
+      blank with no blank after it (`ok? /x`), Ruby's reading is ambiguous and
+      the file is refused.
       Lines join while a bracket or keyword block is
       open (`if` and its kin count only where an expression starts; a `do` is
       a loop's separator only while the loop's condition is open, which ends

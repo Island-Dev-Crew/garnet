@@ -539,8 +539,18 @@ pub fn ruby_line_after(line: &str, name_first: bool) -> Result<RubyLine<'_>, &'s
         min_blocks: 0,
         clause_at: None,
     };
-    // The token before ends an expression: `if` after it is a modifier.
+    // The token before ends an expression: `if` after it is a modifier, and
+    // `/`, `%` or `?` after it is an operator. Otherwise an operand starts.
     let mut after_value = false;
+    // The token before is an identifier that may be a method call (`ok?`
+    // included), and `blank_before`: blanks follow it. `word /x` and `word %x`
+    // are then ambiguous in Ruby.
+    let mut last_ident = false;
+    let mut blank_before = false;
+    // The token before is `return`, `break` or `next` (Ruby's EXPR_MID): an
+    // operand starts (`/` opens a regular expression), but `if` and its kin
+    // after it are modifiers.
+    let mut after_mid = false;
     // A `while`/`until`/`for` whose condition is still open on this line, at
     // this bracket depth: a `do` there is its separator. The condition ends at
     // that `do`, at a `;` at the same depth, or at the line end.
@@ -559,6 +569,16 @@ pub fn ruby_line_after(line: &str, name_first: bool) -> Result<RubyLine<'_>, &'s
     while i < b.len() {
         let c = b[i];
         let mut op = true;
+        let spaced_ident = last_ident && blank_before;
+        // An operand starts here: `/`, `%` or `?` opens a literal.
+        let operand = !after_value || after_mid;
+        if is_rb_blank(c) {
+            blank_before = true;
+        } else {
+            last_ident = false;
+            blank_before = false;
+            after_mid = false;
+        }
         // After `.`, `&.`, `::` or `def` the method name is the next token of
         // any kind: an operator name (`obj.[]`, `obj.!`, `def ==`) or the
         // `obj.()` call takes it, so a later word (`do`) is a keyword again.
@@ -594,10 +614,10 @@ pub fn ruby_line_after(line: &str, name_first: bool) -> Result<RubyLine<'_>, &'s
                 // Where an operand starts, `%` begins a percent literal whatever
                 // follows it; after a spaced identifier with no space after it,
                 // Ruby reads one too. Elsewhere it is the modulo operator.
-                if operand_position(b, i) {
+                if operand {
                     return Err("a percent literal");
                 }
-                let spaced_after_word = spaced_after_identifier(b, i)
+                let spaced_after_word = spaced_ident
                     && !b
                         .get(i + 1)
                         .is_some_and(|c| c.is_ascii_whitespace() || *c == b'=');
@@ -627,7 +647,7 @@ pub fn ruby_line_after(line: &str, name_first: bool) -> Result<RubyLine<'_>, &'s
                 after_value = false;
                 names_rest = false;
             }
-            b'?' if operand_position(b, i)
+            b'?' if operand
                 && b.get(i + 1).is_some_and(|c| !c.is_ascii_whitespace())
                 && !b
                     .get(i + 2)
@@ -661,12 +681,12 @@ pub fn ruby_line_after(line: &str, name_first: bool) -> Result<RubyLine<'_>, &'s
                 continue;
             }
             b'/' => {
-                let spaced_after_word = spaced_after_identifier(b, i)
-                    && !b.get(i + 1).is_some_and(|c| c.is_ascii_whitespace());
+                let spaced_after_word =
+                    spaced_ident && !b.get(i + 1).is_some_and(|c| c.is_ascii_whitespace());
                 if spaced_after_word {
                     return Err("an ambiguous / that may start a regular expression");
                 }
-                if operand_position(b, i) {
+                if operand {
                     i += 1;
                     loop {
                         match b.get(i) {
@@ -761,6 +781,7 @@ pub fn ruby_line_after(line: &str, name_first: bool) -> Result<RubyLine<'_>, &'s
                 if name_next || names_rest || c.is_ascii_digit() {
                     name_next = false;
                     after_value = true;
+                    last_ident = !c.is_ascii_digit();
                     continue;
                 }
                 match &line[start..i] {
@@ -833,7 +854,14 @@ pub fn ruby_line_after(line: &str, name_first: bool) -> Result<RubyLine<'_>, &'s
                             Some(out.clause_at.map_or(out.blocks, |d| d.min(out.blocks)));
                         after_value = false;
                     }
-                    _ => after_value = true,
+                    "return" | "break" | "next" => {
+                        after_value = true;
+                        after_mid = true;
+                    }
+                    _ => {
+                        after_value = true;
+                        last_ident = true;
+                    }
                 }
                 continue;
             }
@@ -982,59 +1010,6 @@ fn scan_rb_double(b: &[u8], mut i: usize, q: u8) -> Result<usize, &'static str> 
         }
     }
     Err("a string that continues on the next line")
-}
-
-/// Whether the byte at `i` starts an operand: nothing but an opening bracket,
-/// separator or operator (or a keyword that takes an expression) precedes it.
-fn operand_position(b: &[u8], i: usize) -> bool {
-    let mut j = i;
-    while j > 0 && is_rb_blank(b[j - 1]) {
-        j -= 1;
-    }
-    if j == 0 {
-        return true;
-    }
-    let prev = b[j - 1];
-    if prev.is_ascii_alphanumeric() || prev == b'_' {
-        let word_end = j;
-        let mut start = j;
-        while start > 0 && (b[start - 1].is_ascii_alphanumeric() || b[start - 1] == b'_') {
-            start -= 1;
-        }
-        let word = &b[start..word_end];
-        return matches!(
-            word,
-            b"if"
-                | b"unless"
-                | b"when"
-                | b"while"
-                | b"until"
-                | b"and"
-                | b"or"
-                | b"not"
-                | b"return"
-                | b"in"
-        );
-    }
-    !matches!(prev, b')' | b']' | b'}' | b'"' | b'\'' | b'`')
-}
-
-/// Whether blanks separate the byte at `i` from an identifier before
-/// them (not a keyword that takes an expression), so `word /x` or `word %x` is
-/// ambiguous in Ruby.
-fn spaced_after_identifier(b: &[u8], i: usize) -> bool {
-    let mut end = i;
-    while end > 0 && is_rb_blank(b[end - 1]) {
-        end -= 1;
-    }
-    if end == i {
-        return false;
-    }
-    let mut start = end;
-    while start > 0 && (b[start - 1].is_ascii_alphanumeric() || b[start - 1] == b'_') {
-        start -= 1;
-    }
-    start < end && !operand_position(b, i)
 }
 
 #[cfg(test)]

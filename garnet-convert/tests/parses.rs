@@ -1740,18 +1740,72 @@ fn a_control_character_in_ruby_code_refuses_the_file() {
 /// carriage return.
 #[test]
 fn a_carriage_return_is_a_ruby_blank_everywhere() {
-    for src in [
-        "def save\n  value\r/ work do /1/; 0\n    persist()\n  end\nend\n",
-        "def save\n  value\r\t/ work do /1/; 0\n    persist()\n  end\nend\n",
-        "def save\n  value / work do /1/; 0\n    persist()\n  end\nend\n",
-        "def save\n  def foo()\r= keep()\n  persist()\nend\n",
-    ] {
-        match try_convert(src, SourceLang::Ruby, "ruby", "save.rb") {
-            Err(e) => assert!(
+    // Each source with a carriage return converts as the same source with a
+    // space does, and neither leaves the block's body active.
+    let outcome = |src: &str| match try_convert(src, SourceLang::Ruby, "ruby", "save.rb") {
+        Err(e) => {
+            assert!(
                 e.contains("ambiguous /") || e.contains("endless method"),
                 "{src:?}: {e}"
-            ),
-            Ok(garnet) => panic!("converted: {src:?}\n{garnet}"),
+            );
+            None
         }
+        Ok(garnet) => {
+            assert_parses(&garnet);
+            assert_inactive(&garnet, "persist()");
+            Some(code_lines(&garnet).len())
+        }
+    };
+    for (cr, space) in [
+        (
+            "def save\n  value\r/ work do /1/; 0\n    persist()\n  end\nend\n",
+            "def save\n  value / work do /1/; 0\n    persist()\n  end\nend\n",
+        ),
+        (
+            "def save\n  value\r\t/ work do /1/; 0\n    persist()\n  end\nend\n",
+            "def save\n  value \t/ work do /1/; 0\n    persist()\n  end\nend\n",
+        ),
+        (
+            "def save\n  def foo()\r= keep()\n  persist()\nend\n",
+            "def save\n  def foo() = keep()\n  persist()\nend\n",
+        ),
+    ] {
+        assert_eq!(outcome(cr), outcome(space), "{cr:?} / {space:?}");
     }
+}
+
+/// Codex round 22: whether a `/` or `%` divides or opens a literal was decided
+/// by scanning bytes backward, which disagreed with the lexer's own record of
+/// the token before: after `ok?`, `ok!`, `$!` or a keyword-shaped method name
+/// (`x.if`) the `/` divides, but the scan read a regular expression that hid
+/// the block's `do`. Both now come from the token before, as the lexer read it.
+#[test]
+fn a_division_after_a_value_does_not_hide_a_block() {
+    for head in [
+        "ok? / work do 1/2",
+        "ok! / work do 1/2",
+        "$! / work do 1/2",
+        "x.if / work do 1/2",
+        "x.end / work do 1/2",
+        // Controls: a word, an instance variable, a number, and `%`.
+        "value / work do 1/2",
+        "@v / work do 1/2",
+        "4 / work do 1/2",
+        "ok? % work do 1%2",
+    ] {
+        let src = format!("def save\n  {head}\n    persist()\n  end\nend\n");
+        let (garnet, _) = convert_src(&src, SourceLang::Ruby, "ruby", "save.rb");
+        assert_parses(&garnet);
+        assert_inactive(&garnet, "persist()");
+    }
+    // After `return` an operand starts: `/ 2 /` is a regular expression that
+    // ends its line, so the next line is a statement of its own.
+    let (garnet, _) = convert_src(
+        "def save\n  return / 2 /\n  persist()\nend\n",
+        SourceLang::Ruby,
+        "ruby",
+        "save.rb",
+    );
+    assert_parses(&garnet);
+    assert!(code_lines(&garnet).contains(&"persist()"), "{garnet}");
 }

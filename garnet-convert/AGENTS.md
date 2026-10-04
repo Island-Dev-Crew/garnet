@@ -26,7 +26,9 @@ Owns migration frontends and conversion helpers for lifting Rust, Ruby, Python, 
   so a later `do` opens a block), and the method name due after `.`, `&.`, `::`
   or `def` is the next token of any kind, an operator name (`obj.[]`) included.
   Every Ruby blank check uses one set, space, tab and carriage return
-  (`is_rb_blank`), the blanks Ruby reads inside a line. Only a statement on one line becomes code.
+  (`is_rb_blank`), the blanks Ruby reads inside a line. Whether `/`, `%` or `?`
+  opens a literal comes from the lexer's forward state (`after_value`,
+  `after_mid`, `last_ident`), never from scanning bytes backward. Only a statement on one line becomes code.
 - What a frontend does not lex is refused with its line number, never guessed:
   Python tab or form-feed indentation, a carriage return without a line feed,
   and f-strings or t-strings whose replacement fields hold their own quote, a
