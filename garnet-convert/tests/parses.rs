@@ -1214,3 +1214,23 @@ fn python_fstring_inside_a_replacement_field_is_refused() {
     let err = try_convert(src, SourceLang::Python, "python", "save.py").unwrap_err();
     assert!(err.contains("f-string") && err.contains("line 2"), "{err}");
 }
+
+// Codex lane B, round 10 on #607 (d2f0c3e0).
+
+#[test]
+fn ruby_definition_inside_another_statement_is_never_lost() {
+    for src in [
+        "def outer\n  puts def save() persist() end\nend\n",
+        "def outer\n  print def save() persist() end\nend\n",
+        "def outer(x = def save; persist; end)\n  0\nend\n",
+        "def outer\n  return def save() persist() end\nend\n",
+    ] {
+        let (garnet, checklist) = convert_src(src, SourceLang::Ruby, "ruby", "outer.rb");
+        assert_parses(&garnet);
+        assert_inactive(&garnet, "persist");
+        assert!(
+            checklist.contains("def save"),
+            "kept as a to-do: {src:?}\n{checklist}"
+        );
+    }
+}
