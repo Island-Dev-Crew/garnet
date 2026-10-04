@@ -234,19 +234,30 @@ enum Outcome<'a> {
 /// trust artifacts** — capability_manifest.json (S36), diff_caps.txt (S37),
 /// seal.json (S38), transparency_log.jsonl (S68) — plus a `decision.md` that states its scope.
 /// On REJECT it records the refusal (the negative proof): no seal is ever written.
-fn write_record(a: &Args, exe: &std::path::Path, diff_stdout: &[u8], outcome: &Outcome) {
+/// Returns false if `--record-dir` was given and any artifact could not be
+/// written; each failure is named on stderr.
+fn write_record(a: &Args, exe: &std::path::Path, diff_stdout: &[u8], outcome: &Outcome) -> bool {
     let Some(dir) = a.record_dir.as_deref() else {
-        return;
+        return true;
     };
     if let Err(e) = std::fs::create_dir_all(dir) {
         eprintln!(
             "garnet agent-loop: cannot create --record-dir `{}`: {e}",
             dir.display()
         );
-        return;
+        return false;
     }
+    let mut failed: Vec<String> = Vec::new();
+    let mut put = |name: &str, result: std::io::Result<()>| {
+        if let Err(e) = result {
+            failed.push(format!("{name}: {e}"));
+        }
+    };
     // Artifact 2 — the diff-caps capability-surface decision (always captured).
-    let _ = std::fs::write(dir.join("diff_caps.txt"), diff_stdout);
+    put(
+        "diff_caps.txt",
+        std::fs::write(dir.join("diff_caps.txt"), diff_stdout),
+    );
 
     let (gained, added) = per_function_changes(diff_stdout);
     let per_function = if gained + added > 0 {
@@ -302,24 +313,55 @@ fn write_record(a: &Args, exe: &std::path::Path, diff_stdout: &[u8], outcome: &O
             a.backend,
         ),
     };
-    let _ = std::fs::write(dir.join("decision.md"), decision);
+    put(
+        "decision.md",
+        std::fs::write(dir.join("decision.md"), decision),
+    );
 
     match outcome {
         Outcome::Accepted { run_stdout, .. } => {
             // Artifact 1 — the capability manifest (S36).
-            if let Ok(o) = Command::new(exe).arg("caps").arg(&a.proposal).output() {
-                let _ = std::fs::write(dir.join("capability_manifest.json"), o.stdout);
-            }
+            let manifest = Command::new(exe).arg("caps").arg(&a.proposal).output();
+            put(
+                "capability_manifest.json",
+                match manifest {
+                    Ok(o) if o.status.success() => {
+                        std::fs::write(dir.join("capability_manifest.json"), o.stdout)
+                    }
+                    Ok(o) => Err(std::io::Error::other(format!(
+                        "garnet caps exited {}",
+                        o.status
+                    ))),
+                    Err(e) => Err(e),
+                },
+            );
             // Artifact 3 — the in-toto seal (S38), copied from `--seal-out`.
-            let _ = std::fs::copy(&a.seal_out, dir.join("seal.json"));
+            put(
+                "seal.json",
+                std::fs::copy(&a.seal_out, dir.join("seal.json")).map(|_| ()),
+            );
             // Artifact 4 — the transparency-log entry (S68), appended + chain-verifiable.
-            let _ = Command::new(exe)
+            let log = Command::new(exe)
                 .arg("caps-log")
                 .arg(&a.proposal)
                 .arg("--log")
                 .arg(dir.join("transparency_log.jsonl"))
                 .output();
-            let _ = std::fs::write(dir.join("run_output.txt"), run_stdout);
+            put(
+                "transparency_log.jsonl",
+                match log {
+                    Ok(o) if o.status.success() => Ok(()),
+                    Ok(o) => Err(std::io::Error::other(format!(
+                        "garnet caps-log exited {}",
+                        o.status
+                    ))),
+                    Err(e) => Err(e),
+                },
+            );
+            put(
+                "run_output.txt",
+                std::fs::write(dir.join("run_output.txt"), run_stdout),
+            );
         }
         Outcome::RejectedCheck {
             check_stdout,
@@ -328,13 +370,20 @@ fn write_record(a: &Args, exe: &std::path::Path, diff_stdout: &[u8], outcome: &O
             let mut check = Vec::with_capacity(check_stdout.len() + check_stderr.len());
             check.extend_from_slice(check_stdout);
             check.extend_from_slice(check_stderr);
-            let _ = std::fs::write(dir.join("check.txt"), check);
+            put("check.txt", std::fs::write(dir.join("check.txt"), check));
         }
         Outcome::RejectedRun { run_stderr } => {
-            let _ = std::fs::write(dir.join("run_trap.txt"), run_stderr);
+            put(
+                "run_trap.txt",
+                std::fs::write(dir.join("run_trap.txt"), run_stderr),
+            );
         }
         Outcome::RejectedDiffCaps => {}
     }
+    for f in &failed {
+        eprintln!("garnet agent-loop: cannot write --record-dir artifact {f}");
+    }
+    failed.is_empty()
 }
 
 pub fn run(args: &[String]) -> ExitCode {
@@ -369,7 +418,7 @@ pub fn run(args: &[String]) -> ExitCode {
         echo("  | ", &check.stdout);
         echo("  | ", &check.stderr);
         println!("agent-loop: REJECTED at stage check (the proposal is not run and is not sealed)");
-        write_record(
+        if !write_record(
             &a,
             &exe,
             &[],
@@ -377,7 +426,9 @@ pub fn run(args: &[String]) -> ExitCode {
                 check_stdout: &check.stdout,
                 check_stderr: &check.stderr,
             },
-        );
+        ) {
+            return ExitCode::from(2);
+        }
         return ExitCode::from(1);
     }
     println!("agent-loop: stage check -> PASS");
@@ -409,22 +460,25 @@ pub fn run(args: &[String]) -> ExitCode {
             echo("  | ", &diff.stderr);
             return ExitCode::from(2);
         }
-        write_record(&a, &exe, &diff.stdout, &Outcome::RejectedDiffCaps);
+        if !write_record(&a, &exe, &diff.stdout, &Outcome::RejectedDiffCaps) {
+            return ExitCode::from(2);
+        }
         return ExitCode::from(1);
     }
     println!("agent-loop: stage diff-caps -> PASS (no program-wide authority expansion, band 5/5)");
     let (gained, added) = per_function_changes(&diff.stdout);
     if gained + added > 0 {
+        // The changes are always named here; diff_caps.txt is only a record of them,
+        // written with --record-dir, and a failure to write it fails the loop.
         if a.record_dir.is_some() {
-            println!("agent-loop: per-function changes listed for review in diff_caps.txt");
+            println!("agent-loop: per-function changes listed for review in diff_caps.txt:");
         } else {
-            // Nothing is written without --record-dir, so the changes are named here.
             println!(
                 "agent-loop: per-function changes for review ({gained} gained, {added} new; --record-dir saves them):"
             );
-            for line in per_function_lines(&diff.stdout) {
-                println!("agent-loop:   {line}");
-            }
+        }
+        for line in per_function_lines(&diff.stdout) {
+            println!("agent-loop:   {line}");
         }
     }
 
@@ -452,14 +506,16 @@ pub fn run(args: &[String]) -> ExitCode {
             "agent-loop: REJECTED at stage run (an enforced ceiling — @max_depth or @caps — \
              trapped; the proposal is not sealed)"
         );
-        write_record(
+        if !write_record(
             &a,
             &exe,
             &diff.stdout,
             &Outcome::RejectedRun {
                 run_stderr: &kernel.stderr,
             },
-        );
+        ) {
+            return ExitCode::from(2);
+        }
         return ExitCode::from(1);
     }
     let value = String::from_utf8_lossy(&kernel.stdout)
@@ -499,7 +555,7 @@ pub fn run(args: &[String]) -> ExitCode {
         "agent-loop: stage seal -> SEALED ({}) (unsigned)",
         a.seal_out.display()
     );
-    write_record(
+    if !write_record(
         &a,
         &exe,
         &diff.stdout,
@@ -507,7 +563,9 @@ pub fn run(args: &[String]) -> ExitCode {
             value: &value,
             run_stdout: &kernel.stdout,
         },
-    );
+    ) {
+        return ExitCode::from(2);
+    }
     println!("agent-loop: ACCEPTED on capability+depth evidence");
     ExitCode::SUCCESS
 }

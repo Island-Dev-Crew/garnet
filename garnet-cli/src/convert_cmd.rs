@@ -95,7 +95,7 @@ pub fn run(args: ConvertArgs) -> Result<ConvertOutcome, String> {
         &migrate_todo_path,
         &metrics_path,
     ];
-    refuse_linked_outputs(&outputs)?;
+    refuse_linked_outputs(&args.source_path, &outputs)?;
     fs::write(&target_path, &emitted.garnet).map_err(|e| format!("write garnet: {e}"))?;
     fs::write(&lineage_path, &emitted.lineage_json).map_err(|e| format!("write lineage: {e}"))?;
     fs::write(&migrate_todo_path, &emitted.migrate_todo_md)
@@ -165,35 +165,40 @@ fn render_summary(o: &ConvertOutcome) {
 }
 
 /// Refuse to write through an output path that already exists as anything but a
-/// regular file of its own: a symlink, a directory, or a file hard-linked to
-/// another output would let one output overwrite another after it was written.
-/// The read-back after writing catches any sharing this check cannot see.
-fn refuse_linked_outputs(outputs: &[&PathBuf]) -> Result<(), String> {
-    #[cfg(unix)]
-    let mut seen: Vec<(u64, u64)> = Vec::new();
+/// regular file (a symlink, a directory), or when any two of the source and the
+/// outputs already name one file (a hard link, or a symlinked source): writing
+/// one output would then overwrite the source or another output. `same-file`
+/// compares file identity on every platform. The read-back after writing
+/// catches any sharing that appears later.
+fn refuse_linked_outputs(source: &Path, outputs: &[&PathBuf]) -> Result<(), String> {
     for path in outputs {
-        let meta = match fs::symlink_metadata(path) {
-            Ok(meta) => meta,
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => continue,
-            Err(e) => return Err(format!("cannot inspect {}: {e}", path.display())),
-        };
-        if !meta.file_type().is_file() {
-            return Err(format!(
-                "refusing to write {}: it exists and is not a regular file",
-                path.display()
-            ));
-        }
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::MetadataExt;
-            let id = (meta.dev(), meta.ino());
-            if seen.contains(&id) {
+        match fs::symlink_metadata(path) {
+            Ok(meta) if !meta.file_type().is_file() => {
                 return Err(format!(
-                    "refusing to write {}: it is the same file as another output",
+                    "refusing to write {}: it exists and is not a regular file",
                     path.display()
                 ));
             }
-            seen.push(id);
+            Ok(_) => {}
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+            Err(e) => return Err(format!("cannot inspect {}: {e}", path.display())),
+        }
+    }
+    let existing: Vec<&Path> = std::iter::once(source)
+        .chain(outputs.iter().map(|p| p.as_path()))
+        .filter(|p| p.exists())
+        .collect();
+    for (i, a) in existing.iter().enumerate() {
+        for b in &existing[i + 1..] {
+            let same = same_file::is_same_file(a, b)
+                .map_err(|e| format!("cannot compare {} with {}: {e}", a.display(), b.display()))?;
+            if same {
+                return Err(format!(
+                    "refusing to write {}: it is the same file as {}",
+                    b.display(),
+                    a.display()
+                ));
+            }
         }
     }
     Ok(())
