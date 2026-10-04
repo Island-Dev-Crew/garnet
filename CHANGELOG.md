@@ -188,10 +188,12 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
       token each, and a `\` that ends a line is a blank: the next line starts
       in the state the line before ended in. After an identifier and a blank
       Ruby reads `:` as a symbol after a method name but as a ternary colon
-      after a local variable, which the converter cannot tell apart: where the
-      two readings differ in structure (`:/`, `:%`, `` :` `` or a keyword that
-      opens a block, such as `:if`) the file is refused, and otherwise it is a
-      symbol; after a value it is a ternary colon. `?` with a character there,
+      after a local variable, which the converter cannot tell apart: the rest
+      of the line is read both ways, and where the two readings differ in
+      structure (`local :/end/`, `local :! /end/`, `local :if x then y end`)
+      the file is refused, otherwise it is a symbol. Before a keyword or
+      operator that cannot start an expression (`:end`, `:in`, `:<<`) only the
+      symbol reading is possible. After a value it is a ternary colon. `?` with a character there,
       or `?` before a `\` anywhere, is a character literal (refused).
       Lines join while a bracket or keyword block is
       open (`if` and its kin count only where an expression starts; a `do` is

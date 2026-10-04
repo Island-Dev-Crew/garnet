@@ -1954,3 +1954,41 @@ fn an_ambiguous_ruby_colon_is_refused() {
         try_convert(src, SourceLang::Ruby, "ruby", "box.rb").unwrap();
     }
 }
+
+/// Codex round 26: listing which `:` forms read differently as a symbol and as
+/// a ternary colon missed operators and keywords that take an operand
+/// (`local :! /end/`, `local :defined? /end/`). After an identifier and a blank
+/// the lexer now reads the rest of the line both ways and refuses the file when
+/// the two readings differ in structure.
+#[test]
+fn a_colon_read_two_ways_must_agree() {
+    let in_block =
+        |line: &str| format!("def save\n  use do |local|\n    {line}\n    persist()\n  end\nend\n");
+    for line in [
+        "(true ? local :! /end/)",
+        "(true ? local :defined? /end/)",
+        "(true ? local :~ /end/)",
+        "(true ? local :- /end/)",
+    ] {
+        let src = in_block(line);
+        match try_convert(&src, SourceLang::Ruby, "ruby", "save.rb") {
+            Err(e) => assert!(e.contains("ternary colon"), "{src:?}: {e}"),
+            Ok(garnet) => panic!("converted: {src:?}\n{garnet}"),
+        }
+    }
+    // Where both readings agree, or a ternary cannot follow, it converts.
+    for line in [
+        "(true ? local :foo)",
+        "alias_method :<<, :push",
+        "attr_accessor :next",
+        "delete :in",
+        "send :foo, 1",
+        // A binary operator cannot start an expression after a ternary colon.
+        "undef_method :<<",
+        "alias_method :==, :eql?",
+    ] {
+        let (garnet, _) = convert_src(&in_block(line), SourceLang::Ruby, "ruby", "save.rb");
+        assert_parses(&garnet);
+        assert_inactive(&garnet, "persist()");
+    }
+}

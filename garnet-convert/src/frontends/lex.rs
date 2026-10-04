@@ -554,6 +554,14 @@ pub fn ruby_line_after(line: &str, name_first: bool) -> Result<RubyLine<'_>, &'s
 /// Lex one line of the Ruby subset starting in `start`, the `next` state of
 /// the line before. See `ruby_line_after`.
 pub fn ruby_line_from(line: &str, start: RubyState) -> Result<RubyLine<'_>, &'static str> {
+    lex_ruby_line(line, start, 0)
+}
+
+/// How many ambiguous `:` one line may hold before it is refused: each is read
+/// two ways (see the `:` fork in `lex_ruby_line`).
+const MAX_COLON_FORKS: u32 = 4;
+
+fn lex_ruby_line(line: &str, start: RubyState, forks: u32) -> Result<RubyLine<'_>, &'static str> {
     let b = line.as_bytes();
     let first = line.trim_start();
     if first.starts_with("=begin") {
@@ -774,6 +782,48 @@ pub fn ruby_line_from(line: &str, start: RubyState) -> Result<RubyLine<'_>, &'st
                 after_value = true;
                 op = false;
             }
+            // After an identifier and a blank Ruby reads `:` as a symbol after a
+            // method name but as a ternary colon after a local variable, which
+            // the converter cannot tell apart. The rest of the line is read both
+            // ways, and where the two readings differ in structure the file is
+            // refused. Before a keyword or operator that cannot start an
+            // expression (`:end`, `:in`, `:<<`) only the symbol reading is
+            // possible.
+            b':' if spaced_ident
+                && !names_rest
+                && b.get(i + 1)
+                    .is_some_and(|c| !c.is_ascii_whitespace() && *c != b':')
+                && !colon_cannot_be_ternary(&b[i + 1..]) =>
+            {
+                if forks >= MAX_COLON_FORKS {
+                    return Err(AMBIGUOUS_COLON);
+                }
+                let rest_start = RubyState {
+                    loop_do: loop_do == Some(out.brackets),
+                    ..RubyState::default()
+                };
+                let as_symbol = lex_ruby_line(&line[i..], rest_start, forks + 1);
+                let as_colon = lex_ruby_line(&line[i + 1..], rest_start, forks + 1);
+                let rest = match (as_symbol, as_colon) {
+                    (Ok(symbol), Ok(colon)) if same_structure(&symbol, &colon) => symbol,
+                    (Err(why), Err(_)) => return Err(why),
+                    _ => return Err(AMBIGUOUS_COLON),
+                };
+                out.min_blocks = out.min_blocks.min(out.blocks + rest.min_blocks);
+                if let Some(at) = rest.clause_at {
+                    let at = out.blocks + at;
+                    out.clause_at = Some(out.clause_at.map_or(at, |c| c.min(at)));
+                }
+                out.blocks += rest.blocks;
+                out.brackets += rest.brackets;
+                out.openers += rest.openers;
+                out.semicolon |= rest.semicolon;
+                out.continues = rest.continues;
+                out.name_pending = rest.name_pending;
+                out.next = rest.next;
+                out.code = line[..i + rest.code.len()].trim_end();
+                return Ok(out);
+            }
             b':' if b.get(i + 1) == Some(&b':') => {
                 name_next = true;
                 after_value = false;
@@ -781,16 +831,9 @@ pub fn ruby_line_from(line: &str, start: RubyState) -> Result<RubyLine<'_>, &'st
                 i += 2;
                 continue;
             }
-            // An operator symbol (`:/`, `:<=>`, `:[]`) where an operand starts, or
-            // after an identifier and a blank (a method call's first argument,
-            // `use :/`), is one token: its `/` or `%` opens no literal. After an
-            // identifier and a blank Ruby reads a ternary colon instead when the
-            // identifier is a local variable; where that reading starts a
-            // literal (`local :/x/`, `:%r{}`, `` :`x` ``) the file is refused.
+            // An operator symbol (`:/`, `:<=>`, `:[]`) where an operand starts is
+            // one token: its `/` or `%` opens no literal.
             b':' if (operand || spaced_ident) && operator_method_name(&b[i + 1..]).is_some() => {
-                if !operand && matches!(b.get(i + 1), Some(b'/' | b'%' | b'`')) {
-                    return Err(AMBIGUOUS_COLON);
-                }
                 if names_rest {
                     operands += 1;
                 }
@@ -799,31 +842,11 @@ pub fn ruby_line_from(line: &str, start: RubyState) -> Result<RubyLine<'_>, &'st
                 last_op = false;
                 continue;
             }
-            // A symbol where an operand starts or after an identifier and a blank:
-            // `:end` is a value, not `end`. After a value the `:` is a ternary
-            // colon. After an identifier and a blank, a keyword that opens a
-            // block where an expression starts (`local :if x then y end`) is
-            // read differently by the two readings: the file is refused.
+            // A symbol where an operand starts: `:end` is a value, not `end`. After
+            // a value the `:` is a ternary colon.
             b':' if (operand || spaced_ident)
                 && b.get(i + 1).is_some_and(|c| is_rb_word_byte(*c)) =>
             {
-                if !operand
-                    && matches!(
-                        &b[i + 1..word_end(b, i + 1)],
-                        b"if"
-                            | b"unless"
-                            | b"while"
-                            | b"until"
-                            | b"case"
-                            | b"begin"
-                            | b"class"
-                            | b"module"
-                            | b"def"
-                            | b"for"
-                    )
-                {
-                    return Err(AMBIGUOUS_COLON);
-                }
                 if names_rest {
                     operands += 1;
                 }
@@ -999,6 +1022,71 @@ fn operator_method_name(b: &[u8]) -> Option<usize> {
     NAMES.iter().find(|n| b.starts_with(n)).map(|n| n.len())
 }
 
+/// Whether `b` starts with a keyword or an operator that cannot start an
+/// expression, so a `:` before it cannot be a ternary colon (`delete :in`,
+/// `undef_method :<<`): only the symbol reading is possible.
+fn colon_cannot_be_ternary(b: &[u8]) -> bool {
+    let end = word_end(b, 0);
+    if end > 0 {
+        return !matches!(b.get(end), Some(b'?' | b'!' | b':'))
+            && matches!(
+                &b[..end],
+                b"end"
+                    | b"do"
+                    | b"then"
+                    | b"else"
+                    | b"elsif"
+                    | b"when"
+                    | b"in"
+                    | b"ensure"
+                    | b"rescue"
+                    | b"and"
+                    | b"or"
+            );
+    }
+    let heredoc = |c: Option<&u8>| {
+        c.is_some_and(|c| {
+            c.is_ascii_alphabetic() || matches!(c, b'_' | b'"' | b'\'' | b'`' | b'~' | b'-')
+        })
+    };
+    match operator_method_name(b).map(|len| &b[..len]) {
+        Some(b"<<") => !heredoc(b.get(2)),
+        Some(name) => matches!(
+            name,
+            b">>"
+                | b"=="
+                | b"==="
+                | b"!="
+                | b"=~"
+                | b"!~"
+                | b"<=>"
+                | b"<="
+                | b">="
+                | b"<"
+                | b">"
+                | b"|"
+                | b"^"
+                | b"**"
+                | b"*"
+                | b"&"
+        ),
+        None => false,
+    }
+}
+
+/// Whether two readings of the same rest of a line agree in everything the
+/// statement and block boundaries depend on.
+fn same_structure(a: &RubyLine<'_>, b: &RubyLine<'_>) -> bool {
+    a.brackets == b.brackets
+        && a.blocks == b.blocks
+        && a.openers == b.openers
+        && a.continues == b.continues
+        && a.semicolon == b.semicolon
+        && a.min_blocks == b.min_blocks
+        && a.clause_at == b.clause_at
+        && a.next == b.next
+}
+
 /// The end of the identifier starting at `i`.
 fn word_end(b: &[u8], mut i: usize) -> usize {
     while i < b.len() && is_rb_word_byte(b[i]) {
@@ -1071,7 +1159,7 @@ const NON_ASCII: &str = "a non-ASCII character outside a string or comment";
 
 /// After an identifier and a blank, a `:` Ruby reads as a symbol after a method
 /// name and as a ternary colon after a local variable, where the two readings
-/// differ in structure.
+/// of the rest of the line differ in structure.
 const AMBIGUOUS_COLON: &str = "a `:` after an identifier that may be a symbol or a ternary colon";
 
 /// Ruby code holds no control character but tab and carriage return.
