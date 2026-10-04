@@ -8,12 +8,20 @@
 //! v1.0 §11.7); `eval` / `instance_eval` → Untranslatable; regex
 //! literals → MigrateTodo (stdlib regex is v4.1.x); monkey-patched
 //! open classes → Untranslatable.
+//!
+//! C1-18: a statement is read as a unit of the lexed subset (see `lex`): lines
+//! join while a bracket or a keyword block is open, a line ends in an operator
+//! or a comma, or the next line starts with `.`. Only a statement on one line
+//! becomes code; `EXPR.each do |x| ... end` is lowered; every other statement is
+//! kept whole as one MigrateTodo. A file outside the subset is refused.
 
+use super::lex::ruby_line;
 use crate::cir::{Cir, CirLit, CirTy, FuncMode, Ownership, Param};
 use crate::error::ConvertError;
 use crate::lineage::Lineage;
 
 pub fn parse_and_lift(source: &str, filename: &str) -> Result<Cir, ConvertError> {
+    refuse_unlexed(source)?;
     let mut p = RubyParser::new(source, filename);
     p.parse_module()
 }
@@ -129,6 +137,14 @@ impl<'a> RubyParser<'a> {
         })
     }
 
+    fn todo(&self, start: usize, note: String) -> Cir {
+        Cir::MigrateTodo {
+            placeholder: Box::new(Cir::Literal(CirLit::Nil, self.lineage(start))),
+            note,
+            lineage: self.lineage(start),
+        }
+    }
+
     fn parse_item(&mut self) -> Result<Option<Cir>, ConvertError> {
         self.skip_ws();
         if self.remaining().is_empty() {
@@ -137,71 +153,111 @@ impl<'a> RubyParser<'a> {
         let start = self.pos;
 
         if self.peek_keyword("def") {
-            self.eat("def ");
             return Ok(Some(self.parse_def(start)?));
         }
         if self.peek_keyword("class") {
-            self.eat("class ");
             return Ok(Some(self.parse_class(start)?));
         }
         if self.peek_keyword("module") {
-            self.eat("module ");
             return Ok(Some(self.parse_inner_module(start)?));
         }
-        if self.peek_keyword("require") || self.peek_keyword("require_relative") {
-            self.read_until_newline();
+        let end = self.statement_end(start);
+        let text = self.source[start..end].trim_end().to_string();
+        self.pos = end;
+        let first = first_word(&text);
+        if matches!(first, "require" | "require_relative") {
             return self.parse_item();
         }
-        if self.peek_keyword("method_missing") {
-            self.read_until_newline();
-            return Ok(Some(Cir::MigrateTodo {
-                placeholder: Box::new(Cir::Literal(CirLit::Nil, self.lineage(start))),
-                note: "Ruby method_missing — use Garnet @dynamic per Mini-Spec v1.0 §11.7".into(),
-                lineage: self.lineage(start),
-            }));
+        if first == "method_missing" {
+            return Ok(Some(self.todo(
+                start,
+                "Ruby method_missing — use Garnet @dynamic per Mini-Spec v1.0 §11.7".into(),
+            )));
         }
-        if self.peek_keyword("eval") || self.peek_keyword("instance_eval") {
-            self.read_until_newline();
+        if matches!(first, "eval" | "instance_eval") {
             return Ok(Some(Cir::Untranslatable {
                 reason: "Ruby eval / instance_eval — Garnet has no runtime source evaluation"
                     .into(),
                 lineage: self.lineage(start),
             }));
         }
-
-        // Default: bare expression statement or unknown → MigrateTodo
-        let line = self.read_until_newline();
-        if line.trim().is_empty() {
-            return self.parse_item();
-        }
         // Try to recognize an attr_accessor pattern
-        if line.trim_start().starts_with("attr_accessor") {
-            return Ok(Some(Cir::MigrateTodo {
-                placeholder: Box::new(Cir::Literal(CirLit::Nil, self.lineage(start))),
-                note: format!(
-                    "attr_accessor: {} — declare as pub struct fields in the enclosing struct",
-                    line.trim()
+        if text.starts_with("attr_accessor") {
+            return Ok(Some(self.todo(
+                start,
+                format!(
+                    "attr_accessor: {text} — declare as pub struct fields in the enclosing struct"
                 ),
-                lineage: self.lineage(start),
-            }));
+            )));
         }
-        Ok(Some(Cir::MigrateTodo {
-            placeholder: Box::new(Cir::Literal(CirLit::Nil, self.lineage(start))),
-            note: format!("unparsed Ruby statement: {}", line.trim()),
-            lineage: self.lineage(start),
-        }))
+        Ok(Some(
+            self.todo(start, format!("unparsed Ruby statement: {text}")),
+        ))
+    }
+
+    /// The whole statement starting at `start` (a definition the frontend does
+    /// not read, or a block it does not lower) as one MigrateTodo carrying its
+    /// source lines, dedented, for hand translation.
+    fn whole_todo(&mut self, start: usize, kind: &str) -> Cir {
+        let end = self.statement_end(start);
+        let line_begin = self.source[..start].rfind('\n').map_or(0, |i| i + 1);
+        let indent = start - line_begin;
+        let text = self.source[line_begin..end]
+            .lines()
+            .map(|l| {
+                l.get(indent.min(l.len() - l.trim_start().len())..)
+                    .unwrap_or("")
+                    .trim_end()
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
+        self.pos = end;
+        self.todo(
+            start,
+            format!(
+                "Ruby `{kind}` block kept whole for hand translation:\n{}",
+                text.trim_end()
+            ),
+        )
+    }
+
+    /// Whether the rest of the current line holds no code.
+    fn header_ends_here(&self) -> bool {
+        let rest = self.remaining();
+        let line = &rest[..rest.find('\n').unwrap_or(rest.len())];
+        ruby_code(line).is_empty()
+    }
+
+    /// Skip spaces and tabs, but not a line end.
+    fn skip_blanks(&mut self) {
+        let rest = self.remaining();
+        self.pos += rest.len() - rest.trim_start_matches([' ', '\t']).len();
     }
 
     fn parse_def(&mut self, start: usize) -> Result<Cir, ConvertError> {
+        self.pos += "def".len();
+        self.skip_blanks();
         let name = self.read_ident().unwrap_or_default();
-        let params = if self.eat("(") {
+        self.skip_blanks();
+        let params = if self.remaining().starts_with('(') {
+            self.pos += 1;
             let ps = self.parse_params()?;
             self.eat(")");
             ps
         } else {
             Vec::new()
         };
-        let body = self.parse_body_until_end()?;
+        // The header must end here. A receiver (`def self.x`), an operator or
+        // setter name, parameters without parentheses, or a body on the header
+        // line are not read: the definition is kept whole.
+        if name.is_empty() || !self.header_ends_here() {
+            self.pos = start;
+            return Ok(self.whole_todo(start, "def"));
+        }
+        let Some(body) = self.parse_body_until_end(true)? else {
+            self.pos = start;
+            return Ok(self.whole_todo(start, "def"));
+        };
         Ok(Cir::Func {
             name,
             params,
@@ -241,84 +297,84 @@ impl<'a> RubyParser<'a> {
         Ok(params)
     }
 
-    fn parse_body_until_end(&mut self) -> Result<Vec<Cir>, ConvertError> {
+    /// The statements of a body up to its closing `end`. In a function body
+    /// `EXPR.each do |x| ... end` is lowered and `return`/`yield`/`puts` are
+    /// recognized; a class or module body keeps every statement as text. `None`
+    /// when a clause keyword (`rescue`, `ensure`, `else`, ...) opens a line of
+    /// the body: the body is not a plain sequence of statements.
+    fn parse_body_until_end(
+        &mut self,
+        function_body: bool,
+    ) -> Result<Option<Vec<Cir>>, ConvertError> {
         let mut stmts = Vec::new();
         loop {
             self.skip_ws();
             if self.peek_keyword("end") {
-                self.eat("end");
+                self.pos += "end".len();
                 break;
             }
             if self.remaining().is_empty() {
                 break;
             }
+            if ["rescue", "ensure", "else", "elsif", "when", "in", "then"]
+                .iter()
+                .any(|kw| self.peek_keyword(kw))
+            {
+                return Ok(None);
+            }
             let start = self.pos;
             // A method inside a class body (or a nested def) is parsed as a real
             // function, so its own `end` does not close the enclosing body.
             if self.peek_keyword("def") {
-                self.eat("def ");
                 stmts.push(self.parse_def(start)?);
                 continue;
             }
-            let line = self.read_until_newline();
-            let line = line.trim().to_string();
-            if line.is_empty() {
-                continue;
-            }
-            // Blocks are recognized on the code before any trailing `# comment`;
-            // the comment still travels with the line's text.
-            let code = strip_ruby_comment(&line);
-            if code == "end" {
-                break;
-            }
-            // C1-18: a `do ... end` block or a keyword block (`if`, `while`, `case`,
-            // ...) is handled whole, up to its matching `end`. `EXPR.each do |x|`
-            // is lowered to `for x in EXPR { ... }`; every other block is kept as
-            // one whole-statement MigrateTodo, so neither its body nor its `end`
-            // (for example `end.to_h`) spills into the enclosing def.
-            if let Some(kind) = block_opener(code) {
-                if let Some((close, after)) = self.matching_end() {
-                    match each_header(code) {
-                        Some((iter, var)) if close == "end" => {
-                            let body = self.parse_body_until_end()?;
+            let end = self.statement_end(start);
+            let text = self.source[start..end].trim_end();
+            let lines: Vec<&str> = text.lines().collect();
+            let header = ruby_code(lines[0]);
+            // C1-18: a statement that spans lines (a `do ... end` or keyword
+            // block, a brace block, a call left open, a line ending in an
+            // operator, a chain continued with `.`) is handled whole.
+            // `EXPR.each do |x| ... end` is lowered to `for x in EXPR { ... }`;
+            // every other one is kept as one whole-statement MigrateTodo, so
+            // neither its body nor its `end` spills into the enclosing def.
+            if lines.len() > 1 || !complete(lines[0]) {
+                let last = lines.last().map_or("", |l| ruby_code(l));
+                if let (true, Some((iter, var))) =
+                    (function_body && last == "end", each_header(header))
+                {
+                    let body_start = start + lines[0].len() + 1;
+                    self.pos = body_start.min(end);
+                    if let Some(body) = self.parse_body_until_end(true)? {
+                        let rest_is_blank = self.pos <= end
+                            && self.source[self.pos..end]
+                                .lines()
+                                .all(|l| ruby_code(l).is_empty());
+                        if rest_is_blank {
+                            self.pos = end;
                             stmts.push(Cir::For {
                                 var,
                                 iter: Box::new(Cir::Ident(iter, self.lineage(start))),
                                 body,
                                 lineage: self.lineage(start),
                             });
-                        }
-                        _ => {
-                            let line_begin = self.source[..start].rfind('\n').map_or(0, |i| i + 1);
-                            let indent = start - line_begin;
-                            let text = self.source[line_begin..after]
-                                .lines()
-                                .map(|l| {
-                                    l.get(indent.min(l.len() - l.trim_start().len())..)
-                                        .unwrap_or("")
-                                })
-                                .collect::<Vec<_>>()
-                                .join("\n");
-                            self.pos = after;
-                            stmts.push(Cir::MigrateTodo {
-                                placeholder: Box::new(Cir::Literal(
-                                    CirLit::Nil,
-                                    self.lineage(start),
-                                )),
-                                note: format!(
-                                    "Ruby `{kind}` block kept whole for hand translation:\n{}",
-                                    text.trim_end()
-                                ),
-                                lineage: self.lineage(start),
-                            });
+                            continue;
                         }
                     }
-                    continue;
                 }
+                self.pos = start;
+                let kind = block_kind(header);
+                stmts.push(self.whole_todo(start, kind));
+                continue;
             }
-            // Recognize a handful of common forms; everything else is
-            // a bare ident expression (fall back to Ident CIR).
-            if let Some(expr_src) = line.strip_prefix("return ") {
+            self.pos = end;
+            let line = lines[0].trim().to_string();
+            if !function_body {
+                stmts.push(Cir::Ident(line, self.lineage(start)));
+            } else if let Some(expr_src) = line.strip_prefix("return ") {
+                // Recognize a handful of common forms; everything else is
+                // a bare ident expression (fall back to Ident CIR).
                 stmts.push(Cir::Return {
                     value: Some(Box::new(Cir::Ident(
                         expr_src.trim().to_string(),
@@ -349,120 +405,153 @@ impl<'a> RubyParser<'a> {
                 stmts.push(Cir::Ident(line, self.lineage(start)));
             }
         }
-        Ok(stmts)
+        Ok(Some(stmts))
+    }
+
+    /// One past the end of the statement starting at `from`: lines join while a
+    /// bracket or a keyword block is open, a line ends in an operator or a comma,
+    /// or the next code line starts with `.` or `&.`. The file was checked
+    /// against the lexed subset before parsing.
+    fn statement_end(&self, from: usize) -> usize {
+        let mut brackets = 0;
+        let mut blocks = 0;
+        let mut pos = from;
+        for line in self.source[from..].split_inclusive('\n') {
+            pos += line.len();
+            if let Ok(l) = ruby_line(line.trim_end_matches(['\n', '\r'])) {
+                brackets += l.brackets;
+                blocks += l.blocks;
+                if brackets > 0 || blocks > 0 || l.continues {
+                    continue;
+                }
+            }
+            let chained = self.source[pos..]
+                .lines()
+                .map(ruby_code)
+                .find(|code| !code.is_empty())
+                .is_some_and(|code| {
+                    (code.starts_with('.') && !code.starts_with("..")) || code.starts_with("&.")
+                });
+            if !chained {
+                break;
+            }
+        }
+        pos
     }
 
     fn parse_class(&mut self, start: usize) -> Result<Cir, ConvertError> {
+        self.pos += "class".len();
+        self.skip_blanks();
         let name = self.read_ident().unwrap_or_default();
-        // Skip optional superclass `< Base`
-        if self.eat("<") {
-            let _base = self.read_ident();
+        // Skip optional superclass `< Base` (a constant path such as `A::B`)
+        self.skip_blanks();
+        if self.remaining().starts_with('<') && !self.remaining().starts_with("<<") {
+            self.pos += 1;
+            self.skip_blanks();
+            let rest = self.remaining();
+            self.pos += rest.len()
+                - rest
+                    .trim_start_matches(|c: char| c.is_alphanumeric() || c == '_' || c == ':')
+                    .len();
+        }
+        // `class << self`, a superclass expression or code after the header is
+        // not read: the class is kept whole.
+        if name.is_empty() || !self.header_ends_here() {
+            self.pos = start;
+            return Ok(self.whole_todo(start, "class"));
         }
         // Body contains attr_accessor / def / instance variables
-        let methods = self.parse_body_until_end()?;
+        let Some(body) = self.parse_body_until_end(false)? else {
+            self.pos = start;
+            return Ok(self.whole_todo(start, "class"));
+        };
         // Emit a struct + impl pair (Phase 2F finding)
         let lineage = self.lineage(start);
-        // Hoist `def`s from the methods vector into an Impl
+        // Hoist `def`s into an Impl and `attr_accessor` names into fields; every
+        // other class-level statement is kept as a todo, not dropped.
         let mut fields = Vec::new();
         let mut impl_methods = Vec::new();
-        for m in methods {
-            if let Cir::Func { .. } = m {
-                impl_methods.push(m);
-            } else if let Cir::MigrateTodo { note, .. } = &m {
-                if note.starts_with("attr_accessor:") {
-                    // parse out the accessor names
-                    let parts: Vec<&str> = note.splitn(2, ':').collect();
-                    if parts.len() == 2 {
-                        for accessor in parts[1].split(',') {
-                            let accessor = accessor.trim();
-                            let name = accessor
-                                .trim_start_matches("attr_accessor")
-                                .trim()
-                                .trim_start_matches(':');
-                            if !name.is_empty() {
-                                fields.push(crate::cir::FieldDecl {
-                                    name: name.to_string(),
-                                    ty: CirTy::Inferred,
-                                    public: true,
-                                });
-                            }
+        let mut kept = Vec::new();
+        for m in body {
+            match m {
+                Cir::Func { .. } => impl_methods.push(m),
+                Cir::Ident(text, _) if text.starts_with("attr_accessor") => {
+                    for accessor in ruby_code(&text).split(',') {
+                        let name = accessor
+                            .trim()
+                            .trim_start_matches("attr_accessor")
+                            .trim()
+                            .trim_start_matches(':');
+                        if !name.is_empty() {
+                            fields.push(crate::cir::FieldDecl {
+                                name: name.to_string(),
+                                ty: CirTy::Inferred,
+                                public: true,
+                            });
                         }
                     }
                 }
+                Cir::Ident(text, lin) => kept.push(Cir::MigrateTodo {
+                    placeholder: Box::new(Cir::Literal(CirLit::Nil, lin.clone())),
+                    note: format!("Ruby class-level statement: {text}"),
+                    lineage: lin,
+                }),
+                // A class body holds only definitions, todos and statement text.
+                other => kept.push(other),
             }
         }
         // Emit as a Module wrapping Struct + Impl; the outer Module's
         // items vec absorbs these.
-        // Here we return a single synthetic Module item that the outer
-        // parse_module appends.
+        let mut items = vec![
+            Cir::Struct {
+                name: name.clone(),
+                fields,
+                lineage: lineage.clone(),
+            },
+            Cir::Impl {
+                target: name.clone(),
+                methods: impl_methods,
+                lineage: lineage.clone(),
+            },
+        ];
+        items.extend(kept);
         Ok(Cir::Module {
-            name: name.clone(),
-            items: vec![
-                Cir::Struct {
-                    name: name.clone(),
-                    fields,
-                    lineage: lineage.clone(),
-                },
-                Cir::Impl {
-                    target: name,
-                    methods: impl_methods,
-                    lineage: lineage.clone(),
-                },
-            ],
+            name,
+            items,
             sandbox: false,
             lineage,
         })
     }
 
     fn parse_inner_module(&mut self, start: usize) -> Result<Cir, ConvertError> {
+        self.pos += "module".len();
+        self.skip_blanks();
         let name = self.read_ident().unwrap_or_default();
-        let body = self.parse_body_until_end()?;
+        if name.is_empty() || !self.header_ends_here() {
+            self.pos = start;
+            return Ok(self.whole_todo(start, "module"));
+        }
+        let Some(body) = self.parse_body_until_end(false)? else {
+            self.pos = start;
+            return Ok(self.whole_todo(start, "module"));
+        };
+        let items = body
+            .into_iter()
+            .map(|item| match item {
+                Cir::Ident(text, lin) => Cir::MigrateTodo {
+                    placeholder: Box::new(Cir::Literal(CirLit::Nil, lin.clone())),
+                    note: format!("Ruby module-level statement: {text}"),
+                    lineage: lin,
+                },
+                other => other,
+            })
+            .collect();
         Ok(Cir::Module {
             name,
-            items: body,
+            items,
             sandbox: false,
             lineage: self.lineage(start),
         })
-    }
-
-    /// Where the block whose header was just read ends: the trimmed closing line
-    /// and the byte offset just past it. Nested blocks are counted, so an inner
-    /// `end` does not close the outer block.
-    fn matching_end(&self) -> Option<(String, usize)> {
-        let mut depth = 1usize;
-        let mut pos = self.pos;
-        for line in self.source[self.pos..].split_inclusive('\n') {
-            pos += line.len();
-            let t = strip_ruby_comment(line.trim());
-            if t.is_empty() {
-                continue;
-            }
-            if block_opener(t).is_some() {
-                depth += 1;
-            } else if is_block_close(t) {
-                depth -= 1;
-                if depth == 0 {
-                    return Some((t.to_string(), pos));
-                }
-            }
-        }
-        None
-    }
-
-    fn read_until_newline(&mut self) -> String {
-        let rem = self.remaining();
-        match rem.find('\n') {
-            Some(i) => {
-                let s = rem[..i].to_string();
-                self.pos += i + 1;
-                s
-            }
-            None => {
-                let s = rem.to_string();
-                self.pos += rem.len();
-                s
-            }
-        }
     }
 
     fn read_until_one_of(&mut self, stops: &[char]) -> String {
@@ -499,56 +588,57 @@ fn derive_module_name(filename: &str) -> String {
     }
 }
 
-/// The code of a Ruby line without its trailing `# comment`, trimmed. A `#`
-/// inside a quoted string (including `#{...}` interpolation) is not a comment.
-fn strip_ruby_comment(line: &str) -> &str {
-    let mut quote: Option<char> = None;
-    let mut escaped = false;
-    for (i, c) in line.char_indices() {
-        match quote {
-            Some(q) => {
-                if escaped {
-                    escaped = false;
-                } else if c == '\\' {
-                    escaped = true;
-                } else if c == q {
-                    quote = None;
-                }
-            }
-            None => match c {
-                '\'' | '"' | '`' => quote = Some(c),
-                '#' => return line[..i].trim_end(),
-                _ => {}
-            },
-        }
-    }
-    line.trim_end()
+/// The code of a Ruby line without its trailing `# comment`, trimmed. The file
+/// was checked by `refuse_unlexed`, so every line is inside the lexed subset.
+fn ruby_code(line: &str) -> &str {
+    ruby_line(line).map_or_else(|_| line.trim(), |l| l.code.trim())
 }
 
-/// The kind of block a Ruby line opens: `do` for `... do` / `... do |x|`, or the
-/// keyword of a multi-line `if`/`unless`/`while`/`until`/`case`/`begin`/`for`/
-/// `def`/`class`/`module`. A one-line form that closes with `end` opens nothing.
-fn block_opener(t: &str) -> Option<&'static str> {
-    if t == "do" || t.ends_with(" do") || (t.ends_with('|') && t.contains(" do |")) {
-        return Some("do");
+/// A one-line statement that opens nothing it does not close.
+fn complete(line: &str) -> bool {
+    ruby_line(line).is_ok_and(|l| l.brackets == 0 && l.blocks == 0 && !l.continues)
+}
+
+/// The leading identifier of a statement (`require` in `require "x"`).
+fn first_word(text: &str) -> &str {
+    let end = text
+        .find(|c: char| !(c.is_alphanumeric() || c == '_'))
+        .unwrap_or(text.len());
+    &text[..end]
+}
+
+/// Refuse a file the Ruby frontend cannot lex: a construct outside the subset
+/// `lex` reads could hide a block or a statement boundary, and the converter
+/// would then leave part of a statement active.
+fn refuse_unlexed(source: &str) -> Result<(), ConvertError> {
+    for (n, line) in source.lines().enumerate() {
+        if let Err(why) = ruby_line(line) {
+            return Err(ConvertError::ParseError {
+                source_lang: "ruby".into(),
+                message: format!(
+                    "line {} uses {why}, which the converter does not lex; convert this file by hand",
+                    n + 1
+                ),
+            });
+        }
     }
-    let first = t.split_whitespace().next().unwrap_or("");
-    let kind = [
+    Ok(())
+}
+
+/// What kind of statement a header line starts, for the todo note: its leading
+/// keyword, `do` for a `do` block, or `statement`.
+fn block_kind(code: &str) -> &'static str {
+    let first = code.split_whitespace().next().unwrap_or("");
+    [
         "if", "unless", "while", "until", "case", "begin", "for", "def", "class", "module",
     ]
     .into_iter()
-    .find(|k| *k == first)?;
-    if t.split_whitespace().last() == Some("end") {
-        return None;
-    }
-    Some(kind)
-}
-
-fn is_block_close(t: &str) -> bool {
-    t == "end"
-        || ["end.", "end ", "end)", "end,"]
-            .iter()
-            .any(|p| t.starts_with(p))
+    .find(|k| *k == first)
+    .unwrap_or(if code.split_whitespace().any(|w| w == "do") {
+        "do"
+    } else {
+        "statement"
+    })
 }
 
 /// `EXPR.each do |NAME|` → `(EXPR, NAME)`.

@@ -7,25 +7,47 @@
 //! Flags: decorators (`@decorator`) → MigrateTodo (closure-wrap pattern);
 //! `eval`/`exec` → Untranslatable; `*args`/`**kwargs` → MigrateTodo
 //! (Garnet has fixed arity).
+//!
+//! C1-18: the unit is the logical line (see `lex`). A compound statement is its
+//! header plus every deeper-indented logical line and its `elif`/`else`/`except`/
+//! `finally` clauses. Only a simple statement on one physical line becomes code;
+//! simple `for`/`while` loops are lowered; every other statement is kept whole as
+//! one MigrateTodo. Tab indentation and constructs `lex` does not read are refused.
 
+use super::lex::PyLex;
 use crate::cir::{Cir, CirLit, CirTy, FuncMode, Ownership, Param};
 use crate::error::ConvertError;
 use crate::lineage::Lineage;
 
 pub fn parse_and_lift(source: &str, filename: &str) -> Result<Cir, ConvertError> {
-    let mut p = PythonParser::new(source, filename);
+    let mut p = PythonParser::new(source, filename)?;
     p.parse_module()
 }
 
 struct PythonParser<'a> {
     lines: Vec<&'a str>,
+    /// For the first physical line of a logical line: one past its last.
+    ends: Vec<usize>,
+    /// Each physical line's code: its length without a trailing comment.
+    code_len: Vec<usize>,
     filename: String,
     line_idx: usize,
     global_byte_offset: Vec<usize>, // per-line byte offset within source
 }
 
+/// The refusal for a file the frontend does not read.
+fn refuse(line: usize, why: &str) -> ConvertError {
+    ConvertError::ParseError {
+        source_lang: "python".into(),
+        message: format!(
+            "line {} uses {why}, which the converter does not lex; convert this file by hand",
+            line + 1
+        ),
+    }
+}
+
 impl<'a> PythonParser<'a> {
-    fn new(source: &'a str, filename: &str) -> Self {
+    fn new(source: &'a str, filename: &str) -> Result<Self, ConvertError> {
         let lines: Vec<&str> = source.lines().collect();
         let mut offsets = Vec::with_capacity(lines.len());
         let mut off = 0;
@@ -33,12 +55,15 @@ impl<'a> PythonParser<'a> {
             offsets.push(off);
             off += l.len() + 1; // +1 for newline
         }
-        Self {
+        let (ends, code_len) = logical_lines(&lines)?;
+        Ok(Self {
             lines,
+            ends,
+            code_len,
             filename: filename.to_string(),
             line_idx: 0,
             global_byte_offset: offsets,
-        }
+        })
     }
 
     fn lineage(&self, start_line: usize) -> Lineage {
@@ -55,21 +80,70 @@ impl<'a> PythonParser<'a> {
         Lineage::new("python", &self.filename, start, end)
     }
 
+    /// One past the last physical line of the logical line starting at `start`.
+    fn end_of(&self, start: usize) -> usize {
+        self.ends.get(start).copied().unwrap_or(0).max(start + 1)
+    }
+
+    /// The code of the logical line starting at `start`: its physical lines
+    /// without comments or a `\` continuation, trimmed and joined by a space.
+    /// Empty for a blank or comment-only line.
+    fn code_of(&self, start: usize) -> String {
+        let end = self.end_of(start).min(self.lines.len());
+        (start..end)
+            .map(|i| {
+                let code = self.lines[i][..self.code_len[i]].trim();
+                match code.strip_suffix('\\') {
+                    Some(joined) if i + 1 < end => joined.trim_end(),
+                    _ => code,
+                }
+            })
+            .filter(|code| !code.is_empty())
+            .collect::<Vec<_>>()
+            .join(" ")
+    }
+
+    /// The source lines `start..end`, dedented by `indent`, for hand translation.
+    fn text(&self, start: usize, indent: usize, end: usize) -> String {
+        self.lines[start..end]
+            .iter()
+            .map(|l| {
+                l.get(indent.min(leading_indent(l))..)
+                    .unwrap_or("")
+                    .trim_end()
+            })
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+
+    fn todo(&self, start: usize, note: String) -> Cir {
+        Cir::MigrateTodo {
+            placeholder: Box::new(Cir::Literal(CirLit::Nil, self.lineage(start))),
+            note,
+            lineage: self.lineage(start),
+        }
+    }
+
     fn parse_module(&mut self) -> Result<Cir, ConvertError> {
         let start = self.line_idx;
         let mut items = Vec::new();
         while self.line_idx < self.lines.len() {
-            let raw = self.current_line();
-            let trimmed = raw.trim_start();
-            if trimmed.is_empty() || trimmed.starts_with('#') {
-                self.line_idx += 1;
+            let at = self.line_idx;
+            if self.code_of(at).is_empty() {
+                self.line_idx = self.end_of(at);
                 continue;
             }
-            let item = self.parse_item()?;
-            if let Some(i) = item {
-                items.push(i);
-            } else {
-                self.line_idx += 1;
+            if leading_indent(self.lines[at]) > 0 {
+                return Err(ConvertError::ParseError {
+                    source_lang: "python".into(),
+                    message: format!(
+                        "line {} is indented where a statement starts at the margin; convert this file by hand",
+                        at + 1
+                    ),
+                });
+            }
+            if let Some(item) = self.parse_item()? {
+                items.push(item);
             }
         }
         Ok(Cir::Module {
@@ -80,40 +154,28 @@ impl<'a> PythonParser<'a> {
         })
     }
 
+    /// One module-level statement. Always moves past it.
     fn parse_item(&mut self) -> Result<Option<Cir>, ConvertError> {
         let start = self.line_idx;
-        let raw = self.current_line().to_string();
-        let indent = leading_indent(&raw);
-        let trimmed = raw.trim_start().to_string();
-
-        if trimmed.starts_with('@') {
-            // Decorator → MigrateTodo, consume this line + following def
-            self.line_idx += 1;
-            if self.line_idx < self.lines.len() {
-                self.line_idx += 1; // skip the decorated def too
-            }
-            return Ok(Some(Cir::MigrateTodo {
-                placeholder: Box::new(Cir::Literal(CirLit::Nil, self.lineage(start))),
-                note: format!(
-                    "Python decorator: {} — convert to explicit closure-wrap",
-                    trimmed
-                ),
-                lineage: self.lineage(start),
-            }));
+        let code = self.code_of(start);
+        if code.starts_with('@') {
+            return Ok(Some(self.decorated_todo(start, 0)));
         }
-
-        if trimmed.starts_with("def ") {
-            return Ok(Some(self.parse_def(start, indent)?));
+        if code.starts_with("def ") && code.ends_with(':') {
+            return Ok(Some(self.parse_def(start, 0)?));
         }
-        if trimmed.starts_with("class ") {
-            return Ok(Some(self.parse_class(start, indent)?));
+        if code.starts_with("class ") && code.ends_with(':') {
+            return Ok(Some(self.parse_class(start, 0)?));
         }
-        if trimmed.starts_with("import ") || trimmed.starts_with("from ") {
-            self.line_idx += 1;
-            return self.parse_item();
+        if let Some(keyword) = header_keyword(&code) {
+            return Ok(Some(self.compound_todo(keyword, start, 0)));
         }
-        if trimmed.starts_with("eval(") || trimmed.starts_with("exec(") {
-            self.line_idx += 1;
+        let end = self.end_of(start);
+        self.line_idx = end;
+        if code.starts_with("import ") || code.starts_with("from ") {
+            return Ok(None);
+        }
+        if code.starts_with("eval(") || code.starts_with("exec(") {
             return Ok(Some(Cir::Untranslatable {
                 reason: "Python eval/exec — Garnet has no runtime source evaluation".into(),
                 lineage: self.lineage(start),
@@ -121,27 +183,22 @@ impl<'a> PythonParser<'a> {
         }
         // Top-level statement (rare at module level except for main
         // guard). Consume as MigrateTodo.
-        self.line_idx += 1;
-        if trimmed.is_empty() {
-            return Ok(None);
-        }
-        Ok(Some(Cir::MigrateTodo {
-            placeholder: Box::new(Cir::Literal(CirLit::Nil, self.lineage(start))),
-            note: format!("Python top-level statement: {}", trimmed),
-            lineage: self.lineage(start),
-        }))
+        let text = self.text(start, 0, end);
+        Ok(Some(self.todo(
+            start,
+            format!("Python top-level statement: {text}"),
+        )))
     }
 
     fn parse_def(&mut self, start_line: usize, parent_indent: usize) -> Result<Cir, ConvertError> {
-        let raw = self.current_line().to_string();
-        self.line_idx += 1;
-        let trimmed = raw.trim_start();
-        // def name(params) -> ReturnType:
-        let rest = &trimmed[4..]; // after "def "
+        // def name(params) -> ReturnType:  (the header may span lines)
+        let header = self.code_of(start_line);
+        let rest = &header[4..]; // after "def "
         let paren = rest.find('(').ok_or_else(|| ConvertError::ParseError {
             source_lang: "python".into(),
-            message: format!("def without open paren: {trimmed}"),
+            message: format!("def without open paren: {header}"),
         })?;
+        self.line_idx = self.end_of(start_line);
         let name = rest[..paren].trim().to_string();
         let after_paren = &rest[paren + 1..];
         let closing = after_paren.rfind("):").or_else(|| after_paren.rfind(')'));
@@ -151,8 +208,8 @@ impl<'a> PythonParser<'a> {
         };
         let params = parse_params(params_src);
         // Extract return type if present
-        let return_ty = if let Some(arrow) = trimmed.find("->") {
-            let tail = &trimmed[arrow + 2..];
+        let return_ty = if let Some(arrow) = header.find("->") {
+            let tail = &header[arrow + 2..];
             let colon = tail.find(':').unwrap_or(tail.len());
             parse_ty(tail[..colon].trim())
         } else {
@@ -160,7 +217,7 @@ impl<'a> PythonParser<'a> {
         };
 
         // Body: lines more indented than parent_indent
-        let body = self.parse_indented_body(parent_indent);
+        let body = self.parse_indented_body(parent_indent, true);
 
         Ok(Cir::Func {
             name,
@@ -178,10 +235,9 @@ impl<'a> PythonParser<'a> {
         start_line: usize,
         parent_indent: usize,
     ) -> Result<Cir, ConvertError> {
-        let raw = self.current_line().to_string();
-        self.line_idx += 1;
-        let trimmed = raw.trim_start();
-        let rest = &trimmed[6..]; // after "class "
+        let header = self.code_of(start_line);
+        self.line_idx = self.end_of(start_line);
+        let rest = &header[6..]; // after "class "
         let name = rest
             .split(['(', ':'])
             .next()
@@ -189,18 +245,21 @@ impl<'a> PythonParser<'a> {
             .trim()
             .to_string();
 
-        let body = self.parse_indented_body(parent_indent);
-        // Split body into fields (from __init__) + methods
+        // A class body is not a function body: a loop at class level is kept
+        // whole and a statement stays text.
+        let body = self.parse_indented_body(parent_indent, false);
+        // Split body into fields (from __init__) + methods; every other
+        // class-level statement is kept as a todo, not dropped.
         let mut methods = Vec::new();
         let mut fields = Vec::new();
-        for b in &body {
-            if let Cir::Func {
-                name: fname,
-                body: fb,
-                ..
-            } = b
-            {
-                if fname == "__init__" {
+        let mut kept = Vec::new();
+        for b in body {
+            match b {
+                Cir::Func {
+                    name: ref fname,
+                    body: ref fb,
+                    ..
+                } if fname == "__init__" => {
                     // Try to extract self.x = y assignments as fields
                     for s in fb {
                         if let Cir::Assign { lhs, .. } = s {
@@ -213,142 +272,193 @@ impl<'a> PythonParser<'a> {
                             }
                         }
                     }
-                } else {
-                    methods.push(b.clone());
                 }
+                Cir::Func { .. } => methods.push(b),
+                Cir::Ident(text, lineage) => kept.push(Cir::MigrateTodo {
+                    placeholder: Box::new(Cir::Literal(CirLit::Nil, lineage.clone())),
+                    note: format!("Python class-level statement: {text}"),
+                    lineage,
+                }),
+                // A class body holds only definitions, todos and statement text.
+                other => kept.push(other),
             }
         }
 
+        let mut items = vec![
+            Cir::Struct {
+                name: name.clone(),
+                fields,
+                lineage: self.lineage(start_line),
+            },
+            Cir::Impl {
+                target: name.clone(),
+                methods,
+                lineage: self.lineage(start_line),
+            },
+        ];
+        items.extend(kept);
         Ok(Cir::Module {
-            name: name.clone(),
-            items: vec![
-                Cir::Struct {
-                    name: name.clone(),
-                    fields,
-                    lineage: self.lineage(start_line),
-                },
-                Cir::Impl {
-                    target: name,
-                    methods,
-                    lineage: self.lineage(start_line),
-                },
-            ],
+            name,
+            items,
             sandbox: false,
             lineage: self.lineage(start_line),
         })
     }
 
-    fn parse_indented_body(&mut self, parent_indent: usize) -> Vec<Cir> {
+    /// The statements of a body indented deeper than `parent_indent`. In a
+    /// function body simple `for`/`while` loops are lowered to brace form and
+    /// simple statements become code; a class body keeps them as text.
+    fn parse_indented_body(&mut self, parent_indent: usize, function_body: bool) -> Vec<Cir> {
         let mut body = Vec::new();
         while self.line_idx < self.lines.len() {
-            let raw = self.current_line().to_string();
-            let trimmed = raw.trim_start().to_string();
-            let indent = leading_indent(&raw);
-            if trimmed.is_empty() || trimmed.starts_with('#') {
-                self.line_idx += 1;
+            let start = self.line_idx;
+            let code = self.code_of(start);
+            if code.is_empty() {
+                self.line_idx = self.end_of(start);
                 continue;
             }
+            let indent = leading_indent(self.lines[start]);
             if indent <= parent_indent {
                 break;
             }
-            let line_start = self.line_idx;
-            // Recognize nested defs (methods inside a class body)
-            if trimmed.starts_with("def ") {
-                if let Ok(f) = self.parse_def(line_start, indent) {
-                    body.push(f);
-                    continue;
-                }
-            }
-            // C1-18: a block (`for x in xs:`, `with ...:`, `if ...:` and so on) is
-            // handled whole. Simple `for`/`while` loops are lowered to brace form;
-            // every other block is kept as one whole-statement MigrateTodo, so its
-            // body is never flattened into the enclosing function.
-            if let Some(keyword) = block_keyword(&trimmed) {
-                let end = self.block_end(line_start, indent);
-                let header = strip_python_comment(&trimmed);
-                if let Some(lowered) = self.lower_loop(keyword, header, line_start, indent, end) {
-                    body.push(lowered);
-                } else {
-                    body.push(self.block_todo(keyword, line_start, indent, end));
-                    self.line_idx = end;
-                }
+            if code.starts_with('@') {
+                body.push(self.decorated_todo(start, indent));
                 continue;
             }
-            // C1-18: a statement that leaves a bracket open (or ends in `\`) runs on
-            // over the following physical lines. It is kept whole as one
+            // Recognize nested defs (methods inside a class body)
+            if code.starts_with("def ") && code.ends_with(':') {
+                match self.parse_def(start, indent) {
+                    Ok(f) => {
+                        body.push(f);
+                        continue;
+                    }
+                    Err(_) => self.line_idx = start,
+                }
+            }
+            // A compound statement (`for x in xs:`, `with ...:`, `if x: y` ...) is
+            // handled whole. Simple `for`/`while` loops are lowered to brace form;
+            // every other one is kept as one whole-statement MigrateTodo, so its
+            // body is never flattened into the enclosing function.
+            if let Some(keyword) = header_keyword(&code) {
+                let one_line_header = self.end_of(start) == start + 1;
+                if function_body && one_line_header && code.ends_with(':') {
+                    let end = self.block_end(start, indent);
+                    if let Some(lowered) = self.lower_loop(keyword, &code, start, indent, end) {
+                        body.push(lowered);
+                        continue;
+                    }
+                }
+                body.push(self.compound_todo(keyword, start, indent));
+                continue;
+            }
+            // A statement that spans physical lines is kept whole as one
             // MigrateTodo, so no fragment of it becomes active code.
-            let end = self.logical_end(line_start);
-            if end > line_start + 1 {
-                body.push(self.statement_todo(line_start, indent, end));
+            let end = self.end_of(start);
+            if end > start + 1 {
+                body.push(self.statement_todo(start, indent, end));
                 self.line_idx = end;
                 continue;
             }
-            // Simplified: each physical line is one statement.
-            if let Some(stripped) = trimmed.strip_prefix("return") {
-                let expr_src = stripped.trim();
+            // A simple statement on one physical line. Its trailing comment
+            // travels with the code.
+            let line = self.lines[start].trim();
+            if !function_body {
+                body.push(Cir::Ident(line.to_string(), self.lineage(start)));
+            } else if code == "return" || code.starts_with("return ") {
+                let expr_src = code["return".len()..].trim();
                 body.push(Cir::Return {
                     value: if expr_src.is_empty() {
                         None
                     } else {
                         Some(Box::new(Cir::Ident(
                             expr_src.to_string(),
-                            self.lineage(line_start),
+                            self.lineage(start),
                         )))
                     },
-                    lineage: self.lineage(line_start),
+                    lineage: self.lineage(start),
                 });
-            } else if trimmed.contains(" = ") && trimmed.starts_with("self.") {
+            } else if code.contains(" = ") && code.starts_with("self.") {
                 // self.x = y — recognize as field write
-                let parts: Vec<&str> = trimmed.splitn(2, " = ").collect();
+                let parts: Vec<&str> = code.splitn(2, " = ").collect();
                 let field = parts[0].trim_start_matches("self.").to_string();
                 body.push(Cir::Assign {
                     lhs: Box::new(Cir::FieldAccess {
-                        recv: Box::new(Cir::Ident("self".into(), self.lineage(line_start))),
+                        recv: Box::new(Cir::Ident("self".into(), self.lineage(start))),
                         name: field,
-                        lineage: self.lineage(line_start),
+                        lineage: self.lineage(start),
                     }),
-                    rhs: Box::new(Cir::Ident(parts[1].to_string(), self.lineage(line_start))),
-                    lineage: self.lineage(line_start),
+                    rhs: Box::new(Cir::Ident(parts[1].to_string(), self.lineage(start))),
+                    lineage: self.lineage(start),
                 });
             } else {
-                body.push(Cir::Ident(trimmed.to_string(), self.lineage(line_start)));
+                body.push(Cir::Ident(line.to_string(), self.lineage(start)));
             }
             self.line_idx += 1;
         }
         body
     }
 
-    fn current_line(&self) -> &str {
-        self.lines.get(self.line_idx).copied().unwrap_or("")
+    /// One past the last line of the block whose header starts at `header`
+    /// (indent `indent`): every following logical line indented deeper, blank
+    /// lines between them, and any `elif`/`else`/`except`/`finally` clause at the
+    /// header's indent. Trailing blank lines belong to whatever follows.
+    fn block_end(&self, header: usize, indent: usize) -> usize {
+        let mut idx = self.end_of(header);
+        let mut end = idx;
+        while idx < self.lines.len() {
+            let code = self.code_of(idx);
+            let next = self.end_of(idx);
+            if !code.is_empty() {
+                let line_indent = leading_indent(self.lines[idx]);
+                let clause = line_indent == indent && is_continuation_clause(&code);
+                if line_indent <= indent && !clause {
+                    break;
+                }
+                end = next;
+            }
+            idx = next;
+        }
+        end
     }
 
-    /// One past the last line of the block whose header is at `header` (indent
-    /// `indent`): every following line indented deeper, blank lines, and any
-    /// `elif`/`else`/`except`/`finally` clause at the header's indent.
-    fn block_end(&self, header: usize, indent: usize) -> usize {
-        let mut idx = header + 1;
-        while idx < self.lines.len() {
-            let line = self.lines[idx];
-            let trimmed = line.trim_start();
-            let line_indent = leading_indent(line);
-            let inside = trimmed.is_empty() || trimmed.starts_with('#') || line_indent > indent;
-            let clause = line_indent == indent && is_continuation_clause(trimmed);
-            if inside || clause {
-                idx += 1;
-            } else {
-                break;
-            }
+    /// A compound statement the converter does not lower, kept whole: with its
+    /// indented body and clauses when its header ends in `:`, or on its own when
+    /// its body is on the header line.
+    fn compound_todo(&mut self, keyword: &str, start: usize, indent: usize) -> Cir {
+        let end = if self.code_of(start).ends_with(':') {
+            self.block_end(start, indent)
+        } else {
+            self.end_of(start)
+        };
+        self.line_idx = end;
+        self.block_todo(keyword, start, indent, end)
+    }
+
+    /// Decorators and the definition they decorate, body included, kept whole.
+    fn decorated_todo(&mut self, start: usize, indent: usize) -> Cir {
+        let mut def = start;
+        while def < self.lines.len() && {
+            let code = self.code_of(def);
+            code.is_empty() || code.starts_with('@')
+        } {
+            def = self.end_of(def);
         }
-        // Trailing blank or comment lines belong to whatever follows.
-        while idx > header + 1 {
-            let t = self.lines[idx - 1].trim_start();
-            if t.is_empty() || t.starts_with('#') {
-                idx -= 1;
-            } else {
-                break;
-            }
-        }
-        idx
+        let end = if def >= self.lines.len() {
+            def
+        } else if self.code_of(def).ends_with(':') {
+            self.block_end(def, indent)
+        } else {
+            self.end_of(def)
+        };
+        self.line_idx = end;
+        let first = self.lines[start].trim();
+        let text = self.text(start, indent, end);
+        self.todo(
+            start,
+            format!(
+                "Python decorator: {first} — convert to explicit closure-wrap; the decorated definition is kept whole for hand translation:\n{text}"
+            ),
+        )
     }
 
     /// Lower `for NAME in EXPR:` and `while COND:` (with no `else:` clause) to
@@ -365,11 +475,12 @@ impl<'a> PythonParser<'a> {
             return None;
         }
         // A loop `else:` clause has no brace form; keep the block whole.
-        let has_clause = (start + 1..end).any(|i| {
-            leading_indent(self.lines[i]) == indent && !self.lines[i].trim_start().is_empty()
-        });
-        if has_clause {
-            return None;
+        let mut idx = self.end_of(start);
+        while idx < end {
+            if leading_indent(self.lines[idx]) == indent && !self.code_of(idx).is_empty() {
+                return None;
+            }
+            idx = self.end_of(idx);
         }
         let head = header.strip_suffix(':')?.trim_end();
         let node = if keyword == "for" {
@@ -379,8 +490,8 @@ impl<'a> PythonParser<'a> {
             if !is_identifier(var) {
                 return None;
             }
-            self.line_idx = start + 1;
-            let body = self.parse_indented_body(indent);
+            self.line_idx = self.end_of(start);
+            let body = self.parse_indented_body(indent, true);
             Cir::For {
                 var: var.to_string(),
                 iter: Box::new(Cir::Ident(iter.trim().to_string(), self.lineage(start))),
@@ -389,8 +500,8 @@ impl<'a> PythonParser<'a> {
             }
         } else {
             let cond = head.strip_prefix("while ")?.trim();
-            self.line_idx = start + 1;
-            let body = self.parse_indented_body(indent);
+            self.line_idx = self.end_of(start);
+            let body = self.parse_indented_body(indent, true);
             Cir::While {
                 cond: Box::new(Cir::Ident(cond.to_string(), self.lineage(start))),
                 body,
@@ -401,133 +512,93 @@ impl<'a> PythonParser<'a> {
         Some(node)
     }
 
-    /// The whole block, header and body, as one MigrateTodo whose note carries
-    /// The line index just past the logical line that starts at `start`: while a
-    /// bracket opened on it is still open, or a line ends in `\`, the statement
-    /// continues on the next physical line. Unbalanced to the end of the file
-    /// means the rest of the file.
-    fn logical_end(&self, start: usize) -> usize {
-        let mut depth: i64 = 0;
-        let mut idx = start;
-        while idx < self.lines.len() {
-            let code = strip_python_comment(self.lines[idx]);
-            depth += bracket_delta(code);
-            idx += 1;
-            if depth <= 0 && !code.ends_with('\\') {
-                break;
-            }
-        }
-        idx
-    }
-
     /// A statement spanning `start..end` kept whole, with its source lines
     /// (dedented to its first line) for hand translation.
     fn statement_todo(&self, start: usize, indent: usize, end: usize) -> Cir {
-        let text = self.lines[start..end]
-            .iter()
-            .map(|l| l.get(indent.min(leading_indent(l))..).unwrap_or(""))
-            .collect::<Vec<_>>()
-            .join("\n");
-        Cir::MigrateTodo {
-            placeholder: Box::new(Cir::Literal(CirLit::Nil, self.lineage(start))),
-            note: format!(
+        let text = self.text(start, indent, end);
+        self.todo(
+            start,
+            format!(
                 "Python statement spanning {} lines kept whole for hand translation:\n{text}",
                 end - start
             ),
-            lineage: self.lineage(start),
-        }
+        )
     }
 
+    /// The whole block, header and body, as one MigrateTodo whose note carries
     /// the source lines (dedented to the header) for hand translation.
     fn block_todo(&self, keyword: &str, start: usize, indent: usize, end: usize) -> Cir {
-        let text = self.lines[start..end]
-            .iter()
-            .map(|l| l.get(indent.min(leading_indent(l))..).unwrap_or(""))
-            .collect::<Vec<_>>()
-            .join("\n");
-        Cir::MigrateTodo {
-            placeholder: Box::new(Cir::Literal(CirLit::Nil, self.lineage(start))),
-            note: format!("Python `{keyword}` block kept whole for hand translation:\n{text}"),
-            lineage: self.lineage(start),
-        }
+        let text = self.text(start, indent, end);
+        self.todo(
+            start,
+            format!("Python `{keyword}` block kept whole for hand translation:\n{text}"),
+        )
     }
 }
 
-/// The code of a Python line without its trailing `# comment`, trimmed at the
-/// end. A `#` inside a quoted string is not a comment.
-fn strip_python_comment(line: &str) -> &str {
-    let mut quote: Option<char> = None;
-    let mut escaped = false;
-    for (i, c) in line.char_indices() {
-        match quote {
-            Some(q) => {
-                if escaped {
-                    escaped = false;
-                } else if c == '\\' {
-                    escaped = true;
-                } else if c == q {
-                    quote = None;
-                }
+/// Split the file into logical lines with `lex::PyLex`: for each logical line's
+/// first physical line, one past its last; and each physical line's code length.
+/// Refuses tab indentation, a construct the lexer does not read, and a string,
+/// bracket or `\` continuation still open at the end of the file.
+fn logical_lines(lines: &[&str]) -> Result<(Vec<usize>, Vec<usize>), ConvertError> {
+    let mut ends = vec![0; lines.len()];
+    let mut code_len = vec![0; lines.len()];
+    let mut lex = PyLex::default();
+    let mut i = 0;
+    while i < lines.len() {
+        let start = i;
+        let line = lines[i];
+        if line[..line.len() - line.trim_start().len()].contains('\t') && !line.trim().is_empty() {
+            return Err(refuse(i, "tab indentation"));
+        }
+        let mut depth = 0i64;
+        loop {
+            let scanned = lex.scan(lines[i]).map_err(|why| refuse(i, why))?;
+            code_len[i] = scanned.comment_at.unwrap_or(lines[i].len());
+            depth += scanned.delta;
+            i += 1;
+            if depth <= 0 && !scanned.continues && !lex.open() {
+                break;
             }
-            None => match c {
-                '\'' | '"' => quote = Some(c),
-                '#' => return line[..i].trim_end(),
-                _ => {}
-            },
-        }
-    }
-    line.trim_end()
-}
-
-/// Brackets opened minus brackets closed on a line of code, outside strings.
-fn bracket_delta(code: &str) -> i64 {
-    let mut quote: Option<char> = None;
-    let mut escaped = false;
-    let mut delta = 0;
-    for c in code.chars() {
-        match quote {
-            Some(q) => {
-                if escaped {
-                    escaped = false;
-                } else if c == '\\' {
-                    escaped = true;
-                } else if c == q {
-                    quote = None;
-                }
+            if i == lines.len() {
+                let why = if lex.open() {
+                    "a triple-quoted string that never closes"
+                } else {
+                    "a bracket or continuation that never closes"
+                };
+                return Err(refuse(start, why));
             }
-            None => match c {
-                '\'' | '"' => quote = Some(c),
-                '(' | '[' | '{' => delta += 1,
-                ')' | ']' | '}' => delta -= 1,
-                _ => {}
-            },
         }
+        ends[start] = i;
     }
-    delta
+    Ok((ends, code_len))
 }
 
-/// The keyword of a statement that opens an indented Python block. A trailing
-/// `# comment` after the colon does not hide the block.
-fn block_keyword(trimmed: &str) -> Option<&'static str> {
-    let trimmed = strip_python_comment(trimmed);
-    if !trimmed.ends_with(':') {
-        return None;
-    }
+/// The keyword of a compound statement, whether its header ends on this line
+/// (`if x:`), spans lines (`if (`), or carries its body (`if x: y`). `match` and
+/// `case` are soft keywords: they open a statement only when it ends in `:`.
+fn header_keyword(code: &str) -> Option<&'static str> {
+    let starts = |kw: &str| {
+        code.strip_prefix(kw).is_some_and(|rest| {
+            rest.is_empty() || rest.starts_with([' ', '(', ':', '[', '"', '\''])
+        })
+    };
     [
-        "for", "while", "with", "if", "elif", "else", "try", "except", "finally", "async", "match",
-        "case", "class",
+        "for", "while", "with", "if", "elif", "else", "try", "except", "finally", "async", "class",
+        "def",
     ]
     .into_iter()
-    .find(|kw| {
-        trimmed == *kw
-            || trimmed.starts_with(&format!("{kw} "))
-            || trimmed.starts_with(&format!("{kw}:"))
+    .find(|kw| starts(kw))
+    .or_else(|| {
+        ["match", "case"]
+            .into_iter()
+            .find(|kw| code.ends_with(':') && starts(kw))
     })
 }
 
-fn is_continuation_clause(trimmed: &str) -> bool {
+fn is_continuation_clause(code: &str) -> bool {
     matches!(
-        block_keyword(trimmed),
+        header_keyword(code),
         Some("elif" | "else" | "except" | "finally")
     )
 }

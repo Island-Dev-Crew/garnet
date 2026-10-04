@@ -287,12 +287,15 @@ fn try_convert(src: &str, lang: SourceLang, lang_name: &str, file: &str) -> Resu
         fail_on_todo: false,
         fail_on_untranslatable: false,
     };
-    convert(src, lang, file, opts).map(|(out, _)| out.garnet).map_err(|e| e.to_string())
+    convert(src, lang, file, opts)
+        .map(|(out, _)| out.garnet)
+        .map_err(|e| e.to_string())
 }
 
 #[test]
 fn python_block_whose_header_spans_lines_is_kept_whole() {
-    let src = "def save(enabled):\n    if (\n        enabled\n    ):\n        persist()\n    return 0\n";
+    let src =
+        "def save(enabled):\n    if (\n        enabled\n    ):\n        persist()\n    return 0\n";
     let (garnet, _) = convert_src(src, SourceLang::Python, "python", "save.py");
     assert_parses(&garnet);
     assert_inactive(&garnet, "persist()");
@@ -326,8 +329,14 @@ fn go_braces_inside_comments_and_raw_strings_do_not_count() {
         let (garnet, _) = convert_src(&src, SourceLang::Go, "go", "run.go");
         assert_parses(&garnet);
         assert_inactive(&garnet, "persist()");
-        assert!(!garnet.contains("unparsed Go item: return 0"), "{body}:\n{garnet}");
-        assert!(code_lines(&garnet).contains(&"return 0"), "{body}:\n{garnet}");
+        assert!(
+            !garnet.contains("unparsed Go item: return 0"),
+            "{body}:\n{garnet}"
+        );
+        assert!(
+            code_lines(&garnet).contains(&"return 0"),
+            "{body}:\n{garnet}"
+        );
     }
 }
 
@@ -341,7 +350,10 @@ fn ruby_outside_the_lexed_subset_is_refused() {
     ] {
         let src = format!("def run(items)\n{line}\n    persist(item)\n  end\n  return 0\nend\n");
         let err = try_convert(&src, SourceLang::Ruby, "ruby", "run.rb").unwrap_err();
-        assert!(err.contains(what) && err.contains("line 2"), "{what}: {err}");
+        assert!(
+            err.contains(what) && err.contains("line 2"),
+            "{what}: {err}"
+        );
     }
 }
 
@@ -383,11 +395,19 @@ fn python_def_whose_signature_spans_lines_keeps_only_its_body_active() {
     let code = code_lines(&garnet);
     assert!(code.iter().any(|l| l.starts_with("def save(")), "{garnet}");
     assert!(code.contains(&"return 0"), "{garnet}");
+    // A header continued with `\` reads the same as one continued in brackets.
+    let src = "def save(path, \\\n         data):\n    return 0\n";
+    let (garnet, _) = convert_src(src, SourceLang::Python, "python", "save.py");
+    assert_parses(&garnet);
+    let code = code_lines(&garnet);
+    assert!(code.contains(&"def save(path, data) {"), "{garnet}");
+    assert!(code.contains(&"return 0"), "{garnet}");
 }
 
 #[test]
 fn python_decorated_definition_is_kept_whole() {
-    let src = "@cached\ndef load():\n    def inner():\n        return persist()\n    return inner()\n";
+    let src =
+        "@cached\ndef load():\n    def inner():\n        return persist()\n    return inner()\n";
     let (garnet, _) = convert_src(src, SourceLang::Python, "python", "load.py");
     assert_parses(&garnet);
     assert_inactive(&garnet, "persist()");
@@ -400,7 +420,10 @@ fn python_decorated_method_is_kept_whole_and_not_dropped() {
     let (garnet, _) = convert_src(src, SourceLang::Python, "python", "store.py");
     assert_parses(&garnet);
     assert_inactive(&garnet, "persist()");
-    assert!(garnet.contains("@staticmethod"), "the decorated method survives as a todo:\n{garnet}");
+    assert!(
+        garnet.contains("@staticmethod"),
+        "the decorated method survives as a todo:\n{garnet}"
+    );
 }
 
 #[test]
@@ -424,20 +447,26 @@ fn python_compound_statement_on_one_line_is_not_active() {
 
 #[test]
 fn python_tab_indentation_is_refused() {
-    let err = try_convert("def run():\n\treturn persist()\n", SourceLang::Python, "python", "run.py")
-        .unwrap_err();
+    let err = try_convert(
+        "def run():\n\treturn persist()\n",
+        SourceLang::Python,
+        "python",
+        "run.py",
+    )
+    .unwrap_err();
     assert!(err.contains("tab") && err.contains("line 2"), "{err}");
 }
 
 #[test]
 fn go_one_line_function_ends_where_its_brace_closes() {
-    let src = "package main\n\nfunc one() int { return 1 }\n\nfunc run() int {\n\treturn persist()\n}\n";
+    let src =
+        "package main\n\nfunc one() int { return 1 }\n\nfunc run() int {\n\treturn persist()\n}\n";
     let (garnet, _) = convert_src(src, SourceLang::Go, "go", "one.go");
     assert_parses(&garnet);
     let code = code_lines(&garnet);
     assert!(code.contains(&"return 1"), "{garnet}");
     assert!(code.contains(&"return persist()"), "{garnet}");
-    assert!(code.iter().any(|l| l.starts_with("def run(")), "{garnet}");
+    assert!(code.iter().any(|l| l.starts_with("fn run(")), "{garnet}");
 }
 
 #[test]
@@ -451,7 +480,8 @@ fn go_comment_or_raw_string_at_top_level_hides_its_functions() {
 
 #[test]
 fn go_statement_continued_by_a_trailing_operator_is_kept_whole() {
-    let src = "package main\n\nfunc run() int {\n\ttotal := 1 +\n\t\tpersist()\n\treturn total\n}\n";
+    let src =
+        "package main\n\nfunc run() int {\n\ttotal := 1 +\n\t\tpersist()\n\treturn total\n}\n";
     let (garnet, _) = convert_src(src, SourceLang::Go, "go", "run.go");
     assert_parses(&garnet);
     assert_inactive(&garnet, "persist()");
@@ -460,7 +490,8 @@ fn go_statement_continued_by_a_trailing_operator_is_kept_whole() {
 
 #[test]
 fn go_bare_block_is_kept_whole() {
-    let src = "package main\n\nfunc run() int {\n\tx := 0\n\t{\n\t\tx = persist()\n\t}\n\treturn x\n}\n";
+    let src =
+        "package main\n\nfunc run() int {\n\tx := 0\n\t{\n\t\tx = persist()\n\t}\n\treturn x\n}\n";
     let (garnet, _) = convert_src(src, SourceLang::Go, "go", "run.go");
     assert_parses(&garnet);
     assert_inactive(&garnet, "persist()");
@@ -469,7 +500,8 @@ fn go_bare_block_is_kept_whole() {
 
 #[test]
 fn ruby_block_opened_in_expression_position_is_kept_whole() {
-    let src = "def run(ready)\n  x = if ready\n    persist()\n  else\n    0\n  end\n  return x\nend\n";
+    let src =
+        "def run(ready)\n  x = if ready\n    persist()\n  else\n    0\n  end\n  return x\nend\n";
     let (garnet, _) = convert_src(src, SourceLang::Ruby, "ruby", "run.rb");
     assert_parses(&garnet);
     assert_inactive(&garnet, "persist()");
@@ -489,7 +521,10 @@ fn ruby_statement_spanning_lines_is_kept_whole() {
         let (garnet, _) = convert_src(&src, SourceLang::Ruby, "ruby", "run.rb");
         assert_parses(&garnet);
         assert_inactive(&garnet, "persist");
-        assert!(code_lines(&garnet).contains(&"return 0"), "{body}:\n{garnet}");
+        assert!(
+            code_lines(&garnet).contains(&"return 0"),
+            "{body}:\n{garnet}"
+        );
     }
 }
 
