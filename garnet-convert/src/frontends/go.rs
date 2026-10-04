@@ -291,6 +291,29 @@ impl<'a> GoParser<'a> {
             if t.is_empty() {
                 continue;
             }
+            // C1-18: a line that opens a block (`if x {`, `defer func() {`) or leaves
+            // a bracket open continues until its brackets balance. The whole span is
+            // one MigrateTodo, so its body never runs as code of the enclosing
+            // function and its closing `}` does not end the function.
+            let mut open = go_bracket_delta(strip_go_comment(t));
+            if open > 0 {
+                let mut text = vec![t.to_string()];
+                while open > 0 && !self.remaining().is_empty() {
+                    let next = self.read_to_line_end();
+                    open += go_bracket_delta(strip_go_comment(next.trim()));
+                    text.push(next.trim_end().to_string());
+                }
+                stmts.push(Cir::MigrateTodo {
+                    placeholder: Box::new(Cir::Literal(CirLit::Nil, self.lineage(start))),
+                    note: format!(
+                        "Go statement spanning {} lines kept whole for hand translation:\n{}",
+                        text.len(),
+                        text.join("\n")
+                    ),
+                    lineage: self.lineage(start),
+                });
+                continue;
+            }
             if let Some(stripped) = t.strip_prefix("return") {
                 let expr_src = stripped.trim();
                 stmts.push(Cir::Return {
@@ -417,6 +440,65 @@ fn derive_module_name(filename: &str) -> String {
     } else {
         out
     }
+}
+
+/// The code of a Go line without its trailing `// comment`. `//` inside a
+/// string, rune or raw string is not a comment.
+fn strip_go_comment(line: &str) -> &str {
+    let mut quote: Option<char> = None;
+    let mut escaped = false;
+    let mut prev_slash = false;
+    for (i, c) in line.char_indices() {
+        match quote {
+            Some(q) => {
+                if escaped {
+                    escaped = false;
+                } else if c == '\\' && q != '`' {
+                    escaped = true;
+                } else if c == q {
+                    quote = None;
+                }
+            }
+            None => {
+                if c == '/' && prev_slash {
+                    return line[..i - 1].trim_end();
+                }
+                prev_slash = c == '/';
+                if matches!(c, '"' | '\'' | '`') {
+                    quote = Some(c);
+                }
+            }
+        }
+    }
+    line.trim_end()
+}
+
+/// Brackets opened minus brackets closed on a line of Go code, outside
+/// strings, runes and raw strings.
+fn go_bracket_delta(code: &str) -> i64 {
+    let mut quote: Option<char> = None;
+    let mut escaped = false;
+    let mut delta = 0;
+    for c in code.chars() {
+        match quote {
+            Some(q) => {
+                if escaped {
+                    escaped = false;
+                } else if c == '\\' && q != '`' {
+                    escaped = true;
+                } else if c == q {
+                    quote = None;
+                }
+            }
+            None => match c {
+                '"' | '\'' | '`' => quote = Some(c),
+                '(' | '[' | '{' => delta += 1,
+                ')' | ']' | '}' => delta -= 1,
+                _ => {}
+            },
+        }
+    }
+    delta
 }
 
 #[cfg(test)]

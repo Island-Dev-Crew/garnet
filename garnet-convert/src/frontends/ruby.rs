@@ -265,7 +265,10 @@ impl<'a> RubyParser<'a> {
             if line.is_empty() {
                 continue;
             }
-            if line == "end" {
+            // Blocks are recognized on the code before any trailing `# comment`;
+            // the comment still travels with the line's text.
+            let code = strip_ruby_comment(&line);
+            if code == "end" {
                 break;
             }
             // C1-18: a `do ... end` block or a keyword block (`if`, `while`, `case`,
@@ -273,9 +276,9 @@ impl<'a> RubyParser<'a> {
             // is lowered to `for x in EXPR { ... }`; every other block is kept as
             // one whole-statement MigrateTodo, so neither its body nor its `end`
             // (for example `end.to_h`) spills into the enclosing def.
-            if let Some(kind) = block_opener(&line) {
+            if let Some(kind) = block_opener(code) {
                 if let Some((close, after)) = self.matching_end() {
-                    match each_header(&line) {
+                    match each_header(code) {
                         Some((iter, var)) if close == "end" => {
                             let body = self.parse_body_until_end()?;
                             stmts.push(Cir::For {
@@ -430,8 +433,8 @@ impl<'a> RubyParser<'a> {
         let mut pos = self.pos;
         for line in self.source[self.pos..].split_inclusive('\n') {
             pos += line.len();
-            let t = line.trim();
-            if t.is_empty() || t.starts_with('#') {
+            let t = strip_ruby_comment(line.trim());
+            if t.is_empty() {
                 continue;
             }
             if block_opener(t).is_some() {
@@ -494,6 +497,32 @@ fn derive_module_name(filename: &str) -> String {
     } else {
         out
     }
+}
+
+/// The code of a Ruby line without its trailing `# comment`, trimmed. A `#`
+/// inside a quoted string (including `#{...}` interpolation) is not a comment.
+fn strip_ruby_comment(line: &str) -> &str {
+    let mut quote: Option<char> = None;
+    let mut escaped = false;
+    for (i, c) in line.char_indices() {
+        match quote {
+            Some(q) => {
+                if escaped {
+                    escaped = false;
+                } else if c == '\\' {
+                    escaped = true;
+                } else if c == q {
+                    quote = None;
+                }
+            }
+            None => match c {
+                '\'' | '"' | '`' => quote = Some(c),
+                '#' => return line[..i].trim_end(),
+                _ => {}
+            },
+        }
+    }
+    line.trim_end()
 }
 
 /// The kind of block a Ruby line opens: `do` for `... do` / `... do |x|`, or the

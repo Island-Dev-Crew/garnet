@@ -265,12 +265,22 @@ impl<'a> PythonParser<'a> {
             // body is never flattened into the enclosing function.
             if let Some(keyword) = block_keyword(&trimmed) {
                 let end = self.block_end(line_start, indent);
-                if let Some(lowered) = self.lower_loop(keyword, &trimmed, line_start, indent, end) {
+                let header = strip_python_comment(&trimmed);
+                if let Some(lowered) = self.lower_loop(keyword, header, line_start, indent, end) {
                     body.push(lowered);
                 } else {
                     body.push(self.block_todo(keyword, line_start, indent, end));
                     self.line_idx = end;
                 }
+                continue;
+            }
+            // C1-18: a statement that leaves a bracket open (or ends in `\`) runs on
+            // over the following physical lines. It is kept whole as one
+            // MigrateTodo, so no fragment of it becomes active code.
+            let end = self.logical_end(line_start);
+            if end > line_start + 1 {
+                body.push(self.statement_todo(line_start, indent, end));
+                self.line_idx = end;
                 continue;
             }
             // Simplified: each physical line is one statement.
@@ -392,6 +402,42 @@ impl<'a> PythonParser<'a> {
     }
 
     /// The whole block, header and body, as one MigrateTodo whose note carries
+    /// The line index just past the logical line that starts at `start`: while a
+    /// bracket opened on it is still open, or a line ends in `\`, the statement
+    /// continues on the next physical line. Unbalanced to the end of the file
+    /// means the rest of the file.
+    fn logical_end(&self, start: usize) -> usize {
+        let mut depth: i64 = 0;
+        let mut idx = start;
+        while idx < self.lines.len() {
+            let code = strip_python_comment(self.lines[idx]);
+            depth += bracket_delta(code);
+            idx += 1;
+            if depth <= 0 && !code.ends_with('\\') {
+                break;
+            }
+        }
+        idx
+    }
+
+    /// A statement spanning `start..end` kept whole, with its source lines
+    /// (dedented to its first line) for hand translation.
+    fn statement_todo(&self, start: usize, indent: usize, end: usize) -> Cir {
+        let text = self.lines[start..end]
+            .iter()
+            .map(|l| l.get(indent.min(leading_indent(l))..).unwrap_or(""))
+            .collect::<Vec<_>>()
+            .join("\n");
+        Cir::MigrateTodo {
+            placeholder: Box::new(Cir::Literal(CirLit::Nil, self.lineage(start))),
+            note: format!(
+                "Python statement spanning {} lines kept whole for hand translation:\n{text}",
+                end - start
+            ),
+            lineage: self.lineage(start),
+        }
+    }
+
     /// the source lines (dedented to the header) for hand translation.
     fn block_todo(&self, keyword: &str, start: usize, indent: usize, end: usize) -> Cir {
         let text = self.lines[start..end]
@@ -407,9 +453,64 @@ impl<'a> PythonParser<'a> {
     }
 }
 
-/// The keyword of a statement that opens an indented Python block.
+/// The code of a Python line without its trailing `# comment`, trimmed at the
+/// end. A `#` inside a quoted string is not a comment.
+fn strip_python_comment(line: &str) -> &str {
+    let mut quote: Option<char> = None;
+    let mut escaped = false;
+    for (i, c) in line.char_indices() {
+        match quote {
+            Some(q) => {
+                if escaped {
+                    escaped = false;
+                } else if c == '\\' {
+                    escaped = true;
+                } else if c == q {
+                    quote = None;
+                }
+            }
+            None => match c {
+                '\'' | '"' => quote = Some(c),
+                '#' => return line[..i].trim_end(),
+                _ => {}
+            },
+        }
+    }
+    line.trim_end()
+}
+
+/// Brackets opened minus brackets closed on a line of code, outside strings.
+fn bracket_delta(code: &str) -> i64 {
+    let mut quote: Option<char> = None;
+    let mut escaped = false;
+    let mut delta = 0;
+    for c in code.chars() {
+        match quote {
+            Some(q) => {
+                if escaped {
+                    escaped = false;
+                } else if c == '\\' {
+                    escaped = true;
+                } else if c == q {
+                    quote = None;
+                }
+            }
+            None => match c {
+                '\'' | '"' => quote = Some(c),
+                '(' | '[' | '{' => delta += 1,
+                ')' | ']' | '}' => delta -= 1,
+                _ => {}
+            },
+        }
+    }
+    delta
+}
+
+/// The keyword of a statement that opens an indented Python block. A trailing
+/// `# comment` after the colon does not hide the block.
 fn block_keyword(trimmed: &str) -> Option<&'static str> {
-    if !trimmed.trim_end().ends_with(':') {
+    let trimmed = strip_python_comment(trimmed);
+    if !trimmed.ends_with(':') {
         return None;
     }
     [
