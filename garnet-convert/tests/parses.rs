@@ -732,3 +732,106 @@ fn an_import_sharing_its_line_keeps_what_follows() {
         "the statement is kept:\n{python}"
     );
 }
+
+// Codex lane B, round 4 on #607 (6a3f3523).
+
+#[test]
+fn python_escape_before_a_brace_does_not_hide_a_replacement_field() {
+    for src in [
+        "def save():\n    text = rf\"\"\"\\{ \"\"\"\n    persist()\n\"\"\" }\"\"\"\n",
+        "def save(d):\n    text = rf\"\\{d[\"key\"]}\"\n    return 0\n",
+        "def save():\n    text = rt\"\"\"\\{ \"\"\"\n    persist()\n\"\"\" }\"\"\"\n",
+    ] {
+        let err = try_convert(src, SourceLang::Python, "python", "save.py").unwrap_err();
+        assert!(
+            err.contains("own quote") && err.contains("line 2"),
+            "{src:?}: {err}"
+        );
+    }
+    // A named character escape in a non-raw f-string is not a field.
+    let (garnet, _) = convert_src(
+        "def save():\n    text = f\"\\N{EM DASH}\"\n    return 0\n",
+        SourceLang::Python,
+        "python",
+        "save.py",
+    );
+    assert_parses(&garnet);
+}
+
+#[test]
+fn python_inline_suite_keeps_its_clauses() {
+    for header in ["if ready: pass", "for x in items: pass"] {
+        let src = format!(
+            "def save(ready, items):\n    {header}\n    else:\n        persist()\n    return 0\n"
+        );
+        let (garnet, checklist) = convert_src(&src, SourceLang::Python, "python", "save.py");
+        assert_parses(&garnet);
+        assert_inactive(&garnet, "persist()");
+        assert_eq!(
+            1,
+            garnet.matches("@migrate_todo").count(),
+            "{header}: one whole statement:\n{garnet}\n{checklist}"
+        );
+    }
+}
+
+#[test]
+fn ruby_spaced_percent_or_slash_after_a_word_is_refused() {
+    for line in ["  puts  %q=hello", "  puts\t%q=hello", "  puts  /hello"] {
+        let src = format!("def save\n{line}\n  persist()\n=\n  return 0\nend\n");
+        let err = try_convert(&src, SourceLang::Ruby, "ruby", "save.rb").unwrap_err();
+        assert!(
+            err.contains("ambiguous") && err.contains("line 2"),
+            "{line:?}: {err}"
+        );
+    }
+}
+
+#[test]
+fn ruby_require_is_skipped_only_in_its_exact_form() {
+    for src in [
+        "require = def save\n  persist()\nend\n",
+        "require(\"x\") && (def save\n persist()\nend)\n",
+        "require! do\n def save\n  persist()\n end\nend\n",
+        "require(\"x\") do\n def save\n  persist()\n end\nend\n",
+    ] {
+        let (garnet, _) = convert_src(src, SourceLang::Ruby, "ruby", "save.rb");
+        assert_parses(&garnet);
+        assert!(
+            garnet.contains("persist()"),
+            "kept, not dropped: {src:?}\n{garnet}"
+        );
+    }
+}
+
+#[test]
+fn go_function_header_is_read_lexically() {
+    for src in [
+        "package example\nfunc save() int /* { return 0 } func injected() { persist() } */ { return 1 }\n",
+        "package example\nfunc save() int /* { return 0 }\nfunc injected() { persist() }\n*/ {\n return 1\n}\n",
+        "package example\nfunc save(x int /* ) int { return 0 }\nfunc injected() { persist() }\n*/ ) int {\n return 1\n}\n",
+    ] {
+        let (garnet, _) = convert_src(src, SourceLang::Go, "go", "save.go");
+        assert_parses(&garnet);
+        assert_inactive(&garnet, "persist()");
+        assert_inactive(&garnet, "injected");
+    }
+    // A struct return type's braces are not the body's.
+    let (garnet, _) = convert_src(
+        "package example\nfunc save() struct { value int } {\n persist()\n return struct{value int}{0}\n}\n",
+        SourceLang::Go,
+        "go",
+        "save.go",
+    );
+    assert_parses(&garnet);
+    assert_inactive(&garnet, "value int } {");
+}
+
+#[test]
+fn go_struct_with_a_raw_tag_across_lines_is_kept_whole() {
+    let src = "package example\ntype Store struct {\n Field int `\n}\nfunc injected() { persist() }\n`\n}\n";
+    let (garnet, _) = convert_src(src, SourceLang::Go, "go", "store.go");
+    assert_parses(&garnet);
+    assert_inactive(&garnet, "persist()");
+    assert_inactive(&garnet, "injected");
+}
