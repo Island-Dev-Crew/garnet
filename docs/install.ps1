@@ -163,6 +163,15 @@
         return "$($converted[0])"
     }
 
+    # The agent a throwaway gpg home started is stopped, so it holds no file open
+    # in the home when the home is removed.
+    function Stop-GpgAgent([string]$GpgPath, [string]$GnupgHome) {
+        $gpgconf = Join-Path (Split-Path -Parent $GpgPath) 'gpgconf.exe'
+        if (-not (Test-Path -LiteralPath $gpgconf -PathType Leaf)) { return }
+        $ErrorActionPreference = 'Continue'
+        & $gpgconf --homedir (ConvertTo-GpgPath $GpgPath $GnupgHome) --kill gpg-agent 2>$null | Out-Null
+    }
+
     # stdout carries the status lines; gpg's own messages (stderr) are kept so a
     # refusal can say why gpg failed.
     function Invoke-Gpg([string]$GpgPath, [string]$GnupgHome, [string[]]$Arguments) {
@@ -198,8 +207,6 @@
         if (-not $fpr) {
             Fail "no release signing key is pinned for v$version in this installer; refusing to trust SHA256SUMS (GARNET_VERIFY_SIGNATURE=0 proceeds on integrity only)"
         }
-        $gnupg = Join-Path $Work 'gnupg'
-        New-Item -ItemType Directory -Path $gnupg | Out-Null
         $signature = Join-Path $Work 'SHA256SUMS.asc'
         try {
             Get-Asset $SignatureUrl $signature
@@ -212,14 +219,26 @@
         } catch {
             Fail "cannot fetch the release signing keys from $keysUrl"
         }
-        $import = Invoke-Gpg $gpg.Path $gnupg @('--quiet', '--import', (ConvertTo-GpgPath $gpg.Path $keys))
-        if ($import.ExitCode -ne 0) {
-            Fail "cannot import the release signing keys from $keysUrl ($(Format-GpgMessages $import))"
+        # gpg needs its agent even to import public keys, and the agent puts Unix
+        # sockets in the gpg home. A socket path is limited to about 104-108 bytes,
+        # and the work directory is too deep for the agent's longest socket name
+        # (S.gpg-agent.browser), so the home is a short directory of its own in the
+        # temp folder. The agent is stopped and the home removed either way.
+        $gnupg = Join-Path ([IO.Path]::GetTempPath()) ('gk' + [Guid]::NewGuid().ToString('N').Substring(0, 8))
+        New-Item -ItemType Directory -Path $gnupg | Out-Null
+        try {
+            $import = Invoke-Gpg $gpg.Path $gnupg @('--quiet', '--import', (ConvertTo-GpgPath $gpg.Path $keys))
+            if ($import.ExitCode -ne 0) {
+                Fail "cannot import the release signing keys from $keysUrl ($(Format-GpgMessages $import))"
+            }
+            # A detached signature is required: gpg refuses an inline-signed message
+            # when given the data file, so another signed text cannot stand in.
+            $result = Invoke-Gpg $gpg.Path $gnupg @('--status-fd', '1', '--verify', (ConvertTo-GpgPath $gpg.Path $signature), (ConvertTo-GpgPath $gpg.Path $Sums))
+            if ($result.ExitCode -ne 0) { Fail "SHA256SUMS.asc does not verify against SHA256SUMS; refusing to install ($(Format-GpgMessages $result))" }
+        } finally {
+            Stop-GpgAgent $gpg.Path $gnupg
+            Remove-Item -LiteralPath $gnupg -Recurse -Force -ErrorAction SilentlyContinue
         }
-        # A detached signature is required: gpg refuses an inline-signed message
-        # when given the data file, so another signed text cannot stand in.
-        $result = Invoke-Gpg $gpg.Path $gnupg @('--status-fd', '1', '--verify', (ConvertTo-GpgPath $gpg.Path $signature), (ConvertTo-GpgPath $gpg.Path $Sums))
-        if ($result.ExitCode -ne 0) { Fail "SHA256SUMS.asc does not verify against SHA256SUMS; refusing to install ($(Format-GpgMessages $result))" }
         # VALIDSIG carries the signing key's fingerprint and, last, its primary key's.
         $signedByPin = $false
         foreach ($line in $result.Lines) {

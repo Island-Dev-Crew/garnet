@@ -45,8 +45,11 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   - Without `gpg` they warn and check integrity only. On Windows, the `gpg`
     from Gpg4win works, and so does the one in Git for Windows, MSYS2 or
     Cygwin: that `gpg` reads `C:\...` as a relative path, so `install.ps1`
-    gives it POSIX paths through the `cygpath` beside it. Releases before
-    v0.8.1 were never signed and also warn.
+    gives it POSIX paths through the `cygpath` beside it. `gpg` starts an
+    agent even to import public keys, and the agent's socket paths have a
+    length limit, so `install.ps1` gives `gpg` a short throwaway home of its
+    own and stops the agent afterwards. Releases before v0.8.1 were never
+    signed and also warn.
   - `GARNET_VERIFY_SIGNATURE=0` turns the check off with a warning, and
     `GARNET_SIGNING_KEYS_URL` / `GARNET_SIGNING_KEY_FPR` point it at a mirror
     you sign yourself.
