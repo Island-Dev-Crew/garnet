@@ -19,8 +19,11 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 - Only `@caps` and `@max_depth` trap at run time. `@bounded` step budgets,
   memory and time ceilings, `@mailbox`, and OS-sandbox application on macOS and
   Windows are declared, not enforced; seccomp is applied on Linux only.
-- The Rust and Go converter frontends drop binary operators: the output parses
-  but does not compute the same thing (Q48; after R2).
+- Converter output parses but does not keep the source's meaning. The Rust
+  frontend drops binary operators (`a + b` comes out as `a nil b`). The Go
+  frontend keeps a `return` expression's text but turns a `:=` declaration into
+  a placeholder and every block into a whole-statement to-do, so later lines
+  can name variables that no longer exist (Q48; after R2).
 - WV-6 (native-Windows acceptance) ships as a disclosed partial.
   `python3 -I scripts/garnet_wv_acceptance_status.py --wv WV-6` reports
   `partial`: its five checks pass, but the recorded product digest predates
@@ -106,19 +109,25 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   `TODO(release-security)` comment is gone.
 - **`garnet agent-loop` says what it checked (C1-02).** The decision reads
   "program-wide declared capability surface did not widen", and functions that
-  gained capabilities or are new are counted in the decision and listed in
-  `diff_caps.txt` for review.
+  gained capabilities or are new are counted in the decision and listed for
+  review: in `diff_caps.txt` with `--record-dir`, on stdout without it.
 - **Every converter output parses (C1-18, Q48).**
   - `@sandbox` is named in a comment; `@caps()` stays.
   - Python `for` / `while` (without `else`) and Ruby `.each do |x|` are lowered
     to brace form, and any other statement that would not parse becomes a
-    whole-statement `@migrate_todo` carrying its source lines. A final
-    full-file parse turns any remaining failure into an error, not a file.
+    whole-statement `@migrate_todo` carrying its source lines. A block header
+    is recognized with a trailing comment, a Python statement that leaves a
+    bracket open runs on until it balances, and a Go line that opens a block
+    or a bracket is read on until its brackets balance, so no fragment of such
+    a statement stays active code. A final full-file parse turns any remaining
+    failure into an error, not a file.
   - A safe `fn` with no stated return type is emitted `-> ()`.
   - The checklist no longer suggests the nonexistent `@sandbox(unquarantine)`.
-  - `garnet convert` names its output `<stem>.<lang>.garnet`, re-parses the file
-    it wrote, and prints "N of M constructs mapped without a migration to-do"
-    and "output parses: yes", followed by "parsing is not correctness"
+  - `garnet convert` names its output `<stem>.<lang>.garnet`. It refuses an
+    output path that is a link, or the same file as another output, and after
+    writing it reads the `.garnet` file back, checks it is what was emitted,
+    and parses it. It prints "N of M constructs mapped without a migration
+    to-do" and "output parses: yes", followed by "parsing is not correctness"
     (C5-12). The percentage "clean translation" line and the duplicate
     summary are gone.
 - **`garnet caps-log` fails closed (C5-12).** An existing log it cannot read
@@ -129,11 +138,13 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   `LICENSE-APACHE`, the full Apache-2.0 text. The packages and the Windows zip
   ship both, and the dual-license notice is in the README.
 - **Limits, stated plainly.**
-  - The Rust and Go converter frontends still drop binary operators: Rust
-    `if x > 3 { x * 2 }` comes out as `if x { nil 3 nil x nil 2 ... }`. The output
-    parses, but it does not compute the same thing. Every converted Rust or Go
-    function needs a line-by-line rewrite. The fix is deferred until after R2
-    (Q48).
+  - Converter output parses but does not compute the same thing. The Rust
+    frontend still drops binary operators: `if x > 3 { x * 2 }` comes out as
+    `if x { nil 3 nil x nil 2 ... }`. The Go frontend keeps `return a + b` as
+    written, but `y := x * 2` becomes a placeholder, so a later `return y - 1`
+    names a variable that no longer exists, and every Go block becomes a
+    whole-statement to-do. Every converted Rust or Go function needs a
+    line-by-line rewrite. The fix is deferred until after R2 (Q48).
   - The installers check the signature only when `gpg` is installed.
   - The macOS and Windows binaries are not code-signed.
 
