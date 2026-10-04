@@ -50,6 +50,16 @@ fn refuse(line: usize, why: &str) -> ConvertError {
 
 impl<'a> PythonParser<'a> {
     fn new(source: &'a str, filename: &str) -> Result<Self, ConvertError> {
+        // Python ends a line at a bare carriage return too; the converter splits
+        // lines at `\n` (and `\r\n`) only, so a bare `\r` is refused.
+        if let Some(at) = source
+            .bytes()
+            .enumerate()
+            .position(|(i, c)| c == b'\r' && source.as_bytes().get(i + 1) != Some(&b'\n'))
+        {
+            let line = source[..at].matches('\n').count();
+            return Err(refuse(line, "a carriage return without a line feed"));
+        }
         let lines: Vec<&str> = source.lines().collect();
         let mut offsets = Vec::with_capacity(lines.len());
         let mut off = 0;

@@ -15,7 +15,7 @@
 //! becomes code; `EXPR.each do |x| ... end` is lowered; every other statement is
 //! kept whole as one MigrateTodo. A file outside the subset is refused.
 
-use super::lex::ruby_line;
+use super::lex::{ruby_line, ruby_line_after};
 use crate::cir::{Cir, CirLit, CirTy, FuncMode, Ownership, Param};
 use crate::error::ConvertError;
 use crate::lineage::Lineage;
@@ -423,10 +423,12 @@ impl<'a> RubyParser<'a> {
         let mut brackets = 0;
         let mut blocks = 0;
         let mut continues = false;
+        // A method name is due at the start of the next code line (`obj.`).
+        let mut name_pending = false;
         let mut pos = from;
         for line in self.source[from..].split_inclusive('\n') {
             pos += line.len();
-            match ruby_line(line.trim_end_matches(['\n', '\r'])) {
+            match ruby_line_after(line.trim_end_matches(['\n', '\r']), name_pending) {
                 // A blank or comment line neither opens nor closes anything, and
                 // does not end a statement that is still open.
                 Ok(l) if l.code.trim().is_empty() => {
@@ -438,6 +440,7 @@ impl<'a> RubyParser<'a> {
                     brackets += l.brackets;
                     blocks += l.blocks;
                     continues = l.continues;
+                    name_pending = l.name_pending;
                     if brackets > 0 || blocks > 0 || continues {
                         continue;
                     }

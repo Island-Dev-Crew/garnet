@@ -150,6 +150,12 @@ impl GoLex {
     }
 }
 
+/// Whether `word` is a Go keyword after which no semicolon is inserted at a
+/// line end (it takes what follows).
+pub fn go_keyword_takes_operand(word: &[u8]) -> bool {
+    GO_OPERAND_KEYWORDS.contains(&word)
+}
+
 /// Go keywords after which no semicolon is inserted at a line end.
 const GO_OPERAND_KEYWORDS: [&[u8]; 21] = [
     b"case",
@@ -439,6 +445,15 @@ pub struct RubyLine<'a> {
     pub continues: bool,
     /// A `;` statement separator appears outside strings and comments.
     pub semicolon: bool,
+    /// The line ends where a method name is due (after `.`, `&.`, `::` or
+    /// `def`), so the next line's first word is a name, not a keyword.
+    pub name_pending: bool,
+}
+
+/// Lex one line of the Ruby subset that starts a statement or follows a
+/// complete one. See `ruby_line_after`.
+pub fn ruby_line(line: &str) -> Result<RubyLine<'_>, &'static str> {
+    ruby_line_after(line, false)
 }
 
 /// Lex one line of the Ruby subset: comments, quoted and backtick strings (with
@@ -446,7 +461,10 @@ pub struct RubyLine<'a> {
 /// position, and keyword blocks. Percent literals, heredocs, character literals,
 /// `$'`-style globals, an ambiguous `/`, `=begin` comments, `__END__`, endless
 /// method definitions and strings that continue on the next line are refused.
-pub fn ruby_line(line: &str) -> Result<RubyLine<'_>, &'static str> {
+///
+/// `name_first`: the line before ended where a method name is due, so this
+/// line's first word is a name (`obj.` then `end`).
+pub fn ruby_line_after(line: &str, name_first: bool) -> Result<RubyLine<'_>, &'static str> {
     let b = line.as_bytes();
     let first = line.trim_start();
     if first.starts_with("=begin") {
@@ -461,13 +479,14 @@ pub fn ruby_line(line: &str) -> Result<RubyLine<'_>, &'static str> {
         blocks: 0,
         continues: false,
         semicolon: false,
+        name_pending: false,
     };
     // The token before ends an expression: `if` after it is a modifier.
     let mut after_value = false;
     // A `while`/`until`/`for` opened on this line: a later `do` is its separator.
     let mut loop_do = false;
     // The next word is a method name (after `def`, `.` or `::`), not a keyword.
-    let mut name_next = false;
+    let mut name_next = name_first;
     // The last token is an operator, a comma or `\`.
     let mut last_op = false;
     let mut code_end = b.len();
@@ -567,6 +586,9 @@ pub fn ruby_line(line: &str) -> Result<RubyLine<'_>, &'static str> {
                                 return Err("a regular expression that continues on the next line")
                             }
                             Some(b'\\') => i += 2,
+                            Some(b'#') if b.get(i + 1) == Some(&b'{') => {
+                                return Err("a regular expression with interpolation")
+                            }
                             Some(b'/') => break,
                             Some(_) => i += 1,
                         }
@@ -699,6 +721,7 @@ pub fn ruby_line(line: &str) -> Result<RubyLine<'_>, &'static str> {
     }
     out.code = line[..code_end].trim_end();
     out.continues = last_op;
+    out.name_pending = name_next;
     Ok(out)
 }
 

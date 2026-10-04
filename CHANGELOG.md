@@ -153,25 +153,32 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
       inside a block comment or raw string is not converted. A function's
       header is read lexically up to the brace that opens its body (comments,
       strings and `struct`/`interface` braces skipped); a header that does not
-      read as `[(receiver)] name(params) [result]` keeps the function whole. A
-      struct's fields are converted only when each reads as `Name Type [tag]`
-      on its own line; otherwise the type is kept whole.
+      read as `[(receiver)] name(params) [result]` keeps the function whole,
+      and a declaration without a body ends at its `;` or line end. A struct's
+      fields are converted only when each reads as `Name Type [tag]`, one per
+      line or `;`-separated; otherwise the type is kept whole.
     - Ruby: a lexical subset. Lines join while a bracket or keyword block is
       open (`if` and its kin count only where an expression starts), after a
       trailing operator, comma or modifier (`if`, `unless`, `rescue` ...), or
       before a line that starts with `.`; a blank or comment line does not
-      end an open statement. A def, class or module whose header the
+      end an open statement, and a word after `.` at the end of the line
+      before is a method name, not a keyword. A def, class or module whose header the
       frontend does not read, whose body has a `rescue`/`ensure`/`else`
       clause, or whose `end` shares its line with more code, is kept whole.
-    Only a statement on one line becomes code. Class-level statements become
+    Only a statement on one line becomes code, and never one whose code holds
+    `#{`: text that was inert in the source, such as `"#{x}"` in a Python or Go
+    string or `'#{x}'` in Ruby, would run as Garnet interpolation, so it is kept
+    as a to-do. Class-level statements become
     to-dos instead of being dropped, and an import is skipped only when it is
     the whole statement (anything after a `;` on its line is kept; a Ruby
     `require` only in its exact form, `require "x"` or `require("x")`). What a frontend does not lex is refused with its line number:
     Python tab or form-feed indentation, an f-string or t-string whose
     replacement field holds its own quote, a comment or a backslash outside a
-    nested string (an escape before `{` does not hide a field), and a string
-    or bracket left open at the end of the file;
-    Ruby heredocs (and a `<<` with no space after it), percent literals (a `%`
+    nested string (an escape before `{` does not hide a field), a carriage
+    return without a line feed, and a string or bracket left open at the end
+    of the file;
+    Ruby heredocs (and a `<<` with no space after it), regular expressions
+    with interpolation, percent literals (a `%`
     where an operand starts, or after an identifier and spaces with none
     after it, as for `/`), character literals, `=begin` comments, endless
     methods and the rest outside the subset.

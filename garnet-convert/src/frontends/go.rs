@@ -16,7 +16,7 @@
 //! line becomes code; every other one, blocks included, is kept whole as one
 //! MigrateTodo.
 
-use super::lex::GoLex;
+use super::lex::{go_keyword_takes_operand, GoLex};
 use crate::cir::{Cir, CirLit, CirTy, FuncMode, Ownership, Param};
 use crate::error::ConvertError;
 use crate::lineage::Lineage;
@@ -183,7 +183,27 @@ impl<'a> GoParser<'a> {
         // that does not read as `[(receiver)] name[type params](params) [result]`
         // keeps the whole function as a to-do.
         let rest = self.remaining();
-        let parsed = body_brace(rest).and_then(|open| {
+        let open = match body_brace(rest) {
+            Header::Body(open) => Some(open),
+            Header::NoBody(end) => {
+                // A declaration without a body (implemented elsewhere) ends at
+                // its `;` or line end; what follows is read on its own.
+                let text = rest[..end].trim_end().to_string();
+                self.pos += end;
+                if self.remaining().starts_with(';') {
+                    self.pos += 1;
+                }
+                return Ok(Cir::MigrateTodo {
+                    placeholder: Box::new(Cir::Literal(CirLit::Nil, self.lineage(start))),
+                    note: format!(
+                        "Go function declaration without a body kept for hand translation:\nfunc {text}"
+                    ),
+                    lineage: self.lineage(start),
+                });
+            }
+            Header::Unreadable => None,
+        };
+        let parsed = open.and_then(|open| {
             parse_func_header(&blank_go_comments(&rest[..open])).map(|h| (open, h))
         });
         let Some((open, (name, params, return_ty))) = parsed else {
@@ -405,12 +425,31 @@ fn matching_bracket(b: &[u8], i: usize) -> Option<usize> {
     None
 }
 
-/// The offset in `s` (the text after `func `) of the `{` that opens the body.
-/// Comments and literals are skipped; a `{` inside brackets or after `struct`
-/// or `interface` opens a type literal and is skipped whole. `None` when the
-/// header ends where Go inserts a semicolon (a declaration without a body) or
-/// the text ends first.
-fn body_brace(s: &str) -> Option<usize> {
+/// Where a function header (the text after `func `) ends.
+enum Header {
+    /// At the `{` that opens the body, at this offset.
+    Body(usize),
+    /// Before this offset, where Go ends the declaration (`;`, a line end or
+    /// a block comment holding one): a declaration without a body.
+    NoBody(usize),
+    /// Nowhere the converter can read (a literal or comment left open).
+    Unreadable,
+}
+
+/// Where the function header in `s` ends. Comments and literals are skipped;
+/// a `{` inside brackets or after `struct` or `interface` opens a type literal
+/// and is skipped whole.
+fn body_brace(s: &str) -> Header {
+    match find_body_brace(s) {
+        Some(Ok(open)) => Header::Body(open),
+        Some(Err(end)) => Header::NoBody(end),
+        None => Header::Unreadable,
+    }
+}
+
+/// `Ok(open)` for the body's `{`, `Err(end)` where a bodyless declaration
+/// ends, `None` when unreadable.
+fn find_body_brace(s: &str) -> Option<Result<usize, usize>> {
     let b = s.as_bytes();
     let mut depth = 0i64;
     let mut last_word: &[u8] = b"";
@@ -427,10 +466,16 @@ fn body_brace(s: &str) -> Option<usize> {
                 continue;
             }
             b'/' if b.get(i + 1) == Some(&b'*') => {
-                i += 2 + b[i + 2..].windows(2).position(|w| w == b"*/")? + 2;
+                let end = i + 2 + b[i + 2..].windows(2).position(|w| w == b"*/")? + 2;
+                // A block comment that holds a newline ends a line, as one would.
+                if depth == 0 && ends && b[i..end].contains(&b'\n') {
+                    return Some(Err(i));
+                }
+                i = end;
                 continue;
             }
-            b'\n' if depth == 0 && ends => return None,
+            b'\n' if depth == 0 && ends => return Some(Err(i)),
+            b';' if depth == 0 => return Some(Err(i)),
             b'"' | b'\'' | b'`' => {
                 i = skip_go_literal(b, i)?;
                 last_word = b"";
@@ -443,7 +488,7 @@ fn body_brace(s: &str) -> Option<usize> {
                     i += 1;
                 }
                 last_word = &b[start..i];
-                ends = true;
+                ends = !go_keyword_takes_operand(last_word);
                 continue;
             }
             b'{' if depth > 0 || last_word == b"struct" || last_word == b"interface" => {
@@ -452,7 +497,7 @@ fn body_brace(s: &str) -> Option<usize> {
                 ends = true;
                 continue;
             }
-            b'{' => return Some(i),
+            b'{' => return Some(Ok(i)),
             b'(' | b'[' => {
                 depth += 1;
                 last_word = b"";

@@ -594,19 +594,30 @@ fn render_alone(node: &Cir, lang: &str, ctx: ProbeContext) -> String {
 
 fn keep_if_parses(node: Cir, lang: &str, ctx: ProbeContext) -> Cir {
     let text = render_alone(&node, lang, ctx);
+    // Source text that was inert where it came from, such as `#{...}` inside a
+    // string literal, would run as Garnet string interpolation. A construct
+    // whose code (not its comments) holds `#{` is kept for hand translation.
+    let interpolates = text.lines().any(|line| {
+        let code = line.trim_start();
+        !code.starts_with('#') && code.contains("#{")
+    });
     let probe = match ctx {
         ProbeContext::Statement => format!("def garnet_convert_probe() {{\n{text}}}\n"),
         ProbeContext::Item => format!("module GarnetConvertProbe {{\n{text}}}\n"),
     };
-    if garnet_parser::parse_source(&probe).is_ok() {
+    if !interpolates && garnet_parser::parse_source(&probe).is_ok() {
         return node;
     }
+    let why = if interpolates {
+        "`#{` in it would run as Garnet string interpolation"
+    } else {
+        "it does not parse as Garnet"
+    };
     let lineage = node.lineage().clone();
     Cir::MigrateTodo {
         placeholder: Box::new(Cir::Literal(CirLit::Nil, lineage.clone())),
         note: format!(
-            "{lang} construct copied through unconverted; it does not parse as Garnet. \
-             Rewrite it by hand:\n{}",
+            "{lang} construct copied through unconverted; {why}. Rewrite it by hand:\n{}",
             text.trim_end()
         ),
         lineage,
