@@ -944,3 +944,58 @@ fn go_header_ends_where_go_ends_a_declaration() {
         );
     }
 }
+
+// Codex lane B, round 6 on #607 (19e5b89b; stopped by the content filter before
+// its report, the cases are from its log): a statement copied through as source
+// text keeps the source's quoting, which Garnet can read differently, so string
+// contents became code.
+
+#[test]
+fn copied_source_text_with_a_quote_is_never_active() {
+    for (src, lang, name, file) in [
+        (
+            "def save():\n    \"\"\"x\"; persist(); \"y\"\"\"\n",
+            SourceLang::Python,
+            "python",
+            "save.py",
+        ),
+        (
+            "def save():\n    7\n    \"\"\"x\"; persist(); \"y\"\"\"\n",
+            SourceLang::Python,
+            "python",
+            "save.py",
+        ),
+        (
+            "def save():\n    \"\"\"x\"; persist(); #\"\"\"\n",
+            SourceLang::Python,
+            "python",
+            "save.py",
+        ),
+        (
+            "def save(x):\n    x = 'a\"; persist(); \"b'\n    return x\n",
+            SourceLang::Python,
+            "python",
+            "save.py",
+        ),
+        (
+            "package example\nfunc save() string {\n\tx := `a\"; persist(); \"b`\n\treturn x\n}\n",
+            SourceLang::Go,
+            "go",
+            "save.go",
+        ),
+        (
+            "def save\n  x = 'a\"; persist(); \"b'\n  return x\nend\n",
+            SourceLang::Ruby,
+            "ruby",
+            "save.rb",
+        ),
+    ] {
+        let (garnet, _) = convert_src(src, lang, name, file);
+        assert_parses(&garnet);
+        assert_inactive(&garnet, "persist()");
+        assert!(
+            garnet.contains("persist()"),
+            "kept as a to-do: {src:?}\n{garnet}"
+        );
+    }
+}

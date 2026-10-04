@@ -601,15 +601,21 @@ fn keep_if_parses(node: Cir, lang: &str, ctx: ProbeContext) -> Cir {
         let code = line.trim_start();
         !code.starts_with('#') && code.contains("#{")
     });
+    // Source text copied through with its own quoting (a Python triple-quoted
+    // string, a single-quoted or raw string, a rune) may tokenize differently in
+    // Garnet, so string contents could become code; it is kept as a to-do too.
+    let quoted = node.copies_quoted_text();
     let probe = match ctx {
         ProbeContext::Statement => format!("def garnet_convert_probe() {{\n{text}}}\n"),
         ProbeContext::Item => format!("module GarnetConvertProbe {{\n{text}}}\n"),
     };
-    if !interpolates && garnet_parser::parse_source(&probe).is_ok() {
+    if !interpolates && !quoted && garnet_parser::parse_source(&probe).is_ok() {
         return node;
     }
     let why = if interpolates {
         "`#{` in it would run as Garnet string interpolation"
+    } else if quoted {
+        "it copies source text holding a quoted literal, whose quoting Garnet may read differently"
     } else {
         "it does not parse as Garnet"
     };

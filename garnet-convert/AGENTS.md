@@ -28,7 +28,10 @@ Owns migration frontends and conversion helpers for lifting Rust, Ruby, Python, 
   character literals, `=begin`, endless methods, multi-line strings).
 - No emitted code line holds `#{`: the emitter keeps any construct whose code
   (not its comments) contains it as a to-do, because source text that was inert
-  would run as Garnet string interpolation. To support a construct, extend `lex.rs`
+  would run as Garnet string interpolation. Likewise any construct that copies
+  source text holding a quote character (`Cir::copies_quoted_text`): the source's
+  quoting may tokenize differently in Garnet. Emit string values as
+  `CirLit::Str`, which the emitter escapes, never as copied text. To support a construct, extend `lex.rs`
   and the unit, not one frontend's heuristic, and cover it in `tests/parses.rs`
   with a test that asserts its fragments are not active (`assert_inactive`).
 - A definition or class-level statement the frontend does not read is kept as a

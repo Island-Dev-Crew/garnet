@@ -24,7 +24,9 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   frontend keeps a `return` expression's text but turns a `:=` declaration into
   a placeholder and every block that spans lines into a whole-statement to-do,
   so later lines can name variables that no longer exist; a block on one line
-  is copied through as one statement (Q48; after R2).
+  is copied through as one statement (Q48; after R2). In the Python, Go and
+  Ruby frontends a statement that holds a string or character literal is
+  kept as a to-do.
 - The Ruby converter reads a lexical subset and refuses a file outside it
   (heredocs, percent literals and the like). The Python converter refuses tab
   or form-feed indentation and f-strings whose replacement fields hold their
@@ -168,7 +170,10 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
     Only a statement on one line becomes code, and never one whose code holds
     `#{`: text that was inert in the source, such as `"#{x}"` in a Python or Go
     string or `'#{x}'` in Ruby, would run as Garnet interpolation, so it is kept
-    as a to-do. Class-level statements become
+    as a to-do. Nor does a Python, Go or Ruby statement that holds a quote
+    character: those frontends copy statement text through, and Garnet may
+    read its quoting (triple quotes, single quotes, raw strings, runes)
+    differently, so string contents could become code. Class-level statements become
     to-dos instead of being dropped, and an import is skipped only when it is
     the whole statement (anything after a `;` on its line is kept; a Ruby
     `require` only in its exact form, `require "x"` or `require("x")`). What a frontend does not lex is refused with its line number:
