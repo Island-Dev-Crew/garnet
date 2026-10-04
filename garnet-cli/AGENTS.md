@@ -62,14 +62,16 @@ Owns the `garnet` binary, subcommand routing, template embedding, deterministic 
   A caller-supplied `tool=` replaces the default tool label. Empty or duplicate
   attestation keys, including collisions with reserved loop metadata, fail
   during argument parsing before any proposal runs.
-  Per-function capability gains and new functions are listed in
-  `diff_caps.txt` only with `--record-dir`; without it they are printed on
-  stdout, and the loop never names a file it does not write.
+  Per-function capability gains and new functions are printed on stdout and,
+  with `--record-dir`, also written to `diff_caps.txt`. Every `--record-dir`
+  artifact is checked: one that cannot be written is named on stderr and the
+  loop exits 2, so it never names a file it did not write.
 - `garnet convert` writes `<stem>.<lang>.garnet` and its three sidecars. It
-  refuses an existing output path that is not a regular file, or that is the
-  same file as another output, and its "output parses: yes" line is backed by
-  reading the written `.garnet` back, comparing it with what was emitted, and
-  parsing those bytes.
+  refuses an existing output path that is not a regular file, and any output
+  that is the same file as the source or another output (compared by file
+  identity with `same-file`, so hard links and other spellings count on every
+  platform). Its "output parses: yes" line is backed by reading the written
+  `.garnet` back, comparing it with what was emitted, and parsing those bytes.
 - `garnet diff-caps` human text output and exit codes (0 = no expansion,
   1 = authority expanded, 2 = usage/parse error) are load-bearing for CI
   scripts and integration tests — byte-stable, never reworded casually.

@@ -24,6 +24,9 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   frontend keeps a `return` expression's text but turns a `:=` declaration into
   a placeholder and every block into a whole-statement to-do, so later lines
   can name variables that no longer exist (Q48; after R2).
+- The Ruby converter reads a lexical subset and refuses a file outside it
+  (heredocs, percent literals and the like). The Python converter refuses tab
+  indentation.
 - WV-6 (native-Windows acceptance) ships as a disclosed partial.
   `python3 -I scripts/garnet_wv_acceptance_status.py --wv WV-6` reports
   `partial`: its five checks pass, but the recorded product digest predates
@@ -105,28 +108,53 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   reviewed ones: the `gpg --detach-sign` step and the fail-closed refusal match
   pinned text, the `SHA256SUMS.asc` attach step keeps its condition and file,
   `HAS_GPG` follows the signing key, and the steps run sign, refuse, publish,
-  attach. A refusal that no longer refuses reads broken. The stale
-  `TODO(release-security)` comment is gone.
+  attach. Nothing in the job may publish past the refusal: neither the job
+  nor any step continues on error, `Publish release` has no condition of its
+  own and only the attach step follows it, and no other step calls the
+  release action or `gh release`. A refusal that no longer refuses, or a release published around
+  it, reads broken. The stale `TODO(release-security)` comment is gone.
 - **`garnet agent-loop` says what it checked (C1-02).** The decision reads
   "program-wide declared capability surface did not widen", and functions that
   gained capabilities or are new are counted in the decision and listed for
-  review: in `diff_caps.txt` with `--record-dir`, on stdout without it.
+  review on stdout, and in `diff_caps.txt` with `--record-dir`. A
+  `--record-dir` artifact that cannot be written is named on stderr and the
+  loop exits 2, so a record is never claimed that was not written.
 - **Every converter output parses (C1-18, Q48).**
   - `@sandbox` is named in a comment; `@caps()` stays.
   - Python `for` / `while` (without `else`) and Ruby `.each do |x|` are lowered
     to brace form, and any other statement that would not parse becomes a
-    whole-statement `@migrate_todo` carrying its source lines. A block header
-    is recognized with a trailing comment, a Python statement that leaves a
-    bracket open runs on until it balances, and a Go line that opens a block
-    or a bracket is read on until its brackets balance, so no fragment of such
-    a statement stays active code. A final full-file parse turns any remaining
-    failure into an error, not a file.
+    whole-statement `@migrate_todo` carrying its source lines. A final
+    full-file parse turns any remaining failure into an error, not a file.
+  - Each frontend reads a statement as a defined unit of its language, lexed
+    by one shared module, so no fragment of a longer statement stays active
+    code:
+    - Python: the logical line (brackets, `\`, triple-quoted strings). A
+      compound statement is its header plus its deeper-indented lines and
+      `elif`/`else`/`except`/`finally` clauses, at module level as in a
+      function. A def header may span lines, and a decorated definition is
+      kept whole.
+    - Go: lines up to where Go inserts a semicolon, once every bracket, block
+      comment and raw string is closed. A one-line function keeps its body,
+      and a function inside a block comment or raw string is not converted.
+    - Ruby: a lexical subset. Lines join while a bracket or keyword block is
+      open (`if` and its kin count only where an expression starts), after a
+      trailing operator or comma, or before a line that starts with `.`. A
+      def or class whose header the frontend does not read, or whose body
+      has a `rescue`/`ensure`/`else` clause, is kept whole.
+    Only a statement on one line becomes code. Class-level statements become
+    to-dos instead of being dropped. What a frontend does not lex is refused
+    with its line number: Python tab indentation, an f-string that reuses its
+    own quote inside a field, and a string or bracket left open at the end of
+    the file; Ruby heredocs, percent literals, character literals, `=begin`
+    comments, endless methods and the rest outside the subset.
   - A safe `fn` with no stated return type is emitted `-> ()`.
   - The checklist no longer suggests the nonexistent `@sandbox(unquarantine)`.
   - `garnet convert` names its output `<stem>.<lang>.garnet`. It refuses an
-    output path that is a link, or the same file as another output, and after
-    writing it reads the `.garnet` file back, checks it is what was emitted,
-    and parses it. It prints "N of M constructs mapped without a migration
+    output path that exists as anything but a regular file, and any output
+    that is the same file as the source or another output, compared by file
+    identity on every platform, so a hard link or another spelling of the
+    source counts. After writing it reads the `.garnet` file back, checks it
+    is what was emitted, and parses it. It prints "N of M constructs mapped without a migration
     to-do" and "output parses: yes", followed by "parsing is not correctness"
     (C5-12). The percentage "clean translation" line and the duplicate
     summary are gone.
@@ -145,6 +173,8 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
     names a variable that no longer exists, and every Go block becomes a
     whole-statement to-do. Every converted Rust or Go function needs a
     line-by-line rewrite. The fix is deferred until after R2 (Q48).
+  - The Ruby converter reads a lexical subset and refuses a file outside it;
+    the Python converter refuses tab indentation.
   - The installers check the signature only when `gpg` is installed.
   - The macOS and Windows binaries are not code-signed.
 
