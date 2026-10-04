@@ -176,7 +176,8 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
     - Ruby: a lexical subset, whose code is ASCII without control characters
       but tab and carriage return (any other character outside a string,
       regular expression or comment refuses the file: Ruby reads a form feed
-      as a blank and stops at `^D`, `^Z` or NUL).
+      as a blank and stops at `^D`, `^Z` or NUL). Its blanks are those Ruby
+      reads in a line, space, tab and carriage return, in every check.
       Lines join while a bracket or keyword block is
       open (`if` and its kin count only where an expression starts; a `do` is
       a loop's separator only while the loop's condition is open, which ends

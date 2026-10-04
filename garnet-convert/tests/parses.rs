@@ -1731,3 +1731,27 @@ fn a_control_character_in_ruby_code_refuses_the_file() {
         "{garnet}"
     );
 }
+
+/// Codex round 21 (from the draft of a run stopped by a content filter): Ruby
+/// reads a carriage return inside a line as a blank, where some lexer checks
+/// counted only spaces and tabs. `value\r/ work do /1/` was read as a regular
+/// expression hiding the block's `do`, and `def foo()\r= x` was not seen as an
+/// endless method. Every Ruby blank check now uses one set: space, tab and
+/// carriage return.
+#[test]
+fn a_carriage_return_is_a_ruby_blank_everywhere() {
+    for src in [
+        "def save\n  value\r/ work do /1/; 0\n    persist()\n  end\nend\n",
+        "def save\n  value\r\t/ work do /1/; 0\n    persist()\n  end\nend\n",
+        "def save\n  value / work do /1/; 0\n    persist()\n  end\nend\n",
+        "def save\n  def foo()\r= keep()\n  persist()\nend\n",
+    ] {
+        match try_convert(src, SourceLang::Ruby, "ruby", "save.rb") {
+            Err(e) => assert!(
+                e.contains("ambiguous /") || e.contains("endless method"),
+                "{src:?}: {e}"
+            ),
+            Ok(garnet) => panic!("converted: {src:?}\n{garnet}"),
+        }
+    }
+}

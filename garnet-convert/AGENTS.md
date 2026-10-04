@@ -24,7 +24,9 @@ Owns migration frontends and conversion helpers for lifting Rust, Ruby, Python, 
   `RubyLine::clause_at`), keeps the definition whole. A `;` carries no lexer
   state of the statement before it into the next (a loop condition ends there,
   so a later `do` opens a block), and the method name due after `.`, `&.`, `::`
-  or `def` is the next token of any kind, an operator name (`obj.[]`) included. Only a statement on one line becomes code.
+  or `def` is the next token of any kind, an operator name (`obj.[]`) included.
+  Every Ruby blank check uses one set, space, tab and carriage return
+  (`is_rb_blank`), the blanks Ruby reads inside a line. Only a statement on one line becomes code.
 - What a frontend does not lex is refused with its line number, never guessed:
   Python tab or form-feed indentation, a carriage return without a line feed,
   and f-strings or t-strings whose replacement fields hold their own quote, a

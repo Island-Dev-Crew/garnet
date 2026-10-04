@@ -207,6 +207,13 @@ fn is_rb_word_byte(c: u8) -> bool {
     c.is_ascii_alphanumeric() || c == b'_'
 }
 
+/// A blank inside a Ruby line, as Ruby reads it: space, tab and carriage
+/// return (a form feed or vertical tab is refused, see `CONTROL`). Every blank
+/// check in the Ruby lexer uses this set.
+fn is_rb_blank(c: u8) -> bool {
+    matches!(c, b' ' | b'\t' | b'\r')
+}
+
 /// Inside a number literal: a `.`, or the sign of an exponent.
 fn is_number_tail(b: &[u8], i: usize) -> bool {
     b[i] == b'.' || (matches!(b[i], b'+' | b'-') && matches!(b[i - 1], b'e' | b'E' | b'p' | b'P'))
@@ -555,11 +562,11 @@ pub fn ruby_line_after(line: &str, name_first: bool) -> Result<RubyLine<'_>, &'s
         // After `.`, `&.`, `::` or `def` the method name is the next token of
         // any kind: an operator name (`obj.[]`, `obj.!`, `def ==`) or the
         // `obj.()` call takes it, so a later word (`do`) is a keyword again.
-        if name_next && !is_rb_word_byte(c) && !matches!(c, b' ' | b'\t' | b'\r' | b'#' | b'\\') {
+        if name_next && !is_rb_word_byte(c) && !is_rb_blank(c) && !matches!(c, b'#' | b'\\') {
             name_next = false;
         }
         match c {
-            b' ' | b'\t' | b'\r' => {
+            c if is_rb_blank(c) => {
                 i += 1;
                 continue;
             }
@@ -863,11 +870,11 @@ fn method_name_end(b: &[u8], i: usize) -> usize {
 /// Whether the `def` that ends just before `i` is an endless method
 /// (`def name(args) = expr`), which has no `end`.
 fn endless_def(b: &[u8], mut i: usize) -> bool {
-    while matches!(b.get(i), Some(b' ' | b'\t')) {
+    while b.get(i).is_some_and(|c| is_rb_blank(*c)) {
         i += 1;
     }
     let name = i;
-    while i < b.len() && !matches!(b[i], b' ' | b'\t' | b'(') {
+    while i < b.len() && !is_rb_blank(b[i]) && b[i] != b'(' {
         i += 1;
     }
     if i == name {
@@ -890,7 +897,7 @@ fn endless_def(b: &[u8], mut i: usize) -> bool {
             i += 1;
         }
     }
-    while matches!(b.get(i), Some(b' ' | b'\t')) {
+    while b.get(i).is_some_and(|c| is_rb_blank(*c)) {
         i += 1;
     }
     b.get(i) == Some(&b'=') && !matches!(b.get(i + 1), Some(b'=' | b'~' | b'>'))
@@ -981,7 +988,7 @@ fn scan_rb_double(b: &[u8], mut i: usize, q: u8) -> Result<usize, &'static str> 
 /// separator or operator (or a keyword that takes an expression) precedes it.
 fn operand_position(b: &[u8], i: usize) -> bool {
     let mut j = i;
-    while j > 0 && matches!(b[j - 1], b' ' | b'\t') {
+    while j > 0 && is_rb_blank(b[j - 1]) {
         j -= 1;
     }
     if j == 0 {
@@ -1012,12 +1019,12 @@ fn operand_position(b: &[u8], i: usize) -> bool {
     !matches!(prev, b')' | b']' | b'}' | b'"' | b'\'' | b'`')
 }
 
-/// Whether spaces or tabs separate the byte at `i` from an identifier before
+/// Whether blanks separate the byte at `i` from an identifier before
 /// them (not a keyword that takes an expression), so `word /x` or `word %x` is
 /// ambiguous in Ruby.
 fn spaced_after_identifier(b: &[u8], i: usize) -> bool {
     let mut end = i;
-    while end > 0 && matches!(b[end - 1], b' ' | b'\t') {
+    while end > 0 && is_rb_blank(b[end - 1]) {
         end -= 1;
     }
     if end == i {
