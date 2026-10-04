@@ -930,18 +930,22 @@ fn go_header_ends_where_go_ends_a_declaration() {
     ] {
         let (garnet, _) = convert_src(src, SourceLang::Go, "go", "save.go");
         assert_parses(&garnet);
-        assert!(
-            code_lines(&garnet)
-                .iter()
-                .any(|l| l.starts_with("fn save(")),
-            "save keeps its own body: {src:?}\n{garnet}"
-        );
+        // The bodyless declaration is kept as a to-do with its text...
+        assert!(garnet.contains("func external()"), "{src:?}\n{garnet}");
         assert!(
             !code_lines(&garnet)
                 .iter()
                 .any(|l| l.starts_with("fn external(")),
             "external has no body: {src:?}\n{garnet}"
         );
+        // ...and save keeps its own body, inside it.
+        let code = code_lines(&garnet);
+        let at = code
+            .iter()
+            .position(|l| l.starts_with("fn save("))
+            .unwrap_or_else(|| panic!("save is converted: {src:?}\n{garnet}"));
+        assert_eq!(code[at + 1], "persist()", "{src:?}\n{garnet}");
+        assert_eq!(code[at + 2], "}", "{src:?}\n{garnet}");
     }
 }
 
@@ -997,5 +1001,74 @@ fn copied_source_text_with_a_quote_is_never_active() {
             garnet.contains("persist()"),
             "kept as a to-do: {src:?}\n{garnet}"
         );
+    }
+}
+
+// Codex lane B, round 7 on #607 (a9273c92).
+
+#[test]
+fn ruby_alias_and_undef_operands_are_names() {
+    for line in [
+        "alias end foo",
+        "alias foo end",
+        "undef end",
+        "undef foo, end",
+    ] {
+        let src = format!("def save\n  if false\n    {line}\n    persist()\n  end\nend\n");
+        let (garnet, _) = convert_src(&src, SourceLang::Ruby, "ruby", "save.rb");
+        assert_parses(&garnet);
+        assert_inactive(&garnet, "persist()");
+    }
+}
+
+#[test]
+fn ruby_interpolation_beyond_plain_expressions_is_refused() {
+    for line in [
+        "  value = \"#{ /}/; \"#\" }\"",
+        "  value = \"#{a / b}\"",
+        "  value = \"#{x ? 1 : 2}\"",
+        "  value = \"#{%w[a]}\"",
+    ] {
+        let src = format!("def save\n{line}\n  return 0\nend\n");
+        let err = try_convert(&src, SourceLang::Ruby, "ruby", "save.rb").unwrap_err();
+        assert!(
+            err.contains("interpolation") && err.contains("line 2"),
+            "{line}: {err}"
+        );
+    }
+    let (garnet, _) = convert_src(
+        "def save(a)\n  value = \"#{a.name}[#{a[0] + 1}]\"\n  return 0\nend\n",
+        SourceLang::Ruby,
+        "ruby",
+        "save.rb",
+    );
+    assert_parses(&garnet);
+}
+
+#[test]
+fn a_statement_sharing_a_line_with_eval_is_kept() {
+    for (src, lang, name, file) in [
+        (
+            "eval \"1\"; def save\n  persist()\nend\n",
+            SourceLang::Ruby,
+            "ruby",
+            "save.rb",
+        ),
+        (
+            "instance_eval \"1\"; def save\n  persist()\nend\n",
+            SourceLang::Ruby,
+            "ruby",
+            "save.rb",
+        ),
+        (
+            "exec(\"1\"); value = persist()\n",
+            SourceLang::Python,
+            "python",
+            "save.py",
+        ),
+    ] {
+        let (garnet, _) = convert_src(src, lang, name, file);
+        assert_parses(&garnet);
+        assert!(garnet.contains("persist()"), "kept: {src:?}\n{garnet}");
     }
 }
