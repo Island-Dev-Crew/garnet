@@ -1256,3 +1256,41 @@ fn ruby_definition_header_or_chain_across_lines_is_kept_whole() {
         );
     }
 }
+
+// From probing Codex's round-11 corpus: a Ruby parameter list read character by
+// character could take a `)` in a comment or string for its end, and a carriage
+// return in a kept note relied on Garnet's lexer to stay inside a comment.
+
+#[test]
+fn ruby_parameter_list_with_a_comment_or_string_is_kept_whole() {
+    for src in [
+        "def save(value = 1 # )\n)\n  persist()\nend\n",
+        "def save(value = \") #\")\n  persist()\nend\n",
+    ] {
+        let (garnet, checklist) = convert_src(src, SourceLang::Ruby, "ruby", "save.rb");
+        assert_parses(&garnet);
+        assert_inactive(&garnet, "persist()");
+        assert!(
+            checklist.contains("def save"),
+            "kept as a to-do: {src:?}\n{checklist}"
+        );
+    }
+}
+
+#[test]
+fn every_line_of_a_kept_note_is_a_comment_whatever_its_line_ends() {
+    let (garnet, _) = convert_src(
+        "def\rsave(x = def inner; persist; end)\nend\n",
+        SourceLang::Ruby,
+        "ruby",
+        "save.rb",
+    );
+    assert_parses(&garnet);
+    for line in garnet.split(['\n', '\r']) {
+        let code = line.trim();
+        assert!(
+            code.is_empty() || code.starts_with('#') || !code.contains("persist"),
+            "a note line escaped its comment: {line:?}\n{garnet}"
+        );
+    }
+}
