@@ -362,3 +362,45 @@ fn per_function_changes_without_a_record_dir_are_printed_not_promised() {
     );
     assert!(!dir.path().join("diff_caps.txt").exists());
 }
+
+// Codex delta review on #607 (3d77d8e9): a --record-dir artifact that cannot be
+// written was ignored, so the loop announced diff_caps.txt and exited 0 without it.
+#[test]
+fn a_record_artifact_that_cannot_be_written_fails_the_loop() {
+    let dir = tempfile::TempDir::new().unwrap();
+    let baseline = write(dir.path(), "baseline.garnet", PER_FN_BASELINE);
+    let proposal = write(dir.path(), "proposal.garnet", PER_FN_PROPOSAL);
+    let record = dir.path().join("record");
+    std::fs::create_dir_all(record.join("diff_caps.txt")).unwrap();
+    let out = garnet()
+        .args(["agent-loop", "--baseline"])
+        .arg(&baseline)
+        .arg("--proposal")
+        .arg(&proposal)
+        .arg("--seal-out")
+        .arg(dir.path().join("seal.json"))
+        .arg("--record-dir")
+        .arg(&record)
+        .args([
+            "--attest",
+            "agent=scripted-agent-v1",
+            "--gate-version",
+            "dogfood-gate-v1",
+        ])
+        .output()
+        .unwrap();
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        !out.status.success(),
+        "a missing record artifact must fail the loop:\n{stdout}\n{stderr}"
+    );
+    assert!(
+        stderr.contains("diff_caps.txt"),
+        "the failed artifact is named: {stderr}"
+    );
+    assert!(
+        stdout.contains("~ helper gained: fs"),
+        "the changes are still named: {stdout}"
+    );
+}

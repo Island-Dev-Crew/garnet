@@ -96,3 +96,34 @@ fn an_output_that_is_a_link_to_another_output_is_refused() {
         assert!(!stdout.contains("output parses: yes"), "{kind}: {stdout}");
     }
 }
+
+// Codex delta review on #607 (3d77d8e9): only outputs were compared, so a lineage
+// sidecar hard-linked to the input passed, and writing the lineage replaced the
+// source with JSON.
+#[cfg(unix)]
+#[test]
+fn an_output_that_is_the_source_file_is_refused_and_the_source_is_kept() {
+    let source_text = "def one():\n    return 1\n";
+    for kind in ["hard link", "symlink"] {
+        let dir = tempfile::TempDir::new().unwrap();
+        let source = dir.path().join("sample.py");
+        std::fs::write(&source, source_text).unwrap();
+        let lineage = dir.path().join("sample.python.garnet.lineage.json");
+        if kind == "hard link" {
+            std::fs::hard_link(&source, &lineage).unwrap();
+        } else {
+            std::os::unix::fs::symlink("sample.py", &lineage).unwrap();
+        }
+        let out = convert(dir.path(), "python", "sample.py");
+        let stdout = String::from_utf8_lossy(&out.stdout);
+        assert!(
+            !out.status.success(),
+            "{kind}: the conversion must fail:\n{stdout}"
+        );
+        assert_eq!(
+            source_text,
+            std::fs::read_to_string(&source).unwrap(),
+            "{kind}: the source must be kept"
+        );
+    }
+}
