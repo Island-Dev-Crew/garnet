@@ -835,3 +835,112 @@ fn go_struct_with_a_raw_tag_across_lines_is_kept_whole() {
     assert_inactive(&garnet, "persist()");
     assert_inactive(&garnet, "injected");
 }
+
+// Codex lane B, round 5 on #607 (23b5bcf0).
+
+#[test]
+fn ruby_method_name_continued_on_the_next_line_is_not_a_keyword() {
+    for src in [
+        "def save\n  if false\n    obj.\n      end\n    persist()\n  end\nend\n",
+        "def save\n  if ready\n    obj. # continuation\n      end\n    persist()\n  end\nend\n",
+        "if ready\n  obj.\n    end\n  def save\n    persist()\n  end\nend\n",
+    ] {
+        let (garnet, _) = convert_src(src, SourceLang::Ruby, "ruby", "save.rb");
+        assert_parses(&garnet);
+        assert_inactive(&garnet, "persist()");
+    }
+}
+
+#[test]
+fn ruby_regex_with_interpolation_is_refused() {
+    for line in ["  text = /#{/x/}", "  x = /#{\"/\"}/", "  value = /#{1 # /"] {
+        let src = format!("def save\n{line}\n  persist()\n  x/\nend\n");
+        let err = try_convert(&src, SourceLang::Ruby, "ruby", "save.rb").unwrap_err();
+        assert!(
+            err.contains("regular expression") && err.contains("line 2"),
+            "{line}: {err}"
+        );
+    }
+}
+
+#[test]
+fn source_text_that_reads_as_garnet_interpolation_is_never_active() {
+    for (src, lang, name, file) in [
+        (
+            "def save():\n    return \"#{persist()}\"\n",
+            SourceLang::Python,
+            "python",
+            "save.py",
+        ),
+        (
+            "def save():\n    return r\"#{persist()}\"\n",
+            SourceLang::Python,
+            "python",
+            "save.py",
+        ),
+        (
+            "package example\nfunc save() string { return \"#{persist()}\" }\n",
+            SourceLang::Go,
+            "go",
+            "save.go",
+        ),
+        (
+            "def save\n  puts '#{persist()}'\nend\n",
+            SourceLang::Ruby,
+            "ruby",
+            "save.rb",
+        ),
+        (
+            "def save\n  return '#{persist()}'\nend\n",
+            SourceLang::Ruby,
+            "ruby",
+            "save.rb",
+        ),
+    ] {
+        let (garnet, _) = convert_src(src, lang, name, file);
+        assert_parses(&garnet);
+        assert_inactive(&garnet, "#{");
+        assert!(
+            garnet.contains("persist()"),
+            "kept as a to-do: {src:?}\n{garnet}"
+        );
+    }
+}
+
+#[test]
+fn python_bare_carriage_return_line_ending_is_refused() {
+    let err = try_convert(
+        "# comment\rdef save():\r    return 7\r",
+        SourceLang::Python,
+        "python",
+        "save.py",
+    )
+    .unwrap_err();
+    assert!(
+        err.contains("carriage return") && err.contains("line 1"),
+        "{err}"
+    );
+}
+
+#[test]
+fn go_header_ends_where_go_ends_a_declaration() {
+    for src in [
+        "package example\nfunc external(); func save() { persist() }\n",
+        "package example\nfunc external() /*\n*/ func save() { persist() }\n",
+    ] {
+        let (garnet, _) = convert_src(src, SourceLang::Go, "go", "save.go");
+        assert_parses(&garnet);
+        assert!(
+            code_lines(&garnet)
+                .iter()
+                .any(|l| l.starts_with("fn save(")),
+            "save keeps its own body: {src:?}\n{garnet}"
+        );
+        assert!(
+            !code_lines(&garnet)
+                .iter()
+                .any(|l| l.starts_with("fn external(")),
+            "external has no body: {src:?}\n{garnet}"
+        );
+    }
+}
