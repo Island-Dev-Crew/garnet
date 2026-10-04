@@ -533,8 +533,10 @@ pub fn ruby_line_after(line: &str, name_first: bool) -> Result<RubyLine<'_>, &'s
     };
     // The token before ends an expression: `if` after it is a modifier.
     let mut after_value = false;
-    // A `while`/`until`/`for` opened on this line: a later `do` is its separator.
-    let mut loop_do = false;
+    // A `while`/`until`/`for` whose condition is still open on this line, at
+    // this bracket depth: a `do` there is its separator. The condition ends at
+    // that `do`, at a `;` at the same depth, or at the line end.
+    let mut loop_do: Option<i64> = None;
     // The next word is a method name (after `def`, `.` or `::`), not a keyword.
     let mut name_next = name_first;
     // The rest of the statement holds method names (the operands of `alias`
@@ -597,6 +599,12 @@ pub fn ruby_line_after(line: &str, name_first: bool) -> Result<RubyLine<'_>, &'s
                 if names_rest && (operands < operands_needed || last_op) {
                     return Err(ALIAS_OPERANDS);
                 }
+                // A `;` ends the statement: no state of the one before carries
+                // over, and a loop condition at this depth is closed.
+                if loop_do == Some(out.brackets) {
+                    loop_do = None;
+                }
+                name_next = false;
                 out.semicolon = true;
                 after_value = false;
                 names_rest = false;
@@ -742,7 +750,9 @@ pub fn ruby_line_after(line: &str, name_first: bool) -> Result<RubyLine<'_>, &'s
                         if !after_value {
                             out.blocks += 1;
                             out.openers += 1;
-                            loop_do |= matches!(&line[start..i], "while" | "until");
+                            if matches!(&line[start..i], "while" | "until") {
+                                loop_do = Some(out.brackets);
+                            }
                         }
                         // As a modifier at a line end it takes the next line.
                         after_value = false;
@@ -751,7 +761,7 @@ pub fn ruby_line_after(line: &str, name_first: bool) -> Result<RubyLine<'_>, &'s
                     "for" => {
                         out.blocks += 1;
                         out.openers += 1;
-                        loop_do = true;
+                        loop_do = Some(out.brackets);
                         after_value = false;
                     }
                     "case" | "begin" | "class" | "module" => {
@@ -769,8 +779,8 @@ pub fn ruby_line_after(line: &str, name_first: bool) -> Result<RubyLine<'_>, &'s
                         after_value = false;
                     }
                     "do" => {
-                        if loop_do {
-                            loop_do = false;
+                        if loop_do == Some(out.brackets) {
+                            loop_do = None;
                         } else {
                             out.blocks += 1;
                             out.openers += 1;

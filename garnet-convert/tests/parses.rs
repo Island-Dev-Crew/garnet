@@ -1623,12 +1623,13 @@ fn a_nested_ruby_definition_and_a_trailing_in_stay_contained() {
     for src in [
         "def outer\n  def inner\n    0; end; end; def second\n  persist()\nend\n",
         "class Box\n  def inner\n    0; end; end; def second\n  persist()\nend\n",
-        "def save\n  x in\n    persist()\nend\n",
-        "def save\n  x in # a pattern\n\n    # on the next code line\n    persist()\nend\n",
+        "def save\n  x in\n    Persisted()\nend\n",
+        "def save\n  x in # a pattern\n\n    # on the next code line\n    Persisted()\nend\n",
     ] {
         let (garnet, _) = convert_src(src, SourceLang::Ruby, "ruby", "save.rb");
         assert_parses(&garnet);
         assert_inactive(&garnet, "persist()");
+        assert_inactive(&garnet, "Persisted()");
     }
     // A nested definition closed on its own line keeps the enclosing one read,
     // and the statement after it active (Garnet has no nested `def`, so the
@@ -1643,4 +1644,26 @@ fn a_nested_ruby_definition_and_a_trailing_in_stay_contained() {
     let code = code_lines(&garnet);
     assert!(code.contains(&"def outer() {"), "{garnet}");
     assert!(code.contains(&"persist()"), "{garnet}");
+}
+
+/// Codex round 18: a `do` is a loop's separator only while the loop's
+/// condition is open: a `;` at the loop's bracket depth ends the condition, so
+/// a later `do` (`while false; work do`) opens a block and its `end` closes
+/// that block, not the loop.
+#[test]
+fn a_do_after_a_loop_condition_opens_a_block() {
+    for src in [
+        "def save\n  while false; work do\n  end\n  persist()\n  end\nend\n",
+        "def save\n  until true; work do\n  end\n  persist()\n  end\nend\n",
+        "def save\n  for x in [1]; work do\n  end\n  persist()\n  end\nend\n",
+        "def save\n  while false; end; work do\n    persist()\n  end\nend\n",
+        // Controls: a `;` inside the condition's parentheses, and the loop's
+        // own `do` before a block's.
+        "def save\n  while (a; b) do\n    persist()\n  end\nend\n",
+        "def save\n  while false do work do\n  end\n  persist()\n  end\nend\n",
+    ] {
+        let (garnet, _) = convert_src(src, SourceLang::Ruby, "ruby", "save.rb");
+        assert_parses(&garnet);
+        assert_inactive(&garnet, "persist()");
+    }
 }

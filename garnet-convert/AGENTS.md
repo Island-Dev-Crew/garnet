@@ -21,7 +21,9 @@ Owns migration frontends and conversion helpers for lifting Rust, Ruby, Python, 
   commas and modifiers, and a leading `.`. A Ruby body statement, a nested
   definition included, must stay inside its block: one that closes a block
   opened before it, or starts a clause of one (`RubyLine::min_blocks`,
-  `RubyLine::clause_at`), keeps the definition whole. Only a statement on one line becomes code.
+  `RubyLine::clause_at`), keeps the definition whole. A `;` carries no lexer
+  state of the statement before it into the next (a loop condition ends there,
+  so a later `do` opens a block). Only a statement on one line becomes code.
 - What a frontend does not lex is refused with its line number, never guessed:
   Python tab or form-feed indentation, a carriage return without a line feed,
   and f-strings or t-strings whose replacement fields hold their own quote, a

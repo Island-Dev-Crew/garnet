@@ -175,7 +175,9 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
     - Ruby: a lexical subset, whose code is ASCII (a non-ASCII character
       outside a string, regular expression or comment refuses the file).
       Lines join while a bracket or keyword block is
-      open (`if` and its kin count only where an expression starts), after a
+      open (`if` and its kin count only where an expression starts; a `do` is
+      a loop's separator only while the loop's condition is open, which ends
+      at a `;` at its bracket depth or at the line end), after a
       trailing operator, comma or modifier (`if`, `unless`, `rescue`, a
       pattern's `in` ...), or
       before a line that starts with `.`; a blank or comment line does not
