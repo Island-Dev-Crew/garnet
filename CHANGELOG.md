@@ -39,7 +39,9 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   fingerprint must be the key the installer pins for the requested version,
   not merely a key in the file. Only then do they trust `SHA256SUMS`.
   - A missing, mismatched or wrong-key signature stops the install, and
-    `install.sh` never falls back to a source build after one.
+    `install.sh` never falls back to a source build after one. When `gpg`
+    cannot import the keys or verify the signature, `install.ps1` quotes
+    `gpg`'s own messages in the refusal.
   - Without `gpg` they warn and check integrity only; on Windows, Gpg4win
     provides `gpg`. Releases before v0.8.1 were never signed and also warn.
   - `GARNET_VERIFY_SIGNATURE=0` turns the check off with a warning, and
@@ -49,7 +51,7 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   - The installer, its pins and the keys file all come from `garnet-lang.org`,
     so the check stops a substituted release asset, not a substituted installer;
     `docs/release-signing.md` says how to verify by hand.
-  - Tests: `scripts/test_garnet_installer_signature.py` (10, throwaway keys,
+  - Tests: `scripts/test_garnet_installer_signature.py` (11, throwaway keys,
     in CI). The Windows job runs `scripts/ci_install_ps1_signature.ps1` under
     PowerShell 7 and Windows PowerShell 5.1. It installs the real v0.8.2
     release through its real signature, then refuses another pinned key, a
