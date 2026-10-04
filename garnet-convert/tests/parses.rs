@@ -1667,3 +1667,31 @@ fn a_do_after_a_loop_condition_opens_a_block() {
         assert_inactive(&garnet, "persist()");
     }
 }
+
+/// Codex round 19: after `.`, `&.`, `::` or `def` the method name is the next
+/// token of any kind, an operator name (`obj.[]`, `obj.!`, `obj.-@`) or the
+/// `obj.()` call included; a word after it (`do`) is a keyword again and opens
+/// a block.
+#[test]
+fn an_operator_method_name_does_not_hide_a_block() {
+    for call in [
+        "obj.[]",
+        "obj.[]()",
+        "obj.!",
+        "obj.~",
+        "obj.-@",
+        "obj.+@",
+        "obj.\n    []",
+        "obj&.[]",
+        "obj::[]",
+        "obj.()",
+        // Controls: a word name and an operator name with an argument.
+        "obj.call",
+        "obj.[](0)",
+    ] {
+        let src = format!("def save\n  {call} do\n    persist()\n  end\nend\n");
+        let (garnet, _) = convert_src(&src, SourceLang::Ruby, "ruby", "save.rb");
+        assert_parses(&garnet);
+        assert_inactive(&garnet, "persist()");
+    }
+}

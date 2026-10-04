@@ -551,6 +551,12 @@ pub fn ruby_line_after(line: &str, name_first: bool) -> Result<RubyLine<'_>, &'s
     while i < b.len() {
         let c = b[i];
         let mut op = true;
+        // After `.`, `&.`, `::` or `def` the method name is the next token of
+        // any kind: an operator name (`obj.[]`, `obj.!`, `def ==`) or the
+        // `obj.()` call takes it, so a later word (`do`) is a keyword again.
+        if name_next && !is_rb_word_byte(c) && !matches!(c, b' ' | b'\t' | b'\r' | b'#' | b'\\') {
+            name_next = false;
+        }
         match c {
             b' ' | b'\t' | b'\r' => {
                 i += 1;

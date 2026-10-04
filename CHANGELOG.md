@@ -182,7 +182,9 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
       pattern's `in` ...), or
       before a line that starts with `.`; a blank or comment line does not
       end an open statement, a word after `.` at the end of the line before is
-      a method name, not a keyword, and so are the operands of `alias` and
+      a method name, not a keyword (the name after `.`, `&.`, `::` or `def` is
+      the next token of any kind, so after an operator name such as `obj.[]`
+      or `obj.!` a word is a keyword again), and so are the operands of `alias` and
       `undef`, which must be complete on their own line. A statement holding
       `;` or a keyword block (even one closed on its line, such as
       `puts def x() ... end`) is kept whole rather than read by `puts`,
