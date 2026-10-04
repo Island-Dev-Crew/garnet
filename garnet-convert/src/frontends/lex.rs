@@ -213,6 +213,8 @@ struct Field {
 struct OpenString {
     quote: u8,
     triple: bool,
+    /// A raw string: `\N{...}` is not a named character.
+    raw: bool,
     /// An f-string or t-string: `{` opens a replacement field.
     fields_allowed: bool,
     fields: Vec<Field>,
@@ -260,6 +262,7 @@ impl PyLex {
                     let mut open = OpenString {
                         quote,
                         triple,
+                        raw: prefix.iter().any(|c| matches!(c, b'r' | b'R')),
                         fields_allowed: prefix
                             .iter()
                             .any(|c| matches!(c, b'f' | b'F' | b't' | b'T')),
@@ -371,6 +374,26 @@ fn scan_string(
         }
         match c {
             b'\\' => {
+                // An escape never hides a replacement field: `\{` leaves the
+                // `{` to open one, and only in a non-raw string is `\N{...}` a
+                // named character.
+                if open.fields_allowed && b.get(i + 1) == Some(&b'{') {
+                    i += 1;
+                    continue;
+                }
+                if open.fields_allowed
+                    && !open.raw
+                    && b.get(i + 1) == Some(&b'N')
+                    && b.get(i + 2) == Some(&b'{')
+                {
+                    i += 3
+                        + b[i + 3..]
+                            .iter()
+                            .position(|&c| c == b'}')
+                            .ok_or(OPEN_STRING)?
+                        + 1;
+                    continue;
+                }
                 i += 2;
                 continue;
             }
@@ -480,9 +503,7 @@ pub fn ruby_line(line: &str) -> Result<RubyLine<'_>, &'static str> {
                 if operand_position(b, i) {
                     return Err("a percent literal");
                 }
-                let spaced_after_word = i > 0
-                    && b[i - 1] == b' '
-                    && previous_word_is_identifier(b, i)
+                let spaced_after_word = spaced_after_identifier(b, i)
                     && !b
                         .get(i + 1)
                         .is_some_and(|c| c.is_ascii_whitespace() || *c == b'=');
@@ -533,9 +554,7 @@ pub fn ruby_line(line: &str) -> Result<RubyLine<'_>, &'static str> {
                 continue;
             }
             b'/' => {
-                let spaced_after_word = i > 0
-                    && b[i - 1] == b' '
-                    && previous_word_is_identifier(b, i)
+                let spaced_after_word = spaced_after_identifier(b, i)
                     && !b.get(i + 1).is_some_and(|c| c.is_ascii_whitespace());
                 if spaced_after_word {
                     return Err("an ambiguous / that may start a regular expression");
@@ -778,7 +797,7 @@ fn scan_rb_double(b: &[u8], mut i: usize, q: u8) -> Result<usize, &'static str> 
 /// separator or operator (or a keyword that takes an expression) precedes it.
 fn operand_position(b: &[u8], i: usize) -> bool {
     let mut j = i;
-    while j > 0 && b[j - 1] == b' ' {
+    while j > 0 && matches!(b[j - 1], b' ' | b'\t') {
         j -= 1;
     }
     if j == 0 {
@@ -809,10 +828,17 @@ fn operand_position(b: &[u8], i: usize) -> bool {
     !matches!(prev, b')' | b']' | b'}' | b'"' | b'\'' | b'`')
 }
 
-/// Whether the word just before the space at `i - 1` is an identifier (not a
-/// keyword that takes an expression), so `word /x` is ambiguous in Ruby.
-fn previous_word_is_identifier(b: &[u8], i: usize) -> bool {
-    let end = i - 1;
+/// Whether spaces or tabs separate the byte at `i` from an identifier before
+/// them (not a keyword that takes an expression), so `word /x` or `word %x` is
+/// ambiguous in Ruby.
+fn spaced_after_identifier(b: &[u8], i: usize) -> bool {
+    let mut end = i;
+    while end > 0 && matches!(b[end - 1], b' ' | b'\t') {
+        end -= 1;
+    }
+    if end == i {
+        return false;
+    }
     let mut start = end;
     while start > 0 && (b[start - 1].is_ascii_alphanumeric() || b[start - 1] == b'_') {
         start -= 1;

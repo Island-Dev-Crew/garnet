@@ -176,31 +176,26 @@ impl<'a> GoParser<'a> {
     }
 
     fn parse_func(&mut self, start: usize) -> Result<Cir, ConvertError> {
-        // Optional receiver: func (r *Recv) Name(...)
-        if self.eat("(") {
-            // skip receiver — treat as method of the type
-            let _ = self.read_until(')');
-            self.eat(")");
-        }
-        let name = self.read_ident().unwrap_or_default();
-        self.eat("(");
-        let params = self.parse_params()?;
-        self.eat(")");
-        // Return type is optional in Go
-        let return_ty = if !self.peek("{") {
-            // Could be a single type, or (a, b) tuple. Handle single for v4.1.
-            if self.eat("(") {
-                let rs = self.read_until(')');
-                self.eat(")");
-                parse_ty_string(&rs)
-            } else {
-                let ty_str = self.read_until('{').trim().to_string();
-                parse_ty_string(&ty_str)
-            }
-        } else {
-            CirTy::Inferred
+        // The header runs to the `{` that opens the body, found lexically:
+        // comments, strings and raw strings are skipped, the braces of a
+        // `struct` or `interface` type literal belong to the header, and a
+        // header that ends where Go inserts a semicolon has no body. A header
+        // that does not read as `[(receiver)] name[type params](params) [result]`
+        // keeps the whole function as a to-do.
+        let rest = self.remaining();
+        let parsed = body_brace(rest).and_then(|open| {
+            parse_func_header(&blank_go_comments(&rest[..open])).map(|h| (open, h))
+        });
+        let Some((open, (name, params, return_ty))) = parsed else {
+            self.pos = start;
+            let text = self.read_statement().join("\n");
+            return Ok(Cir::MigrateTodo {
+                placeholder: Box::new(Cir::Literal(CirLit::Nil, self.lineage(start))),
+                note: format!("Go function kept whole for hand translation:\n{text}"),
+                lineage: self.lineage(start),
+            });
         };
-        self.eat("{");
+        self.pos += open + 1;
         let body = self.parse_body_to_brace()?;
         Ok(Cir::Func {
             name,
@@ -213,62 +208,27 @@ impl<'a> GoParser<'a> {
         })
     }
 
-    fn parse_params(&mut self) -> Result<Vec<Param>, ConvertError> {
-        let mut out = Vec::new();
-        loop {
-            self.skip_ws();
-            if self.peek(")") || self.remaining().is_empty() {
-                break;
-            }
-            // Go: name Type, name Type or shared: name1, name2 Type
-            let name = match self.read_ident() {
-                Some(n) => n,
-                None => break,
-            };
-            self.skip_ws();
-            let ty_src = self.read_until_one_of(&[',', ')']);
-            out.push(Param {
-                name,
-                ty: parse_ty_string(ty_src.trim()),
-                ownership: Ownership::Default,
-            });
-            if !self.eat(",") {
-                break;
-            }
-        }
-        Ok(out)
-    }
-
     fn parse_type_decl(&mut self, start: usize) -> Result<Cir, ConvertError> {
         let name = self.read_ident().unwrap_or_default();
         self.skip_ws();
-        if self.eat("struct") {
-            self.eat("{");
-            let mut fields = Vec::new();
-            loop {
-                self.skip_ws();
-                if self.peek("}") || self.remaining().is_empty() {
-                    break;
-                }
-                let fname = match self.read_ident() {
-                    Some(n) => n,
-                    None => break,
-                };
-                let ty_src = self.read_to_line_end();
-                fields.push(crate::cir::FieldDecl {
-                    name: fname.clone(),
-                    ty: parse_ty_string(ty_src.trim()),
-                    public: fname
-                        .chars()
-                        .next()
-                        .map(|c| c.is_uppercase())
-                        .unwrap_or(false),
+        if self.peek("struct") {
+            // The whole declaration is read lexically (a raw tag may span
+            // lines); its fields are converted only when each one reads as
+            // `Name[, Name] Type [tag]` on its own line.
+            let text = self.read_statement().join("\n");
+            if let Some(fields) = struct_fields(&text) {
+                return Ok(Cir::Struct {
+                    name,
+                    fields,
+                    lineage: self.lineage(start),
                 });
             }
-            self.eat("}");
-            return Ok(Cir::Struct {
-                name,
-                fields,
+            return Ok(Cir::MigrateTodo {
+                placeholder: Box::new(Cir::Literal(CirLit::Nil, self.lineage(start))),
+                note: format!(
+                    "Go type '{name}' kept whole for hand translation:\ntype {name} {}",
+                    text.trim()
+                ),
                 lineage: self.lineage(start),
             });
         }
@@ -379,22 +339,6 @@ impl<'a> GoParser<'a> {
         lines
     }
 
-    fn read_until(&mut self, stop: char) -> String {
-        let rem = self.remaining();
-        let idx = rem.find(stop).unwrap_or(rem.len());
-        let s = rem[..idx].to_string();
-        self.pos += idx;
-        s
-    }
-
-    fn read_until_one_of(&mut self, stops: &[char]) -> String {
-        let rem = self.remaining();
-        let idx = rem.find(|c| stops.contains(&c)).unwrap_or(rem.len());
-        let s = rem[..idx].to_string();
-        self.pos += idx;
-        s
-    }
-
     fn read_to_line_end(&mut self) -> String {
         let rem = self.remaining();
         let idx = rem.find('\n').unwrap_or(rem.len());
@@ -405,6 +349,282 @@ impl<'a> GoParser<'a> {
         }
         s
     }
+}
+
+/// Whether `c` belongs to a Go identifier (any non-ASCII byte counts).
+fn is_go_word(c: u8) -> bool {
+    c.is_ascii_alphanumeric() || c == b'_' || c >= 0x80
+}
+
+/// The index just past the string, rune or raw string that starts at `i`, or
+/// `None` when it does not close.
+fn skip_go_literal(b: &[u8], i: usize) -> Option<usize> {
+    let quote = b[i];
+    let mut j = i + 1;
+    while j < b.len() {
+        match b[j] {
+            b'\\' if quote != b'`' => j += 2,
+            c if c == quote => return Some(j + 1),
+            b'\n' if quote != b'`' => return None,
+            _ => j += 1,
+        }
+    }
+    None
+}
+
+/// The index of the bracket that closes the one at `i`, skipping comments
+/// and literals.
+fn matching_bracket(b: &[u8], i: usize) -> Option<usize> {
+    let mut depth = 0i64;
+    let mut j = i;
+    while j < b.len() {
+        match b[j] {
+            b'/' if b.get(j + 1) == Some(&b'/') => {
+                j += b[j..].iter().position(|&c| c == b'\n')?;
+                continue;
+            }
+            b'/' if b.get(j + 1) == Some(&b'*') => {
+                j += 2 + b[j + 2..].windows(2).position(|w| w == b"*/")? + 2;
+                continue;
+            }
+            b'"' | b'\'' | b'`' => {
+                j = skip_go_literal(b, j)?;
+                continue;
+            }
+            b'(' | b'[' | b'{' => depth += 1,
+            b')' | b']' | b'}' => {
+                depth -= 1;
+                if depth == 0 {
+                    return Some(j);
+                }
+            }
+            _ => {}
+        }
+        j += 1;
+    }
+    None
+}
+
+/// The offset in `s` (the text after `func `) of the `{` that opens the body.
+/// Comments and literals are skipped; a `{` inside brackets or after `struct`
+/// or `interface` opens a type literal and is skipped whole. `None` when the
+/// header ends where Go inserts a semicolon (a declaration without a body) or
+/// the text ends first.
+fn body_brace(s: &str) -> Option<usize> {
+    let b = s.as_bytes();
+    let mut depth = 0i64;
+    let mut last_word: &[u8] = b"";
+    let mut ends = false;
+    let mut i = 0;
+    while i < b.len() {
+        let c = b[i];
+        match c {
+            b'/' if b.get(i + 1) == Some(&b'/') => {
+                i += b[i..]
+                    .iter()
+                    .position(|&c| c == b'\n')
+                    .unwrap_or(b.len() - i);
+                continue;
+            }
+            b'/' if b.get(i + 1) == Some(&b'*') => {
+                i += 2 + b[i + 2..].windows(2).position(|w| w == b"*/")? + 2;
+                continue;
+            }
+            b'\n' if depth == 0 && ends => return None,
+            b'"' | b'\'' | b'`' => {
+                i = skip_go_literal(b, i)?;
+                last_word = b"";
+                ends = true;
+                continue;
+            }
+            c if is_go_word(c) => {
+                let start = i;
+                while i < b.len() && is_go_word(b[i]) {
+                    i += 1;
+                }
+                last_word = &b[start..i];
+                ends = true;
+                continue;
+            }
+            b'{' if depth > 0 || last_word == b"struct" || last_word == b"interface" => {
+                i = matching_bracket(b, i)? + 1;
+                last_word = b"";
+                ends = true;
+                continue;
+            }
+            b'{' => return Some(i),
+            b'(' | b'[' => {
+                depth += 1;
+                last_word = b"";
+                ends = false;
+            }
+            b')' | b']' => {
+                depth -= 1;
+                last_word = b"";
+                ends = true;
+            }
+            c if c.is_ascii_whitespace() => {}
+            _ => {
+                last_word = b"";
+                ends = false;
+            }
+        }
+        i += 1;
+    }
+    None
+}
+
+/// `s` with every comment replaced by spaces (newlines kept), so offsets and
+/// line breaks stay where they were.
+fn blank_go_comments(s: &str) -> String {
+    let b = s.as_bytes();
+    let mut out = b.to_vec();
+    let mut i = 0;
+    while i < b.len() {
+        match b[i] {
+            b'/' if b.get(i + 1) == Some(&b'/') => {
+                while i < b.len() && b[i] != b'\n' {
+                    out[i] = b' ';
+                    i += 1;
+                }
+            }
+            b'/' if b.get(i + 1) == Some(&b'*') => {
+                let end = b[i + 2..]
+                    .windows(2)
+                    .position(|w| w == b"*/")
+                    .map_or(b.len(), |n| i + 2 + n + 2);
+                for slot in &mut out[i..end] {
+                    if *slot != b'\n' {
+                        *slot = b' ';
+                    }
+                }
+                i = end;
+            }
+            b'"' | b'\'' | b'`' => i = skip_go_literal(b, i).unwrap_or(b.len()),
+            _ => i += 1,
+        }
+    }
+    String::from_utf8(out).unwrap_or_default()
+}
+
+/// `[(receiver)] name[type params](params) [result]`, from a header without
+/// comments.
+fn parse_func_header(h: &str) -> Option<(String, Vec<Param>, CirTy)> {
+    let b = h.as_bytes();
+    let skip = |mut i: usize| {
+        while i < b.len() && b[i].is_ascii_whitespace() {
+            i += 1;
+        }
+        i
+    };
+    let mut i = skip(0);
+    if b.get(i) == Some(&b'(') {
+        i = skip(matching_bracket(b, i)? + 1);
+    }
+    let name_start = i;
+    while i < b.len() && is_go_word(b[i]) {
+        i += 1;
+    }
+    let name = &h[name_start..i];
+    if name.is_empty() {
+        return None;
+    }
+    i = skip(i);
+    if b.get(i) == Some(&b'[') {
+        i = skip(matching_bracket(b, i)? + 1);
+    }
+    if b.get(i) != Some(&b'(') {
+        return None;
+    }
+    let close = matching_bracket(b, i)?;
+    let params = split_top_level(&h[i + 1..close])
+        .into_iter()
+        .filter(|segment| !segment.trim().is_empty())
+        .map(|segment| {
+            let segment = segment.trim();
+            let (name, ty) = segment
+                .split_once(|c: char| c.is_whitespace())
+                .map_or((segment, ""), |(n, t)| (n, t.trim()));
+            Param {
+                name: name.to_string(),
+                ty: parse_ty_string(ty),
+                ownership: Ownership::Default,
+            }
+        })
+        .collect();
+    let result = h[close + 1..].trim();
+    let return_ty = match result.strip_prefix('(').and_then(|r| r.strip_suffix(')')) {
+        Some(inner) => parse_ty_string(inner),
+        None => parse_ty_string(result),
+    };
+    Some((name.to_string(), params, return_ty))
+}
+
+/// `s` split at commas outside brackets and literals.
+fn split_top_level(s: &str) -> Vec<&str> {
+    let b = s.as_bytes();
+    let mut parts = Vec::new();
+    let mut depth = 0i64;
+    let mut start = 0;
+    let mut i = 0;
+    while i < b.len() {
+        match b[i] {
+            b'"' | b'\'' | b'`' => {
+                i = skip_go_literal(b, i).unwrap_or(b.len());
+                continue;
+            }
+            b'(' | b'[' | b'{' => depth += 1,
+            b')' | b']' | b'}' => depth -= 1,
+            b',' if depth == 0 => {
+                parts.push(&s[start..i]);
+                start = i + 1;
+            }
+            _ => {}
+        }
+        i += 1;
+    }
+    parts.push(&s[start..]);
+    parts
+}
+
+/// The fields of `struct { ... }` when each reads as `Name[, Name] Type [tag]`
+/// on its own line (or `;`-separated on one line), a tag being one string or
+/// raw string on that line. Anything else (a nested type literal, a raw tag
+/// across lines, an embedded field) leaves the type whole.
+fn struct_fields(text: &str) -> Option<Vec<crate::cir::FieldDecl>> {
+    let clean = blank_go_comments(text);
+    let body = clean.trim().strip_prefix("struct")?.trim();
+    let inner = body.strip_prefix('{')?.strip_suffix('}')?;
+    let mut fields = Vec::new();
+    for line in inner.split(['\n', ';']) {
+        let mut line = line.trim();
+        if line.is_empty() {
+            continue;
+        }
+        if let Some(tag_start) = line.find(['`', '"']) {
+            let b = line.as_bytes();
+            if skip_go_literal(b, tag_start)? != b.len() {
+                return None;
+            }
+            line = line[..tag_start].trim_end();
+        }
+        if line.contains(['{', '}', '`', '"', '\'']) {
+            return None;
+        }
+        let (names, ty) = line.rsplit_once(|c: char| c.is_whitespace())?;
+        for name in names.split(',') {
+            let name = name.trim();
+            if name.is_empty() || !name.bytes().all(is_go_word) {
+                return None;
+            }
+            fields.push(crate::cir::FieldDecl {
+                name: name.to_string(),
+                ty: parse_ty_string(ty),
+                public: name.chars().next().is_some_and(|c| c.is_uppercase()),
+            });
+        }
+    }
+    Some(fields)
 }
 
 /// Whether a `;` statement separator appears, outside strings and comments,

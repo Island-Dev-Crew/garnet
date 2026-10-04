@@ -165,12 +165,9 @@ impl<'a> RubyParser<'a> {
         let text = self.source[start..end].trim_end().to_string();
         self.pos = end;
         let first = first_word(&text);
-        // A require is skipped only when it is the whole statement: anything
-        // after a `;` on its line is kept as a to-do with it.
-        let separated = text
-            .lines()
-            .any(|line| ruby_line(line).is_ok_and(|l| l.semicolon));
-        if matches!(first, "require" | "require_relative") && !separated {
+        // A require is skipped only in its exact form, `require "x"` or
+        // `require("x")`; anything else on its line is kept as a to-do with it.
+        if text.lines().count() == 1 && is_plain_require(ruby_code(&text)) {
             return self.parse_item();
         }
         if first == "method_missing" {
@@ -625,6 +622,30 @@ fn ruby_code(line: &str) -> &str {
 /// A one-line statement that opens nothing it does not close.
 fn complete(line: &str) -> bool {
     ruby_line(line).is_ok_and(|l| l.brackets == 0 && l.blocks == 0 && !l.continues)
+}
+
+/// `require "path"`, `require_relative 'path'` or the same with parentheses,
+/// and nothing else.
+fn is_plain_require(code: &str) -> bool {
+    let rest = code
+        .strip_prefix("require_relative")
+        .or_else(|| code.strip_prefix("require"));
+    let Some(rest) = rest else {
+        return false;
+    };
+    let arg = match rest.strip_prefix('(') {
+        Some(inner) => match inner.trim_end().strip_suffix(')') {
+            Some(arg) => arg.trim(),
+            None => return false,
+        },
+        None if rest.starts_with([' ', '\t']) => rest.trim(),
+        None => return false,
+    };
+    let b = arg.as_bytes();
+    b.len() >= 2
+        && matches!(b[0], b'"' | b'\'')
+        && b[b.len() - 1] == b[0]
+        && !arg[1..arg.len() - 1].contains(['"', '\'', '#', '\\'])
 }
 
 /// The leading identifier of a statement (`require` in `require "x"`).

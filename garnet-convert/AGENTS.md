@@ -30,8 +30,10 @@ Owns migration frontends and conversion helpers for lifting Rust, Ruby, Python, 
   with a test that asserts its fragments are not active (`assert_inactive`).
 - A definition or class-level statement the frontend does not read is kept as a
   to-do, never dropped: `__init__` stays a method, a Ruby definition whose `end`
-  shares its line with more code is kept whole, and an import or `require` is
-  skipped only when nothing follows it on its line.
+  shares its line with more code is kept whole, an import is skipped only when
+  nothing follows it on its line (a Ruby `require` only in its exact form), a Go
+  function whose lexed header does not read is kept whole, and a Go struct whose
+  fields are not one simple `Name Type [tag]` per line is kept whole.
 
 ## Required Checks
 

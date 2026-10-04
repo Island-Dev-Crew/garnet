@@ -769,7 +769,7 @@ fn python_inline_suite_keeps_its_clauses() {
         assert_inactive(&garnet, "persist()");
         assert_eq!(
             1,
-            garnet.matches("@migrate_todo").count(),
+            garnet.matches("@migrate_todo:").count(),
             "{header}: one whole statement:\n{garnet}\n{checklist}"
         );
     }

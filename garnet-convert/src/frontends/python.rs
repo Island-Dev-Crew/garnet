@@ -429,15 +429,11 @@ impl<'a> PythonParser<'a> {
         end
     }
 
-    /// A compound statement the converter does not lower, kept whole: with its
-    /// indented body and clauses when its header ends in `:`, or on its own when
-    /// its body is on the header line.
+    /// A compound statement the converter does not lower, kept whole: its
+    /// header, its indented body, and its `elif`/`else`/`except`/`finally`
+    /// clauses, whether or not a suite sits on the header line.
     fn compound_todo(&mut self, keyword: &str, start: usize, indent: usize) -> Cir {
-        let end = if self.code_of(start).ends_with(':') {
-            self.block_end(start, indent)
-        } else {
-            self.end_of(start)
-        };
+        let end = self.block_end(start, indent);
         self.line_idx = end;
         self.block_todo(keyword, start, indent, end)
     }
@@ -600,7 +596,7 @@ fn header_keyword(code: &str) -> Option<&'static str> {
     // A keyword is the statement's whole leading identifier: whatever follows it
     // (a space, a tab, `(`, `{`, `*`, `:` ...) is not part of it.
     let word_end = code
-        .find(|c: char| !(c.is_alphanumeric() || c == '_'))
+        .find(|c: char| !(c.is_alphanumeric() || c == '_' || !c.is_ascii()))
         .unwrap_or(code.len());
     let word = &code[..word_end];
     [
