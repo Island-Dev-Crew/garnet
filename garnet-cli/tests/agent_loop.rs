@@ -451,3 +451,61 @@ fn a_record_never_names_an_artifact_it_did_not_write() {
         );
     }
 }
+
+// Codex lane B, round 3 on #607 (7b788fd2): with check.txt unwritable the decision
+// still said "See `check.txt`". Every mention of an unwritten artifact is marked.
+#[test]
+fn a_decision_marks_every_artifact_it_could_not_write() {
+    const CHECK_FAIL: &str = "@caps()\ndef main( {\n";
+    let cases: [(&str, &[&str]); 4] = [
+        (
+            ACCEPT,
+            &[
+                "diff_caps.txt",
+                "capability_manifest.json",
+                "seal.json",
+                "transparency_log.jsonl",
+                "run_output.txt",
+            ],
+        ),
+        (WIDEN, &["diff_caps.txt"]),
+        (OVERDEPTH, &["diff_caps.txt", "run_trap.txt"]),
+        (CHECK_FAIL, &["diff_caps.txt", "check.txt"]),
+    ];
+    for (proposal_src, artifacts) in cases {
+        for blocked in artifacts {
+            let dir = tempfile::TempDir::new().unwrap();
+            let baseline = write(dir.path(), "baseline.garnet", BASELINE);
+            let proposal = write(dir.path(), "proposal.garnet", proposal_src);
+            let record = dir.path().join("record");
+            std::fs::create_dir_all(record.join(blocked)).unwrap();
+            let out = garnet()
+                .args(["agent-loop", "--baseline"])
+                .arg(&baseline)
+                .arg("--proposal")
+                .arg(&proposal)
+                .arg("--seal-out")
+                .arg(dir.path().join("seal.json"))
+                .arg("--record-dir")
+                .arg(&record)
+                .args([
+                    "--attest",
+                    "agent=scripted-agent-v1",
+                    "--gate-version",
+                    "dogfood-gate-v1",
+                ])
+                .output()
+                .unwrap();
+            assert_eq!(Some(2), out.status.code(), "{blocked}");
+            let decision = std::fs::read_to_string(record.join("decision.md")).unwrap();
+            let named = format!("`{blocked}`");
+            let marked = format!("`{blocked}` (not written");
+            assert!(decision.contains(&marked), "{blocked}: {decision}");
+            assert_eq!(
+                decision.matches(&named).count(),
+                decision.matches(&marked).count(),
+                "{blocked}: every mention is marked: {decision}"
+            );
+        }
+    }
+}

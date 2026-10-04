@@ -592,3 +592,143 @@ fn ruby_line_ending_in_a_modifier_continues_its_statement() {
         );
     }
 }
+
+// Codex lane B, round 3 on #607 (7b788fd2).
+
+#[test]
+fn python_keyword_followed_by_any_non_identifier_character_opens_its_block() {
+    for header in [
+        "if\tenabled:",
+        "if{1}:",
+        "for\tx in items:",
+        "while(ready):",
+    ] {
+        let src = format!(
+            "def save(enabled, items, ready):\n    {header}\n        persist()\n    return 0\n"
+        );
+        let (garnet, _) = convert_src(&src, SourceLang::Python, "python", "save.py");
+        assert_parses(&garnet);
+        assert_inactive(&garnet, "persist()");
+        assert!(
+            code_lines(&garnet).contains(&"return 0"),
+            "{header}:\n{garnet}"
+        );
+    }
+    let src = "def save():\n    try:\n        attempt()\n    except* ValueError:\n        persist()\n    return 0\n";
+    let (garnet, _) = convert_src(src, SourceLang::Python, "python", "save.py");
+    assert_parses(&garnet);
+    assert_inactive(&garnet, "persist()");
+}
+
+#[test]
+fn python_fstring_field_holding_its_quote_or_a_comment_is_refused() {
+    for src in [
+        "def save():\n    text = f\"\"\"{ \"\"\"\npersist()\n\"\"\" }\"\"\"\n    return 0\n",
+        "def save(d):\n    text = f\"\"\"{d[\"\"\"key\"\"\"]}\"\"\"\n    return 0\n",
+        "def save(d):\n    text = t\"{d[\"key\"]}\"\n    return 0\n",
+        "def save(x):\n    text = f\"\"\"{x # }\n}\"\"\"\n    return 0\n",
+    ] {
+        let err = try_convert(src, SourceLang::Python, "python", "save.py").unwrap_err();
+        assert!(
+            err.contains("string") && err.contains("line 2"),
+            "{src:?}: {err}"
+        );
+    }
+}
+
+#[test]
+fn python_constructor_is_kept_not_dropped() {
+    for src in [
+        "class Store:\n    def __init__(self):\n        persist()\n",
+        "class Store:\n    def __init__(self):\n        if ready:\n            persist()\n",
+    ] {
+        let (garnet, _) = convert_src(src, SourceLang::Python, "python", "store.py");
+        assert_parses(&garnet);
+        assert!(
+            garnet.contains("persist()"),
+            "the constructor's body survives:\n{garnet}"
+        );
+    }
+}
+
+#[test]
+fn ruby_blank_or_comment_line_does_not_end_a_continued_statement() {
+    for body in [
+        "  enabled &&\n\n    persist()\n",
+        "  enabled &&\n  # still the same expression\n    persist()\n",
+        "  return 7 if\n  # condition follows\n    persist()\n",
+    ] {
+        let src = format!("def save(enabled)\n{body}  return 0\nend\n");
+        let (garnet, _) = convert_src(&src, SourceLang::Ruby, "ruby", "save.rb");
+        assert_parses(&garnet);
+        assert_inactive(&garnet, "persist()");
+        assert!(
+            code_lines(&garnet).contains(&"return 0"),
+            "{body}:\n{garnet}"
+        );
+    }
+}
+
+#[test]
+fn ruby_heredoc_and_percent_literal_forms_are_refused() {
+    for (line, what) in [
+        ("  value = <<text", "heredoc"),
+        ("  value = %q hello ", "percent literal"),
+        ("  value = %q=hello=", "percent literal"),
+        ("  value = % hello ", "percent literal"),
+    ] {
+        let src = format!("def save\n{line}\n  return 0\nend\n");
+        let err = try_convert(&src, SourceLang::Ruby, "ruby", "save.rb").unwrap_err();
+        assert!(
+            err.contains(what) && err.contains("line 2"),
+            "{line}: {err}"
+        );
+    }
+}
+
+#[test]
+fn ruby_definition_with_more_code_on_its_end_line_is_kept_whole() {
+    for src in [
+        "def save\n  persist()\nend if false\n",
+        "class Store\n  def save\n    persist()\n  end\nend if false\n",
+        "def run(xs)\n  xs.each do |x|\n    persist(x)\n  end if false\n  0\nend\n",
+    ] {
+        let (garnet, _) = convert_src(src, SourceLang::Ruby, "ruby", "save.rb");
+        assert_parses(&garnet);
+        assert_inactive(&garnet, "persist(");
+    }
+}
+
+#[test]
+fn an_import_sharing_its_line_keeps_what_follows() {
+    let (go, _) = convert_src(
+        "package example\nimport \"fmt\"; func save() { fmt.Println(\"saved\") }\n",
+        SourceLang::Go,
+        "go",
+        "save.go",
+    );
+    assert_parses(&go);
+    assert!(go.contains("saved"), "the definition is kept:\n{go}");
+    let (ruby, _) = convert_src(
+        "require \"x\"; def save\n  persist()\nend\n",
+        SourceLang::Ruby,
+        "ruby",
+        "save.rb",
+    );
+    assert_parses(&ruby);
+    assert!(
+        ruby.contains("persist()"),
+        "the definition is kept:\n{ruby}"
+    );
+    let (python, _) = convert_src(
+        "import os; value = persist()\n",
+        SourceLang::Python,
+        "python",
+        "save.py",
+    );
+    assert_parses(&python);
+    assert!(
+        python.contains("persist()"),
+        "the statement is kept:\n{python}"
+    );
+}
