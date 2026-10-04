@@ -1072,3 +1072,92 @@ fn a_statement_sharing_a_line_with_eval_is_kept() {
         assert!(garnet.contains("persist()"), "kept: {src:?}\n{garnet}");
     }
 }
+
+// Codex lane B, round 8 on #607 (a0b55b50; stopped by the content filter, the
+// cases are from its drafted checks).
+
+#[test]
+fn ruby_alias_and_undef_operands_continued_on_the_next_line_are_names() {
+    for line in [
+        "undef foo,\n      end",
+        "undef foo, # comment\n      end",
+        "alias foo \\\n      end",
+    ] {
+        let src = format!("def save\n  if false\n    {line}\n    persist()\n  end\nend\n");
+        let (garnet, _) = convert_src(&src, SourceLang::Ruby, "ruby", "save.rb");
+        assert_parses(&garnet);
+        assert_inactive(&garnet, "persist()");
+    }
+}
+
+#[test]
+fn python_triple_quoted_string_inside_a_replacement_field_is_refused() {
+    for src in [
+        "def save():\n    value = f\"\"\"{''' ' } \"\"\"#\n    persist()\n    # '''}\"\"\"\n",
+        "def save():\n    value = f'''{\"\"\" \" } '''#\n    persist()\n    # \"\"\"}'''\n",
+        "def save():\n    value = t\"\"\"{''' ' } \"\"\"#\n    persist()\n    # '''}\"\"\"\n",
+    ] {
+        let err = try_convert(src, SourceLang::Python, "python", "save.py").unwrap_err();
+        assert!(
+            err.contains("triple-quoted") && err.contains("line 2"),
+            "{src:?}: {err}"
+        );
+    }
+}
+
+#[test]
+fn go_block_comment_holding_a_newline_ends_a_statement() {
+    for src in [
+        "package example\nimport _ \"fmt\" /*\n*/ func save() { println(7) }\n",
+        "package example\nimport (_ \"fmt\") /*\n*/ func save() { println(7) }\n",
+    ] {
+        let (garnet, _) = convert_src(src, SourceLang::Go, "go", "save.go");
+        assert_parses(&garnet);
+        assert!(
+            code_lines(&garnet)
+                .iter()
+                .any(|l| l.starts_with("fn save(")),
+            "save is converted, not skipped with the import: {src:?}\n{garnet}"
+        );
+    }
+}
+
+#[test]
+fn eval_stands_for_its_statement_only_as_a_single_call() {
+    for (src, lang, name, file) in [
+        (
+            "eval(\"1\") and def save() persist() end\n",
+            SourceLang::Ruby,
+            "ruby",
+            "save.rb",
+        ),
+        (
+            "eval(\"1\") { def save; persist(); end }\n",
+            SourceLang::Ruby,
+            "ruby",
+            "save.rb",
+        ),
+        (
+            "method_missing(def save() persist() end)\n",
+            SourceLang::Ruby,
+            "ruby",
+            "save.rb",
+        ),
+        (
+            "eval(\"1\") or persist()\n",
+            SourceLang::Python,
+            "python",
+            "save.py",
+        ),
+        (
+            "exec(\n\"1\"\n); value = persist()\n",
+            SourceLang::Python,
+            "python",
+            "save.py",
+        ),
+    ] {
+        let (garnet, _) = convert_src(src, lang, name, file);
+        assert_parses(&garnet);
+        assert!(garnet.contains("persist()"), "kept: {src:?}\n{garnet}");
+    }
+}
