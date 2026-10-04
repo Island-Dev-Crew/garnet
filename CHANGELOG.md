@@ -98,8 +98,11 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   computed with the repository's own functions after the same computation
   reproduced every existing pin on main.
 - **The release-lanes reporter is truthful (C5-16b, C6-19).** Release-artifact
-  signing is an active lane keyed on the `gpg --detach-sign` step, the
-  `SHA256SUMS.asc` upload and the fail-closed step. The stale
+  signing is an active lane only while the release job's signing steps are the
+  reviewed ones: the `gpg --detach-sign` step and the fail-closed refusal match
+  pinned text, the `SHA256SUMS.asc` attach step keeps its condition and file,
+  `HAS_GPG` follows the signing key, and the steps run sign, refuse, publish,
+  attach. A refusal that no longer refuses reads broken. The stale
   `TODO(release-security)` comment is gone.
 - **`garnet agent-loop` says what it checked (C1-02).** The decision reads
   "program-wide declared capability surface did not widen", and functions that
