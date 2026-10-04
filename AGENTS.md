@@ -158,6 +158,29 @@ readiness-sensitive paths, so a change to the producer of the required
 `PR dogfood evidence` context must carry that evidence. Both are trust-kernel
 paths as well, so such a change also needs a structured review record.
 
+## Agentic Dogfood Matrix Child Environment
+
+`scripts/run_agentic_dogfood_matrix.py` starts every process through `run()`,
+which builds the environment with `child_environment()`. No probe, and no
+process a probe starts, sees the caller's variables for the interpreters the
+checks run in: every `PYTHON*`, `NODE_*` and `BASH*` variable (an exported bash
+function is `BASH_FUNC_<name>%%`), plus the unprefixed names bash reads at
+startup that change what runs: `ENV`, `SHELLOPTS`, `POSIXLY_CORRECT`,
+`POSIX_PEDANTIC`, `SSH_CLIENT` and `SSH2_CLIENT`. Children get
+`PYTHONNOUSERSITE=1`, the runner's own UTF-8 mode as `PYTHONUTF8`, and
+`/dev/null` as standard input, and `Probe.env` applies last. Start processes
+only through `run()`, and keep `assert` out of the runner's own logic. Outside
+this rule, and the caller's: variables the interpreters read while running, such
+as `CDPATH`; build and version-control configuration (`RUSTC_WRAPPER`, cargo
+runners, `CARGO_*`, `GIT_*`); configuration files under `HOME`, including a
+login shell's profile; `PATH`; native-library loading (`LD_PRELOAD`, `DYLD_*`,
+`OPENSSL_CONF`); installed tools; the runner's own interpreter; and, on Windows,
+the environment inside WSL. WSL takes a Windows variable only when `WSLENV`
+names it (and `PATH` by default), so a removed variable cannot cross, and
+`PYTHONNOUSERSITE` and `PYTHONUTF8` cross only when the caller's `WSLENV` names
+them. Run
+`python3 scripts/test_run_agentic_dogfood_matrix.py` after changing the runner.
+
 ## WV-6 / WV-7 Acceptance Gates
 
 `F_Project_Management/LAUNCH/WV6_WV7_ACCEPTANCE_CONTRACTS.json` preserves the
