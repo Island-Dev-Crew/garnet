@@ -100,6 +100,40 @@ class SignedReleaseLanesTests(unittest.TestCase):
                 self.assertEqual("broken", lanes.release_artifact_lane(text).status)
         self.assertEqual("active", lanes.release_artifact_lane(workflow).status)
 
+    def test_release_artifact_lane_breaks_when_publication_can_run_past_the_refusal(self) -> None:
+        # Codex delta review on #607: `if: always()` on Publish release kept every
+        # signing step pinned and in order, yet published after the refusal failed.
+        workflow = lanes._read(".github/workflows/linux-packages.yml")
+        publish = "      - name: Publish release\n"
+        attach = "      - name: Attach SHA256SUMS signature (only when signed)\n"
+        sign = "      - name: Sign SHA256SUMS (activates when GPG_SIGNING_KEY secret is set)\n"
+        release_job = "\n  release:\n"
+        self.assertEqual(1, workflow.count(publish))
+        cases = {
+            "publish runs always": workflow.replace(publish, publish + "        if: always()\n"),
+            "a step after the refusal publishes regardless": workflow.replace(
+                publish,
+                "      - name: Publish anyway\n        if: always()\n        run: gh release create \"$GITHUB_REF_NAME\" release-dist/*\n"
+                + publish,
+            ),
+            "the job continues on error": workflow.replace(
+                release_job + "    if: startsWith(github.ref, 'refs/tags/v')\n",
+                release_job + "    if: startsWith(github.ref, 'refs/tags/v')\n    continue-on-error: true\n",
+            ),
+            "a step before signing publishes": workflow.replace(
+                sign, "      - name: Early publish\n        run: gh release create \"$GITHUB_REF_NAME\" release-dist/*\n\n" + sign
+            ),
+            "publish continues on error": workflow.replace(
+                publish + "        uses:", publish + "        continue-on-error: true\n        uses:"
+            ),
+        }
+        self.assertIn(attach, workflow)
+        for label, text in cases.items():
+            with self.subTest(label):
+                self.assertNotEqual(workflow, text, "the mutation must change the workflow")
+                self.assertEqual("broken", lanes.release_artifact_lane(text).status)
+        self.assertEqual("active", lanes.release_artifact_lane(workflow).status)
+
     def test_supply_chain_lane_notes_out_flag(self) -> None:
         s = lanes.read_lanes()
         sc = next(l for l in s.lanes if l.id == "supply-chain-attestation")
