@@ -230,6 +230,23 @@ impl<'a> RubyParser<'a> {
         )
     }
 
+    /// Whether the statement goes on after the current position: code on the
+    /// rest of the line, or a leading `.`/`&.` chain on the next code line.
+    fn continues_after(&self) -> bool {
+        if !self.rest_of_line_is_blank() {
+            return true;
+        }
+        let rest = self.remaining();
+        let after_line = rest.find('\n').map_or("", |i| &rest[i + 1..]);
+        after_line
+            .lines()
+            .map(ruby_code)
+            .find(|code| !code.is_empty())
+            .is_some_and(|code| {
+                (code.starts_with('.') && !code.starts_with("..")) || code.starts_with("&.")
+            })
+    }
+
     /// Whether the rest of the current line holds no code.
     fn rest_of_line_is_blank(&self) -> bool {
         let rest = self.remaining();
@@ -264,6 +281,12 @@ impl<'a> RubyParser<'a> {
         }
         self.pos += "def".len();
         self.skip_blanks();
+        // The name must be on the `def` line; a header that starts its name on
+        // the next line is not read (its parameters were not checked above).
+        if self.remaining().starts_with(['\n', '\r', '#']) {
+            self.pos = start;
+            return Ok(self.whole_todo(start, "def"));
+        }
         let name = self.read_ident().unwrap_or_default();
         self.skip_blanks();
         let params = if self.remaining().starts_with('(') {
@@ -281,10 +304,11 @@ impl<'a> RubyParser<'a> {
             self.pos = start;
             return Ok(self.whole_todo(start, "def"));
         }
-        // The closing `end` must end its line too: `end if cond` or `end; more`
-        // makes the definition conditional or shares its line, so it is kept whole.
+        // The closing `end` must end the statement too: `end if cond`, `end;
+        // more` or a `.chain` on the next line makes the definition part of a
+        // larger statement, so it is kept whole.
         let body = match self.parse_body_until_end(true)? {
-            Some(body) if self.rest_of_line_is_blank() => body,
+            Some(body) if !self.continues_after() => body,
             _ => {
                 self.pos = start;
                 return Ok(self.whole_todo(start, "def"));
@@ -516,7 +540,7 @@ impl<'a> RubyParser<'a> {
         }
         // Body contains attr_accessor / def / instance variables
         let body = match self.parse_body_until_end(false)? {
-            Some(body) if self.rest_of_line_is_blank() => body,
+            Some(body) if !self.continues_after() => body,
             _ => {
                 self.pos = start;
                 return Ok(self.whole_todo(start, "class"));
@@ -589,7 +613,7 @@ impl<'a> RubyParser<'a> {
             return Ok(self.whole_todo(start, "module"));
         }
         let body = match self.parse_body_until_end(false)? {
-            Some(body) if self.rest_of_line_is_blank() => body,
+            Some(body) if !self.continues_after() => body,
             _ => {
                 self.pos = start;
                 return Ok(self.whole_todo(start, "module"));
