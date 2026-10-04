@@ -64,6 +64,42 @@ class SignedReleaseLanesTests(unittest.TestCase):
         finally:
             lanes._read = original
 
+    def test_release_artifact_lane_breaks_when_the_signing_steps_change_but_keep_their_names(self) -> None:
+        # Codex lane A on #607: the reporter only looked for the refusal step's name, so a
+        # refusal that no longer refused stayed "active".
+        workflow = lanes._read(".github/workflows/linux-packages.yml")
+        refusal = "      - name: Require signed SHA256SUMS (fail-closed)\n"
+        publish = "      - name: Publish release\n"
+        self.assertEqual(1, workflow.count(refusal))
+        self.assertEqual(1, workflow.count(publish))
+        refusal_at = workflow.index(refusal)
+        refusal_end = workflow.index(publish)
+        refusal_block = workflow[refusal_at:refusal_end]
+        cases = {
+            "the refusal exits 0": workflow.replace(
+                refusal_block, refusal_block.replace("            exit 1\n", "            exit 0\n")
+            ),
+            "the refusal's condition never matches": workflow.replace(
+                refusal_block, refusal_block.replace("if: env.HAS_GPG != 'true'", "if: false")
+            ),
+            "the signature is attached unconditionally": workflow.replace(
+                "      - name: Attach SHA256SUMS signature (only when signed)\n        if: env.HAS_GPG == 'true'\n",
+                "      - name: Attach SHA256SUMS signature (only when signed)\n        if: always()\n",
+            ),
+            "HAS_GPG no longer follows the key": workflow.replace(
+                "      HAS_GPG: ${{ secrets.GPG_SIGNING_KEY != '' }}\n", "      HAS_GPG: 'false'\n"
+            ),
+        }
+        # The reordering case moves the refusal block after Publish release.
+        moved = workflow[:refusal_at] + workflow[refusal_end:]
+        publish_end = moved.index("      - name: Attach SHA256SUMS signature (only when signed)\n")
+        cases["the refusal runs after the release is published"] = moved[:publish_end] + refusal_block + moved[publish_end:]
+        for label, text in cases.items():
+            with self.subTest(label):
+                self.assertNotEqual(workflow, text, "the mutation must change the workflow")
+                self.assertEqual("broken", lanes.release_artifact_lane(text).status)
+        self.assertEqual("active", lanes.release_artifact_lane(workflow).status)
+
     def test_supply_chain_lane_notes_out_flag(self) -> None:
         s = lanes.read_lanes()
         sc = next(l for l in s.lanes if l.id == "supply-chain-attestation")
