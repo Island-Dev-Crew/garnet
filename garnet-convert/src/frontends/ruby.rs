@@ -170,19 +170,23 @@ impl<'a> RubyParser<'a> {
         if text.lines().count() == 1 && is_plain_require(ruby_code(&text)) {
             return self.parse_item();
         }
-        // `method_missing` and `eval` stand for their whole statement only when
-        // nothing else shares it; otherwise the statement is kept as a to-do.
-        let alone = text.lines().count() == 1 && !ruby_line(&text).is_ok_and(|l| l.semicolon);
-        if first == "method_missing" && alone {
+        if first == "method_missing" {
             return Ok(Some(self.todo(
                 start,
-                "Ruby method_missing — use Garnet @dynamic per Mini-Spec v1.0 §11.7".into(),
+                format!(
+                    "Ruby method_missing — use Garnet @dynamic per Mini-Spec v1.0 §11.7: {text}"
+                ),
             )));
         }
-        if matches!(first, "eval" | "instance_eval") && alone {
+        // An `eval` stands for its statement only as one call with one string
+        // literal; anything else in the statement is kept as a to-do.
+        if text.lines().count() == 1
+            && single_string_call(ruby_code(&text), &["eval", "instance_eval"])
+        {
             return Ok(Some(Cir::Untranslatable {
-                reason: "Ruby eval / instance_eval — Garnet has no runtime source evaluation"
-                    .into(),
+                reason: format!(
+                    "Ruby eval / instance_eval — Garnet has no runtime source evaluation: {text}"
+                ),
                 lineage: self.lineage(start),
             }));
         }
@@ -428,10 +432,16 @@ impl<'a> RubyParser<'a> {
         let mut continues = false;
         // A method name is due at the start of the next code line (`obj.`).
         let mut name_pending = false;
+        // The operands of `alias` or `undef` continue on the next code line.
+        let mut names_pending = false;
         let mut pos = from;
         for line in self.source[from..].split_inclusive('\n') {
             pos += line.len();
-            match ruby_line_after(line.trim_end_matches(['\n', '\r']), name_pending) {
+            match ruby_line_after(
+                line.trim_end_matches(['\n', '\r']),
+                name_pending,
+                names_pending,
+            ) {
                 // A blank or comment line neither opens nor closes anything, and
                 // does not end a statement that is still open.
                 Ok(l) if l.code.trim().is_empty() => {
@@ -444,6 +454,7 @@ impl<'a> RubyParser<'a> {
                     blocks += l.blocks;
                     continues = l.continues;
                     name_pending = l.name_pending;
+                    names_pending = l.names_pending;
                     if brackets > 0 || blocks > 0 || continues {
                         continue;
                     }
@@ -633,9 +644,16 @@ fn complete(line: &str) -> bool {
 /// `require "path"`, `require_relative 'path'` or the same with parentheses,
 /// and nothing else.
 fn is_plain_require(code: &str) -> bool {
-    let rest = code
-        .strip_prefix("require_relative")
-        .or_else(|| code.strip_prefix("require"));
+    single_string_call(code, &["require_relative", "require"])
+}
+
+/// `name "literal"` or `name("literal")` for one of `names`, and nothing else:
+/// the literal holds no quote, `#` or backslash.
+fn single_string_call(code: &str, names: &[&str]) -> bool {
+    let rest = names.iter().find_map(|name| {
+        code.strip_prefix(name)
+            .filter(|rest| !rest.starts_with(|c: char| c.is_alphanumeric() || c == '_'))
+    });
     let Some(rest) = rest else {
         return false;
     };

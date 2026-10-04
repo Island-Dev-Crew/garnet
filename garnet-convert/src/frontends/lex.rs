@@ -45,6 +45,10 @@ pub struct GoLine {
     /// Where a closing bracket went below depth zero. The scan stops there: the
     /// bracket closes a construct the statement is inside.
     pub cut: Option<usize>,
+    /// Where a block comment opens that does not close on this line, when the
+    /// statement could end there (outside brackets, after a token that ends
+    /// one): a comment holding a newline acts as one, so the statement ends.
+    pub comment_break: Option<usize>,
 }
 
 impl GoLex {
@@ -75,6 +79,14 @@ impl GoLex {
                 b' ' | b'\t' | b'\r' => {}
                 b'/' if b.get(i + 1) == Some(&b'/') => break,
                 b'/' if b.get(i + 1) == Some(&b'*') => {
+                    let closes_here = b[i + 2..].windows(2).any(|w| w == b"*/");
+                    if !closes_here && depth == 0 && self.last_ends {
+                        return GoLine {
+                            depth,
+                            cut: None,
+                            comment_break: Some(i),
+                        };
+                    }
                     self.in_block_comment = true;
                     i += 2;
                     continue;
@@ -104,6 +116,7 @@ impl GoLex {
                         return GoLine {
                             depth,
                             cut: Some(i),
+                            comment_break: None,
                         };
                     }
                     depth -= 1;
@@ -130,7 +143,11 @@ impl GoLex {
             }
             i += 1;
         }
-        GoLine { depth, cut: None }
+        GoLine {
+            depth,
+            cut: None,
+            comment_break: None,
+        }
     }
 
     /// True while a block comment or a raw string is still open.
@@ -230,6 +247,8 @@ const FIELD_QUOTE: &str = "an f-string or t-string whose replacement field conta
 const FIELD_COMMENT: &str = "an f-string or t-string whose replacement field contains a comment";
 const FIELD_BACKSLASH: &str =
     "an f-string or t-string whose replacement field contains a backslash";
+const FIELD_TRIPLE: &str =
+    "an f-string or t-string whose replacement field holds a triple-quoted string";
 const OPEN_STRING: &str = "a string that is still open at the end of its line";
 
 /// Python lexing state that can span lines: a triple-quoted string.
@@ -355,6 +374,9 @@ fn scan_string(
                 b'#' => return Err(FIELD_COMMENT),
                 b'\\' => return Err(FIELD_BACKSLASH),
                 nested @ (b'"' | b'\'') => {
+                    if b.get(i + 1) == Some(&nested) && b.get(i + 2) == Some(&nested) {
+                        return Err(FIELD_TRIPLE);
+                    }
                     i += 1;
                     while i < b.len() && b[i] != nested {
                         if b[i] == b'\\' {
@@ -448,12 +470,15 @@ pub struct RubyLine<'a> {
     /// The line ends where a method name is due (after `.`, `&.`, `::` or
     /// `def`), so the next line's first word is a name, not a keyword.
     pub name_pending: bool,
+    /// The line continues the operands of `alias` or `undef`, so every word
+    /// of the next line is a name too.
+    pub names_pending: bool,
 }
 
 /// Lex one line of the Ruby subset that starts a statement or follows a
 /// complete one. See `ruby_line_after`.
 pub fn ruby_line(line: &str) -> Result<RubyLine<'_>, &'static str> {
-    ruby_line_after(line, false)
+    ruby_line_after(line, false, false)
 }
 
 /// Lex one line of the Ruby subset: comments, quoted and backtick strings (with
@@ -463,8 +488,13 @@ pub fn ruby_line(line: &str) -> Result<RubyLine<'_>, &'static str> {
 /// method definitions and strings that continue on the next line are refused.
 ///
 /// `name_first`: the line before ended where a method name is due, so this
-/// line's first word is a name (`obj.` then `end`).
-pub fn ruby_line_after(line: &str, name_first: bool) -> Result<RubyLine<'_>, &'static str> {
+/// line's first word is a name (`obj.` then `end`). `names_first`: the line
+/// before continued the operands of `alias` or `undef`.
+pub fn ruby_line_after(
+    line: &str,
+    name_first: bool,
+    names_first: bool,
+) -> Result<RubyLine<'_>, &'static str> {
     let b = line.as_bytes();
     let first = line.trim_start();
     if first.starts_with("=begin") {
@@ -480,6 +510,7 @@ pub fn ruby_line_after(line: &str, name_first: bool) -> Result<RubyLine<'_>, &'s
         continues: false,
         semicolon: false,
         name_pending: false,
+        names_pending: false,
     };
     // The token before ends an expression: `if` after it is a modifier.
     let mut after_value = false;
@@ -489,7 +520,7 @@ pub fn ruby_line_after(line: &str, name_first: bool) -> Result<RubyLine<'_>, &'s
     let mut name_next = name_first;
     // The rest of the statement holds method names (the operands of `alias`
     // and `undef`), not keywords.
-    let mut names_rest = false;
+    let mut names_rest = names_first;
     // The last token is an operator, a comma or `\`.
     let mut last_op = false;
     let mut code_end = b.len();
@@ -730,6 +761,7 @@ pub fn ruby_line_after(line: &str, name_first: bool) -> Result<RubyLine<'_>, &'s
     out.code = line[..code_end].trim_end();
     out.continues = last_op;
     out.name_pending = name_next;
+    out.names_pending = names_rest && last_op;
     Ok(out)
 }
 

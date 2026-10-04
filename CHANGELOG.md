@@ -150,7 +150,8 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
       decorated definition is kept whole, and `__init__` is kept as a
       method.
     - Go: lines up to where Go inserts a semicolon, once every bracket, block
-      comment and raw string is closed; a line ending in `go`, `defer` or
+      comment and raw string is closed (a block comment holding a newline
+      ends a statement, as a newline would); a line ending in `go`, `defer` or
       another keyword outside `break`/`continue`/`fallthrough`/`return` takes
       the next line. A one-line function keeps its body, and a function
       inside a block comment or raw string is not converted. A function's
@@ -166,7 +167,7 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
       before a line that starts with `.`; a blank or comment line does not
       end an open statement, a word after `.` at the end of the line before is
       a method name, not a keyword, and so are the operands of `alias` and
-      `undef`. A def, class or module whose header the
+      `undef`, also when they continue onto the next line. A def, class or module whose header the
       frontend does not read, whose body has a `rescue`/`ensure`/`else`
       clause, or whose `end` shares its line with more code, is kept whole.
     Only a statement on one line becomes code, and never one whose code holds
@@ -181,10 +182,12 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
     the whole statement (anything after a `;` on its line is kept; a Ruby
     `require` only in its exact form, `require "x"` or `require("x")`), and
     an `eval`, `exec` or `instance_eval` becomes an untranslatable note only
-    when nothing shares its statement. What a frontend does not lex is refused with its line number:
+    as a single call with one string literal (anything else in its statement
+    is kept as a to-do). What a frontend does not lex is refused with its line number:
     Python tab or form-feed indentation, an f-string or t-string whose
-    replacement field holds its own quote, a comment or a backslash outside a
-    nested string (an escape before `{` does not hide a field), a carriage
+    replacement field holds its own quote, a comment, a backslash outside a
+    nested string or a triple-quoted string (an escape before `{` does not
+    hide a field), a carriage
     return without a line feed, and a string or bracket left open at the end
     of the file;
     Ruby heredocs (and a `<<` with no space after it), regular expressions

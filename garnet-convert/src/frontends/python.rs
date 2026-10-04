@@ -191,12 +191,13 @@ impl<'a> PythonParser<'a> {
         if (code.starts_with("import ") || code.starts_with("from ")) && !statement_separator {
             return Ok(None);
         }
-        if (code.starts_with("eval(") || code.starts_with("exec("))
-            && !statement_separator
-            && end == start + 1
-        {
+        // `eval`/`exec` stand for their statement only as one call with one
+        // string literal; anything else in the statement is kept as a to-do.
+        if !statement_separator && end == start + 1 && is_single_eval(&code) {
             return Ok(Some(Cir::Untranslatable {
-                reason: "Python eval/exec — Garnet has no runtime source evaluation".into(),
+                reason: format!(
+                    "Python eval/exec — Garnet has no runtime source evaluation: {code}"
+                ),
                 lineage: self.lineage(start),
             }));
         }
@@ -623,6 +624,24 @@ fn header_keyword(code: &str) -> Option<&'static str> {
             .into_iter()
             .find(|kw| code.ends_with(':') && *kw == word)
     })
+}
+
+/// `eval("...")` or `exec('...')` with one plain string literal, and nothing
+/// else.
+fn is_single_eval(code: &str) -> bool {
+    let Some(arg) = ["eval(", "exec("]
+        .iter()
+        .find_map(|call| code.strip_prefix(call))
+        .and_then(|rest| rest.strip_suffix(')'))
+        .map(str::trim)
+    else {
+        return false;
+    };
+    let b = arg.as_bytes();
+    b.len() >= 2
+        && matches!(b[0], b'"' | b'\'')
+        && b[b.len() - 1] == b[0]
+        && !arg[1..arg.len() - 1].contains(['"', '\'', '\\', '#'])
 }
 
 fn is_continuation_clause(code: &str) -> bool {

@@ -343,6 +343,13 @@ impl<'a> GoParser<'a> {
             let line_start = self.pos;
             let line = self.read_to_line_end();
             let scanned = lex.scan(&line, depth);
+            if let Some(at) = scanned.comment_break {
+                // A block comment holding a newline ends the statement; the
+                // comment is skipped as whitespace before the next one.
+                self.pos = line_start + at;
+                lines.push(line[..at].trim_end().to_string());
+                break;
+            }
             if let Some(cut) = scanned.cut {
                 let cut = if cut == 0 && lines.is_empty() { 1 } else { cut };
                 self.pos = line_start + cut;

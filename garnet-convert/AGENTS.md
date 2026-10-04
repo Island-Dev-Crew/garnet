@@ -23,7 +23,7 @@ Owns migration frontends and conversion helpers for lifting Rust, Ruby, Python, 
 - What a frontend does not lex is refused with its line number, never guessed:
   Python tab or form-feed indentation, a carriage return without a line feed,
   and f-strings or t-strings whose replacement fields hold their own quote, a
-  comment or a backslash; Ruby outside the subset (heredocs and a `<<` with no
+  comment, a backslash or a triple-quoted string; Ruby outside the subset (heredocs and a `<<` with no
   space after it, regular expressions with interpolation, interpolation beyond
   plain expressions, percent literals, character literals, `=begin`, endless
   methods, multi-line strings).
@@ -37,9 +37,10 @@ Owns migration frontends and conversion helpers for lifting Rust, Ruby, Python, 
   with a test that asserts its fragments are not active (`assert_inactive`).
 - A definition or class-level statement the frontend does not read is kept as a
   to-do, never dropped: `__init__` stays a method, a Ruby definition whose `end`
-  shares its line with more code is kept whole, an import is skipped (and an
-  `eval` becomes an untranslatable note) only when nothing follows it on its
-  line (a Ruby `require` only in its exact form), a Go
+  shares its line with more code is kept whole, an import is skipped only when
+  nothing follows it on its line (a Ruby `require` only in its exact form), an
+  `eval` becomes an untranslatable note only as a single call with one string
+  literal, a Go
   function whose lexed header does not read is kept whole (one without a body
   ends at its `;` or line end), and a Go struct whose fields are not each a
   simple `Name Type [tag]`, one per line or `;`-separated, is kept whole.
