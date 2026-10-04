@@ -1504,3 +1504,69 @@ fn a_converted_function_keeps_every_named_parameter() {
         }
     }
 }
+
+/// Codex round 15: Ruby code is read as ASCII. A non-ASCII character outside a
+/// string or comment (a heredoc delimiter such as `<<終`, an identifier, a
+/// symbol) refuses the file, so no ASCII-only check can disagree with the lexer;
+/// a string or comment may still hold any character.
+#[test]
+fn ruby_code_outside_strings_and_comments_is_ascii() {
+    for src in [
+        "text = <<終\ndef save\n  persist()\nend\n終\n",
+        "def save\n  text = <<終\n  persist()\n終\n  return 1\nend\n",
+        "def save\n  text = <<-終\n  persist()\n  終\n  return 1\nend\n",
+        "def 保存\n  persist()\nend\n",
+        "def save\n  x = :終\n  persist()\nend\n",
+        "def save\n  puts \"#{終}\"\nend\n",
+    ] {
+        match try_convert(src, SourceLang::Ruby, "ruby", "save.rb") {
+            Err(_) => {}
+            Ok(garnet) => panic!("converted: {src:?}\n{garnet}"),
+        }
+    }
+    // A string or comment may hold any character.
+    let (garnet, _) = convert_src(
+        "# 終わり\ndef save\n  puts \"終\"\n  persist() # 保存\nend\n",
+        SourceLang::Ruby,
+        "ruby",
+        "save.rb",
+    );
+    assert_parses(&garnet);
+    assert!(code_lines(&garnet).contains(&"def save() {"), "{garnet}");
+}
+
+/// Codex round 15: a Go parameter written as a spaced type (`Box [int]`, an
+/// instantiated generic; `pkg .Type`, a qualified name) is an unnamed
+/// parameter, as go/parser reads it, not a name `Box` or `pkg`: the function is
+/// kept whole. A name before an array or slice type is still a name.
+#[test]
+fn a_spaced_go_type_is_not_a_parameter_name() {
+    for src in [
+        "package main\n\nfunc keep(Box [int]) {\n\treturn\n}\n",
+        "package main\n\ntype Box[T any] struct{}\n\nfunc (Box [T]) keep() {\n\treturn\n}\n",
+        "package main\n\nfunc keep(pkg .Type) {\n\treturn\n}\n",
+        "package main\n\nfunc keep(a int, Box [int]) {\n\treturn\n}\n",
+    ] {
+        let (garnet, checklist) = convert_src(src, SourceLang::Go, "go", "keep.go");
+        assert_parses(&garnet);
+        assert!(
+            !code_lines(&garnet)
+                .iter()
+                .any(|l| l.starts_with("fn keep(")),
+            "{src:?}\n{garnet}"
+        );
+        assert_inactive(&garnet, "return");
+        assert!(
+            checklist.contains("keep"),
+            "kept as a to-do: {src:?}\n{checklist}"
+        );
+    }
+    // A name before an array or slice type is a name.
+    let src = "package main\n\nfunc keep(xs [3]int, ys []string) {\n\treturn\n}\n";
+    let (garnet, _) = convert_src(src, SourceLang::Go, "go", "keep.go");
+    assert_parses(&garnet);
+    assert!(
+        code_lines(&garnet).contains(&"fn keep(xs: Array<Int>, ys: Array<String>) -> () {"),
+        "{src:?}\n{garnet}"
+    );
+}

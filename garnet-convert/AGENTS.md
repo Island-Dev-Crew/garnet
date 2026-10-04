@@ -25,7 +25,8 @@ Owns migration frontends and conversion helpers for lifting Rust, Ruby, Python, 
   and f-strings or t-strings whose replacement fields hold their own quote, a
   comment, a backslash in the field's expression outside a nested string, a
   triple-quoted string or
-  another f-string or t-string; Ruby outside the subset (heredocs and a `<<` with no
+  another f-string or t-string; Ruby outside the subset (a non-ASCII character
+  outside a string, regular expression or comment, heredocs and a `<<` with no
   space after it, regular expressions with interpolation, interpolation beyond
   plain expressions, an `alias` or `undef` with operands on another line,
   percent literals, character literals, `=begin`, endless
@@ -49,7 +50,8 @@ Owns migration frontends and conversion helpers for lifting Rust, Ruby, Python, 
   `name[ = default]`; a default holding another `=`, a Python `lambda`, `*args`
   or `**kwargs` is not plain), a converted function keeps every named source
   parameter (`self` included; a Go receiver becomes the first parameter, and an
-  unnamed or variadic Go parameter keeps the function whole), a Ruby
+  unnamed or variadic Go parameter, including a spaced type such as `Box [int]`
+  or `pkg .Type`, keeps the function whole), a Ruby
   definition whose `end`
   is followed by more of its statement (on the line or a `.` chain next) is kept
   whole, an import is skipped only when

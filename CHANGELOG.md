@@ -28,8 +28,8 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   Ruby frontends a statement copied through as text that holds a string or
   character literal is kept as a to-do.
 - The Ruby converter reads a lexical subset and refuses a file outside it
-  (heredocs, percent literals, interpolation beyond plain expressions and the
-  like). The Python converter refuses tab
+  (heredocs, percent literals, interpolation beyond plain expressions, a
+  non-ASCII character outside a string or comment, and the like). The Python converter refuses tab
   or form-feed indentation and f-strings whose replacement fields hold their
   own quote, a comment, a backslash in the field's expression outside a
   nested string, or a nested
@@ -168,10 +168,13 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
       and a declaration without a body ends at its `;` or line end. A
       receiver becomes the function's first parameter, as in Go's method
       expression `T.M`; an unnamed receiver or parameter list, or a variadic
-      parameter, keeps the function whole. A struct's
+      parameter, keeps the function whole. A spaced type (`Box [int]`,
+      `pkg .Type`) is an unnamed parameter, as go/parser reads it. A struct's
       fields are converted only when each reads as `Name Type [tag]`, one per
       line or `;`-separated; otherwise the type is kept whole.
-    - Ruby: a lexical subset. Lines join while a bracket or keyword block is
+    - Ruby: a lexical subset, whose code is ASCII (a non-ASCII character
+      outside a string, regular expression or comment refuses the file).
+      Lines join while a bracket or keyword block is
       open (`if` and its kin count only where an expression starts), after a
       trailing operator, comma or modifier (`if`, `unless`, `rescue` ...), or
       before a line that starts with `.`; a blank or comment line does not
@@ -209,7 +212,8 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
     escape before `{` does not hide a field), a carriage
     return without a line feed, and a string or bracket left open at the end
     of the file;
-    Ruby heredocs (and a `<<` with no space after it), regular expressions
+    Ruby code holding a non-ASCII character outside a string, regular
+    expression or comment, heredocs (and a `<<` with no space after it), regular expressions
     with interpolation, interpolation beyond plain expressions (a string,
     regex, literal, `/`, `?`, comment or heredoc inside `#{...}`), an `alias`
     or `undef` whose operands are not complete on its line, percent literals

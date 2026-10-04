@@ -202,6 +202,11 @@ fn is_word_byte(c: u8) -> bool {
     c.is_ascii_alphanumeric() || c == b'_' || c >= 0x80
 }
 
+/// A byte of a Ruby identifier in the subset: ASCII only (see `NON_ASCII`).
+fn is_rb_word_byte(c: u8) -> bool {
+    c.is_ascii_alphanumeric() || c == b'_'
+}
+
 /// Inside a number literal: a `.`, or the sign of an exponent.
 fn is_number_tail(b: &[u8], i: usize) -> bool {
     b[i] == b'.' || (matches!(b[i], b'+' | b'-') && matches!(b[i - 1], b'e' | b'E' | b'p' | b'P'))
@@ -490,7 +495,9 @@ pub fn ruby_line(line: &str) -> Result<RubyLine<'_>, &'static str> {
 
 /// Lex one line of the Ruby subset: comments, quoted and backtick strings (with
 /// interpolation that holds no quotes), symbols, regular expressions in operand
-/// position, and keyword blocks. Percent literals, heredocs, character literals,
+/// position, and keyword blocks. Code is ASCII: a non-ASCII character outside a
+/// string, regular expression or comment is refused, so every check below reads
+/// identifiers the same way. Percent literals, heredocs, character literals,
 /// `$'`-style globals, an ambiguous `/`, `=begin` comments, `__END__`, endless
 /// method definitions and strings that continue on the next line are refused.
 ///
@@ -599,7 +606,7 @@ pub fn ruby_line_after(line: &str, name_first: bool) -> Result<RubyLine<'_>, &'s
                 match b.get(i + 1) {
                     Some(b'\'' | b'"' | b'`') => return Err("a $' or $\" global"),
                     // `$!`, `$?`, `$~` and the other punctuation globals.
-                    Some(c) if !is_word_byte(*c) && !c.is_ascii_whitespace() => i += 2,
+                    Some(c) if !is_rb_word_byte(*c) && !c.is_ascii_whitespace() => i += 2,
                     _ => i = word_end(b, i + 1),
                 }
                 after_value = true;
@@ -665,7 +672,7 @@ pub fn ruby_line_after(line: &str, name_first: bool) -> Result<RubyLine<'_>, &'s
                 i += 2;
                 continue;
             }
-            b':' if b.get(i + 1).is_some_and(|c| is_word_byte(*c)) => {
+            b':' if b.get(i + 1).is_some_and(|c| is_rb_word_byte(*c)) => {
                 // A symbol: `:end` is a value, not `end`.
                 if names_rest {
                     operands += 1;
@@ -695,7 +702,8 @@ pub fn ruby_line_after(line: &str, name_first: bool) -> Result<RubyLine<'_>, &'s
                 i += 2;
                 continue;
             }
-            c if is_word_byte(c) => {
+            c if c >= 0x80 => return Err(NON_ASCII),
+            c if is_rb_word_byte(c) => {
                 let start = i;
                 i = method_name_end(b, word_end(b, i));
                 if b.get(i) == Some(&b':') && b.get(i + 1) != Some(&b':') {
@@ -792,7 +800,7 @@ pub fn ruby_line_after(line: &str, name_first: bool) -> Result<RubyLine<'_>, &'s
 
 /// The end of the identifier starting at `i`.
 fn word_end(b: &[u8], mut i: usize) -> usize {
-    while i < b.len() && is_word_byte(b[i]) {
+    while i < b.len() && is_rb_word_byte(b[i]) {
         i += 1;
     }
     i
@@ -856,6 +864,10 @@ fn scan_rb_single(b: &[u8], mut i: usize) -> Result<usize, &'static str> {
 
 const ALIAS_OPERANDS: &str = "an alias or undef whose operands are not complete on its line";
 
+/// Ruby code (outside strings, regular expressions and comments) is read as
+/// ASCII.
+const NON_ASCII: &str = "a non-ASCII character outside a string or comment";
+
 const INTERPOLATION: &str =
     "interpolation beyond plain expressions (a string, regex, percent or character literal, `/`, `?`, a comment or a heredoc)";
 
@@ -879,8 +891,8 @@ fn scan_rb_double(b: &[u8], mut i: usize, q: u8) -> Result<usize, &'static str> 
                         // A predicate method name such as `empty?`.
                         b'?' if i > 0 && (b[i - 1].is_ascii_alphanumeric() || b[i - 1] == b'_') => {
                         }
+                        c if c >= 0x80 => return Err(NON_ASCII),
                         c if c.is_ascii_alphanumeric()
-                            || c >= 0x80
                             || matches!(
                                 c,
                                 b' ' | b'\t'

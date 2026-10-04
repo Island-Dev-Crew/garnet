@@ -609,7 +609,9 @@ fn parse_func_header(h: &str) -> Option<(String, Vec<Param>, CirTy)> {
 /// A named parameter list: segments `name Type`, or a bare `name` grouped with
 /// the typed one after it, so the last segment carries a type. `None` for an
 /// unnamed list (types only), a variadic `...T`, or a name that is not an
-/// identifier: Garnet has no unnamed or variadic parameter.
+/// identifier: Garnet has no unnamed or variadic parameter. A segment whose
+/// type part starts with `.` (`pkg .Type`) or is a bracket group with nothing
+/// after it (`Box [int]`) is a spaced type, unnamed, as go/parser reads it.
 fn go_params(list: &str) -> Option<Vec<Param>> {
     let segments: Vec<&str> = split_top_level(list)
         .into_iter()
@@ -628,7 +630,11 @@ fn go_params(list: &str) -> Option<Vec<Param>> {
             let (name, ty) = segment
                 .split_once(char::is_whitespace)
                 .map_or((*segment, ""), |(n, t)| (n, t.trim()));
-            (is_go_identifier(name) && !ty.starts_with("...")).then(|| Param {
+            let spaced_type = ty.starts_with('.')
+                || (ty.starts_with('[')
+                    && matching_bracket(ty.as_bytes(), 0)
+                        .is_some_and(|close| ty[close + 1..].trim().is_empty()));
+            (is_go_identifier(name) && !ty.starts_with("...") && !spaced_type).then(|| Param {
                 name: name.to_string(),
                 ty: parse_ty_string(ty),
                 ownership: Ownership::Default,
