@@ -1870,3 +1870,34 @@ fn an_operator_name_and_a_backslash_keep_the_lexer_state() {
     .unwrap_err();
     assert!(err.contains("ambiguous /"), "{err}");
 }
+
+/// Codex round 24: after an identifier and a blank (a method call's first
+/// argument, as Ruby reads it) `:` with an operator name is a symbol (`use :/`)
+/// and `?` with a character is a character literal (`use ?/`), so the `/` opens
+/// no regular expression that could hide the block's `do`.
+#[test]
+fn an_operator_symbol_argument_does_not_hide_a_block() {
+    for head in [
+        "use :/",
+        "obj.use :/",
+        "obj&.use :/",
+        "obj::use :/",
+        "use \\\n  :/",
+        "use :%",
+        "use ?/",
+        // Controls.
+        "use(:/)",
+        "use [:/]",
+        "use :slash",
+        "use :<=>",
+    ] {
+        let src = format!("def save\n  {head} do 1/2\n    persist()\n  end\nend\n");
+        match try_convert(&src, SourceLang::Ruby, "ruby", "save.rb") {
+            Err(e) => assert!(e.contains("character literal"), "{src:?}: {e}"),
+            Ok(garnet) => {
+                assert_parses(&garnet);
+                assert_inactive(&garnet, "persist()");
+            }
+        }
+    }
+}

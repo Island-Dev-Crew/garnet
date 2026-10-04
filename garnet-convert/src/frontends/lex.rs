@@ -699,7 +699,7 @@ pub fn ruby_line_from(line: &str, start: RubyState) -> Result<RubyLine<'_>, &'st
                 after_value = false;
                 names_rest = false;
             }
-            b'?' if operand
+            b'?' if (operand || spaced_ident)
                 && b.get(i + 1).is_some_and(|c| !c.is_ascii_whitespace())
                 && !b
                     .get(i + 2)
@@ -780,9 +780,10 @@ pub fn ruby_line_from(line: &str, start: RubyState) -> Result<RubyLine<'_>, &'st
                 i += 2;
                 continue;
             }
-            // An operator symbol (`:/`, `:<=>`, `:[]`) where an operand starts is
-            // one token: its `/` or `%` opens no literal.
-            b':' if operand && operator_method_name(&b[i + 1..]).is_some() => {
+            // An operator symbol (`:/`, `:<=>`, `:[]`) where an operand starts, or
+            // after an identifier and a blank (a method call's first argument,
+            // `use :/`), is one token: its `/` or `%` opens no literal.
+            b':' if (operand || spaced_ident) && operator_method_name(&b[i + 1..]).is_some() => {
                 if names_rest {
                     operands += 1;
                 }

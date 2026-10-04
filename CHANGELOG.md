@@ -186,7 +186,9 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
       the file is refused. An operator method name after `.`, `&.`, `::` or
       `def` (`obj.!`, `def ==`) and an operator symbol (`:/`, `:<=>`) are one
       token each, and a `\` that ends a line is a blank: the next line starts
-      in the state the line before ended in.
+      in the state the line before ended in. After an identifier and a blank,
+      where Ruby reads a method call's first argument, `:/` is a symbol and
+      `?/` a character literal (refused).
       Lines join while a bracket or keyword block is
       open (`if` and its kin count only where an expression starts; a `do` is
       a loop's separator only while the loop's condition is open, which ends

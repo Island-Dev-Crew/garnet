@@ -31,7 +31,9 @@ Owns migration frontends and conversion helpers for lifting Rust, Ruby, Python, 
   `after_mid`, `last_ident`), never from scanning bytes backward. A line ending
   in `\` hands that state to the next line (`RubyState`, `RubyLine::next`);
   every caller that walks lines (`statement_end`, `leaves_its_block`,
-  `refuse_unlexed`) carries it. Only a statement on one line becomes code.
+  `refuse_unlexed`) carries it. After an identifier and a blank (a method
+  call's first argument) `:op` is a symbol and `?x` a character literal, as
+  Ruby reads them there. Only a statement on one line becomes code.
 - What a frontend does not lex is refused with its line number, never guessed:
   Python tab or form-feed indentation, a carriage return without a line feed,
   and f-strings or t-strings whose replacement fields hold their own quote, a
