@@ -134,6 +134,62 @@ class SignedReleaseLanesTests(unittest.TestCase):
                 self.assertEqual("broken", lanes.release_artifact_lane(text).status)
         self.assertEqual("active", lanes.release_artifact_lane(workflow).status)
 
+    def test_release_artifact_lane_breaks_on_any_edit_to_the_release_job_or_a_writer_elsewhere(self) -> None:
+        # Codex delta round 3 on #607: a named step running `gh --repo ... release create`
+        # before signing, and an unnamed release-action step with `if: always()` after the
+        # refusal, both kept the lane active. A list of publishing commands is never
+        # complete, so the reviewed release job is pinned whole and no other job may hold
+        # a token that can write a release.
+        workflow = lanes._read(".github/workflows/linux-packages.yml")
+        sign = "      - name: Sign SHA256SUMS (activates when GPG_SIGNING_KEY secret is set)\n"
+        attach = "      - name: Attach SHA256SUMS signature (only when signed)\n"
+        release_job = "\n  release:\n"
+        self.assertEqual(1, workflow.count(sign))
+        self.assertEqual(1, workflow.count(release_job))
+        early_job = (
+            "\n  early-publish:\n    runs-on: ubuntu-24.04\n"
+            "    permissions:\n      contents: write\n"
+            "    steps:\n      - run: gh release create \"$GITHUB_REF_NAME\"\n"
+        )
+        cases = {
+            "a named step publishes with gh --repo before signing": workflow.replace(
+                sign,
+                "      - name: Publish assets\n        env:\n          GH_TOKEN: ${{ github.token }}\n"
+                "        run: gh --repo \"$GITHUB_REPOSITORY\" release create \"$GITHUB_REF_NAME\" release-dist/*\n\n"
+                + sign,
+            ),
+            "an unnamed release-action step runs always after the refusal": workflow.rstrip("\n")
+            + "\n      - uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3\n"
+            "        if: always()\n        with:\n          files: release-dist/SHA256SUMS\n",
+            "a step calls the releases API with curl": workflow.replace(
+                sign,
+                "      - name: Prepare\n        run: curl -X POST -H \"Authorization: Bearer $T\" "
+                "\"https://api.github.com/repos/$GITHUB_REPOSITORY/releases\"\n\n" + sign,
+            ),
+            "the attach step gains a line": workflow.replace(
+                attach, attach + "        continue-on-error: false\n"
+            ),
+            "another job may write contents": workflow.replace(release_job, early_job + release_job),
+            "another job may write everything": workflow.replace(
+                release_job,
+                early_job.replace("    permissions:\n      contents: write\n", "    permissions: write-all\n")
+                + release_job,
+            ),
+            "another job reads a secret": workflow.replace(
+                release_job,
+                early_job.replace(
+                    "    permissions:\n      contents: write\n",
+                    "    env:\n      GH_TOKEN: ${{ secrets.RELEASE_PAT }}\n",
+                )
+                + release_job,
+            ),
+        }
+        for label, text in cases.items():
+            with self.subTest(label):
+                self.assertNotEqual(workflow, text, "the mutation must change the workflow")
+                self.assertEqual("broken", lanes.release_artifact_lane(text).status)
+        self.assertEqual("active", lanes.release_artifact_lane(workflow).status)
+
     def test_supply_chain_lane_notes_out_flag(self) -> None:
         s = lanes.read_lanes()
         sc = next(l for l in s.lanes if l.id == "supply-chain-attestation")
