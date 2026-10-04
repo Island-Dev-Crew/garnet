@@ -248,74 +248,15 @@ fn write_record(a: &Args, exe: &std::path::Path, diff_stdout: &[u8], outcome: &O
         return false;
     }
     let mut failed: Vec<String> = Vec::new();
-    let mut put = |name: &str, result: std::io::Result<()>| {
-        if let Err(e) = result {
-            failed.push(format!("{name}: {e}"));
-        }
+    let mut put = |name: &str, result: std::io::Result<()>| -> bool {
+        result
+            .map_err(|e| failed.push(format!("`{name}` ({e})")))
+            .is_ok()
     };
     // Artifact 2 — the diff-caps capability-surface decision (always captured).
-    put(
+    let diff_written = put(
         "diff_caps.txt",
         std::fs::write(dir.join("diff_caps.txt"), diff_stdout),
-    );
-
-    let (gained, added) = per_function_changes(diff_stdout);
-    let per_function = if gained + added > 0 {
-        format!(
-            "- per-function: {gained} existing function(s) gained capabilities and {added} \
-             function(s) are new — listed in `diff_caps.txt` for human review. Under S37 they \
-             do not block acceptance; only a program-wide widening or a new wildcard is refused.\n"
-        )
-    } else {
-        String::new()
-    };
-    let decision = match outcome {
-        Outcome::Accepted { value, .. } => format!(
-            "# Agent-loop decision: ACCEPTED\n\n\
-             Proposal `{}` (vs baseline `{}`) was ACCEPTED on capability+depth evidence.\n\n\
-             - diff-caps: no authority expansion — the program-wide declared capability surface \
-             did not widen.\n\
-             {per_function}\
-             - enforced kernel ({}): ran without tripping an enforced ceiling ({value}).\n\
-             - sealed: attested in `seal.json` with autonomous-acceptance provenance.\n\n\
-             The 4 trust artifacts: `capability_manifest.json` (S36), `diff_caps.txt` (S37), \
-             `seal.json` (S38), `transparency_log.jsonl` (S68).\n\n\
-             Scope: accepted on capability + depth evidence ONLY — `@caps` and \
-             `@max_depth` are enforced. `@bounded`/memory/time/`@mailbox`/OS-sandbox remain \
-             declared-not-enforced; this is NOT a claim of full boundedness or safety.\n",
-            a.proposal.display(),
-            a.baseline.display(),
-            a.backend,
-        ),
-        Outcome::RejectedCheck { .. } => format!(
-            "# Agent-loop decision: REJECTED (proposal failed check)\n\n\
-             Proposal `{}` (vs baseline `{}`) was REFUSED at the check gate before diff-caps, \
-             run, or seal. See `check.txt` for the checker diagnostics. It was not sealed.\n",
-            a.proposal.display(),
-            a.baseline.display(),
-        ),
-        Outcome::RejectedDiffCaps => format!(
-            "# Agent-loop decision: REJECTED (capability widening)\n\n\
-             Proposal `{}` (vs baseline `{}`) was REFUSED at the diff-caps gate: it WIDENED the \
-             program-wide declared capability surface or introduced a wildcard (see `diff_caps.txt`). It never ran and was never sealed \
-             — the negative proof. A widening is a true gate FAILURE (Rule 2), not a warning.\n",
-            a.proposal.display(),
-            a.baseline.display(),
-        ),
-        Outcome::RejectedRun { .. } => format!(
-            "# Agent-loop decision: REJECTED (enforced-ceiling trap)\n\n\
-             Proposal `{}` (vs baseline `{}`) passed diff-caps (no widening) but the enforced \
-             kernel ({}) TRAPPED it (see `run_trap.txt`) — an `@max_depth` or `@caps` ceiling was \
-             exceeded. It was not sealed. Acceptance rests on the enforced run, not only the static \
-             capability gate.\n",
-            a.proposal.display(),
-            a.baseline.display(),
-            a.backend,
-        ),
-    };
-    put(
-        "decision.md",
-        std::fs::write(dir.join("decision.md"), decision),
     );
 
     match outcome {
@@ -379,6 +320,77 @@ fn write_record(a: &Args, exe: &std::path::Path, diff_stdout: &[u8], outcome: &O
             );
         }
         Outcome::RejectedDiffCaps => {}
+    }
+
+    // decision.md is written last, so it names only what was written and says
+    // what could not be.
+    let (gained, added) = per_function_changes(diff_stdout);
+    let listed = if diff_written {
+        "listed in `diff_caps.txt` for human review"
+    } else {
+        "printed on stdout for human review; `diff_caps.txt` could not be written"
+    };
+    let per_function = if gained + added > 0 {
+        format!(
+            "- per-function: {gained} existing function(s) gained capabilities and {added} \
+             function(s) are new — {listed}. Under S37 they do not block acceptance; only a \
+             program-wide widening or a new wildcard is refused.\n"
+        )
+    } else {
+        String::new()
+    };
+    let mut decision = match outcome {
+        Outcome::Accepted { value, .. } => format!(
+            "# Agent-loop decision: ACCEPTED\n\n\
+             Proposal `{}` (vs baseline `{}`) was ACCEPTED on capability+depth evidence.\n\n\
+             - diff-caps: no authority expansion — the program-wide declared capability surface \
+             did not widen.\n\
+             {per_function}\
+             - enforced kernel ({}): ran without tripping an enforced ceiling ({value}).\n\
+             - sealed: attested in `seal.json` with autonomous-acceptance provenance.\n\n\
+             The 4 trust artifacts: `capability_manifest.json` (S36), `diff_caps.txt` (S37), \
+             `seal.json` (S38), `transparency_log.jsonl` (S68).\n\n\
+             Scope: accepted on capability + depth evidence ONLY — `@caps` and \
+             `@max_depth` are enforced. `@bounded`/memory/time/`@mailbox`/OS-sandbox remain \
+             declared-not-enforced; this is NOT a claim of full boundedness or safety.\n",
+            a.proposal.display(),
+            a.baseline.display(),
+            a.backend,
+        ),
+        Outcome::RejectedCheck { .. } => format!(
+            "# Agent-loop decision: REJECTED (proposal failed check)\n\n\
+             Proposal `{}` (vs baseline `{}`) was REFUSED at the check gate before diff-caps, \
+             run, or seal. See `check.txt` for the checker diagnostics. It was not sealed.\n",
+            a.proposal.display(),
+            a.baseline.display(),
+        ),
+        Outcome::RejectedDiffCaps => format!(
+            "# Agent-loop decision: REJECTED (capability widening)\n\n\
+             Proposal `{}` (vs baseline `{}`) was REFUSED at the diff-caps gate: it WIDENED the \
+             program-wide declared capability surface or introduced a wildcard (see `diff_caps.txt`). It never ran and was never sealed \
+             — the negative proof. A widening is a true gate FAILURE (Rule 2), not a warning.\n",
+            a.proposal.display(),
+            a.baseline.display(),
+        ),
+        Outcome::RejectedRun { .. } => format!(
+            "# Agent-loop decision: REJECTED (enforced-ceiling trap)\n\n\
+             Proposal `{}` (vs baseline `{}`) passed diff-caps (no widening) but the enforced \
+             kernel ({}) TRAPPED it (see `run_trap.txt`) — an `@max_depth` or `@caps` ceiling was \
+             exceeded. It was not sealed. Acceptance rests on the enforced run, not only the static \
+             capability gate.\n",
+            a.proposal.display(),
+            a.baseline.display(),
+            a.backend,
+        ),
+    };
+    if !failed.is_empty() {
+        decision.push_str(&format!(
+            "\nRecord incomplete: these artifacts could not be written: {}. The loop exited 2.\n",
+            failed.join(", ")
+        ));
+    }
+    if let Err(e) = std::fs::write(dir.join("decision.md"), decision) {
+        failed.push(format!("`decision.md` ({e})"));
     }
     for f in &failed {
         eprintln!("garnet agent-loop: cannot write --record-dir artifact {f}");
@@ -468,10 +480,10 @@ pub fn run(args: &[String]) -> ExitCode {
     println!("agent-loop: stage diff-caps -> PASS (no program-wide authority expansion, band 5/5)");
     let (gained, added) = per_function_changes(&diff.stdout);
     if gained + added > 0 {
-        // The changes are always named here; diff_caps.txt is only a record of them,
-        // written with --record-dir, and a failure to write it fails the loop.
+        // The changes are always named here. With --record-dir, diff_caps.txt records
+        // them once it is written; a failure to write it fails the loop.
         if a.record_dir.is_some() {
-            println!("agent-loop: per-function changes listed for review in diff_caps.txt:");
+            println!("agent-loop: per-function changes for review ({gained} gained, {added} new):");
         } else {
             println!(
                 "agent-loop: per-function changes for review ({gained} gained, {added} new; --record-dir saves them):"

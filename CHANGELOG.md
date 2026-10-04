@@ -121,7 +121,8 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   gained capabilities or are new are counted in the decision and listed for
   review on stdout, and in `diff_caps.txt` with `--record-dir`. A
   `--record-dir` artifact that cannot be written is named on stderr and the
-  loop exits 2, so a record is never claimed that was not written.
+  loop exits 2. `decision.md` is written last: it names only artifacts that
+  were written and lists any that could not be.
 - **Every converter output parses (C1-18, Q48).**
   - `@sandbox` is named in a comment; `@caps()` stays.
   - Python `for` / `while` (without `else`) and Ruby `.each do |x|` are lowered
@@ -137,11 +138,14 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
       function. A def header may span lines, and a decorated definition is
       kept whole.
     - Go: lines up to where Go inserts a semicolon, once every bracket, block
-      comment and raw string is closed. A one-line function keeps its body,
-      and a function inside a block comment or raw string is not converted.
+      comment and raw string is closed; a line ending in `go`, `defer` or
+      another keyword outside `break`/`continue`/`fallthrough`/`return` takes
+      the next line. A one-line function keeps its body, and a function
+      inside a block comment or raw string is not converted.
     - Ruby: a lexical subset. Lines join while a bracket or keyword block is
       open (`if` and its kin count only where an expression starts), after a
-      trailing operator or comma, or before a line that starts with `.`. A
+      trailing operator, comma or modifier (`if`, `unless`, `rescue` ...), or
+      before a line that starts with `.`. A
       def or class whose header the frontend does not read, or whose body
       has a `rescue`/`ensure`/`else` clause, is kept whole.
     Only a statement on one line becomes code. Class-level statements become

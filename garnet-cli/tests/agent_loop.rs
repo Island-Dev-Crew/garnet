@@ -313,7 +313,7 @@ fn per_function_changes_are_accepted_but_listed_for_review() {
         "a per-function gain is not a program-wide widening: {stdout}"
     );
     assert!(
-        stdout.contains("agent-loop: per-function changes listed for review in diff_caps.txt"),
+        stdout.contains("agent-loop: per-function changes for review (1 gained, 1 new):"),
         "{stdout}"
     );
     let diff = std::fs::read_to_string(dir.path().join("record/diff_caps.txt")).unwrap();

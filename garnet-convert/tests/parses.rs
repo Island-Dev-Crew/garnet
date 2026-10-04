@@ -568,7 +568,10 @@ fn go_line_ending_in_a_keyword_continues_its_statement() {
         let (garnet, _) = convert_src(&src, SourceLang::Go, "go", "run.go");
         assert_parses(&garnet);
         assert_inactive(&garnet, "persist()");
-        assert!(code_lines(&garnet).contains(&"return 0"), "{keyword}:\n{garnet}");
+        assert!(
+            code_lines(&garnet).contains(&"return 0"),
+            "{keyword}:\n{garnet}"
+        );
     }
 }
 
@@ -583,6 +586,9 @@ fn ruby_line_ending_in_a_modifier_continues_its_statement() {
         let (garnet, _) = convert_src(&src, SourceLang::Ruby, "ruby", "run.rb");
         assert_parses(&garnet);
         assert_inactive(&garnet, "persist()");
-        assert!(code_lines(&garnet).contains(&"return 0"), "{body}:\n{garnet}");
+        assert!(
+            code_lines(&garnet).contains(&"return 0"),
+            "{body}:\n{garnet}"
+        );
     }
 }

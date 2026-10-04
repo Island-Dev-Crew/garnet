@@ -15,9 +15,11 @@ Owns migration frontends and conversion helpers for lifting Rust, Ruby, Python, 
   carrying its source lines; no fragment of it may stay active code. Each
   frontend reads a statement as a defined unit of its language, lexed in
   `src/frontends/lex.rs`: a Python logical line (and a compound statement's
-  indented body and clauses), Go lines up to where Go inserts a semicolon, and
-  for Ruby a lexical subset joined by brackets, keyword blocks, trailing
-  operators and leading `.`. Only a statement on one line becomes code.
+  indented body and clauses), Go lines up to where Go inserts a semicolon (none
+  after an operand-taking keyword such as `go` or `defer`), and for Ruby a
+  lexical subset joined by brackets, keyword blocks, trailing operators,
+  commas and modifiers, and a leading `.`. Only a statement on one line becomes
+  code.
 - What a frontend does not lex is refused with its line number, never guessed:
   Python tab indentation and Python 3.12 f-strings that reuse their quote; Ruby
   outside the subset (heredocs, percent literals, character literals, `=begin`,

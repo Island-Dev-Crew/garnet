@@ -9,10 +9,12 @@
 //!   reference's line structure. Every string form is lexed; an f-string whose
 //!   replacement field holds the f-string's own quote (Python 3.12) is refused.
 //! - **Go**: lines up to the point where Go inserts a semicolon (after an
-//!   identifier, keyword, literal, `++`, `--`, `)`, `]` or `}` at a line end),
-//!   once every bracket, block comment and raw string is closed.
+//!   identifier, a literal, `break`, `continue`, `fallthrough`, `return`, `++`,
+//!   `--`, `)`, `]` or `}` at a line end), once every bracket, block comment and
+//!   raw string is closed.
 //! - **Ruby**: a defined subset. Lines join while a bracket or a keyword block is
-//!   open or a line ends in an operator or a comma. A keyword block is opened by
+//!   open or a line ends in an operator, a comma or a modifier (`if`, `unless`,
+//!   `while`, `until`, `rescue`). A keyword block is opened by
 //!   `if`/`unless`/`while`/`until` where an expression starts (elsewhere they are
 //!   modifiers), `case`, `begin`, `def`, `class`, `module`, `for` and `do`, and
 //!   closed by `end`. A line outside the subset is refused, not guessed.
@@ -105,12 +107,15 @@ impl GoLex {
                     continue;
                 }
                 c if is_word_byte(c) => {
+                    let start = i;
                     let number = c.is_ascii_digit();
                     i += 1;
                     while i < b.len() && (is_word_byte(b[i]) || (number && is_number_tail(b, i))) {
                         i += 1;
                     }
-                    self.last_ends = true;
+                    // Of the keywords, only break, continue, fallthrough and return
+                    // end a line; `go`, `defer` and the rest take what follows.
+                    self.last_ends = !GO_OPERAND_KEYWORDS.contains(&&b[start..i]);
                     continue;
                 }
                 _ => self.last_ends = false,
@@ -130,6 +135,31 @@ impl GoLex {
         self.last_ends
     }
 }
+
+/// Go keywords after which no semicolon is inserted at a line end.
+const GO_OPERAND_KEYWORDS: [&[u8]; 21] = [
+    b"case",
+    b"chan",
+    b"const",
+    b"default",
+    b"defer",
+    b"else",
+    b"for",
+    b"func",
+    b"go",
+    b"goto",
+    b"if",
+    b"import",
+    b"interface",
+    b"map",
+    b"package",
+    b"range",
+    b"select",
+    b"struct",
+    b"switch",
+    b"type",
+    b"var",
+];
 
 fn is_word_byte(c: u8) -> bool {
     c.is_ascii_alphanumeric() || c == b'_' || c >= 0x80
@@ -507,7 +537,9 @@ pub fn ruby_line(line: &str) -> Result<RubyLine<'_>, &'static str> {
                             out.blocks += 1;
                             loop_do |= matches!(&line[start..i], "while" | "until");
                         }
+                        // As a modifier at a line end it takes the next line.
                         after_value = false;
+                        last_op = true;
                     }
                     "for" => {
                         out.blocks += 1;
@@ -538,11 +570,11 @@ pub fn ruby_line(line: &str) -> Result<RubyLine<'_>, &'static str> {
                         out.blocks -= 1;
                         after_value = true;
                     }
-                    "and" | "or" | "not" => {
+                    "and" | "or" | "not" | "rescue" => {
                         after_value = false;
                         last_op = true;
                     }
-                    "then" | "else" | "elsif" | "when" | "in" | "ensure" | "rescue" => {
+                    "then" | "else" | "elsif" | "when" | "in" | "ensure" => {
                         after_value = false;
                     }
                     _ => after_value = true,
@@ -722,6 +754,10 @@ mod tests {
             ("x := 1.5", true),
             ("y := 1e-3 // note", true),
             ("outer:", false),
+            ("go", false),
+            ("defer", false),
+            ("break", true),
+            ("x := m[key]", true),
         ] {
             let mut lex = GoLex::default();
             lex.scan(line, 0);
@@ -814,6 +850,9 @@ mod tests {
             ("save!", false),
             ("x = cond ?", true),
             ("raise $!", false),
+            ("return 7 if", true),
+            ("x = fetch rescue", true),
+            ("x = 1 if ready", false),
             ("r = (1..n)", false),
         ] {
             assert_eq!(continues, rb(line).continues, "{line}");
