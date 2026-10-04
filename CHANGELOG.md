@@ -183,7 +183,10 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
       an operator; after an operator, a keyword that takes an operand, or
       `return`, `break` or `next`, it opens one; after an identifier and a
       blank with no blank after it (`ok? /x`), Ruby's reading is ambiguous and
-      the file is refused.
+      the file is refused. An operator method name after `.`, `&.`, `::` or
+      `def` (`obj.!`, `def ==`) and an operator symbol (`:/`, `:<=>`) are one
+      token each, and a `\` that ends a line is a blank: the next line starts
+      in the state the line before ended in.
       Lines join while a bracket or keyword block is
       open (`if` and its kin count only where an expression starts; a `do` is
       a loop's separator only while the loop's condition is open, which ends

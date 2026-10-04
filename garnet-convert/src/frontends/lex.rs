@@ -474,6 +474,26 @@ fn scan_string(
 
 // ─── Ruby ────────────────────────────────────────────────────────────
 
+/// The lexer state a Ruby line starts in. A line starts fresh after a complete
+/// line, with a method name due after one ending in `.`, and in the exact state
+/// the line before ended in after a `\` that ends it (Ruby reads that `\` and
+/// the line end as a blank).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct RubyState {
+    /// A method name is due (after `.`, `&.`, `::` or `def`).
+    pub name_next: bool,
+    /// The token before ends an expression.
+    pub after_value: bool,
+    /// The token before is an identifier that may be a method call.
+    pub last_ident: bool,
+    /// Blanks follow the token before.
+    pub blank_before: bool,
+    /// The token before is `return`, `break` or `next`.
+    pub after_mid: bool,
+    /// A loop condition is open, so a `do` is its separator.
+    pub loop_do: bool,
+}
+
 /// What one line of Ruby contributes to its statement.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RubyLine<'a> {
@@ -500,6 +520,8 @@ pub struct RubyLine<'a> {
     /// expression starts) appears: at 0 it continues a block opened before the
     /// line.
     pub clause_at: Option<i64>,
+    /// The state the next line starts in (see `RubyState`).
+    pub next: RubyState,
 }
 
 /// Lex one line of the Ruby subset that starts a statement or follows a
@@ -520,6 +542,18 @@ pub fn ruby_line(line: &str) -> Result<RubyLine<'_>, &'static str> {
 /// `name_first`: the line before ended where a method name is due, so this
 /// line's first word is a name (`obj.` then `end`).
 pub fn ruby_line_after(line: &str, name_first: bool) -> Result<RubyLine<'_>, &'static str> {
+    ruby_line_from(
+        line,
+        RubyState {
+            name_next: name_first,
+            ..RubyState::default()
+        },
+    )
+}
+
+/// Lex one line of the Ruby subset starting in `start`, the `next` state of
+/// the line before. See `ruby_line_after`.
+pub fn ruby_line_from(line: &str, start: RubyState) -> Result<RubyLine<'_>, &'static str> {
     let b = line.as_bytes();
     let first = line.trim_start();
     if first.starts_with("=begin") {
@@ -538,25 +572,28 @@ pub fn ruby_line_after(line: &str, name_first: bool) -> Result<RubyLine<'_>, &'s
         name_pending: false,
         min_blocks: 0,
         clause_at: None,
+        next: RubyState::default(),
     };
     // The token before ends an expression: `if` after it is a modifier, and
     // `/`, `%` or `?` after it is an operator. Otherwise an operand starts.
-    let mut after_value = false;
+    let mut after_value = start.after_value;
     // The token before is an identifier that may be a method call (`ok?`
     // included), and `blank_before`: blanks follow it. `word /x` and `word %x`
     // are then ambiguous in Ruby.
-    let mut last_ident = false;
-    let mut blank_before = false;
+    let mut last_ident = start.last_ident;
+    let mut blank_before = start.blank_before;
     // The token before is `return`, `break` or `next` (Ruby's EXPR_MID): an
     // operand starts (`/` opens a regular expression), but `if` and its kin
     // after it are modifiers.
-    let mut after_mid = false;
+    let mut after_mid = start.after_mid;
     // A `while`/`until`/`for` whose condition is still open on this line, at
     // this bracket depth: a `do` there is its separator. The condition ends at
     // that `do`, at a `;` at the same depth, or at the line end.
-    let mut loop_do: Option<i64> = None;
+    let mut loop_do: Option<i64> = start.loop_do.then_some(0);
     // The next word is a method name (after `def`, `.` or `::`), not a keyword.
-    let mut name_next = name_first;
+    let mut name_next = start.name_next;
+    // The line ends in a `\`: Ruby reads it and the line end as a blank.
+    let mut backslash_end = false;
     // The rest of the statement holds method names (the operands of `alias`
     // and `undef`), not keywords; they must be complete on this line.
     let mut names_rest = false;
@@ -572,7 +609,8 @@ pub fn ruby_line_after(line: &str, name_first: bool) -> Result<RubyLine<'_>, &'s
         let spaced_ident = last_ident && blank_before;
         // An operand starts here: `/`, `%` or `?` opens a literal.
         let operand = !after_value || after_mid;
-        if is_rb_blank(c) {
+        let line_continues = c == b'\\' && b[i + 1..].iter().all(|x| *x == b'\r');
+        if is_rb_blank(c) || line_continues {
             blank_before = true;
         } else {
             last_ident = false;
@@ -580,12 +618,26 @@ pub fn ruby_line_after(line: &str, name_first: bool) -> Result<RubyLine<'_>, &'s
             after_mid = false;
         }
         // After `.`, `&.`, `::` or `def` the method name is the next token of
-        // any kind: an operator name (`obj.[]`, `obj.!`, `def ==`) or the
-        // `obj.()` call takes it, so a later word (`do`) is a keyword again.
+        // any kind. An operator name (`obj.[]`, `obj.!`, `def ==`) is one token
+        // that leaves a value, like a word; the `obj.()` call takes the name
+        // too. A later word (`do`) is a keyword again.
         if name_next && !is_rb_word_byte(c) && !is_rb_blank(c) && !matches!(c, b'#' | b'\\') {
             name_next = false;
+            if let Some(len) = operator_method_name(&b[i..]) {
+                i += len;
+                after_value = true;
+                last_ident = true;
+                last_op = false;
+                continue;
+            }
         }
         match c {
+            _ if line_continues => {
+                backslash_end = true;
+                last_op = true;
+                i = b.len();
+                continue;
+            }
             c if is_rb_blank(c) => {
                 i += 1;
                 continue;
@@ -726,6 +778,17 @@ pub fn ruby_line_after(line: &str, name_first: bool) -> Result<RubyLine<'_>, &'s
                 after_value = false;
                 last_op = true;
                 i += 2;
+                continue;
+            }
+            // An operator symbol (`:/`, `:<=>`, `:[]`) where an operand starts is
+            // one token: its `/` or `%` opens no literal.
+            b':' if operand && operator_method_name(&b[i + 1..]).is_some() => {
+                if names_rest {
+                    operands += 1;
+                }
+                i += 1 + operator_method_name(&b[i + 1..]).unwrap_or(0);
+                after_value = true;
+                last_op = false;
                 continue;
             }
             b':' if b.get(i + 1).is_some_and(|c| is_rb_word_byte(*c)) => {
@@ -876,7 +939,33 @@ pub fn ruby_line_after(line: &str, name_first: bool) -> Result<RubyLine<'_>, &'s
         return Err(ALIAS_OPERANDS);
     }
     out.name_pending = name_next;
+    out.next = if backslash_end {
+        RubyState {
+            name_next,
+            after_value,
+            last_ident,
+            blank_before: true,
+            after_mid,
+            loop_do: loop_do == Some(out.brackets),
+        }
+    } else {
+        RubyState {
+            name_next,
+            ..RubyState::default()
+        }
+    };
     Ok(out)
+}
+
+/// The length of the operator method name at the start of `b` (`[]=`, `<=>`,
+/// `!`, `+@` ...), longest first.
+fn operator_method_name(b: &[u8]) -> Option<usize> {
+    const NAMES: [&[u8]; 28] = [
+        b"[]=", b"===", b"<=>", b"**", b"==", b"=~", b"!=", b"!~", b"<=", b">=", b"<<", b">>",
+        b"+@", b"-@", b"[]", b"+", b"-", b"*", b"/", b"%", b"<", b">", b"&", b"|", b"^", b"!",
+        b"~", b"`",
+    ];
+    NAMES.iter().find(|n| b.starts_with(n)).map(|n| n.len())
 }
 
 /// The end of the identifier starting at `i`.

@@ -1809,3 +1809,64 @@ fn a_division_after_a_value_does_not_hide_a_block() {
     assert_parses(&garnet);
     assert!(code_lines(&garnet).contains(&"persist()"), "{garnet}");
 }
+
+/// Codex round 23: an operator method name (`obj.!`, `obj&.~`, `obj::!`,
+/// `obj.==`) is one name token and leaves a value, so a `/` after it divides;
+/// and a `\` that ends a line is a blank, as Ruby reads it, so the next line
+/// starts in the state the line before ended in (`value \` then `/ work`).
+#[test]
+fn an_operator_name_and_a_backslash_keep_the_lexer_state() {
+    let mut sources = Vec::new();
+    for name in [
+        "obj.!", "obj.~", "obj&.!", "obj&.~", "obj::!", "obj::~", "obj.==", "obj.<=>",
+        // Controls.
+        "obj.[]", "obj.+@", "obj.!()",
+    ] {
+        sources.push(format!(
+            "def save\n  {name} / work do 1/2\n    persist()\n  end\nend\n"
+        ));
+    }
+    for value in ["value", "4", "ok?", "value\t"] {
+        sources.push(format!(
+            "def save\n  {value} \\\n  / work do 1/2\n    persist()\n  end\nend\n"
+        ));
+    }
+    // A loop condition continues across `\`: its `do` there is the separator.
+    sources.push("def save\n  while ready \\\n  do\n    persist()\n  end\nend\n".into());
+    // An operator method defined by name is kept whole.
+    sources.push("class Box\n  def ==(other)\n    persist()\n  end\nend\n".into());
+    for src in &sources {
+        let (garnet, _) = convert_src(src, SourceLang::Ruby, "ruby", "save.rb");
+        assert_parses(&garnet);
+        assert_inactive(&garnet, "persist()");
+    }
+    // An operator symbol (`:/`, `:<=>`) is one token: its `/` opens no regular
+    // expression, so the file converts and the statement after it is read.
+    for src in [
+        "def save\n  list.map(&:/)\n  persist()\nend\n",
+        "def save\n  send(:<=>, a)\n  persist()\nend\n",
+        "def save\n  y = [:/, 1]\n  persist()\nend\n",
+    ] {
+        let (garnet, _) = convert_src(src, SourceLang::Ruby, "ruby", "save.rb");
+        assert_parses(&garnet);
+        assert!(
+            code_lines(&garnet).contains(&"persist()"),
+            "{src:?}\n{garnet}"
+        );
+    }
+    convert_src(
+        "class Tms\n  def /(x); memberwise(:/, x) end\nend\n",
+        SourceLang::Ruby,
+        "ruby",
+        "tms.rb",
+    );
+    // `value \` then `/x/` is `value /x/`, which Ruby reads ambiguously.
+    let err = try_convert(
+        "def save\n  value \\\n  /x/\nend\n",
+        SourceLang::Ruby,
+        "ruby",
+        "save.rb",
+    )
+    .unwrap_err();
+    assert!(err.contains("ambiguous /"), "{err}");
+}

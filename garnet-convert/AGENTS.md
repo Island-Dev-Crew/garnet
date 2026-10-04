@@ -28,7 +28,10 @@ Owns migration frontends and conversion helpers for lifting Rust, Ruby, Python, 
   Every Ruby blank check uses one set, space, tab and carriage return
   (`is_rb_blank`), the blanks Ruby reads inside a line. Whether `/`, `%` or `?`
   opens a literal comes from the lexer's forward state (`after_value`,
-  `after_mid`, `last_ident`), never from scanning bytes backward. Only a statement on one line becomes code.
+  `after_mid`, `last_ident`), never from scanning bytes backward. A line ending
+  in `\` hands that state to the next line (`RubyState`, `RubyLine::next`);
+  every caller that walks lines (`statement_end`, `leaves_its_block`,
+  `refuse_unlexed`) carries it. Only a statement on one line becomes code.
 - What a frontend does not lex is refused with its line number, never guessed:
   Python tab or form-feed indentation, a carriage return without a line feed,
   and f-strings or t-strings whose replacement fields hold their own quote, a

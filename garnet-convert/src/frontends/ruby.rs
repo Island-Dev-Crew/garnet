@@ -15,7 +15,7 @@
 //! becomes code; `EXPR.each do |x| ... end` is lowered; every other statement is
 //! kept whole as one MigrateTodo. A file outside the subset is refused.
 
-use super::lex::{ruby_line, ruby_line_after};
+use super::lex::{ruby_line, ruby_line_from, RubyState};
 use crate::cir::{Cir, CirLit, CirTy, FuncMode, Ownership, Param};
 use crate::error::ConvertError;
 use crate::lineage::Lineage;
@@ -536,12 +536,17 @@ impl<'a> RubyParser<'a> {
         let mut brackets = 0;
         let mut blocks = 0;
         let mut continues = false;
-        // A method name is due at the start of the next code line (`obj.`).
-        let mut name_pending = false;
+        // The state the next line starts in: a method name due (`obj.`), or the
+        // whole lexer state after a line ending in `\`.
+        let mut state = RubyState::default();
         let mut pos = from;
         for line in self.source[from..].split_inclusive('\n') {
             pos += line.len();
-            match ruby_line_after(line.trim_end_matches(['\n', '\r']), name_pending) {
+            let lexed = ruby_line_from(line.trim_end_matches(['\n', '\r']), state);
+            if let Ok(l) = &lexed {
+                state = l.next;
+            }
+            match lexed {
                 // A blank or comment line neither opens nor closes anything, and
                 // does not end a statement that is still open.
                 Ok(l) if l.code.trim().is_empty() => {
@@ -553,7 +558,6 @@ impl<'a> RubyParser<'a> {
                     brackets += l.brackets;
                     blocks += l.blocks;
                     continues = l.continues;
-                    name_pending = l.name_pending;
                     if brackets > 0 || blocks > 0 || continues {
                         continue;
                     }
@@ -579,18 +583,16 @@ impl<'a> RubyParser<'a> {
     /// `rescue` clause ...), at any point.
     fn leaves_its_block(&self, from: usize, to: usize) -> bool {
         let mut blocks = 0;
-        let mut name_pending = false;
+        let mut state = RubyState::default();
         for line in self.source[from..to].split_inclusive('\n') {
-            let Ok(l) = ruby_line_after(line.trim_end_matches(['\n', '\r']), name_pending) else {
+            let Ok(l) = ruby_line_from(line.trim_end_matches(['\n', '\r']), state) else {
                 return true;
             };
             if blocks + l.min_blocks < 0 || l.clause_at.is_some_and(|at| blocks + at <= 0) {
                 return true;
             }
             blocks += l.blocks;
-            if !l.code.trim().is_empty() {
-                name_pending = l.name_pending;
-            }
+            state = l.next;
         }
         false
     }
@@ -796,15 +798,19 @@ fn first_word(text: &str) -> &str {
 /// `lex` reads could hide a block or a statement boundary, and the converter
 /// would then leave part of a statement active.
 fn refuse_unlexed(source: &str) -> Result<(), ConvertError> {
+    let mut state = RubyState::default();
     for (n, line) in source.lines().enumerate() {
-        if let Err(why) = ruby_line(line) {
-            return Err(ConvertError::ParseError {
+        match ruby_line_from(line, state) {
+            Ok(l) => state = l.next,
+            Err(why) => {
+                return Err(ConvertError::ParseError {
                 source_lang: "ruby".into(),
-                message: format!(
-                    "line {} uses {why}, which the converter does not lex; convert this file by hand",
-                    n + 1
-                ),
-            });
+                    message: format!(
+                        "line {} uses {why}, which the converter does not lex; convert this file by hand",
+                        n + 1
+                    ),
+                });
+            }
         }
     }
     Ok(())
