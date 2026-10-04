@@ -485,6 +485,14 @@ pub struct RubyLine<'a> {
     /// The line ends where a method name is due (after `.`, `&.`, `::` or
     /// `def`), so the next line's first word is a name, not a keyword.
     pub name_pending: bool,
+    /// The lowest the running keyword-block count reaches on the line: below 0,
+    /// an `end` closed a block opened before the line.
+    pub min_blocks: i64,
+    /// The lowest running keyword-block count at which a clause keyword
+    /// (`then`, `else`, `elsif`, `when`, `ensure`, or `rescue`/`in` where an
+    /// expression starts) appears: at 0 it continues a block opened before the
+    /// line.
+    pub clause_at: Option<i64>,
 }
 
 /// Lex one line of the Ruby subset that starts a statement or follows a
@@ -520,6 +528,8 @@ pub fn ruby_line_after(line: &str, name_first: bool) -> Result<RubyLine<'_>, &'s
         continues: false,
         semicolon: false,
         name_pending: false,
+        min_blocks: 0,
+        clause_at: None,
     };
     // The token before ends an expression: `if` after it is a modifier.
     let mut after_value = false;
@@ -705,7 +715,11 @@ pub fn ruby_line_after(line: &str, name_first: bool) -> Result<RubyLine<'_>, &'s
             c if c >= 0x80 => return Err(NON_ASCII),
             c if is_rb_word_byte(c) => {
                 let start = i;
-                i = method_name_end(b, word_end(b, i));
+                // A number is not a method name: in `1?` the `?` is an operator.
+                i = word_end(b, i);
+                if !c.is_ascii_digit() {
+                    i = method_name_end(b, i);
+                }
                 if b.get(i) == Some(&b':') && b.get(i + 1) != Some(&b':') {
                     // A hash label such as `if:` is not a keyword.
                     i += 1;
@@ -765,6 +779,7 @@ pub fn ruby_line_after(line: &str, name_first: bool) -> Result<RubyLine<'_>, &'s
                     }
                     "end" => {
                         out.blocks -= 1;
+                        out.min_blocks = out.min_blocks.min(out.blocks);
                         after_value = true;
                     }
                     "alias" | "undef" => {
@@ -773,11 +788,19 @@ pub fn ruby_line_after(line: &str, name_first: bool) -> Result<RubyLine<'_>, &'s
                         operands = 0;
                         after_value = false;
                     }
-                    "and" | "or" | "not" | "rescue" => {
+                    "and" | "or" | "not" | "rescue" | "in" => {
+                        // Where an expression starts, `rescue` and `in` are
+                        // clauses; after a value, a modifier and an operator.
+                        if !after_value && matches!(&line[start..i], "rescue" | "in") {
+                            out.clause_at =
+                                Some(out.clause_at.map_or(out.blocks, |d| d.min(out.blocks)));
+                        }
                         after_value = false;
-                        last_op = true;
+                        last_op = !matches!(&line[start..i], "in");
                     }
-                    "then" | "else" | "elsif" | "when" | "in" | "ensure" => {
+                    "then" | "else" | "elsif" | "when" | "ensure" => {
+                        out.clause_at =
+                            Some(out.clause_at.map_or(out.blocks, |d| d.min(out.blocks)));
                         after_value = false;
                     }
                     _ => after_value = true,

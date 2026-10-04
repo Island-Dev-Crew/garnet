@@ -190,8 +190,11 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
       in a default: no string, regex, comment, block or nested call) is kept
       whole, and so is a def, class or module whose header
       the frontend does not read, whose body has a `rescue`/`ensure`/`else`
-      clause, or whose `end` is followed by more of its statement (code on the
-      line, or a `.` chain on the next).
+      clause, whose body holds a statement that closes a block opened before
+      it or starts a clause of one after a `;` (`0; end; def other`,
+      `nil; ensure`), or whose `end` is followed by more of its statement (code
+      on the line, or a `.` chain on the next). A number is not a method name:
+      in `1?` the `?` is the ternary operator.
     Only a statement on one line becomes code, and never one whose code holds
     `#{`: text that was inert in the source, such as `"#{x}"` in a Python or Go
     string or `'#{x}'` in Ruby, would run as Garnet interpolation, so it is kept

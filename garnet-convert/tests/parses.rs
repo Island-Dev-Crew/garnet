@@ -1570,3 +1570,47 @@ fn a_spaced_go_type_is_not_a_parameter_name() {
         "{src:?}\n{garnet}"
     );
 }
+
+/// Codex round 16: a Ruby statement in a body stays inside its block. One that
+/// closes a block opened before it or starts a clause of that block after a
+/// `;` (`0; end; def second`, `nil; ensure`) keeps the enclosing definition
+/// whole. A number is not a method name: in `return 1?` the `?` is the ternary
+/// operator, which continues the statement on the next line.
+#[test]
+fn a_ruby_statement_stays_inside_its_block() {
+    for src in [
+        "def first\n  0; end; def second\n  persist()\nend\n",
+        "def save\n  nil; ensure\n    persist()\nend\n",
+        "def save\n  nil; rescue\n    persist()\nend\n",
+        "class Box\n  0; end; class Other\n  persist()\nend\n",
+        "def save\n  return 1?\n    persist() : 0\nend\n",
+        "def save\n  x = 2.5?\n    persist() : 0\nend\n",
+    ] {
+        let (garnet, _) = convert_src(src, SourceLang::Ruby, "ruby", "save.rb");
+        assert_parses(&garnet);
+        assert_inactive(&garnet, "persist()");
+        assert!(
+            !code_lines(&garnet).iter().any(|l| l.contains('?')),
+            "{src:?}\n{garnet}"
+        );
+    }
+    // A block closed on its own line, a `rescue` modifier and a predicate
+    // method name are still read.
+    for (src, active) in [
+        (
+            "def save\n  begin; x; rescue; y; end\n  persist()\nend\n",
+            "persist()",
+        ),
+        (
+            "def save\n  x = foo rescue nil\n  persist()\nend\n",
+            "persist()",
+        ),
+        ("def save\n  return x.empty?\nend\n", "return x.empty?"),
+    ] {
+        let (garnet, _) = convert_src(src, SourceLang::Ruby, "ruby", "save.rb");
+        assert_parses(&garnet);
+        let code = code_lines(&garnet);
+        assert!(code.contains(&"def save() {"), "{src:?}\n{garnet}");
+        assert!(code.contains(&active), "{src:?}\n{garnet}");
+    }
+}

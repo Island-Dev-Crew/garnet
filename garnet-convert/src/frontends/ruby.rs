@@ -436,6 +436,12 @@ impl<'a> RubyParser<'a> {
                 continue;
             }
             let end = self.statement_end(start);
+            // A statement that closes a block opened before it, or starts a
+            // clause of one (`0; end; def other`, `nil; ensure`), changes the
+            // enclosing structure: the body is not read.
+            if self.leaves_its_block(start, end) {
+                return Ok(None);
+            }
             let text = self.source[start..end].trim_end();
             let lines: Vec<&str> = text.lines().collect();
             let header = ruby_code(lines[0]);
@@ -565,6 +571,27 @@ impl<'a> RubyParser<'a> {
             }
         }
         pos
+    }
+
+    /// Whether the statement in `from..to` closes a keyword block opened before
+    /// it, or holds a clause keyword of such a block (`else`, `ensure`, a
+    /// `rescue` clause ...), at any point.
+    fn leaves_its_block(&self, from: usize, to: usize) -> bool {
+        let mut blocks = 0;
+        let mut name_pending = false;
+        for line in self.source[from..to].split_inclusive('\n') {
+            let Ok(l) = ruby_line_after(line.trim_end_matches(['\n', '\r']), name_pending) else {
+                return true;
+            };
+            if blocks + l.min_blocks < 0 || l.clause_at.is_some_and(|at| blocks + at <= 0) {
+                return true;
+            }
+            blocks += l.blocks;
+            if !l.code.trim().is_empty() {
+                name_pending = l.name_pending;
+            }
+        }
+        false
     }
 
     fn parse_class(&mut self, start: usize) -> Result<Cir, ConvertError> {
