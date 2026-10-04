@@ -29,7 +29,8 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   character literal is kept as a to-do.
 - The Ruby converter reads a lexical subset and refuses a file outside it
   (heredocs, percent literals, interpolation beyond plain expressions, a
-  non-ASCII character outside a string or comment, and the like). The Python converter refuses tab
+  non-ASCII character or a control character other than tab and carriage
+  return outside a string or comment, and the like). The Python converter refuses tab
   or form-feed indentation and f-strings whose replacement fields hold their
   own quote, a comment, a backslash in the field's expression outside a
   nested string, or a nested
@@ -172,8 +173,10 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
       `pkg .Type`) is an unnamed parameter, as go/parser reads it. A struct's
       fields are converted only when each reads as `Name Type [tag]`, one per
       line or `;`-separated; otherwise the type is kept whole.
-    - Ruby: a lexical subset, whose code is ASCII (a non-ASCII character
-      outside a string, regular expression or comment refuses the file).
+    - Ruby: a lexical subset, whose code is ASCII without control characters
+      but tab and carriage return (any other character outside a string,
+      regular expression or comment refuses the file: Ruby reads a form feed
+      as a blank and stops at `^D`, `^Z` or NUL).
       Lines join while a bracket or keyword block is
       open (`if` and its kin count only where an expression starts; a `do` is
       a loop's separator only while the loop's condition is open, which ends
@@ -221,8 +224,9 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
     escape before `{` does not hide a field), a carriage
     return without a line feed, and a string or bracket left open at the end
     of the file;
-    Ruby code holding a non-ASCII character outside a string, regular
-    expression or comment, heredocs (and a `<<` with no space after it), regular expressions
+    Ruby code holding a non-ASCII character, or a control character other
+    than tab and carriage return, outside a string, regular expression or
+    comment, heredocs (and a `<<` with no space after it), regular expressions
     with interpolation, interpolation beyond plain expressions (a string,
     regex, literal, `/`, `?`, comment or heredoc inside `#{...}`), an `alias`
     or `undef` whose operands are not complete on its line, percent literals

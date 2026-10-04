@@ -1327,18 +1327,6 @@ fn a_parameter_list_that_is_not_plain_keeps_its_definition_whole() {
             "ruby",
             "save.rb",
         ),
-        (
-            "def\x0c\nouter(x = def save; persist; end)\nend\n",
-            SourceLang::Ruby,
-            "ruby",
-            "save.rb",
-        ),
-        (
-            "def\x0b\nouter(x = def save; persist; end)\nend\n",
-            SourceLang::Ruby,
-            "ruby",
-            "save.rb",
-        ),
     ] {
         let (garnet, checklist) = convert_src(src, lang, name, file);
         assert_parses(&garnet);
@@ -1694,4 +1682,52 @@ fn an_operator_method_name_does_not_hide_a_block() {
         assert_parses(&garnet);
         assert_inactive(&garnet, "persist()");
     }
+}
+
+/// Codex round 20: Ruby reads a form feed or vertical tab as a blank and stops
+/// at `^D`, `^Z` or NUL, where the converter did neither. Ruby code outside a
+/// string or comment may hold no control character but tab and carriage
+/// return: the file is refused.
+#[test]
+fn a_control_character_in_ruby_code_refuses_the_file() {
+    let mut sources = Vec::new();
+    for gap in ['\x0c', '\x0b'] {
+        for prefix in ["obj.", "obj&.", "obj::"] {
+            sources.push(format!(
+                "def save\n  while false\n    {prefix}{gap}end\n    persist()\n  end\nend\n"
+            ));
+        }
+        sources.push(format!(
+            "def outer\n  def{gap}end\n    persist()\n  end\nend\n"
+        ));
+    }
+    for stop in ['\x04', '\x1a', '\0'] {
+        sources.push(format!("def save\n  keep()\nend\n{stop}\npersist()\n"));
+    }
+    // A header split by a form feed or vertical tab (round 12, kept whole then).
+    for gap in ['\x0c', '\x0b'] {
+        sources.push(format!(
+            "def{gap}\nouter(x = def save; persist; end)\nend\n"
+        ));
+    }
+    for src in &sources {
+        match try_convert(src, SourceLang::Ruby, "ruby", "save.rb") {
+            Err(e) => assert!(e.contains("control character"), "{src:?}: {e}"),
+            Ok(garnet) => panic!("converted: {src:?}\n{garnet}"),
+        }
+    }
+    // A control character inside a string or comment is text.
+    let (garnet, _) = convert_src(
+        "def save\n  puts \"a\\fb\x0c\"\n  persist() # \x0b\nend\n",
+        SourceLang::Ruby,
+        "ruby",
+        "save.rb",
+    );
+    assert_parses(&garnet);
+    assert!(
+        code_lines(&garnet)
+            .iter()
+            .any(|l| l.starts_with("persist()")),
+        "{garnet}"
+    );
 }

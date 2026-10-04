@@ -503,9 +503,10 @@ pub fn ruby_line(line: &str) -> Result<RubyLine<'_>, &'static str> {
 
 /// Lex one line of the Ruby subset: comments, quoted and backtick strings (with
 /// interpolation that holds no quotes), symbols, regular expressions in operand
-/// position, and keyword blocks. Code is ASCII: a non-ASCII character outside a
-/// string, regular expression or comment is refused, so every check below reads
-/// identifiers the same way. Percent literals, heredocs, character literals,
+/// position, and keyword blocks. Code is ASCII without control characters but
+/// tab and carriage return: a non-ASCII or control character outside a string,
+/// regular expression or comment is refused, so every check below reads
+/// identifiers and blanks the same way. Percent literals, heredocs, character literals,
 /// `$'`-style globals, an ambiguous `/`, `=begin` comments, `__END__`, endless
 /// method definitions and strings that continue on the next line are refused.
 ///
@@ -562,6 +563,10 @@ pub fn ruby_line_after(line: &str, name_first: bool) -> Result<RubyLine<'_>, &'s
                 i += 1;
                 continue;
             }
+            // Ruby reads a form feed or vertical tab as a blank and stops at
+            // `^D`, `^Z` or NUL; the subset holds no control character but tab
+            // and carriage return in code.
+            c if c < 0x20 || c == 0x7f => return Err(CONTROL),
             b'#' => {
                 code_end = i;
                 break;
@@ -908,6 +913,9 @@ const ALIAS_OPERANDS: &str = "an alias or undef whose operands are not complete 
 /// Ruby code (outside strings, regular expressions and comments) is read as
 /// ASCII.
 const NON_ASCII: &str = "a non-ASCII character outside a string or comment";
+
+/// Ruby code holds no control character but tab and carriage return.
+const CONTROL: &str = "a control character outside a string or comment";
 
 const INTERPOLATION: &str =
     "interpolation beyond plain expressions (a string, regex, percent or character literal, `/`, `?`, a comment or a heredoc)";
