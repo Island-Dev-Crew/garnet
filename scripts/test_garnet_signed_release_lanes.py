@@ -216,6 +216,36 @@ class SignedReleaseLanesTests(unittest.TestCase):
                 self.assertEqual("broken", lanes.release_artifact_lane(text).status)
         self.assertEqual("active", lanes.release_artifact_lane(workflow).status)
 
+    def test_release_artifact_lane_breaks_when_a_setting_the_release_job_inherits_changes(self) -> None:
+        # Codex lane A, round 3 on #607 (7b788fd2): a workflow-level
+        # `defaults.run.shell` of `bash -c "bash {0}; exit 0"` left the pinned job
+        # unchanged while its refusal stopped failing. The job's effective
+        # definition includes what it inherits from the workflow's top level.
+        workflow = lanes._read(".github/workflows/linux-packages.yml")
+        jobs = "\njobs:\n"
+        env = "\nenv:\n"
+        self.assertEqual(1, workflow.count(jobs))
+        self.assertEqual(1, workflow.count(env))
+        cases = {
+            "a workflow default shell swallows exits": workflow.replace(
+                jobs, '\ndefaults:\n  run:\n    shell: bash -c "bash {0}; exit 0"\n' + jobs
+            ),
+            "a workflow default working directory": workflow.replace(
+                jobs, "\ndefaults:\n  run:\n    working-directory: elsewhere\n" + jobs
+            ),
+            "a workflow variable bash reads at startup": workflow.replace(
+                env, env + "  BASH_ENV: ./ci/preload.sh\n"
+            ),
+            "the workflow runs on another event": workflow.replace(
+                "  workflow_dispatch: {}\n", "  workflow_dispatch: {}\n  release:\n    types: [published]\n"
+            ),
+        }
+        for label, text in cases.items():
+            with self.subTest(label):
+                self.assertNotEqual(workflow, text, "the mutation must change the workflow")
+                self.assertEqual("broken", lanes.release_artifact_lane(text).status)
+        self.assertEqual("active", lanes.release_artifact_lane(workflow).status)
+
     def test_supply_chain_lane_notes_out_flag(self) -> None:
         s = lanes.read_lanes()
         sc = next(l for l in s.lanes if l.id == "supply-chain-attestation")

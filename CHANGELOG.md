@@ -105,8 +105,11 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   reproduced every existing pin on main.
 - **The release-lanes reporter is truthful (C5-16b, C6-19).** Release-artifact
   signing is an active lane only while the `release` job in
-  `linux-packages.yml` is the reviewed one, pinned by the SHA-256 of its text,
-  and no other job, nor the workflow's top level, has a `permissions` key or
+  `linux-packages.yml` is the reviewed one, pinned by the SHA-256 of its text;
+  the settings it inherits from the workflow's top level (`on`, `env`, any
+  `defaults`) are pinned as decoded YAML, so a default shell or a workflow
+  variable cannot change the job without breaking the lane; and no other job,
+  nor the workflow's top level, has a `permissions` key or
   mentions `secrets`, read from the decoded YAML so that a quoted key or an
   escaped value counts the same. Any edit to the job, including a
   step added with or without a name, breaks the lane until a reviewed change

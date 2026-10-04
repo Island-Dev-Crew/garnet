@@ -141,6 +141,13 @@ RELEASE_JOB_SHA256 = "c8f598f0a4008d6072581c31e6033984a5484ad5531bf7e4f09a663bcc
 # in a double-quoted value or another casing of `secrets` counts the same.
 SECRETS_RE = re.compile(r"\bsecrets\b", re.IGNORECASE)
 
+# SHA-256 of the workflow's top level other than `jobs` (`name`, `on`, `env`,
+# and any `defaults`, `permissions` or `concurrency`), as decoded YAML in
+# canonical JSON. The release job inherits these settings, so they are pinned
+# with it: a default shell or a workflow variable changes the job without
+# changing its text.
+TOP_LEVEL_SHA256 = "6f437c23b92e0033151b80873b48f0659c6c9323d6ee592c1d45c05f863db1c9"
+
 
 def _step_block(text: str, name: str) -> tuple[int, str] | None:
     """The step named `name` (at the release job's step indent) and where it starts."""
@@ -212,11 +219,34 @@ def release_job_is_the_reviewed_one(pkg: str) -> bool:
     return no_other_writer(pkg)
 
 
+def _canonical(node: object, yaml: object) -> object:
+    """A composed YAML node as plain JSON data, keys and order kept."""
+    if isinstance(node, yaml.ScalarNode):
+        return node.value
+    if isinstance(node, yaml.SequenceNode):
+        return [_canonical(item, yaml) for item in node.value]
+    if isinstance(node, yaml.MappingNode):
+        return [[_canonical(key, yaml), _canonical(value, yaml)] for key, value in node.value]
+    raise ValueError(f"unexpected YAML node {type(node).__name__}")
+
+
+def top_level_sha256(root: object, yaml: object) -> str:
+    """The digest TOP_LEVEL_SHA256 pins: every top-level entry but `jobs`."""
+    entries = [
+        [_canonical(key, yaml), _canonical(value, yaml)]
+        for key, value in root.value
+        if getattr(key, "value", None) != "jobs"
+    ]
+    data = json.dumps(entries, ensure_ascii=False, separators=(",", ":"))
+    return hashlib.sha256(data.encode("utf-8")).hexdigest()
+
+
 def no_other_writer(pkg: str) -> bool:
-    """No job but `release`, and not the workflow's own top level, has a
-    `permissions` key or mentions `secrets`, in any key or value of the decoded
-    YAML. Without PyYAML, or for YAML that does not compose to one document with
-    exactly one `release` job, the lane cannot be read and is not active."""
+    """The settings the release job inherits are the reviewed ones, and no job
+    but `release`, nor the workflow's own top level, has a `permissions` key or
+    mentions `secrets`, in any key or value of the decoded YAML. Without PyYAML,
+    or for YAML that does not compose to one document with exactly one `jobs`
+    map holding exactly one `release` job, the lane is not active."""
     try:
         import yaml
     except ImportError:
@@ -232,6 +262,11 @@ def no_other_writer(pkg: str) -> bool:
         return False
     job_ids = [getattr(key, "value", None) for key, _ in jobs[0].value]
     if job_ids.count("release") != 1:
+        return False
+    try:
+        if top_level_sha256(root, yaml) != TOP_LEVEL_SHA256:
+            return False
+    except (ValueError, RecursionError):
         return False
     scanned = [pair for pair in root.value if getattr(pair[0], "value", None) != "jobs"]
     scanned += [pair for pair in jobs[0].value if getattr(pair[0], "value", None) != "release"]
