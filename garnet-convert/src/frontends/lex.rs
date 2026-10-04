@@ -249,6 +249,8 @@ const FIELD_BACKSLASH: &str =
     "an f-string or t-string whose replacement field contains a backslash";
 const FIELD_TRIPLE: &str =
     "an f-string or t-string whose replacement field holds a triple-quoted string";
+const FIELD_FSTRING: &str =
+    "an f-string or t-string whose replacement field holds another f-string or t-string";
 const OPEN_STRING: &str = "a string that is still open at the end of its line";
 
 /// Python lexing state that can span lines: a triple-quoted string.
@@ -377,6 +379,12 @@ fn scan_string(
                     if b.get(i + 1) == Some(&nested) && b.get(i + 2) == Some(&nested) {
                         return Err(FIELD_TRIPLE);
                     }
+                    if string_prefix(b, i)
+                        .iter()
+                        .any(|c| matches!(c, b'f' | b'F' | b't' | b'T'))
+                    {
+                        return Err(FIELD_FSTRING);
+                    }
                     i += 1;
                     while i < b.len() && b[i] != nested {
                         if b[i] == b'\\' {
@@ -470,15 +478,12 @@ pub struct RubyLine<'a> {
     /// The line ends where a method name is due (after `.`, `&.`, `::` or
     /// `def`), so the next line's first word is a name, not a keyword.
     pub name_pending: bool,
-    /// The line continues the operands of `alias` or `undef`, so every word
-    /// of the next line is a name too.
-    pub names_pending: bool,
 }
 
 /// Lex one line of the Ruby subset that starts a statement or follows a
 /// complete one. See `ruby_line_after`.
 pub fn ruby_line(line: &str) -> Result<RubyLine<'_>, &'static str> {
-    ruby_line_after(line, false, false)
+    ruby_line_after(line, false)
 }
 
 /// Lex one line of the Ruby subset: comments, quoted and backtick strings (with
@@ -488,13 +493,8 @@ pub fn ruby_line(line: &str) -> Result<RubyLine<'_>, &'static str> {
 /// method definitions and strings that continue on the next line are refused.
 ///
 /// `name_first`: the line before ended where a method name is due, so this
-/// line's first word is a name (`obj.` then `end`). `names_first`: the line
-/// before continued the operands of `alias` or `undef`.
-pub fn ruby_line_after(
-    line: &str,
-    name_first: bool,
-    names_first: bool,
-) -> Result<RubyLine<'_>, &'static str> {
+/// line's first word is a name (`obj.` then `end`).
+pub fn ruby_line_after(line: &str, name_first: bool) -> Result<RubyLine<'_>, &'static str> {
     let b = line.as_bytes();
     let first = line.trim_start();
     if first.starts_with("=begin") {
@@ -510,7 +510,6 @@ pub fn ruby_line_after(
         continues: false,
         semicolon: false,
         name_pending: false,
-        names_pending: false,
     };
     // The token before ends an expression: `if` after it is a modifier.
     let mut after_value = false;
@@ -519,8 +518,10 @@ pub fn ruby_line_after(
     // The next word is a method name (after `def`, `.` or `::`), not a keyword.
     let mut name_next = name_first;
     // The rest of the statement holds method names (the operands of `alias`
-    // and `undef`), not keywords.
-    let mut names_rest = names_first;
+    // and `undef`), not keywords; they must be complete on this line.
+    let mut names_rest = false;
+    let mut operands_needed = 0;
+    let mut operands = 0;
     // The last token is an operator, a comma or `\`.
     let mut last_op = false;
     let mut code_end = b.len();
@@ -573,6 +574,9 @@ pub fn ruby_line_after(
                 return Err("a heredoc, or a << written without a space after it");
             }
             b';' => {
+                if names_rest && (operands < operands_needed || last_op) {
+                    return Err(ALIAS_OPERANDS);
+                }
                 out.semicolon = true;
                 after_value = false;
                 names_rest = false;
@@ -586,6 +590,9 @@ pub fn ruby_line_after(
                 return Err("a character literal");
             }
             b'$' => {
+                if names_rest {
+                    operands += 1;
+                }
                 match b.get(i + 1) {
                     Some(b'\'' | b'"' | b'`') => return Err("a $' or $\" global"),
                     // `$!`, `$?`, `$~` and the other punctuation globals.
@@ -657,6 +664,9 @@ pub fn ruby_line_after(
             }
             b':' if b.get(i + 1).is_some_and(|c| is_word_byte(*c)) => {
                 // A symbol: `:end` is a value, not `end`.
+                if names_rest {
+                    operands += 1;
+                }
                 i = method_name_end(b, word_end(b, i + 1));
                 after_value = true;
                 last_op = false;
@@ -694,6 +704,9 @@ pub fn ruby_line_after(
                     continue;
                 }
                 last_op = false;
+                if names_rest {
+                    operands += 1;
+                }
                 if name_next || names_rest || c.is_ascii_digit() {
                     name_next = false;
                     after_value = true;
@@ -740,6 +753,8 @@ pub fn ruby_line_after(
                     }
                     "alias" | "undef" => {
                         names_rest = true;
+                        operands_needed = if &line[start..i] == "alias" { 2 } else { 1 };
+                        operands = 0;
                         after_value = false;
                     }
                     "and" | "or" | "not" | "rescue" => {
@@ -760,8 +775,10 @@ pub fn ruby_line_after(
     }
     out.code = line[..code_end].trim_end();
     out.continues = last_op;
+    if names_rest && (operands < operands_needed || last_op) {
+        return Err(ALIAS_OPERANDS);
+    }
     out.name_pending = name_next;
-    out.names_pending = names_rest && last_op;
     Ok(out)
 }
 
@@ -828,6 +845,8 @@ fn scan_rb_single(b: &[u8], mut i: usize) -> Result<usize, &'static str> {
         }
     }
 }
+
+const ALIAS_OPERANDS: &str = "an alias or undef whose operands are not complete on its line";
 
 const INTERPOLATION: &str =
     "interpolation beyond plain expressions (a string, regex, percent or character literal, `/`, `?`, a comment or a heredoc)";

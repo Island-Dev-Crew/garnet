@@ -353,7 +353,10 @@ impl<'a> RubyParser<'a> {
             // `EXPR.each do |x| ... end` is lowered to `for x in EXPR { ... }`;
             // every other one is kept as one whole-statement MigrateTodo, so
             // neither its body nor its `end` spills into the enclosing def.
-            if lines.len() > 1 || !complete(lines[0]) {
+            // A statement holding `;` is never read by a special form (`puts`,
+            // `yield`, `return` ...), which would take the rest as its argument.
+            let separated = ruby_line(lines[0]).is_ok_and(|l| l.semicolon);
+            if lines.len() > 1 || !complete(lines[0]) || separated {
                 let last = lines.last().map_or("", |l| ruby_code(l));
                 if let (true, Some((iter, var))) =
                     (function_body && last == "end", each_header(header))
@@ -396,10 +399,12 @@ impl<'a> RubyParser<'a> {
                     ))),
                     lineage: self.lineage(start),
                 });
-            } else if line.starts_with("yield") {
+            } else if first_word(&line) == "yield" {
                 stmts.push(Cir::MigrateTodo {
                     placeholder: Box::new(Cir::Literal(CirLit::Nil, self.lineage(start))),
-                    note: "yield — translated to Garnet implicit block invocation per Mini-Spec v1.0 §5.4".into(),
+                    note: format!(
+                        "yield — translated to Garnet implicit block invocation per Mini-Spec v1.0 §5.4: {line}"
+                    ),
                     lineage: self.lineage(start),
                 });
             } else if line.starts_with("puts ") || line.starts_with("print ") {
@@ -432,16 +437,10 @@ impl<'a> RubyParser<'a> {
         let mut continues = false;
         // A method name is due at the start of the next code line (`obj.`).
         let mut name_pending = false;
-        // The operands of `alias` or `undef` continue on the next code line.
-        let mut names_pending = false;
         let mut pos = from;
         for line in self.source[from..].split_inclusive('\n') {
             pos += line.len();
-            match ruby_line_after(
-                line.trim_end_matches(['\n', '\r']),
-                name_pending,
-                names_pending,
-            ) {
+            match ruby_line_after(line.trim_end_matches(['\n', '\r']), name_pending) {
                 // A blank or comment line neither opens nor closes anything, and
                 // does not end a statement that is still open.
                 Ok(l) if l.code.trim().is_empty() => {
@@ -454,7 +453,6 @@ impl<'a> RubyParser<'a> {
                     blocks += l.blocks;
                     continues = l.continues;
                     name_pending = l.name_pending;
-                    names_pending = l.names_pending;
                     if brackets > 0 || blocks > 0 || continues {
                         continue;
                     }

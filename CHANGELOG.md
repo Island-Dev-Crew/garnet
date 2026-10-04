@@ -167,7 +167,9 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
       before a line that starts with `.`; a blank or comment line does not
       end an open statement, a word after `.` at the end of the line before is
       a method name, not a keyword, and so are the operands of `alias` and
-      `undef`, also when they continue onto the next line. A def, class or module whose header the
+      `undef`, which must be complete on their own line. A statement holding
+      `;` is kept whole rather than read by `puts`, `print`, `yield` or
+      another special form. A def, class or module whose header the
       frontend does not read, whose body has a `rescue`/`ensure`/`else`
       clause, or whose `end` shares its line with more code, is kept whole.
     Only a statement on one line becomes code, and never one whose code holds
@@ -186,14 +188,15 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
     is kept as a to-do). What a frontend does not lex is refused with its line number:
     Python tab or form-feed indentation, an f-string or t-string whose
     replacement field holds its own quote, a comment, a backslash outside a
-    nested string or a triple-quoted string (an escape before `{` does not
-    hide a field), a carriage
+    nested string, a triple-quoted string or another f-string or t-string (an
+    escape before `{` does not hide a field), a carriage
     return without a line feed, and a string or bracket left open at the end
     of the file;
     Ruby heredocs (and a `<<` with no space after it), regular expressions
     with interpolation, interpolation beyond plain expressions (a string,
-    regex, literal, `/`, `?`, comment or heredoc inside `#{...}`), percent
-    literals (a `%`
+    regex, literal, `/`, `?`, comment or heredoc inside `#{...}`), an `alias`
+    or `undef` whose operands are not complete on its line, percent literals
+    (a `%`
     where an operand starts, or after an identifier and spaces with none
     after it, as for `/`), character literals, `=begin` comments, endless
     methods and the rest outside the subset.

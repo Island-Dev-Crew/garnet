@@ -23,9 +23,10 @@ Owns migration frontends and conversion helpers for lifting Rust, Ruby, Python, 
 - What a frontend does not lex is refused with its line number, never guessed:
   Python tab or form-feed indentation, a carriage return without a line feed,
   and f-strings or t-strings whose replacement fields hold their own quote, a
-  comment, a backslash or a triple-quoted string; Ruby outside the subset (heredocs and a `<<` with no
+  comment, a backslash, a triple-quoted string or another f-string or t-string; Ruby outside the subset (heredocs and a `<<` with no
   space after it, regular expressions with interpolation, interpolation beyond
-  plain expressions, percent literals, character literals, `=begin`, endless
+  plain expressions, an `alias` or `undef` with operands on another line,
+  percent literals, character literals, `=begin`, endless
   methods, multi-line strings).
 - No emitted code line holds `#{`: the emitter keeps any construct whose code
   (not its comments) contains it as a to-do, because source text that was inert
