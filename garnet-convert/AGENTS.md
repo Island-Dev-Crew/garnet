@@ -43,8 +43,11 @@ Owns migration frontends and conversion helpers for lifting Rust, Ruby, Python, 
   with a test that asserts its fragments are not active (`assert_inactive`).
 - A definition or class-level statement the frontend does not read is kept as a
   to-do, never dropped: `__init__` stays a method, a Python or Ruby definition
-  whose parameter list is not plain (names, annotations, simple defaults) is
-  kept whole, a Ruby definition whose `end`
+  whose parameter list is not plain is kept whole (parameters are split at
+  commas outside `[...]`; each must read as Python
+  `[*|**]name[: annotation][= default]`, `/` or `*`, or Ruby `name[ = default]`;
+  a default holding another `=`, or a Python `lambda`, is not plain), a Ruby
+  definition whose `end`
   is followed by more of its statement (on the line or a `.` chain next) is kept
   whole, an import is skipped only when
   nothing follows it on its line (a Ruby `require` only in its exact form), an

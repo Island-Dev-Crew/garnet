@@ -150,7 +150,9 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
       function; its keyword is the statement's whole leading word, whatever
       follows it (`if\t`, `if{`, `except*`). A def header may span lines; one
       that is not plain (a string, call, brace or lambda among its parameters)
-      keeps the definition whole. A decorated definition is kept whole, and
+      keeps the definition whole. Parameters are split at commas outside
+      `[...]`, and each must read as `[*|**]name[: annotation][= default]`,
+      `/` or `*`, with no further `=` in its default. A decorated definition is kept whole, and
       `__init__` is kept as a method.
     - Go: lines up to where Go inserts a semicolon, once every bracket, block
       comment and raw string is closed (a block comment holding a newline
@@ -175,8 +177,9 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
       `puts def x() ... end`) is kept whole rather than read by `puts`,
       `print`, `yield` or another special form. A `def` whose header opens
       another block (a `def` in a parameter default), starts its name on the
-      next line, or whose parameter list is not plain (names and simple
-      defaults only: no string, regex, comment, block or nested call) is kept
+      next line, or whose parameter list is not plain (`name` or
+      `name = default`, split at commas outside `[...]`, with no further `=`
+      in a default: no string, regex, comment, block or nested call) is kept
       whole, and so is a def, class or module whose header
       the frontend does not read, whose body has a `rescue`/`ensure`/`else`
       clause, or whose `end` is followed by more of its statement (code on the

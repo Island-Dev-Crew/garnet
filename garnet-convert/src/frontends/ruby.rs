@@ -313,9 +313,13 @@ impl<'a> RubyParser<'a> {
         self.skip_blanks();
         let params = if self.remaining().starts_with('(') {
             self.pos += 1;
-            let ps = self.parse_params()?;
-            self.eat(")");
-            ps
+            match self.parse_params() {
+                Some(ps) if self.eat(")") => ps,
+                _ => {
+                    self.pos = start;
+                    return Ok(self.whole_todo(start, "def"));
+                }
+            }
         } else {
             Vec::new()
         };
@@ -347,32 +351,56 @@ impl<'a> RubyParser<'a> {
         })
     }
 
-    fn parse_params(&mut self) -> Result<Vec<Param>, ConvertError> {
+    /// A plain parameter list: `name` or `name = default`, separated by commas
+    /// outside brackets, up to the closing `)`. `None` for anything else (a
+    /// splat, a block or keyword parameter, a default holding a second `=`):
+    /// the definition is then kept whole.
+    fn parse_params(&mut self) -> Option<Vec<Param>> {
         let mut params = Vec::new();
         loop {
             self.skip_ws();
-            if self.peek(")") || self.remaining().is_empty() {
-                break;
+            if self.peek(")") {
+                return Some(params);
             }
-            // Skip optional default values; just grab ident
-            let name = match self.read_ident() {
-                Some(n) => n,
-                None => break,
-            };
+            let name = self.read_ident()?;
+            self.skip_ws();
             if self.eat("=") {
-                // Skip default value — consume until , or )
-                self.read_until_one_of(&[',', ')']);
+                let default = self.read_default();
+                if default.trim().is_empty() || default.contains('=') {
+                    return None;
+                }
             }
             params.push(Param {
                 name,
                 ty: CirTy::Inferred,
                 ownership: Ownership::Default,
             });
+            self.skip_ws();
             if !self.eat(",") {
-                break;
+                return self.peek(")").then_some(params);
             }
         }
-        Ok(params)
+    }
+
+    /// A parameter default: up to the next `,` or `)` outside `[...]`.
+    fn read_default(&mut self) -> &str {
+        let rem = self.remaining();
+        let mut depth = 0usize;
+        let mut end = rem.len();
+        for (i, c) in rem.char_indices() {
+            match c {
+                '[' => depth += 1,
+                ']' => depth = depth.saturating_sub(1),
+                ',' | ')' if depth == 0 => {
+                    end = i;
+                    break;
+                }
+                _ => {}
+            }
+        }
+        let start = self.pos;
+        self.pos += end;
+        &self.source[start..start + end]
     }
 
     /// The statements of a body up to its closing `end`. In a function body
@@ -658,14 +686,6 @@ impl<'a> RubyParser<'a> {
             sandbox: false,
             lineage: self.lineage(start),
         })
-    }
-
-    fn read_until_one_of(&mut self, stops: &[char]) -> String {
-        let rem = self.remaining();
-        let idx = rem.find(|c| stops.contains(&c)).unwrap_or(rem.len());
-        let s = rem[..idx].to_string();
-        self.pos += idx;
-        s
     }
 }
 

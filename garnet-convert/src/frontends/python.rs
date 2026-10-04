@@ -241,7 +241,10 @@ impl<'a> PythonParser<'a> {
             Some(i) => &after_paren[..i],
             None => after_paren,
         };
-        let params = parse_params(params_src);
+        let params = parse_params(params_src).ok_or_else(|| ConvertError::ParseError {
+            source_lang: "python".into(),
+            message: format!("def parameters the converter does not read: {header}"),
+        })?;
         // Extract return type if present
         let return_ty = if let Some(arrow) = header.find("->") {
             let tail = &header[arrow + 2..];
@@ -660,13 +663,18 @@ fn is_single_eval(code: &str) -> bool {
 }
 
 /// `def name(params) [-> result]:` with one pair of parentheses and only names,
-/// annotations and simple defaults inside: what `parse_params` can split.
+/// annotations and simple defaults inside: what `parse_params` can split. A
+/// `lambda` is refused: its own parameters are separated by commas outside
+/// any bracket.
 fn plain_def_header(header: &str) -> bool {
     header.matches('(').count() == 1
         && header.matches(')').count() == 1
         && header.chars().all(|c| {
             c.is_alphanumeric() || c == '_' || c.is_whitespace() || ",:=*/.[]|->()".contains(c)
         })
+        && !header
+            .split(|c: char| !(c.is_alphanumeric() || c == '_'))
+            .any(|word| word == "lambda")
 }
 
 fn is_continuation_clause(code: &str) -> bool {
@@ -686,30 +694,69 @@ fn leading_indent(s: &str) -> usize {
     s.chars().take_while(|c| *c == ' ').count()
 }
 
-fn parse_params(s: &str) -> Vec<Param> {
+/// The parameters of a plain header, separated by commas outside brackets:
+/// `[*|**]name[: annotation][= default]`, `/` or `*`. `None` for anything
+/// else, and for a default or annotation holding a second `=` (an assignment
+/// or comparison inside it): the definition is then kept whole.
+fn parse_params(s: &str) -> Option<Vec<Param>> {
     let mut out = Vec::new();
-    for p in s.split(',') {
+    for p in split_outside_brackets(s) {
         let p = p.trim();
-        if p.is_empty() || p == "self" {
+        if p.is_empty() || p == "/" || p == "*" {
             continue;
         }
-        if p.starts_with("**") || p.starts_with('*') {
-            // Varargs
-            continue;
+        let varargs = p.starts_with('*');
+        let p = p.trim_start_matches('*').trim_start();
+        let name_len = p
+            .find(|c: char| !(c.is_alphanumeric() || c == '_'))
+            .unwrap_or(p.len());
+        let (name, rest) = p.split_at(name_len);
+        if name.is_empty() || name.starts_with(|c: char| c.is_ascii_digit()) {
+            return None;
         }
-        let (name, ty) = match p.find(':') {
-            Some(i) => (p[..i].trim().to_string(), parse_ty(p[i + 1..].trim())),
-            None => (p.to_string(), CirTy::Inferred),
+        let (annotation, default) = match rest.split_once('=') {
+            Some((annotation, default)) => (annotation.trim(), Some(default.trim())),
+            None => (rest.trim(), None),
         };
-        // Strip default value if present
-        let name = name.split('=').next().unwrap_or(&name).trim().to_string();
+        if default.is_some_and(|d| d.is_empty() || d.contains('=')) {
+            return None;
+        }
+        let ty = if annotation.is_empty() {
+            CirTy::Inferred
+        } else {
+            parse_ty(annotation.strip_prefix(':')?)
+        };
+        // `self` and varargs are not carried over.
+        if varargs || name == "self" {
+            continue;
+        }
         out.push(Param {
-            name,
+            name: name.to_string(),
             ty,
             ownership: Ownership::Default,
         });
     }
-    out
+    Some(out)
+}
+
+/// `s` split at each comma outside `[...]`.
+fn split_outside_brackets(s: &str) -> Vec<&str> {
+    let mut parts = Vec::new();
+    let mut depth = 0usize;
+    let mut start = 0;
+    for (i, c) in s.char_indices() {
+        match c {
+            '[' => depth += 1,
+            ']' => depth = depth.saturating_sub(1),
+            ',' if depth == 0 => {
+                parts.push(&s[start..i]);
+                start = i + 1;
+            }
+            _ => {}
+        }
+    }
+    parts.push(&s[start..]);
+    parts
 }
 
 fn parse_ty(s: &str) -> CirTy {

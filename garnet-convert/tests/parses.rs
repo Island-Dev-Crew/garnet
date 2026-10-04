@@ -1376,3 +1376,65 @@ fn a_parameter_list_that_is_not_plain_keeps_its_definition_whole() {
         );
     }
 }
+
+/// Codex round 13: a comma inside a parameter default (a Python lambda's own
+/// parameters, a Ruby array) does not start another parameter, and a default
+/// holding `=` (an assignment inside it) keeps the definition whole.
+#[test]
+fn a_comma_inside_a_default_does_not_add_a_parameter() {
+    for (src, lang, name, file, header) in [
+        (
+            "def save(value=lambda left, right: left):\n    keep()\n",
+            SourceLang::Python,
+            "python",
+            "save.py",
+            None,
+        ),
+        (
+            "def save(value=[x := 1, 2]):\n    keep()\n",
+            SourceLang::Python,
+            "python",
+            "save.py",
+            None,
+        ),
+        (
+            "def save(value = [1, hidden = 2])\n  keep()\nend\n",
+            SourceLang::Ruby,
+            "ruby",
+            "save.rb",
+            None,
+        ),
+        (
+            "def save(value=[1, 2], count: int = 3):\n    keep()\n",
+            SourceLang::Python,
+            "python",
+            "save.py",
+            Some("def save(value, count: Int) {"),
+        ),
+        (
+            "def save(value = [1, 2], count = 3)\n  keep()\nend\n",
+            SourceLang::Ruby,
+            "ruby",
+            "save.rb",
+            Some("def save(value, count) {"),
+        ),
+    ] {
+        let (garnet, checklist) = convert_src(src, lang, name, file);
+        assert_parses(&garnet);
+        let headers: Vec<&str> = code_lines(&garnet)
+            .into_iter()
+            .filter(|l| l.starts_with("def save("))
+            .collect();
+        match header {
+            Some(expected) => assert_eq!(headers, [expected], "{src:?}\n{garnet}"),
+            None => {
+                assert!(headers.is_empty(), "{src:?}\n{garnet}");
+                assert_inactive(&garnet, "keep()");
+                assert!(
+                    checklist.contains("def "),
+                    "kept as a to-do: {src:?}\n{checklist}"
+                );
+            }
+        }
+    }
+}
