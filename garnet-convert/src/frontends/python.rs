@@ -175,7 +175,14 @@ impl<'a> PythonParser<'a> {
             return Ok(Some(self.decorated_todo(start, 0)));
         }
         if code.starts_with("def ") && code.ends_with(':') {
-            return Ok(Some(self.parse_def(start, 0)?));
+            match self.parse_def(start, 0) {
+                Ok(func) => return Ok(Some(func)),
+                // A header the converter does not read keeps the definition whole.
+                Err(_) => {
+                    self.line_idx = start;
+                    return Ok(Some(self.compound_todo("def", start, 0)));
+                }
+            }
         }
         if code.starts_with("class ") && code.ends_with(':') {
             return Ok(Some(self.parse_class(start, 0)?));
@@ -213,6 +220,14 @@ impl<'a> PythonParser<'a> {
     fn parse_def(&mut self, start_line: usize, parent_indent: usize) -> Result<Cir, ConvertError> {
         // def name(params) -> ReturnType:  (the header may span lines)
         let header = self.code_of(start_line);
+        // Parameters are read by characters, so only a plain header is read: a
+        // string, call, brace or lambda in it could be split into parameters.
+        if !plain_def_header(&header) {
+            return Err(ConvertError::ParseError {
+                source_lang: "python".into(),
+                message: format!("def header the converter does not read: {header}"),
+            });
+        }
         let rest = &header[4..]; // after "def "
         let paren = rest.find('(').ok_or_else(|| ConvertError::ParseError {
             source_lang: "python".into(),
@@ -642,6 +657,16 @@ fn is_single_eval(code: &str) -> bool {
         && matches!(b[0], b'"' | b'\'')
         && b[b.len() - 1] == b[0]
         && !arg[1..arg.len() - 1].contains(['"', '\'', '\\', '#'])
+}
+
+/// `def name(params) [-> result]:` with one pair of parentheses and only names,
+/// annotations and simple defaults inside: what `parse_params` can split.
+fn plain_def_header(header: &str) -> bool {
+    header.matches('(').count() == 1
+        && header.matches(')').count() == 1
+        && header.chars().all(|c| {
+            c.is_alphanumeric() || c == '_' || c.is_whitespace() || ",:=*/.[]|->()".contains(c)
+        })
 }
 
 fn is_continuation_clause(code: &str) -> bool {

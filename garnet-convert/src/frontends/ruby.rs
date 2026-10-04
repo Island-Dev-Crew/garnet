@@ -270,6 +270,7 @@ impl<'a> RubyParser<'a> {
         let mut openers = 0;
         let mut brackets = 0;
         let mut unread = false;
+        let mut header = String::new();
         for line in self.remaining().split_inclusive('\n') {
             let line = line.trim_end_matches(['\n', '\r']);
             let Ok(l) = ruby_line(line) else {
@@ -277,20 +278,34 @@ impl<'a> RubyParser<'a> {
             };
             openers += l.openers;
             brackets += l.brackets;
-            unread |= l.code.contains(['"', '\'', '`']);
             unread |= brackets > 0 && l.code.len() < line.trim_end().len();
+            header.push_str(l.code);
+            header.push(' ');
             if brackets <= 0 {
                 break;
             }
+        }
+        // Only a plain parameter list is read: names and simple defaults. A
+        // string, regex, block, nested call or the like is kept whole.
+        if let Some(open) = header.find('(') {
+            let params = &header[open + 1..];
+            let params = &params[..params.rfind(')').unwrap_or(params.len())];
+            unread |= !params.chars().all(|c| {
+                c.is_alphanumeric() || c == '_' || c.is_whitespace() || ",=*&:.-?![]".contains(c)
+            });
         }
         if openers > 1 || unread {
             return Ok(self.whole_todo(start, "def"));
         }
         self.pos += "def".len();
         self.skip_blanks();
-        // The name must be on the `def` line; a header that starts its name on
-        // the next line is not read (its parameters were not checked above).
-        if self.remaining().starts_with(['\n', '\r', '#']) {
+        // The name must follow `def` on its line; a header whose name starts
+        // elsewhere (after a newline, a form feed, a comment) is not read: its
+        // parameters were not checked above.
+        if !self
+            .remaining()
+            .starts_with(|c: char| c.is_alphanumeric() || c == '_')
+        {
             self.pos = start;
             return Ok(self.whole_todo(start, "def"));
         }

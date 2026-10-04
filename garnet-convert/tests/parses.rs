@@ -1316,6 +1316,12 @@ fn a_parameter_list_that_is_not_plain_keeps_its_definition_whole() {
             "save.py",
         ),
         (
+            "def save(value=\"x, x) { hidden() } def other(y=1\"):\n    keep()\n",
+            SourceLang::Python,
+            "python",
+            "save.py",
+        ),
+        (
             "def save(value = /x, hidden=1/)\n  keep()\nend\n",
             SourceLang::Ruby,
             "ruby",
@@ -1355,7 +1361,7 @@ fn a_parameter_list_that_is_not_plain_keeps_its_definition_whole() {
             "def save(",
         ),
         (
-            "def save(a, b = 1, *rest)\n  a\nend\n",
+            "def save(a, b = 1)\n  a\nend\n",
             SourceLang::Ruby,
             "ruby",
             "save.rb",

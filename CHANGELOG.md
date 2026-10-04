@@ -31,7 +31,8 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   (heredocs, percent literals, interpolation beyond plain expressions and the
   like). The Python converter refuses tab
   or form-feed indentation and f-strings whose replacement fields hold their
-  own quote, a comment, a backslash in the field's expression, or a nested
+  own quote, a comment, a backslash in the field's expression outside a
+  nested string, or a nested
   triple-quoted string or f-string.
 - WV-6 (native-Windows acceptance) ships as a disclosed partial.
   `python3 -I scripts/garnet_wv_acceptance_status.py --wv WV-6` reports
@@ -147,9 +148,10 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
       compound statement is its header plus its deeper-indented lines and
       `elif`/`else`/`except`/`finally` clauses, at module level as in a
       function; its keyword is the statement's whole leading word, whatever
-      follows it (`if\t`, `if{`, `except*`). A def header may span lines, a
-      decorated definition is kept whole, and `__init__` is kept as a
-      method.
+      follows it (`if\t`, `if{`, `except*`). A def header may span lines; one
+      that is not plain (a string, call, brace or lambda among its parameters)
+      keeps the definition whole. A decorated definition is kept whole, and
+      `__init__` is kept as a method.
     - Go: lines up to where Go inserts a semicolon, once every bracket, block
       comment and raw string is closed (a block comment holding a newline
       ends a statement, as a newline would); a line ending in `go`, `defer` or
@@ -173,7 +175,8 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
       `puts def x() ... end`) is kept whole rather than read by `puts`,
       `print`, `yield` or another special form. A `def` whose header opens
       another block (a `def` in a parameter default), starts its name on the
-      next line, or holds a string or comment in its parameter list is kept
+      next line, or whose parameter list is not plain (names and simple
+      defaults only: no string, regex, comment, block or nested call) is kept
       whole, and so is a def, class or module whose header
       the frontend does not read, whose body has a `rescue`/`ensure`/`else`
       clause, or whose `end` is followed by more of its statement (code on the
@@ -194,7 +197,7 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
     is kept as a to-do). What a frontend does not lex is refused with its line number:
     Python tab or form-feed indentation, an f-string or t-string whose
     replacement field holds its own quote, a comment, a backslash in the
-    field's expression, a triple-quoted string or another f-string or t-string (an
+    field's expression outside a nested string, a triple-quoted string or another f-string or t-string (an
     escape before `{` does not hide a field), a carriage
     return without a line feed, and a string or bracket left open at the end
     of the file;

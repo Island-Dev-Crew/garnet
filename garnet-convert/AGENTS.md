@@ -23,7 +23,8 @@ Owns migration frontends and conversion helpers for lifting Rust, Ruby, Python, 
 - What a frontend does not lex is refused with its line number, never guessed:
   Python tab or form-feed indentation, a carriage return without a line feed,
   and f-strings or t-strings whose replacement fields hold their own quote, a
-  comment, a backslash in the field's expression, a triple-quoted string or
+  comment, a backslash in the field's expression outside a nested string, a
+  triple-quoted string or
   another f-string or t-string; Ruby outside the subset (heredocs and a `<<` with no
   space after it, regular expressions with interpolation, interpolation beyond
   plain expressions, an `alias` or `undef` with operands on another line,
@@ -41,7 +42,9 @@ Owns migration frontends and conversion helpers for lifting Rust, Ruby, Python, 
   and the unit, not one frontend's heuristic, and cover it in `tests/parses.rs`
   with a test that asserts its fragments are not active (`assert_inactive`).
 - A definition or class-level statement the frontend does not read is kept as a
-  to-do, never dropped: `__init__` stays a method, a Ruby definition whose `end`
+  to-do, never dropped: `__init__` stays a method, a Python or Ruby definition
+  whose parameter list is not plain (names, annotations, simple defaults) is
+  kept whole, a Ruby definition whose `end`
   is followed by more of its statement (on the line or a `.` chain next) is kept
   whole, an import is skipped only when
   nothing follows it on its line (a Ruby `require` only in its exact form), an
