@@ -695,9 +695,12 @@ fn leading_indent(s: &str) -> usize {
 }
 
 /// The parameters of a plain header, separated by commas outside brackets:
-/// `[*|**]name[: annotation][= default]`, `/` or `*`. `None` for anything
-/// else, and for a default or annotation holding a second `=` (an assignment
-/// or comparison inside it): the definition is then kept whole.
+/// `name[: annotation][= default]`, or the `/` and `*` markers, which name no
+/// parameter. Every named parameter is kept, `self` included: Garnet takes
+/// `self` explicitly. `None` for anything else, for `*args` or `**kwargs`
+/// (Garnet has no variadic parameter), and for a default or annotation holding
+/// a second `=` (an assignment or comparison inside it): the definition is
+/// then kept whole.
 fn parse_params(s: &str) -> Option<Vec<Param>> {
     let mut out = Vec::new();
     for p in split_outside_brackets(s) {
@@ -705,8 +708,9 @@ fn parse_params(s: &str) -> Option<Vec<Param>> {
         if p.is_empty() || p == "/" || p == "*" {
             continue;
         }
-        let varargs = p.starts_with('*');
-        let p = p.trim_start_matches('*').trim_start();
+        if p.starts_with('*') {
+            return None;
+        }
         let name_len = p
             .find(|c: char| !(c.is_alphanumeric() || c == '_'))
             .unwrap_or(p.len());
@@ -726,10 +730,6 @@ fn parse_params(s: &str) -> Option<Vec<Param>> {
         } else {
             parse_ty(annotation.strip_prefix(':')?)
         };
-        // `self` and varargs are not carried over.
-        if varargs || name == "self" {
-            continue;
-        }
         out.push(Param {
             name: name.to_string(),
             ty,

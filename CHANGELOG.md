@@ -151,8 +151,10 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
       follows it (`if\t`, `if{`, `except*`). A def header may span lines; one
       that is not plain (a string, call, brace or lambda among its parameters)
       keeps the definition whole. Parameters are split at commas outside
-      `[...]`, and each must read as `[*|**]name[: annotation][= default]`,
-      `/` or `*`, with no further `=` in its default. A decorated definition is kept whole, and
+      `[...]`, and each must read as `name[: annotation][= default]` or one of
+      the `/` and `*` markers, with no further `=` in its default. Every named
+      parameter is kept, `self` included; `*args` or `**kwargs` keeps the
+      definition whole. A decorated definition is kept whole, and
       `__init__` is kept as a method.
     - Go: lines up to where Go inserts a semicolon, once every bracket, block
       comment and raw string is closed (a block comment holding a newline
@@ -163,7 +165,10 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
       header is read lexically up to the brace that opens its body (comments,
       strings and `struct`/`interface` braces skipped); a header that does not
       read as `[(receiver)] name(params) [result]` keeps the function whole,
-      and a declaration without a body ends at its `;` or line end. A struct's
+      and a declaration without a body ends at its `;` or line end. A
+      receiver becomes the function's first parameter, as in Go's method
+      expression `T.M`; an unnamed receiver or parameter list, or a variadic
+      parameter, keeps the function whole. A struct's
       fields are converted only when each reads as `Name Type [tag]`, one per
       line or `;`-separated; otherwise the type is kept whole.
     - Ruby: a lexical subset. Lines join while a bracket or keyword block is

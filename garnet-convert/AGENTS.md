@@ -45,8 +45,11 @@ Owns migration frontends and conversion helpers for lifting Rust, Ruby, Python, 
   to-do, never dropped: `__init__` stays a method, a Python or Ruby definition
   whose parameter list is not plain is kept whole (parameters are split at
   commas outside `[...]`; each must read as Python
-  `[*|**]name[: annotation][= default]`, `/` or `*`, or Ruby `name[ = default]`;
-  a default holding another `=`, or a Python `lambda`, is not plain), a Ruby
+  `name[: annotation][= default]` or a `/` or `*` marker, or Ruby
+  `name[ = default]`; a default holding another `=`, a Python `lambda`, `*args`
+  or `**kwargs` is not plain), a converted function keeps every named source
+  parameter (`self` included; a Go receiver becomes the first parameter, and an
+  unnamed or variadic Go parameter keeps the function whole), a Ruby
   definition whose `end`
   is followed by more of its statement (on the line or a `.` chain next) is kept
   whole, an import is skipped only when

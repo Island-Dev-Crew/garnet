@@ -560,7 +560,9 @@ fn blank_go_comments(s: &str) -> String {
 }
 
 /// `[(receiver)] name[type params](params) [result]`, from a header without
-/// comments.
+/// comments. A receiver becomes the first parameter, as in Go's method
+/// expression `T.M`. `None` when the receiver or the parameters are not named
+/// (see `go_params`): the function is then kept whole.
 fn parse_func_header(h: &str) -> Option<(String, Vec<Param>, CirTy)> {
     let b = h.as_bytes();
     let skip = |mut i: usize| {
@@ -570,8 +572,14 @@ fn parse_func_header(h: &str) -> Option<(String, Vec<Param>, CirTy)> {
         i
     };
     let mut i = skip(0);
+    let mut params = Vec::new();
     if b.get(i) == Some(&b'(') {
-        i = skip(matching_bracket(b, i)? + 1);
+        let close = matching_bracket(b, i)?;
+        params = go_params(&h[i + 1..close])?;
+        if params.len() != 1 {
+            return None;
+        }
+        i = skip(close + 1);
     }
     let name_start = i;
     while i < b.len() && is_go_word(b[i]) {
@@ -589,27 +597,78 @@ fn parse_func_header(h: &str) -> Option<(String, Vec<Param>, CirTy)> {
         return None;
     }
     let close = matching_bracket(b, i)?;
-    let params = split_top_level(&h[i + 1..close])
-        .into_iter()
-        .filter(|segment| !segment.trim().is_empty())
-        .map(|segment| {
-            let segment = segment.trim();
-            let (name, ty) = segment
-                .split_once(|c: char| c.is_whitespace())
-                .map_or((segment, ""), |(n, t)| (n, t.trim()));
-            Param {
-                name: name.to_string(),
-                ty: parse_ty_string(ty),
-                ownership: Ownership::Default,
-            }
-        })
-        .collect();
+    params.extend(go_params(&h[i + 1..close])?);
     let result = h[close + 1..].trim();
     let return_ty = match result.strip_prefix('(').and_then(|r| r.strip_suffix(')')) {
         Some(inner) => parse_ty_string(inner),
         None => parse_ty_string(result),
     };
     Some((name.to_string(), params, return_ty))
+}
+
+/// A named parameter list: segments `name Type`, or a bare `name` grouped with
+/// the typed one after it, so the last segment carries a type. `None` for an
+/// unnamed list (types only), a variadic `...T`, or a name that is not an
+/// identifier: Garnet has no unnamed or variadic parameter.
+fn go_params(list: &str) -> Option<Vec<Param>> {
+    let segments: Vec<&str> = split_top_level(list)
+        .into_iter()
+        .map(str::trim)
+        .filter(|segment| !segment.is_empty())
+        .collect();
+    if segments
+        .last()
+        .is_some_and(|last| !last.contains(char::is_whitespace))
+    {
+        return None;
+    }
+    segments
+        .iter()
+        .map(|segment| {
+            let (name, ty) = segment
+                .split_once(char::is_whitespace)
+                .map_or((*segment, ""), |(n, t)| (n, t.trim()));
+            (is_go_identifier(name) && !ty.starts_with("...")).then(|| Param {
+                name: name.to_string(),
+                ty: parse_ty_string(ty),
+                ownership: Ownership::Default,
+            })
+        })
+        .collect()
+}
+
+/// A Go identifier that is not a keyword.
+fn is_go_identifier(s: &str) -> bool {
+    const KEYWORDS: [&str; 25] = [
+        "break",
+        "case",
+        "chan",
+        "const",
+        "continue",
+        "default",
+        "defer",
+        "else",
+        "fallthrough",
+        "for",
+        "func",
+        "go",
+        "goto",
+        "if",
+        "import",
+        "interface",
+        "map",
+        "package",
+        "range",
+        "return",
+        "select",
+        "struct",
+        "switch",
+        "type",
+        "var",
+    ];
+    s.starts_with(|c: char| c.is_alphabetic() || c == '_')
+        && s.chars().all(|c| c.is_alphanumeric() || c == '_')
+        && !KEYWORDS.contains(&s)
 }
 
 /// `s` split at commas outside brackets and literals.

@@ -1354,26 +1354,23 @@ fn a_parameter_list_that_is_not_plain_keeps_its_definition_whole() {
     // Plain parameter lists still convert.
     for (src, lang, name, file, header) in [
         (
-            "def save(a: int, b=1, *rest):\n    return a\n",
+            "def save(a: int, b=1, *, c=2):\n    return a\n",
             SourceLang::Python,
             "python",
             "save.py",
-            "def save(",
+            "def save(a: Int, b, c) {",
         ),
         (
             "def save(a, b = 1)\n  a\nend\n",
             SourceLang::Ruby,
             "ruby",
             "save.rb",
-            "def save(",
+            "def save(a, b) {",
         ),
     ] {
         let (garnet, _) = convert_src(src, lang, name, file);
         assert_parses(&garnet);
-        assert!(
-            code_lines(&garnet).iter().any(|l| l.starts_with(header)),
-            "{src:?}\n{garnet}"
-        );
+        assert!(code_lines(&garnet).contains(&header), "{src:?}\n{garnet}");
     }
 }
 
@@ -1432,6 +1429,75 @@ fn a_comma_inside_a_default_does_not_add_a_parameter() {
                 assert_inactive(&garnet, "keep()");
                 assert!(
                     checklist.contains("def "),
+                    "kept as a to-do: {src:?}\n{checklist}"
+                );
+            }
+        }
+    }
+}
+
+/// Codex round 14: a converted function has exactly the source's named
+/// parameters. `self` stays a parameter (Garnet takes it explicitly), a Go
+/// receiver becomes the first parameter (Go's method expression `T.M`), and a
+/// list Garnet cannot write (Python `*args`/`**kwargs`; a Go variadic, an
+/// unnamed parameter list or an unnamed receiver) keeps the definition whole.
+#[test]
+fn a_converted_function_keeps_every_named_parameter() {
+    let py = |src: &'static str| (src, SourceLang::Python, "python", "save.py");
+    let go = |src: &'static str| (src, SourceLang::Go, "go", "save.go");
+    for ((src, lang, name, file), header) in [
+        (
+            py("def save(self: int):\n    return 1\n"),
+            Some("def save(self: Int) {"),
+        ),
+        (
+            py("def save(self=1):\n    return 1\n"),
+            Some("def save(self) {"),
+        ),
+        (py("def save(*items):\n    return items\n"), None),
+        (py("def save(**items):\n    return items\n"), None),
+        (
+            py("def save(a: int, b=1, *, c=2):\n    return a\n"),
+            Some("def save(a: Int, b, c) {"),
+        ),
+        (
+            go("package main\n\nfunc (s *S) save(x int) int {\n\treturn x\n}\n"),
+            Some("fn save(s: Box<S>, x: Int) -> Int {"),
+        ),
+        (
+            go("package main\n\nfunc (S) save(x int) int {\n\treturn x\n}\n"),
+            None,
+        ),
+        (
+            go("package main\n\nfunc save(xs ...int) int {\n\treturn 0\n}\n"),
+            None,
+        ),
+        (
+            go("package main\n\nfunc save(int, string) int {\n\treturn 0\n}\n"),
+            None,
+        ),
+        (
+            go("package main\n\nfunc save(chan int) int {\n\treturn 0\n}\n"),
+            None,
+        ),
+        (
+            go("package main\n\nfunc save(a, b int) int {\n\treturn a\n}\n"),
+            Some("fn save(a, b: Int) -> Int {"),
+        ),
+    ] {
+        let (garnet, checklist) = convert_src(src, lang, name, file);
+        assert_parses(&garnet);
+        let headers: Vec<&str> = code_lines(&garnet)
+            .into_iter()
+            .filter(|l| l.starts_with("def save(") || l.starts_with("fn save("))
+            .collect();
+        match header {
+            Some(expected) => assert_eq!(headers, [expected], "{src:?}\n{garnet}"),
+            None => {
+                assert!(headers.is_empty(), "{src:?}\n{garnet}");
+                assert_inactive(&garnet, "return");
+                assert!(
+                    checklist.contains("save"),
                     "kept as a to-do: {src:?}\n{checklist}"
                 );
             }
