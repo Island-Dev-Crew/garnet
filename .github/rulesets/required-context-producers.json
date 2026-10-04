@@ -209,7 +209,7 @@
       "matrix": {
         "target": "aarch64-apple-darwin"
       },
-      "semantic_sha256": "caf7da4e21a986afd77d2d8e83f78672dfe007e1ea4611b0d4ac0fb112d882bb"
+      "semantic_sha256": "8d420df7e983cc94765afd2e666ae710a1c373390d6523ba4b5f44c74364cc30"
     },
     {
       "context": "macos-cli-tarballs (x86_64-apple-darwin)",
@@ -219,7 +219,7 @@
       "matrix": {
         "target": "x86_64-apple-darwin"
       },
-      "semantic_sha256": "588e64722a6bf99537e5d47c73d0926f268d22155b5137add7421491b24dde69"
+      "semantic_sha256": "7d0916cb9f19d4423be326e076dd51c1714aa717c23834718e6b81d4d3bec69a"
     },
     {
       "context": "rustfmt",

@@ -657,7 +657,10 @@ jobs:
           GARNET_VERSION="${version}" GARNET_BASE_URL="file://${stage}" \
             GARNET_FORMAT=tar GARNET_INSTALL_MODE=release GARNET_PREFIX="${prefix}" \
             GARNET_VERIFY_SIGNATURE=0 sh docs/install.sh
-          "${prefix}/bin/garnet" --version | grep -q "garnet ${version}"
+          # Read the whole banner before matching: `grep -q` exits at its first
+          # match, and garnet still writing then fails on EPIPE under pipefail.
+          installed="$("${prefix}/bin/garnet" --version)"
+          grep -qF "garnet ${version}" <<<"${installed}"
 
       - name: Upload macOS tarball artifact
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
