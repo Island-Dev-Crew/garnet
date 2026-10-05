@@ -364,6 +364,16 @@ impl Cir {
         matches!(self, Cir::MigrateTodo { .. }) || self.children().any(|c| c.has_migrate_todo())
     }
 
+    /// True if this node or a descendant is source text copied through
+    /// unconverted that holds a quote character (an `Ident` a line-based
+    /// frontend filled with a statement's text). The source's quoting (triple
+    /// quotes, single quotes, raw strings, runes) may not read the same way in
+    /// Garnet, so the emitter keeps such a construct as a to-do.
+    pub fn copies_quoted_text(&self) -> bool {
+        matches!(self, Cir::Ident(text, _) if text.contains(['"', '\'', '`']))
+            || self.children().any(|c| c.copies_quoted_text())
+    }
+
     /// True if this node (or any descendant) is Untranslatable.
     pub fn has_untranslatable(&self) -> bool {
         matches!(self, Cir::Untranslatable { .. })
