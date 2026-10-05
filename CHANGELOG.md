@@ -9,6 +9,24 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ## [Unreleased]
 
+### Decision records — models stay out of the trust path (ADRs 0016–0018)
+
+- **ADR 0016.** No model output reaches check, diff-caps, seal, verify, the
+  runtime gates, their baselines, merges or rulings. A model may raise an item to
+  review or set its priority, and never lowers one. A model call made by a Garnet
+  program is accepted as a direction and is not implemented. It would need its
+  own capability kind, an RFC, a ruling under integrity rule 2, a pilot that
+  favors the language, and recorded demand. `garnet-suggest-llm` is removed under
+  D-42 in a later trust-kernel PR.
+- **ADR 0017.** No track record or history lightens review. No lane merges with
+  less review than today until a ruled predicate, proven by a red test, requires
+  an empty `functions_caps_expanded` and no trust-surface path.
+- **ADR 0018.** The human seat moves to a signing key that no agent environment
+  holds, with signed rule-1 merges and rule-2 rulings checked by a reporter in the
+  next train. Until then, human-merge-only is a convention.
+- **Scope.** These are records of decisions. No code, gate or enforcement claim
+  changes in this entry.
+
 ### Dogfood matrix — probes run without the caller's interpreter variables
 
 - **The caller's `PYTHON*` variables no longer reach any probe.** `run()` copied
