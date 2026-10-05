@@ -1992,3 +1992,29 @@ fn a_colon_read_two_ways_must_agree() {
         assert_inactive(&garnet, "persist()");
     }
 }
+
+/// Codex round 27 (a scope note it did not count as a finding): when the `:`
+/// fork, or a `\` continuation, starts inside the parentheses of a loop
+/// condition, the loop's `do` was counted as a block opener, and the statement
+/// after the enclosing block (`after_loop()`) was converted inside its loop. The
+/// state handed on keeps the condition's bracket depth relative to where the
+/// next reading starts.
+#[test]
+fn a_loop_condition_survives_a_fork_inside_its_parentheses() {
+    for src in [
+        "def save(local)\n  items.each do |item|\n    while (true ? local :foo) do\n      persist()\n    end\n  end\n  after_loop()\nend\n",
+        "def save(local)\n  items.each do |item|\n    while (ready \\\n      ) do\n      persist()\n    end\n  end\n  after_loop()\nend\n",
+        // Control: the spaced colon, read as a ternary colon.
+        "def save(local)\n  items.each do |item|\n    while (true ? local : foo) do\n      persist()\n    end\n  end\n  after_loop()\nend\n",
+    ] {
+        let (garnet, _) = convert_src(src, SourceLang::Ruby, "ruby", "save.rb");
+        assert_parses(&garnet);
+        // `after_loop()` follows the `for` loop's closing brace, in `save`.
+        let code = code_lines(&garnet);
+        let at = code.iter().position(|l| *l == "after_loop()");
+        assert!(
+            at.is_some_and(|at| at > 0 && code[at - 1] == "}"),
+            "{src:?}\n{garnet}"
+        );
+    }
+}

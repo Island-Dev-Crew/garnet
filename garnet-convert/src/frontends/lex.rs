@@ -490,8 +490,9 @@ pub struct RubyState {
     pub blank_before: bool,
     /// The token before is `return`, `break` or `next`.
     pub after_mid: bool,
-    /// A loop condition is open, so a `do` is its separator.
-    pub loop_do: bool,
+    /// A loop condition is open at this bracket depth, relative to where the
+    /// next reading starts, so a `do` there is its separator.
+    pub loop_do: Option<i64>,
 }
 
 /// What one line of Ruby contributes to its statement.
@@ -597,7 +598,7 @@ fn lex_ruby_line(line: &str, start: RubyState, forks: u32) -> Result<RubyLine<'_
     // A `while`/`until`/`for` whose condition is still open on this line, at
     // this bracket depth: a `do` there is its separator. The condition ends at
     // that `do`, at a `;` at the same depth, or at the line end.
-    let mut loop_do: Option<i64> = start.loop_do.then_some(0);
+    let mut loop_do: Option<i64> = start.loop_do;
     // The next word is a method name (after `def`, `.` or `::`), not a keyword.
     let mut name_next = start.name_next;
     // The line ends in a `\`: Ruby reads it and the line end as a blank.
@@ -799,7 +800,7 @@ fn lex_ruby_line(line: &str, start: RubyState, forks: u32) -> Result<RubyLine<'_
                     return Err(AMBIGUOUS_COLON);
                 }
                 let rest_start = RubyState {
-                    loop_do: loop_do == Some(out.brackets),
+                    loop_do: loop_do.map(|depth| depth - out.brackets),
                     ..RubyState::default()
                 };
                 let as_symbol = lex_ruby_line(&line[i..], rest_start, forks + 1);
@@ -1000,7 +1001,7 @@ fn lex_ruby_line(line: &str, start: RubyState, forks: u32) -> Result<RubyLine<'_
             last_ident,
             blank_before: true,
             after_mid,
-            loop_do: loop_do == Some(out.brackets),
+            loop_do: loop_do.map(|depth| depth - out.brackets),
         }
     } else {
         RubyState {
