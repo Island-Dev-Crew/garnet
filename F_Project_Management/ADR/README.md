@@ -75,3 +75,6 @@ or using Garnet.
 | [0013](0013-what-the-mode-boundary-refuses.md) | What the mode boundary refuses, and what it records | Accepted 2026-09-17 |
 | [0014](0014-what-an-actor-promises-when-it-dies.md) | An actor promises nothing when it dies | Accepted 2026-09-17 |
 | [0015](0015-in-process-actors-are-the-concurrency-story.md) | In-process actors are the language's concurrency story | Accepted 2026-09-17 |
+| [0016](0016-models-stay-out-of-the-trust-path.md) | Models stay out of the trust path; a model call inside a program is accepted, not implemented | Accepted 2026-10-04 |
+| [0017](0017-no-track-record-lightens-review.md) | No track record or history lightens review | Accepted 2026-10-04 |
+| [0018](0018-the-human-seat-is-a-credential-no-agent-holds.md) | The human seat is a credential no agent holds | Accepted 2026-10-04 |
