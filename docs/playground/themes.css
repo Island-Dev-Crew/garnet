@@ -1,0 +1,44 @@
+/* Familiar workbench palettes, adapted for Garnet's readable verdicts. */
+[data-playground-theme] { color: var(--ink); }
+.theme-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 12px 0; color: var(--muted); font: 12px/1.5 var(--mono); }
+.theme-bar label { color: var(--muted); }
+.theme-bar select, .theme-bar button { min-height: 36px; padding: 6px 10px; border: 1px solid var(--muted); border-radius: 4px; background: var(--bg); color: var(--ink); font: inherit; }
+.theme-bar select { min-width: 160px; }
+.theme-bar button { min-width: 0; cursor: pointer; }
+.theme-bar button:hover { background: var(--surface2); color: var(--gold); }
+.theme-bar :focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+.theme-hint { margin-left: auto; }
+.theme-status { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
+.theme-credit { margin: 6px 0 0; color: var(--muted); font: 11px/1.6 var(--mono); }
+.theme-credit a { color: var(--gold); text-decoration: underline; text-underline-offset: 3px; }
+/* Only the playground and example workspace wear the selected palette. */
+.lab[data-playground-theme] { padding: 0 18px 18px; border: 1px solid var(--muted); border-radius: 7px; background: var(--bg); }
+.lab[data-playground-theme] :is(.lab-nav,.editor,.live-output,.surface-set,.chain-node,.memory-cell,.actor-box,.message,.cap-chip) { background: var(--surface); border-color: var(--muted); }
+.lab[data-playground-theme] :is(.scenario-tab,.scenario-tab span:first-child,.filebar,.toggle-label,.node-label,.diagram-node small,.lab-foot,.raw-output,.demo-caption,.illustration-text,.illustration-text .comment,.depth-row) { color: var(--muted); border-color: var(--muted); }
+.lab[data-playground-theme] :is(.source,.code-no,.raw-output pre) { color: var(--ink); }
+.lab[data-playground-theme] :is(.code-pink,.cap-chip.added) { color: var(--bright); }
+.lab[data-playground-theme] .code-green { color: var(--green); }
+.lab[data-playground-theme] .code-comment { color: var(--muted); }
+.lab[data-playground-theme] .scenario-tab[aria-selected='true'] { background: var(--surface2); color: var(--ink); box-shadow: inset 0 0 0 1px var(--gold); }
+.lab[data-playground-theme] .scenario-tab[aria-selected='true'] span:first-child { color: var(--gold); }
+.lab[data-playground-theme] .scenario-tab:hover { background: var(--surface2); }
+.lab[data-playground-theme] .diagram.blocked { --state: var(--bright); }
+.lab[data-playground-theme] .diagram.allowed { --state: var(--green); }
+.lab[data-playground-theme] .network-node svg { color: var(--muted); }
+.lab[data-playground-theme] :is(.memory-cell.highlight,.cap-chip.added) { background: var(--surface2); border-color: var(--gold); }
+.lab[data-playground-theme] :is(.tag,.tag.illustration,.tag.neutral,.editor-tools,.raw-output,.lab-foot) { border-color: var(--muted); }
+.lab[data-playground-theme] :is(.btn,.btn.primary) { border: 1px solid var(--gold); background: var(--surface2); color: var(--ink); transition: transform .2s; }
+.lab[data-playground-theme] .btn:hover { background: var(--surface); }
+.lab[data-playground-theme] .depth-bar { background: var(--surface2); border-color: var(--gold); }
+.lab[data-playground-theme] .depth-row:last-child .depth-bar { background: var(--surface2); border-color: var(--bright); }
+body.playground-themed { background: var(--bg); color: var(--ink); }
+body.playground-themed .shell { position: relative; }
+body.playground-themed .shell::before { content: ''; position: absolute; z-index: -1; pointer-events: none; width: 220px; height: 220px; right: 4%; top: 60px; opacity: .09; background: radial-gradient(ellipse,var(--gold),transparent 70%); }
+@media (max-width: 520px) {
+  .theme-bar { gap: 8px; }
+  .theme-bar select { flex: 1; min-width: 135px; width: auto; }
+  .theme-bar button { flex: none; }
+  .theme-hint { display: none; }
+  .lab[data-playground-theme] { padding-inline: 10px; }
+}
+@media (prefers-reduced-motion: reduce) { .theme-bar *, [data-playground-theme] { transition: none !important; } }
