@@ -1,24 +1,24 @@
 {
   "schema": "garnet.w-play.browser-proof/1",
-  "captured_at": "2026-09-28T03:06:59.981Z",
+  "captured_at": "2026-10-11T17:01:15.546Z",
   "verdict": "pass",
-  "duration_ms": 11870,
+  "duration_ms": 7617,
   "execution": {
     "engine": "playwright-browser-page",
-    "browser": "153.0.8010.54",
+    "browser": "154.0.8037.98",
     "node_global_present": false,
     "runtime_ready": true,
     "service_workers": "blocked"
   },
   "git": {
-    "tested_commit": "a4b83d32847545a5733454878449f338f2046edc",
-    "tested_tree": "e64f0c40eedd60dcfacb6230f8c99636436781a4",
+    "tested_commit": "f707f7a466e3317f8898506b3f28d31c5f8ccf5e",
+    "tested_tree": "3b07dae379bdcdc3f7eca15b848737612cd8a4de",
     "runtime_inputs_clean": true
   },
   "host": {
     "os": "darwin",
     "arch": "arm64",
-    "node": "v22.22.2"
+    "node": "v22.22.3"
   },
   "package": {
     "schema": "garnet.playground.wasm-package/1",
@@ -36,7 +36,7 @@
   },
   "runtime_inputs": {
     "schema": "garnet.w-play.runtime-inputs/1",
-    "sha256": "71a85ba17226dcdb3a090f05ec2c489d8739fb9a9c55c923ef7843338451f4d3",
+    "sha256": "e85ed27418a36344dee6fff2508809a3d3b27a546cfebe286c238d4968499b50",
     "files": {
       "apps/garnet-studio/package-lock.json": {
         "bytes": 44280,
@@ -51,16 +51,68 @@
         "sha256": "790a70b22ea92e6f7004eec6196c0807f612d149a2bb40115d31d44ab68927fa"
       },
       "docs/index.html": {
-        "bytes": 117400,
-        "sha256": "8abf9de718561901e980245f039e01f3fbed3e6aa27e5e784f938d3ad93b8588"
+        "bytes": 15389,
+        "sha256": "2877999094c4c4ccc68434e728f94e21261e856dcff6419c9e4abd43ff557da5"
+      },
+      "docs/acceptance-demo.js": {
+        "bytes": 11445,
+        "sha256": "08ae25b0be8130cc5ab35aae270901c5136fd4d4b1a87f50084f4a43ca86e91e"
+      },
+      "docs/evidence-scenes.css": {
+        "bytes": 12907,
+        "sha256": "de90f1ecf11abe72ffc2341f60ff98837f37e438eb243c2d40ee32cda7c8f62d"
+      },
+      "docs/evidence-scenes.js": {
+        "bytes": 11130,
+        "sha256": "ddc2abbe103f0b7943a3888b6de5719b2d2060868e1ceebfeadde7ceaf7373d7"
+      },
+      "docs/front-door.css": {
+        "bytes": 51861,
+        "sha256": "cc9f24afab61f7b18c523878b8dc3674f82ddc320f0079fbaf28df5514a39673"
+      },
+      "docs/front-door.js": {
+        "bytes": 31831,
+        "sha256": "2865f039297c497d98d4c9dc964a28f7f4174be102ec79f15f6a5ddce487dcaa"
+      },
+      "docs/identity.css": {
+        "bytes": 6057,
+        "sha256": "8fcb329ccf8ace00bf6055a30bc3a0a1ffdf0e8a231861539193d575684e476f"
+      },
+      "docs/reference.html": {
+        "bytes": 118795,
+        "sha256": "499a3e6b94592e8266a97a8fe222a82d1c1e255b2a371d4c9878b4a6577c8ef7"
+      },
+      "docs/site-return.css": {
+        "bytes": 680,
+        "sha256": "0d5b9ea4f2174291a2820c8c5ebc9ec22ebb0c6d24b39d4a2bbf1a683ea13eb2"
+      },
+      "docs/site-return.js": {
+        "bytes": 477,
+        "sha256": "b0c3dfcd3d1e59a44603eba663790edbf93c130c24b9d4a156b0935311af30fe"
+      },
+      "docs/site-shell.css": {
+        "bytes": 930,
+        "sha256": "32301671ae60d7fb8fa92638fc27bd85a220423f90c3cbe5ae1d78144d8caea5"
+      },
+      "docs/site-shell.js": {
+        "bytes": 2376,
+        "sha256": "56024688e6f2970dd633cd3afa7a01488f41c46f42611ae2d0e6714ff0a6e388"
+      },
+      "docs/playground/themes.css": {
+        "bytes": 4088,
+        "sha256": "98de8b8888754eda931cda2208dd0fd9da6f4aa2336e8204d320a55af1ab13a7"
+      },
+      "docs/playground/themes.js": {
+        "bytes": 5028,
+        "sha256": "cf72685671f29cf28f4bb3569c7ab83239dbb879c49f85a3731589357943cbdc"
       },
       "docs/service-worker.js": {
-        "bytes": 2698,
-        "sha256": "60ad29884893761b5cbc3cd25d55aefd74e0280ad1a14506f5b8081c609fe70f"
+        "bytes": 3791,
+        "sha256": "10d86cd0ecae66a8821baca22a5bd0e4ef7556b18e18318c28c86a29e5ec0ca5"
       },
       "docs/playground.html": {
-        "bytes": 13981,
-        "sha256": "1325ad68fce6ddd134aa738bb21a4d5c8c2b0265aa45c728bb4eef9e42bca6f6"
+        "bytes": 14723,
+        "sha256": "f93bbcec5a84c10c7bf1a3e7609a88cd9e936d034af42f17827178d45468eea7"
       },
       "docs/playground/examples.json": {
         "bytes": 6628,
@@ -83,12 +135,12 @@
         "sha256": "2be380957ef4a7d63baff789a7f6516f40ed2b340cf3aff2dcdafbb746e3a238"
       },
       "scripts/smoke_garnet_playground_browser.mjs": {
-        "bytes": 21332,
-        "sha256": "c4e858ae44873c02680be0b2c82240bd285c6fa12acc1a1d7848e74dc3b819bd"
+        "bytes": 21785,
+        "sha256": "20e64c88928385a750e545b185c2ddda971a1821d8aed38db8aa7cf94f87f33a"
       },
       "scripts/smoke_garnet_playground_phase1_journeys.mjs": {
-        "bytes": 13871,
-        "sha256": "ac8d0bae131f2cb03d1af6820cb3a6cd72a91b29433f87728498bea6f11f2659"
+        "bytes": 14032,
+        "sha256": "a997674763271a7bfd3b2c4a0fff4b54414eb5a64cc85763a03c1de8d360a961"
       }
     }
   },
@@ -106,31 +158,61 @@
   "network": {
     "external_requests": [],
     "requested_committed_files": [
+      "docs/acceptance-demo.js",
+      "docs/assets/dev_tools_market_growth_v2_1.png",
+      "docs/assets/garnet-capability-gate.png",
       "docs/assets/garnet-demonstration-poster.jpg",
       "docs/assets/garnet-demonstration.mp4",
       "docs/assets/garnet-hero.webp",
+      "docs/assets/garnet-stone-cutout.png",
+      "docs/assets/garnet_positioning_matrix_v2_1.png",
       "docs/blog/feed.xml",
       "docs/blog/index.html",
+      "docs/cra-article-14.html",
+      "docs/demos/acceptance/README.md",
+      "docs/demos/acceptance/accepted.garnet",
+      "docs/demos/acceptance/before.garnet",
+      "docs/demos/acceptance/changed.garnet",
+      "docs/demos/acceptance/record.json",
+      "docs/demos/acceptance/replay.py",
+      "docs/evidence-scenes.css",
+      "docs/evidence-scenes.js",
+      "docs/front-door.css",
+      "docs/front-door.js",
       "docs/getting-started.html",
+      "docs/governance.html",
       "docs/icons/garnet-192.png",
       "docs/icons/garnet-512.png",
+      "docs/identity.css",
       "docs/index.html",
       "docs/install.sh",
       "docs/ladder.html",
       "docs/manifest.webmanifest",
       "docs/minispec.html",
+      "docs/models.css",
+      "docs/models.html",
       "docs/novel.html",
+      "docs/omarchy.html",
       "docs/playground.html",
       "docs/playground/examples.json",
       "docs/playground/live.js",
       "docs/playground/pkg/garnet_wasm.js",
       "docs/playground/pkg/garnet_wasm_bg.wasm",
       "docs/playground/pkg/provenance.json",
+      "docs/playground/themes.css",
+      "docs/playground/themes.js",
+      "docs/reference.html",
       "docs/releases.xml",
+      "docs/scope.html",
       "docs/service-worker.js",
+      "docs/site-return.css",
+      "docs/site-return.js",
+      "docs/site-shell.css",
+      "docs/site-shell.js",
       "docs/status.html",
       "docs/stdlib.html",
-      "docs/synthesis.html"
+      "docs/synthesis.html",
+      "docs/why.html"
     ],
     "untracked_requests": []
   },
@@ -305,8 +387,46 @@
       "old_cache_retired": true,
       "cached": [
         {
-          "name": "garnet-web-v7",
+          "name": "garnet-web-v25",
           "paths": [
+            "/assets/garnet_positioning_matrix_v2_1.png",
+            "/assets/dev_tools_market_growth_v2_1.png",
+            "/omarchy.html",
+            "/cra-article-14.html",
+            "/governance.html",
+            "/models.html",
+            "/models.css",
+            "/front-door.css",
+            "/front-door.js",
+            "/acceptance-demo.js",
+            "/site-shell.js",
+            "/site-shell.css",
+            "/identity.css",
+            "/evidence-scenes.js",
+            "/evidence-scenes.css",
+            "/identity.css",
+            "/evidence-scenes.js",
+            "/evidence-scenes.css",
+            "/site-shell.js",
+            "/site-shell.css",
+            "/why.html",
+            "/acceptance-demo.js",
+            "/site-return.js",
+            "/site-return.css",
+            "/scope.html",
+            "/demos/acceptance/record.json",
+            "/demos/acceptance/replay.py",
+            "/demos/acceptance/README.md",
+            "/demos/acceptance/before.garnet",
+            "/demos/acceptance/accepted.garnet",
+            "/demos/acceptance/changed.garnet",
+            "/reference.html",
+            "/front-door.css",
+            "/front-door.js",
+            "/playground/themes.js",
+            "/playground/themes.css",
+            "/assets/garnet-stone-cutout.png",
+            "/assets/garnet-capability-gate.png",
             "/",
             "/getting-started.html",
             "/index.html",
@@ -339,7 +459,7 @@
   },
   "visual": {
     "screenshot": "ops/lane2a/evidence/30-playground-browser.png",
-    "screenshot_sha256": "a00f576cfb09c01223d6cba88f5aa77da1b5c7a84cb2673780370d437c314b01",
+    "screenshot_sha256": "e35ca5c29b1c79f8dcc0599621105e6e180d90db0e2ed46e738c37305ed3a935",
     "desktop": {
       "horizontal_overflow": false,
       "runtime_state": "ready"
