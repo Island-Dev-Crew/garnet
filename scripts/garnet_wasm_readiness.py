@@ -47,6 +47,20 @@ BROWSER_RUNTIME_INPUTS = (
     "apps/garnet-studio/package.json",
     "docs/icons/garnet-192.png",
     "docs/index.html",
+    # The concise front door and the original homepage behind it load these.
+    "docs/acceptance-demo.js",
+    "docs/evidence-scenes.css",
+    "docs/evidence-scenes.js",
+    "docs/front-door.css",
+    "docs/front-door.js",
+    "docs/identity.css",
+    "docs/reference.html",
+    "docs/site-return.css",
+    "docs/site-return.js",
+    "docs/site-shell.css",
+    "docs/site-shell.js",
+    "docs/playground/themes.css",
+    "docs/playground/themes.js",
     "docs/service-worker.js",
     "docs/playground.html",
     "docs/playground/examples.json",
@@ -375,9 +389,12 @@ def browser_proof_valid(proof: dict | None = None) -> bool:
         phase1 = journeys["phase1"]
         offline = journeys["offline"]
         requested = network["requested_committed_files"]
+        # Bounded: the cold-install journey requests every committed file the
+        # service worker precaches (62 entries in garnet-web-v25) plus the
+        # playground runtime. A larger site needs a reviewed bump here.
         if (
             not isinstance(requested, list)
-            or not 1 <= len(requested) <= 32
+            or not 1 <= len(requested) <= 64
             or len(requested) != len(set(requested))
             or not all(isinstance(item, str) and _safe_repo_file(item) for item in requested)
         ):
@@ -390,6 +407,7 @@ def browser_proof_valid(proof: dict | None = None) -> bool:
         except ValueError:
             return False
         required_requests = {
+            "docs/reference.html",
             "docs/playground.html",
             "docs/playground/live.js",
             "docs/playground/pkg/garnet_wasm.js",

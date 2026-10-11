@@ -29,6 +29,20 @@ const RUNTIME_INPUTS = [
   "apps/garnet-studio/package.json",
   "docs/icons/garnet-192.png",
   "docs/index.html",
+  // The concise front door and the original homepage behind it load these.
+  "docs/acceptance-demo.js",
+  "docs/evidence-scenes.css",
+  "docs/evidence-scenes.js",
+  "docs/front-door.css",
+  "docs/front-door.js",
+  "docs/identity.css",
+  "docs/reference.html",
+  "docs/site-return.css",
+  "docs/site-return.js",
+  "docs/site-shell.css",
+  "docs/site-shell.js",
+  "docs/playground/themes.css",
+  "docs/playground/themes.js",
   "docs/service-worker.js",
   "docs/playground.html",
   "docs/playground/examples.json",
@@ -413,6 +427,7 @@ async function main() {
     const durationMs = Math.round(performance.now() - started);
     const screenshotRaw = readFileSync(args.screenshot);
     const requiredRequests = [
+      "docs/reference.html",
       "docs/playground.html",
       "docs/playground/live.js",
       "docs/playground/pkg/garnet_wasm.js",
