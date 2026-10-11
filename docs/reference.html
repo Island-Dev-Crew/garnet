@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Garnet lang — the evidence language</title>
-<meta name="description" content="English is how you tell an agent what to do. Garnet lang is how anyone else can trust what it did. A capability-bounded language whose checker rejects an undeclared call reached along a named call chain from an annotated function, cycles included, whose diffs report widened authority, and whose builds and seals a stranger can recompute. By Island Dev Crew.">
+<meta name="description" content="English is how you tell an agent what to do. Garnet lang is how anyone else can trust what it did. A capability-bounded language whose checker rejects an undeclared call reached along a named call chain from an annotated function, cycles included on current source, whose diffs report widened authority, and whose builds and seals a stranger can recompute. By Island Dev Crew.">
 <meta name="theme-color" content="#73021E">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/garnet-192.png">
@@ -23,7 +23,7 @@
 <meta name="twitter:title" content="Garnet lang — the evidence language">
 <meta name="twitter:description" content="English is how you tell an agent what to do. Garnet is how anyone else can trust what it did.">
 <meta name="twitter:image" content="https://garnet-lang.org/assets/garnet-og-20260911.jpg">
-<link rel="canonical" href="https://garnet-lang.org/">
+<link rel="canonical" href="https://garnet-lang.org/reference.html">
 <link rel="alternate" type="application/atom+xml" title="Garnet blog" href="/blog/feed.xml">
 <style>
   /* ─── Palette + tokens ─────────────────────────────────────── */
@@ -1065,7 +1065,7 @@ def main() {
 <span class="g">garnet seal:</span> cosign not installed — in-toto predicate emitted UNSIGNED (wrap-don't-rebuild: install cosign to attest; Garnet does not sign supply-chain itself)</pre>
     </div>
 
-    <p class="evidence-note">Captured unedited on 2026-09-02 from <code>garnet 0.8.1</code> built at main <code>fbd64bc5</code>, in a fresh directory with no <code>.garnet-cache</code>; only long JSON lines are elided with an ellipsis. The checker rejects an undeclared call reached along a named call chain from an annotated function, cycles included &mdash; that is the bound the check holds to, and the <a href="https://github.com/Island-Dev-Crew/garnet/blob/main/C_Language_Specification/GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md">capability enforcement scope</a> states where it ends. <code>garnet run</code> does not invoke the checker. <a href="#try">Run check and diff-caps yourself, in the browser &rarr;</a></p>
+    <p class="evidence-note">Captured unedited on 2026-09-02 from <code>garnet 0.8.1</code> built at main <code>fbd64bc5</code>, in a fresh directory with no <code>.garnet-cache</code>; only long JSON lines are elided with an ellipsis. The checker rejects an undeclared call reached along a named call chain from an annotated function, cycles included on current source &mdash; that is the bound the check holds to, and the <a href="https://github.com/Island-Dev-Crew/garnet/blob/main/C_Language_Specification/GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md">capability enforcement scope</a> states where it ends. <code>garnet run</code> does not invoke the checker. <a href="#try">Run check and diff-caps yourself, in the browser &rarr;</a></p>
   </div>
 </section>
 
@@ -1301,7 +1301,7 @@ def main() {
       <div class="feature">
         <div class="icon">@caps(fs)</div>
         <h4>Capability Model</h4>
-        <p>A function declares its OS-authority budget with <code>@caps</code>. <code>garnet check</code> rejects an undeclared call reached along a named call chain from an annotated function, cycles included, and the twenty-four gated host primitives also require the program entry's declared budget at run time.</p>
+        <p>A function declares its OS-authority budget with <code>@caps</code>. <code>garnet check</code> rejects an undeclared call reached along a named call chain from an annotated function, cycles included on current source, and the twenty-four gated host primitives (current source; the published v0.8.2 download has fifteen) also require the program entry's declared budget at run time.</p>
       </div>
       <div class="feature">
         <div class="icon">memory · 4</div>
@@ -1354,7 +1354,7 @@ def main() {
   <div class="container reveal">
     <h3>The Capability Model</h3>
     <h2>Read one token. <span class="accent">Know what the function declares.</span></h2>
-    <p class="lead"><code>@caps(fs)</code> is a semantic beacon: a single annotation that front-loads the function's declared OS-authority budget. Humans and language models can scan a file and read what each function claims, and <code>garnet check</code> rejects an undeclared call reached along a named call chain from an annotated function, cycles included.</p>
+    <p class="lead"><code>@caps(fs)</code> is a semantic beacon: a single annotation that front-loads the function's declared OS-authority budget. Humans and language models can scan a file and read what each function claims, and <code>garnet check</code> rejects an undeclared call reached along a named call chain from an annotated function, cycles included on current source.</p>
 
     <div class="caps-showcase">
       <div class="code-col garnet"><div class="head"><div class="swatch"></div>GARNET</div>
@@ -1466,7 +1466,7 @@ def main() {
   <div class="container reveal">
     <div class="section-head"><h3>Get Garnet</h3><a class="section-offer" href="getting-started.html">Getting Started guide <span aria-hidden="true">&rarr;</span></a></div>
     <h2>Install with one curl command.</h2>
-    <p class="lead">The installer targets the <strong>v0.8.2 release</strong>. It installs the release asset for your platform, verifies it against <code>SHA256SUMS</code>, and falls back to a source install through <code>cargo install --locked</code> only when no asset matches. The v0.8.2 GitHub Release ships CLI binaries for macOS, Linux (x86_64 and ARM64) and Windows, plus a CycloneDX SBOM; productization gates are on the <a href="status.html">readiness status page</a>.</p>
+    <p class="lead">The installer targets the <strong>v0.8.2 release</strong>. It installs the release asset for your platform, verifies it against <code>SHA256SUMS</code>, and falls back to a source install through <code>cargo install --locked</code> when no asset matches, the host glibc is older than 2.39, or the installed binary does not run. The v0.8.2 GitHub Release ships CLI binaries for macOS, Linux (x86_64 and ARM64) and Windows, plus a CycloneDX SBOM; productization gates are on the <a href="status.html">readiness status page</a>.</p>
 
     <div id="os-detect" hidden style="display:none;align-items:center;gap:12px;margin:0 0 18px;padding:12px 16px;border:1px solid var(--rule);border-radius:10px;background:var(--bg-soft);font-size:14px;color:var(--ink-soft);">
       <span id="os-detect-msg"></span>

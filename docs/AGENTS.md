@@ -159,9 +159,8 @@ It distinguishes authorship, advisory triage, and proposed governed model calls
 from deterministic checker verdicts. Laya and Jev are research candidates, not
 integrations or measured Garnet performance. The supplied compilation records
 recommendations, not approvals, experiments run, or shipped model support.
-Keep internal account/credential findings, owner rulings, private video exhibits,
-and operational queues out of the public digest. Preserve the original only in
-the separate handoff reference folder, never the deployed website. The models
+Keep non-public material out of the digest; the source compilation is not
+published. The models
 card opens #page-models in the common shell, with a standalone Garnet return.
 
 ## Playground visual preferences
@@ -191,7 +190,7 @@ CLI binaries require no Rust compiler; source builds require Rust 1.95+ and
 native build prerequisites. Suggest an operating system while preserving all
 three platform overrides. Browser OS detection is not processor detection:
 manual processor choice is required before enabling package downloads.
-macOS/Linux use the release-only shell installer path. Windows ARM uses x64
+macOS/Linux use the shell installer: release mode by default, source mode on request. Windows ARM uses x64
 emulation. Linux release packages require glibc 2.39+. Keep SHA-256 integrity
 verification distinct from separate GPG authentication. Studio is an optional
 source-checkout workbench; do not offer an unpublished signed app package.
