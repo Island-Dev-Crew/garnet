@@ -59,6 +59,7 @@ BROWSER_RUNTIME_INPUTS = (
     "docs/site-return.js",
     "docs/site-shell.css",
     "docs/site-shell.js",
+    "docs/spectrum.js",
     "docs/playground/themes.css",
     "docs/playground/themes.js",
     "docs/service-worker.js",

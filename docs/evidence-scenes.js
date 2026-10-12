@@ -14,7 +14,7 @@ window.GarnetScenes = (() => {
     <g class="request-packet"><rect x="109" y="169" width="52" height="36" rx="7"/><text x="135" y="192" text-anchor="middle">fs</text></g>
     <g class="check-impact"><circle cx="302" cy="187" r="28"/><circle cx="302" cy="187" r="44"/><path d="m291 176 22 22m0-22-22 22"/></g>
     <g class="pass-ticket"><circle cx="608" cy="187" r="25"/><path d="m596 187 8 8 16-18"/></g>
-    <text class="scene-subtext" x="117" y="324" text-anchor="middle">REQUESTED</text><text class="scene-subtext" x="360" y="342" text-anchor="middle">DECLARED AUTHORITY</text><text class="scene-subtext" x="604" y="324" text-anchor="middle">TARGET INSPECTED</text>
+    <text class="scene-subtext" x="117" y="324" text-anchor="middle">REQUESTED</text><text class="scene-subtext" x="360" y="342" text-anchor="middle">DECLARED AUTHORITY</text><text class="scene-subtext" x="604" y="324" text-anchor="middle">TARGET</text>
   `,'A filesystem request meets the declared-authority boundary. The checker result determines rejection or declaration coverage.');}
   function diff(){return frame('diff',`
     <text class="scene-kicker" x="32" y="34">THE CHANGE BEHIND THE CHANGE</text>

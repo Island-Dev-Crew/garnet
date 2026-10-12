@@ -4,6 +4,7 @@
 window.GarnetAcceptance = (() => {
   let generation = 0;
   const source = declared => '@caps(' + (declared ? 'fs' : '') + ')\ndef main() {\n  fs::write_file("report.txt", "Ready for review")\n  0\n}';
+  const spectrum = detail => dispatchEvent(new CustomEvent('garnet:spectrum', {detail}));
   const icon = '<svg viewBox="0 0 72 84" width="72" height="84" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M15 4h28l15 15v60H15zM43 4v16h15M24 39h25M24 48h25M24 57h17"/></svg>';
 
   function mount({panel, engine, highlight, openRecord, sourceLink}) {
@@ -36,6 +37,7 @@ window.GarnetAcceptance = (() => {
       delete $('#review-decision').dataset.decision;
       const shared = btoa(JSON.stringify({v:1, source:source($('#allow-fs').checked), baseline:source(false)})).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
       $('#edit-playground').href = 'playground.html#garnet=' + shared;
+      spectrum({program: 'report.garnet', message: 'Run the check above to light the spectrum.'});
     };
     $('#allow-fs').onchange = reset;
     $('#reset-journey').onclick = () => { $('#allow-fs').checked = false; reset(); };
@@ -58,6 +60,10 @@ window.GarnetAcceptance = (() => {
         $('#raw-result').textContent = JSON.stringify({check, diff}, null, 2);
         $('#review-decision').textContent = checked ? 'A passing check brings the choice to you.' : 'Add @caps(fs), then check again.';
         decisions(checked); stage(checked ? 2 : 1);
+        const declared = diff.new_surface?.aggregate || [];
+        const missing = [...new Set(check.diagnostics.map(item => (String(item.message).match(/does not declare `([^`]+)`/) || [])[1]).filter(Boolean))];
+        spectrum({program: 'report.garnet · @caps(' + declared.join(', ') + ')', declared, flagged: missing,
+          message: missing.length ? missing.join(', ') + ' is reached without a declaration. Check rejected.' : checked ? 'Declared: ' + (declared.join(', ') || 'nothing') + '. Check passed.' : 'Check rejected.'});
       } catch (error) {
         if (token !== generation || version !== revision || !button.isConnected) return;
         checked = false; decisions(false);

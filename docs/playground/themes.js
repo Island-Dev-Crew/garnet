@@ -70,8 +70,8 @@
     const target = event.target;
     if (target instanceof Element && target.closest('input, textarea, select, button, a, [contenteditable]:not([contenteditable="false"]), [role="textbox"]')) return;
     if (event.key.toLowerCase() !== 't') return;
-    // The front door shortcut exists only while its playground is visible.
-    if (!scopes.some(scope => scope.getClientRects().length && scope.getBoundingClientRect().bottom > 0 && scope.getBoundingClientRect().top < innerHeight)) return;
+    // A single-key shortcut works only while keyboard focus is inside the playground (WCAG 2.1.4).
+    if (!scopes.some(scope => scope.contains(document.activeElement))) return;
     event.preventDefault(); next();
   });
   window.addEventListener('storage', event => {

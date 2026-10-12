@@ -124,6 +124,8 @@ body.reference-mode .footer { display: none; }
 .scenario-tab[aria-selected='true'] { color: var(--ink); background: linear-gradient(135deg, #26151b, #130f12); box-shadow: inset 0 0 0 1px #d02e57; }
 .scenario-tab[aria-selected='true'] span:first-child { color: var(--bright); }
 .scenario-tab:hover { background: #252026; }
+/* The tab row clips overflow, so the focus ring sits inside each tab. */
+.scenario-tab:focus-visible { outline-offset: -4px; }
 .lab-top { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 25px 0 16px; }
 .lab-top h3 { font-size: 25px; }
 .lab-body { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; min-height: 325px; }
@@ -277,7 +279,7 @@ body.reference-mode .footer { display: none; }
 
 /* CLI-first installation. The command stays ahead of the optional workbench. */
 .install-wrap { display: grid; grid-template-columns: minmax(300px, .65fr) 1fr; column-gap: 30px; width: min(1440px, calc(100% - 88px)); margin-inline: auto; }
-.install-wrap::before { content: ''; grid-column: 1; grid-row: 1 / 5; min-height: 590px; background: url('assets/garnet-stone-cutout.png') center 30px / 94% auto no-repeat; }
+.install-wrap::before { content: ''; grid-column: 1; grid-row: 1 / 5; min-height: 590px; background: url('assets/garnet-stone-cutout.webp') center 30px / 94% auto no-repeat; }
 .install-wrap > .page-intro, .install-wrap > .os-selector, .install-wrap > .detect-message, .install-wrap > .install-panel { grid-column: 2; }
 .page-intro { padding: 26px 0 23px; text-align: left; }
 .page-intro .eyebrow { margin-bottom: 14px; }
@@ -670,4 +672,20 @@ body.motion-off *, body.motion-off *::before, body.motion-off *::after { animati
   .lab-nav { display: none; }
   .route { page-break-after: always; }
   a { text-decoration: underline; }
+}
+
+/* Verify: the authority spectrum under the workbench (spectrum.js draws the canvas). */
+.spectrum-band { padding-block: 8px 58px; }
+.spectrum-wrap { display: grid; grid-template-columns: minmax(240px, .42fr) minmax(0, 1fr); gap: 0 40px; align-items: center; padding-top: 46px; border-top: 1px solid #27252b; }
+.spectrum-head h2 { margin: 0 0 14px; font-size: clamp(32px, 3.4vw, 46px); }
+.spectrum-head h2 em { color: var(--gold); font-style: normal; }
+.spectrum-sub { max-width: 34ch; margin: 0; color: var(--muted); font-size: 15px; }
+.spectrum-figure { min-width: 0; margin: 0; }
+#spectrum-canvas { display: block; width: 100%; height: clamp(300px, 28vw, 380px); }
+.spectrum-caption { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 18px; padding-top: 12px; border-top: 1px solid #27252b; color: var(--muted); font: 11px/1.6 var(--mono); }
+.spectrum-caption strong { color: var(--ink); font-weight: 500; }
+@media (max-width: 860px) {
+  .spectrum-wrap { grid-template-columns: minmax(0, 1fr); padding-top: 36px; }
+  .spectrum-head { margin-bottom: 6px; }
+  #spectrum-canvas { height: 330px; }
 }
