@@ -1466,7 +1466,7 @@ def main() {
   <div class="container reveal">
     <div class="section-head"><h3>Get Garnet</h3><a class="section-offer" href="getting-started.html">Getting Started guide <span aria-hidden="true">&rarr;</span></a></div>
     <h2>Install with one curl command.</h2>
-    <p class="lead">The installer targets the <strong>v0.8.2 release</strong>. It installs the release asset for your platform, verifies it against <code>SHA256SUMS</code>, and falls back to a source install through <code>cargo install --locked</code> when no asset matches, the host glibc is older than 2.39, or the installed binary does not run. The v0.8.2 GitHub Release ships CLI binaries for macOS, Linux (x86_64 and ARM64) and Windows, plus a CycloneDX SBOM; productization gates are on the <a href="status.html">readiness status page</a>.</p>
+    <p class="lead">One command installs the <strong>v0.8.2</strong> CLI for your platform, and release packages are verified against the published checksums. Prebuilt for macOS, Linux (x86_64 and ARM64) and Windows. Installer behavior and release details are on <a href="status.html#release-details">Status</a>.</p>
 
     <div id="os-detect" hidden style="display:none;align-items:center;gap:12px;margin:0 0 18px;padding:12px 16px;border:1px solid var(--rule);border-radius:10px;background:var(--bg-soft);font-size:14px;color:var(--ink-soft);">
       <span id="os-detect-msg"></span>
@@ -1484,9 +1484,9 @@ def main() {
         var plat=(uad&&uad.platform)?uad.platform:(navigator.platform||'');
         var s=(plat+' '+(navigator.userAgent||'')).toLowerCase();
         var t='';
-        if(s.indexOf('mac')>-1) t='Detected: macOS — the universal installer uses the checksum-verified v0.8.2 CLI tarball for Apple Silicon or Intel, with source fallback. A signed .pkg is not published.';
-        else if(s.indexOf('win')>-1) t='Detected: Windows — run install.ps1 (Windows tab) to install the checksum-verified v0.8.2 x86_64 build; the source install needs Rust 1.95+.';
-        else if(s.indexOf('linux')>-1||s.indexOf('android')>-1) t='Detected: Linux — the universal installer uses the checksum-verified v0.8.2 package for x86_64 or ARM64 (.deb, .rpm or tarball); other targets fall back to source.';
+        if(s.indexOf('mac')>-1) t='Detected: macOS. The installer picks the Apple Silicon or Intel build.';
+        else if(s.indexOf('win')>-1) t='Detected: Windows. Use the Windows tab: install.ps1 installs the checksum-verified x86_64 build.';
+        else if(s.indexOf('linux')>-1||s.indexOf('android')>-1) t='Detected: Linux. The installer picks the x86_64 or ARM64 package.';
         if(!t)return; // unknown platform → no banner, silent
         msg.textContent=t;
         el.hidden=false; el.style.display='flex';
@@ -1496,17 +1496,17 @@ def main() {
     </script>
 
     <div class="install-note" style="margin:8px 0 26px;padding:16px 18px;border:1px solid var(--rule);border-radius:10px;background:var(--bg-soft);font-size:14.5px;color:var(--ink-soft);">
-      <strong style="color:var(--ink);">Before you install.</strong> Prebuilt release packages need <em>no toolchain</em>. The <em>source</em> install needs <strong>Rust 1.95+</strong>; CI also tracks current stable. The latest tagged release is <strong>v0.8.2</strong>, a research-grade milestone. Its assets are below; <code>SHA256SUMS</code> is GPG-signed (verify per docs/release-signing.md), and older releases stay on GitHub Releases:
+      <strong style="color:var(--ink);">Before you install.</strong> Prebuilt packages need <em>no toolchain</em>. Building from source needs <strong>Rust 1.95+</strong>. Every v0.8.2 asset:
       <table style="border-collapse:collapse;margin:12px 0 4px;font-size:13.5px;width:100%;">
         <tr style="color:var(--ink);"><th style="text-align:left;padding:4px 10px;border-bottom:1px solid var(--rule);">Platform</th><th style="text-align:left;padding:4px 10px;border-bottom:1px solid var(--rule);">v0.8.2 asset</th><th style="text-align:left;padding:4px 10px;border-bottom:1px solid var(--rule);">Install path</th></tr>
-        <tr><td style="padding:4px 10px;">macOS · Apple Silicon</td><td style="padding:4px 10px;"><code>garnet-0.8.2-aarch64-apple-darwin.tar.gz</code></td><td style="padding:4px 10px;">install.sh or the tarball; no signed .pkg</td></tr>
-        <tr><td style="padding:4px 10px;">macOS · Intel</td><td style="padding:4px 10px;"><code>garnet-0.8.2-x86_64-apple-darwin.tar.gz</code></td><td style="padding:4px 10px;">install.sh or the tarball; no signed .pkg</td></tr>
+        <tr><td style="padding:4px 10px;">macOS · Apple Silicon</td><td style="padding:4px 10px;"><code>garnet-0.8.2-aarch64-apple-darwin.tar.gz</code></td><td style="padding:4px 10px;">install.sh or the tarball</td></tr>
+        <tr><td style="padding:4px 10px;">macOS · Intel</td><td style="padding:4px 10px;"><code>garnet-0.8.2-x86_64-apple-darwin.tar.gz</code></td><td style="padding:4px 10px;">install.sh or the tarball</td></tr>
         <tr><td style="padding:4px 10px;">Linux x86_64</td><td style="padding:4px 10px;"><code>garnet_0.8.2-1_amd64.deb</code> · <code>garnet-0.8.2-1.x86_64.rpm</code> · <code>garnet-0.8.2-x86_64-unknown-linux-gnu.tar.gz</code></td><td style="padding:4px 10px;">install.sh, a package or the tarball</td></tr>
         <tr><td style="padding:4px 10px;">Linux ARM64</td><td style="padding:4px 10px;"><code>garnet_0.8.2-1_arm64.deb</code> · <code>garnet-0.8.2-1.aarch64.rpm</code> · <code>garnet-0.8.2-aarch64-unknown-linux-gnu.tar.gz</code></td><td style="padding:4px 10px;">install.sh, a package or the tarball</td></tr>
-        <tr><td style="padding:4px 10px;">Windows x86_64</td><td style="padding:4px 10px;"><code>garnet-0.8.2-x86_64-pc-windows-msvc.zip</code></td><td style="padding:4px 10px;">install.ps1 or the zip; no .msi</td></tr>
+        <tr><td style="padding:4px 10px;">Windows x86_64</td><td style="padding:4px 10px;"><code>garnet-0.8.2-x86_64-pc-windows-msvc.zip</code></td><td style="padding:4px 10px;">install.ps1 or the zip</td></tr>
       </table>
-      <div style="margin-top:10px;">The Linux packages and tarballs need glibc 2.39 or newer (Ubuntu 24.04+, Debian 13+, Fedora 40+); on older distributions use the source install.</div>
-      <div style="margin-top:10px;">Verify any manual download before running it (from the folder containing the asset and <code>SHA256SUMS</code>):</div>
+      <div style="margin-top:10px;">Linux packages need glibc 2.39 or newer (Ubuntu 24.04+, Debian 13+, Fedora 40+). On older distributions, the installer builds from source.</div>
+      <div style="margin-top:10px;">Check a manual download from the folder that holds it and <code>SHA256SUMS</code>. To confirm who signed the checksums, follow the <a href="https://github.com/Island-Dev-Crew/garnet/blob/main/docs/release-signing.md">signing guide</a>.</div>
 <pre style="margin:8px 0 0;">shasum -a 256 --ignore-missing -c SHA256SUMS</pre>
     </div>
 
@@ -1535,14 +1535,11 @@ curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | GARNET
         <div class="install-wrap">
           <button class="copy" data-copy="curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh">Copy</button>
 <pre># Recommended — universal installer:
-# installs the checksum-verified v0.8.2 CLI tarball and otherwise falls back
-# to source install. A signed .pkg / notarization is not published.
+# installs the checksum-verified v0.8.2 CLI for Apple Silicon or Intel.
 curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh
 
 # Source install (any arch, needs a Rust toolchain):
-git clone https://github.com/Island-Dev-Crew/garnet && cd garnet/garnet-cli && cargo install --path .
-
-# For Apple distribution evidence, see status.html.</pre>
+git clone https://github.com/Island-Dev-Crew/garnet && cd garnet/garnet-cli && cargo install --path .</pre>
         </div>
       </div>
       <div class="install-pane" data-pane="linux">

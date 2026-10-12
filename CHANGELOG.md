@@ -9,6 +9,32 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
 ## [Unreleased]
 
+### Website — the V2 front door
+
+- **garnet-lang.org opens on the experience page.** Its live workbench checks a
+  file write and an authority change with the real checker in WebAssembly. A
+  spectrum under the workbench draws the result across the nine kinds of
+  authority: gold for declared, red for reached without a declaration or newly
+  gained. The original homepage is now `docs/reference.html`, behind the same
+  shell.
+- **The landing pages say it plainly; the specifics live on Status.** Installer
+  behavior, what v0.8.2 does not publish, and the scope of each workbench scene
+  moved to `status.html` (`#release-details`, `#workbench-scope`). Each scene's
+  scope note links there.
+- **Lighter and steadier.**
+  - The service worker (cache `garnet-web-v26`) precaches what pages request.
+    The duplicate unversioned copies and an unused 691 KB image are gone, and the
+    stone is a 286 KB WebP instead of a 1.9 MB PNG. Precache: 6.6 MB → 4.2 MB.
+  - The reference page is not preloaded when the browser asks to save data.
+  - A scene script that fails to load no longer stops the router.
+- **Accessibility.**
+  - The `T` theme shortcut works only while focus is inside the playground
+    (WCAG 2.1.4).
+  - The Pause button no longer reports a pressed state beside its changing
+    label.
+  - The workbench tabs show their focus ring.
+- Install facts stay on v0.8.2 until the 0.8.3 assets are verified.
+
 ### Dogfood matrix — probes run without the caller's interpreter variables
 
 - **The caller's `PYTHON*` variables no longer reach any probe.** `run()` copied
