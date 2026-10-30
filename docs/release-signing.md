@@ -3,7 +3,7 @@
 How to check that a downloaded Garnet release is intact and was signed by the
 release key.
 
-> **Status (2026-09-30).** Every release ships a `SHA256SUMS` manifest (integrity).
+> **Status (2026-10-30).** Every release ships a `SHA256SUMS` manifest (integrity).
 > The **`v0.8.1` (re-cut 2026-06-07) and `v0.8.2` Releases are signed**: each carries
 > `SHA256SUMS.asc`, a detached GPG signature by the key in the table below. The
 > release key was rotated on 2026-10-30: `v0.8.3` and later are signed by the new key in
