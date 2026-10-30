@@ -68,11 +68,17 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
     `GARNET_SIGNING_KEYS_URL` / `GARNET_SIGNING_KEY_FPR` point it at a mirror
     you sign yourself.
   - v0.8.1 and v0.8.2 pin `04D5 6F91 F038 17DD FFEB  C62A C14D F6E7 1395 6ED1`.
+    v0.8.3 and later pin the rotated key
+    `7431 F1BF AC2A 395D E897  5A3C 3DB8 CC71 3A6B CD50` (made 2026-10-30,
+    Ed25519, sign-only, expires 2028-10-29). The keys file holds both, and every
+    published user ID is `hello@garnet-lang.org`: the old key's personal-address
+    user ID is no longer exported.
   - The installer, its pins and the keys file all come from `garnet-lang.org`,
     so the check stops a substituted release asset, not a substituted installer;
     `docs/release-signing.md` says how to verify by hand.
-  - Tests: `scripts/test_garnet_installer_signature.py` (11, throwaway keys,
-    in CI). The Windows job runs `scripts/garnet_ci_install_ps1_signature.ps1` under
+  - Tests: `scripts/test_garnet_installer_signature.py` (14, throwaway keys,
+    in CI; three check the v0.8.3 pin in all three installers, the rotated key
+    in both published files, and role-address-only user IDs). The Windows job runs `scripts/garnet_ci_install_ps1_signature.ps1` under
     PowerShell 7 and Windows PowerShell 5.1. It installs the real v0.8.2
     release through its real signature, then refuses another pinned key, a
     missing `.asc` and a real `.asc` over a different `SHA256SUMS`, and warns

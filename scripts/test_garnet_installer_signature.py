@@ -23,6 +23,9 @@ ROOT = Path(__file__).resolve().parents[1]
 INSTALLER = ROOT / "docs" / "install.sh"
 KEYRING = ROOT / "docs" / "garnet-release-keys.asc"
 RELEASE_KEY_0_8 = "04D56F91F03817DDFFEBC62AC14DF6E713956ED1"
+RELEASE_KEY_0_8_3 = "7431F1BFAC2A395DE8975A3C3DB8CC713A6BCD50"
+SIGNING_PUBKEY = ROOT / "docs" / "garnet-release-signing.pub.asc"
+ROLE_ADDRESS = "hello@garnet-lang.org"
 VERSION = "0.8.2"
 TRIPLES = (
     "x86_64-unknown-linux-gnu",
@@ -200,6 +203,40 @@ class PinnedKeyTests(unittest.TestCase):
                 capture_output=True, text=True, check=True,
             ).stdout
         self.assertIn(f"fpr:::::::::{RELEASE_KEY_0_8}:", listing)
+
+    def test_every_installer_pins_the_rotated_key_for_0_8_3(self) -> None:
+        mirror = ROOT / "installer" / "sh.garnet-lang.org" / "install.sh"
+        self.assertEqual(mirror.read_text(), INSTALLER.read_text(), "the sh.garnet-lang.org copy drifted")
+        self.assertIn(f"GARNET_RELEASE_KEY_0_8_3='{RELEASE_KEY_0_8_3}'", INSTALLER.read_text())
+        self.assertIn(f"$releaseKey083 = '{RELEASE_KEY_0_8_3}'", (ROOT / "docs" / "install.ps1").read_text())
+
+    def _show(self, path: Path) -> list[list[str]]:
+        if not GPG:
+            self.skipTest("gpg is needed to read the published keys")
+        with tempfile.TemporaryDirectory() as home:
+            os.chmod(home, 0o700)
+            out = subprocess.run(
+                ["gpg", "--homedir", home, "--batch", "--with-colons", "--show-keys", str(path)],
+                capture_output=True, text=True, check=True,
+            ).stdout
+        return [line.split(":") for line in out.splitlines()]
+
+    def test_the_published_keys_hold_the_rotated_key(self) -> None:
+        keyring = [r[9] for r in self._show(KEYRING) if r[0] == "fpr"]
+        self.assertIn(RELEASE_KEY_0_8_3, keyring)
+        self.assertIn(RELEASE_KEY_0_8, keyring, "older releases still verify against the old key")
+        current = [r[9] for r in self._show(SIGNING_PUBKEY) if r[0] == "fpr"]
+        self.assertEqual(current[:1], [RELEASE_KEY_0_8_3], "the current key alone is published as garnet-release-signing.pub.asc")
+
+    def test_published_keys_carry_only_the_role_address(self) -> None:
+        # Rule 7: a personal address never appears on a public surface, key user IDs included.
+        for path in (KEYRING, SIGNING_PUBKEY):
+            uids = [r[9] for r in self._show(path) if r[0] == "uid"]
+            self.assertTrue(uids, path.name)
+            for uid in uids:
+                self.assertTrue(uid.endswith(f"<{ROLE_ADDRESS}>"), f"{path.name}: {uid}")
+        for path in (KEYRING, SIGNING_PUBKEY):
+            self.assertNotIn("PRIVATE KEY", path.read_text())
 
 
 if __name__ == "__main__":

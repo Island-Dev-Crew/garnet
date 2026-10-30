@@ -46,9 +46,8 @@ GARNET_SOURCE_REPO_URL="${GARNET_SOURCE_REPO_URL:-https://github.com/${GARNET_RE
 GARNET_VERIFY_SIGNATURE="${GARNET_VERIFY_SIGNATURE:-1}"
 GARNET_SIGNING_KEYS_URL="${GARNET_SIGNING_KEYS_URL:-https://garnet-lang.org/garnet-release-keys.asc}"
 GARNET_SIGNING_KEY_FPR="${GARNET_SIGNING_KEY_FPR:-}"
-# The rotated release key, pinned for v0.8.3 and later. Empty until the new key
-# exists; while it is empty, a later version is refused when gpg is present.
-GARNET_RELEASE_KEY_0_8_3=''
+# The rotated release key, pinned for v0.8.3 and later (docs/release-signing.md).
+GARNET_RELEASE_KEY_0_8_3='7431F1BFAC2A395DE8975A3C3DB8CC713A6BCD50'
 GARNET_INSTALLED_BIN=""
 
 say_banner() {

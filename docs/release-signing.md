@@ -6,7 +6,8 @@ release key.
 > **Status (2026-09-30).** Every release ships a `SHA256SUMS` manifest (integrity).
 > The **`v0.8.1` (re-cut 2026-06-07) and `v0.8.2` Releases are signed**: each carries
 > `SHA256SUMS.asc`, a detached GPG signature by the key in the table below. The
-> release key is being rotated, and `v0.8.3` and later are signed by the new key.
+> release key was rotated on 2026-10-30: `v0.8.3` and later are signed by the new key in
+> the table below, and the earlier signed releases still verify against the old one.
 > Earlier releases (e.g. `v0.8.0`, `v0.5.0`) predate signing and are **unsigned**, not
 > tampered. `install.sh` and `install.ps1` check the signature for you when `gpg` is
 > installed (section 1). Garnet is a research-grade prototype, not production/1.0.
@@ -16,7 +17,7 @@ release key.
 | Releases | Signing key fingerprint |
 |---|---|
 | `v0.8.1`, `v0.8.2` | `04D5 6F91 F038 17DD FFEB  C62A C14D F6E7 1395 6ED1` |
-| `v0.8.3` and later | the rotated key, added here before `v0.8.3` is tagged |
+| `v0.8.3` and later | `7431 F1BF AC2A 395D E897  5A3C 3DB8 CC71 3A6B CD50` |
 
 Every release public key is in [`docs/garnet-release-keys.asc`](garnet-release-keys.asc),
 served at `https://garnet-lang.org/garnet-release-keys.asc`. The current key alone is

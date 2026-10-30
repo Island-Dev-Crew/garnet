@@ -58,9 +58,8 @@
     $bin = Join-Path $prefix 'bin'
     $keysUrl = 'https://garnet-lang.org/garnet-release-keys.asc'
     if ($env:GARNET_SIGNING_KEYS_URL) { $keysUrl = $env:GARNET_SIGNING_KEYS_URL }
-    # The rotated release key, pinned for v0.8.3 and later. Empty until the new
-    # key exists; while it is empty, a later version is refused when gpg is present.
-    $releaseKey083 = ''
+    # The rotated release key, pinned for v0.8.3 and later (docs/release-signing.md).
+    $releaseKey083 = '7431F1BFAC2A395DE8975A3C3DB8CC713A6BCD50'
 
     # A 32-bit PowerShell on 64-bit Windows reports x86 here; the real
     # architecture is then in PROCESSOR_ARCHITEW6432.
