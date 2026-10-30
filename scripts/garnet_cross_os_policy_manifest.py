@@ -28,7 +28,7 @@ SCHEMA = "garnet.governance-policy-os-evidence/v1"
 OID_RE = re.compile(r"^[0-9a-f]{40}(?:[0-9a-f]{24})?$")
 ALLOWED_OSES = ("Linux", "macOS", "Windows")
 GIT_TIMEOUT_SECONDS = 15
-# Canonical SHA-256 over the ordered four-suite, 36-test, all-green outcome
+# Canonical SHA-256 over the ordered four-suite, 38-test, all-green outcome
 # contract. It intentionally excludes the commit and OS so every matrix leg
 # must reproduce this same value; the manifest binds it back to head and OS.
 # Any change to a suite's test IDs changes it, so it is updated deliberately:
@@ -36,8 +36,12 @@ GIT_TIMEOUT_SECONDS = 15
 # test_current_index_projects_39_ordered_contexts when the release matrix
 # added five contexts (previous value cf3631ea...8cd6, pinned at Lane 1
 # activation). Linux, macOS and Windows all reproduced the new value.
+# #607 (T5b) renamed it to test_current_index_projects_45_ordered_contexts and
+# added test_a_job_may_name_one_static_environment and
+# test_environment_must_be_one_static_name for the release environment
+# (previous value 08ae8f95...acf2e, 36 tests).
 EXPECTED_ALL_GREEN_PARITY_SHA256 = (
-    "08ae8f9511fb7e9b17ddd53fbb5cb7e8aa878c81870ccc99d9c9824a239acf2e"
+    "9cca5745566c06e4fa5a7d96e0d8574b59274eab4b68ec22e80c2fac0666a36e"
 )
 
 
