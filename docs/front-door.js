@@ -16,6 +16,10 @@ async function copyText(text){const previous=document.activeElement;let area;try
 let requestedHash='#home',activeHash=null,routing=false,lastExperienceHash='#home',routeEpoch=0;
 let referenceLoaded=false,referencePromise=null,focusedLoadedPage=null,focusedLoadEpoch=0;
 const routeScroll=new Map(),frame=$('#original-frame'),brand=$('#garnet-brand');
+// A link to status.html#release-details opens the Status page at that section: the fragment
+// waits here until the focused frame holds the page, then scrolls there once.
+const focusedAnchors=new Map();
+function scrollFocused(hash,win){let top=routeScroll.get(hash)||0;const anchor=focusedAnchors.get(hash);if(anchor){try{const target=win.document.getElementById(anchor);if(target){top=target.getBoundingClientRect().top+(win.scrollY||0)-24;focusedAnchors.delete(hash)}}catch{}}win.scrollTo({top,behavior:'instant'})}
 let focusedFrame=$('#focused-frame'),cancelFocusedLoad=null,cachedPlaygroundFrame=null;
 const focusedPages={'#page-why':['Why','why.html'],'#page-docs':['Documentation','minispec.html'],'#page-status':['Status','status.html'],'#page-models':['Models inside Garnet','models.html'],'#page-playground':['Playground','playground.html']};
 const referenceAliases={'#caps':'#caps-chapter','#why':'#why-chapter','#readiness':'#readiness-chapter','#docs':'#docs-catalogue','#spec':'#docs-catalogue','#vision':'#thesis-agent','#download':'#install','#roadmap':'#readiness'};
@@ -38,7 +42,7 @@ function ensureReference(){if(referenceLoaded)return Promise.resolve(true);if(re
 $('#retry-reference').onclick=async()=>{const button=$('#retry-reference');button.disabled=true;try{await ensureReference()}finally{button.disabled=false}};
 function ensureFocused(hash){
  const page=focusedPages[hash]?.[1];if(!page)return;
- try{if(focusedLoadedPage===page&&focusedFrame.contentDocument?.documentElement.dataset.garnetPage===page){focusedFrame.contentWindow.scrollTo({top:routeScroll.get(hash)||0,behavior:'instant'});return}}catch{}
+ try{if(focusedLoadedPage===page&&focusedFrame.contentDocument?.documentElement.dataset.garnetPage===page){scrollFocused(hash,focusedFrame.contentWindow);return}}catch{}
  cancelFocusedLoad?.();
  const epoch=++focusedLoadEpoch,previous=focusedFrame;
  const restorePlayground=page==='playground.html'&&cachedPlaygroundFrame;
@@ -48,11 +52,11 @@ function ensureFocused(hash){
  focusedFrame=current;focusedLoadedPage=null;$('#focused-loader').hidden=false;$('#focused-fallback').hidden=true;
  // Keep an opened workbench mounted so navigation cannot discard source edits.
  if(keepPlayground){cachedPlaygroundFrame=previous;previous.id='cached-playground-frame';previous.hidden=true;previous.after(current);}
- else if(restorePlayground){previous.remove();focusedLoadedPage=page;cancelFocusedLoad=null;$('#focused-loader').hidden=true;current.contentWindow.scrollTo({top:routeScroll.get(hash)||0,behavior:'instant'});return;}
+ else if(restorePlayground){previous.remove();focusedLoadedPage=page;cancelFocusedLoad=null;$('#focused-loader').hidden=true;scrollFocused(hash,current.contentWindow);return;}
  else previous.replaceWith(current);
  let timer,settled=false;
  const cleanup=()=>{clearTimeout(timer);current.removeEventListener('load',loaded);current.removeEventListener('error',failed);};
- const finish=okay=>{if(settled)return;settled=true;cleanup();if(epoch!==focusedLoadEpoch)return;cancelFocusedLoad=null;$('#focused-loader').hidden=true;$('#focused-fallback').hidden=okay;if(okay){focusedLoadedPage=page;if(activeHash===hash)current.contentWindow.scrollTo({top:routeScroll.get(hash)||0,behavior:'instant'})}};
+ const finish=okay=>{if(settled)return;settled=true;cleanup();if(epoch!==focusedLoadEpoch)return;cancelFocusedLoad=null;$('#focused-loader').hidden=true;$('#focused-fallback').hidden=okay;if(okay){focusedLoadedPage=page;if(activeHash===hash)scrollFocused(hash,current.contentWindow)}};
  const loaded=()=>{let okay=false;try{okay=current.contentDocument?.documentElement.dataset.garnetPage===page}catch{}finish(okay)},failed=()=>finish(false);
  cancelFocusedLoad=()=>{settled=true;cleanup();};
  current.addEventListener('load',loaded);current.addEventListener('error',failed);timer=setTimeout(failed,8000);
@@ -68,7 +72,7 @@ function applyRoute(hash){const name=viewOf(hash);$$('.route').forEach(e=>e.hidd
  if(activeHash!==null){const heading=isFocused(hash)?$('#focused-title'):isReference(hash)?$('#reference-title'):hash==='#install'?$('#install-title'):hash==='#use-cases'?$('#cases-title'):$('#hero-title');heading.setAttribute('tabindex','-1');if(armedLink){(armedLink.getClientRects().length?armedLink:$('.menu-toggle')).focus({preventScroll:true});}else heading.focus({preventScroll:true});}
 }
 async function route(){const hash=location.hash||'#home';if(hash==='#main'){$('#main').focus();return;}requestedHash=['#home','#install','#use-cases'].includes(hash)||isFocused(hash)||isReference(hash)?hash:'#home';if(routing)return;routing=true;const epoch=++routeEpoch;$('#main').setAttribute('aria-busy','true');try{while(activeHash!==requestedHash){let next=requestedHash;savePosition();const changedMode=activeHash!==null&&(isReference(next)!==isReference(activeHash)||isReference(next)&&next!==activeHash||isFocused(next)!==isFocused(activeHash)||isFocused(next)&&next!==activeHash);if(changedMode)await fadeMode(0,1,220);if(epoch!==routeEpoch)return;next=requestedHash;if(isReference(next))void ensureReference();applyRoute(next);activeHash=next;if(changedMode)await fadeMode(1,0,300);if(epoch!==routeEpoch)return;}}finally{if(epoch===routeEpoch){$('#mode-veil').style.opacity='0';$('#main').setAttribute('aria-busy','false');routing=false;}}}
-function openSharedRoute(hash,{tour=false,reset=false}={}){disarm();savePosition();if(reset)routeScroll.delete(hash);go(hash);if(tour){state.scenario='check';renderScenario();void beginBoundaryTour();}}
+function openSharedRoute(hash,{tour=false,reset=false,anchor=''}={}){disarm();savePosition();if(reset)routeScroll.delete(hash);if(isFocused(hash)&&/^#[A-Za-z][\w-]*$/.test(anchor)){focusedAnchors.set(hash,anchor.slice(1));routeScroll.delete(hash);}go(hash);if(tour){state.scenario='check';renderScenario();void beginBoundaryTour();}}
 window.GarnetNavigation=Object.freeze({open:openSharedRoute,disarm});
 const pageRoutes={'why.html':'#page-why','minispec.html':'#page-docs','status.html':'#page-status','models.html':'#page-models'};
 document.addEventListener('keydown',event=>{if(event.key==='Enter'&&event.target.closest('header a'))lastActivationHow='key';});
@@ -81,7 +85,7 @@ document.addEventListener('click',event=>{
   return;
  }
  if(link.dataset.sharedRoute){event.preventDefault();openSharedRoute(link.dataset.sharedRoute);return;}
- const destination=new URL(link.href,location.href),local=destination.origin===location.origin&&new URL('.',destination).pathname===new URL('.',location.href).pathname,pageRoute=local?pageRoutes[destination.pathname.split('/').pop()]:null;if(pageRoute){event.preventDefault();openSharedRoute(pageRoute);return;}disarm();const hash=link.getAttribute('href');if(hash?.startsWith('#')&&(isReference(hash)||isFocused(hash)||['#home','#install','#use-cases'].includes(hash))){event.preventDefault();savePosition();if(hash==='#home'&&link.classList.contains('logo'))routeScroll.delete(hash);if(hash==='#use-cases')routeScroll.delete(hash);go(hash);if(link.hasAttribute('data-boundary-tour')){state.scenario='check';renderScenario();void beginBoundaryTour();}}
+ const destination=new URL(link.href,location.href),local=destination.origin===location.origin&&new URL('.',destination).pathname===new URL('.',location.href).pathname,pageRoute=local?pageRoutes[destination.pathname.split('/').pop()]:null;if(pageRoute){event.preventDefault();openSharedRoute(pageRoute,{anchor:destination.hash});return;}disarm();const hash=link.getAttribute('href');if(hash?.startsWith('#')&&(isReference(hash)||isFocused(hash)||['#home','#install','#use-cases'].includes(hash))){event.preventDefault();savePosition();if(hash==='#home'&&link.classList.contains('logo'))routeScroll.delete(hash);if(hash==='#use-cases')routeScroll.delete(hash);go(hash);if(link.hasAttribute('data-boundary-tour')){state.scenario='check';renderScenario();void beginBoundaryTour();}}
 });
 async function beginBoundaryTour(){await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));while(routing&&requestedHash==='#use-cases')await new Promise(resolve=>requestAnimationFrame(resolve));if(state.scenario!=='check'||activeHash!=='#use-cases')return;$('#allow-fs').checked=false;$('#allow-fs').dispatchEvent(new Event('change'));$('#run-demo').click();}
 document.addEventListener('keydown',event=>{if(event.key!=='Escape')return;disarm();if($('.navlinks').classList.contains('open')){$('.navlinks').classList.remove('open');$('.menu-toggle').setAttribute('aria-expanded','false');$('.menu-toggle').focus();}});

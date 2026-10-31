@@ -67,7 +67,7 @@ li a, p a:not(.btn) { text-decoration: underline; text-decoration-thickness: 1px
 li a:hover, p a:not(.btn):hover { text-decoration-thickness: 2px; }
 </style>
 <link rel="stylesheet" href="site-return.css"><script defer src="site-return.js"></script>
-<link rel="stylesheet" href="site-shell.css?rev=20261007.3"><script defer src="site-shell.js?rev=20261009.2"></script></head>
+<link rel="stylesheet" href="site-shell.css?rev=20261007.3"><script defer src="site-shell.js?rev=20261031.1"></script></head>
 <body><div class="site-return-bar"><a data-experience-return href="index.html#home">← Garnet</a><a href="scope.html">Build scope →</a></div>
 <nav>
   <div class="container">
@@ -94,7 +94,7 @@ li a:hover, p a:not(.btn):hover { text-decoration-thickness: 2px; }
     <p>The landing pages keep installation to one command. The specifics live here.</p>
     <ul>
       <li><strong>Installer behavior.</strong> <code>install.sh</code> installs the v0.8.2 release asset for the host and verifies it against <code>SHA256SUMS</code>. It falls back to a source install through <code>cargo install --locked</code> when no asset matches, the host glibc is older than 2.39, or the installed binary does not run. <code>install.ps1</code> installs the Windows x86_64 build after the same checksum comparison.</li>
-      <li><strong>Integrity, then signer.</strong> The v0.8.2 installers check integrity, not the signer: <code>SHA256SUMS</code> is GPG-signed, and verifying that signature is a separate step (<a href="https://github.com/Island-Dev-Crew/garnet/blob/main/docs/release-signing.md">signing guide</a>). Installers that verify the signature themselves are in the 0.8.3 release candidate.</li>
+      <li><strong>Signer, then integrity.</strong> When <code>gpg</code> is installed, both installers first check that <code>SHA256SUMS</code> is signed by the release key pinned for the version being installed, v0.8.2 included, and stop if it is not. Without <code>gpg</code> they warn and check integrity only; on Windows, Gpg4win provides <code>gpg</code>. The <a href="https://github.com/Island-Dev-Crew/garnet/blob/main/docs/release-signing.md">signing guide</a> explains the check and how to verify by hand.</li>
       <li><strong>Not published in v0.8.2.</strong> A signed macOS <code>.pkg</code>, a notarized Studio app, a native Windows ARM64 CLI, and an MSI.</li>
       <li><strong>Linux.</strong> Packages and tarballs need glibc 2.39 or newer (Ubuntu 24.04+, Debian 13+, Fedora 40+).</li>
       <li><strong>Source builds.</strong> Rust 1.95+ and native build tools; CI also tracks current stable.</li>

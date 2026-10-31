@@ -1010,7 +1010,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 </script><link rel="stylesheet" href="site-return.css"><script defer src="site-return.js"></script>
-<link rel="stylesheet" href="site-shell.css?rev=20261007.3"><script defer src="site-shell.js?rev=20261009.2"></script><link rel="stylesheet" href="identity.css?rev=20261029.2"><link rel="stylesheet" href="authority-spectrum.css?rev=20261029.2"><script defer src="authority-spectrum.js?rev=20261029.2"></script></head>
+<link rel="stylesheet" href="site-shell.css?rev=20261007.3"><script defer src="site-shell.js?rev=20261031.1"></script><link rel="stylesheet" href="identity.css?rev=20261029.2"><link rel="stylesheet" href="authority-spectrum.css?rev=20261029.2"><script defer src="authority-spectrum.js?rev=20261029.2"></script></head>
 <body><div class="site-return-bar"><a data-experience-return href="index.html#home">← Garnet</a><a href="scope.html">Build scope →</a></div>
 <div class="starfield"></div>
 <div class="stars"></div>
@@ -1421,7 +1421,7 @@ def main() {
   <div class="container reveal">
     <h3>Migrate at Your Pace</h3>
     <h2>Convert <span class="accent">Rust · Ruby · Python · Go</span> source to Garnet.</h2>
-    <p class="lead">The <code>garnet convert</code> tool is a migration assistant, not a full transpiler: it reads four deterministic source lanes and emits Garnet tagged <code>@sandbox</code> and <code>@caps()</code>, with lineage, metrics, and a human migration checklist. Those two lines are notes for the reviewer, and neither is enforced: nothing in <code>garnet run</code> treats <code>@sandbox</code> as a boundary, and a <code>@caps()</code> placed before a module does not bind the functions inside it. As emitted today the file does not pass <code>garnet check</code> &mdash; the parser rejects the <code>@sandbox</code> line &mdash; so converted code is held to a capability budget only after a reviewer annotates its functions.</p>
+    <p class="lead">The <code>garnet convert</code> tool is a migration assistant, not a full transpiler: it reads four deterministic source lanes and emits Garnet tagged <code>@sandbox</code> and <code>@caps()</code>, with lineage, metrics, and a human migration checklist. Those two lines are notes for the reviewer, and neither is enforced: <code>@sandbox</code> is written as a comment that <code>garnet run</code> does not treat as a boundary, and a <code>@caps()</code> placed before a module does not bind the functions inside it. Every emitted file parses, because the converter fails rather than write one the parser rejects; converted code is held to a capability budget only after a reviewer annotates its functions.</p>
     <table style="border-collapse:collapse;width:100%;margin:6px 0 14px;font-size:14px;color:var(--ink-soft);">
       <tr style="color:var(--ink);"><th style="text-align:left;padding:8px 12px;border-bottom:1px solid var(--rule);">Tier</th><th style="text-align:left;padding:8px 12px;border-bottom:1px solid var(--rule);">What it means</th></tr>
       <tr><td style="padding:8px 12px;"><strong style="color:var(--gold);">Active conversion</strong><br><span style="color:var(--ink-muted);">Rust · Ruby · Python · Go</span></td><td style="padding:8px 12px;">Deterministic frontends — carries ownership-like shape, module boundaries, and migration evidence with deterministic behavior.</td></tr>

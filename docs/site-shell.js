@@ -24,7 +24,7 @@
     const destination=new URL(link.href,location.href);if(destination.origin!==location.origin||new URL('.',destination).pathname!==new URL('.',location.href).pathname)return;
     const file=destination.pathname.split('/').pop(),hash=pageRoutes[file]||(file==='index.html'&&['','#home','#use-cases','#install','#why','#docs','#readiness','#reference'].includes(destination.hash)?destination.hash||'#home':null);
     if(!hash)return;
-    try{if(parent.GarnetNavigation){event.preventDefault();parent.GarnetNavigation.open(hash,{tour:link.hasAttribute('data-boundary-tour'),reset:hash==='#home'||hash==='#use-cases'});}}catch{}
+    try{if(parent.GarnetNavigation){event.preventDefault();parent.GarnetNavigation.open(hash,{tour:link.hasAttribute('data-boundary-tour'),reset:hash==='#home'||hash==='#use-cases',anchor:pageRoutes[file]?destination.hash:''});}}catch{}
   });
   document.addEventListener('keydown', event => {
     if (event.key !== 'Escape') return;
