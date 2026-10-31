@@ -921,6 +921,45 @@ class AgenticDogfoodMatrixTests(unittest.TestCase):
         self.assertIn("web/PWA productization", report)
 
 
+class ConvertProbeTests(unittest.TestCase):
+    """The convert probes parse the file the converter wrote, not its own claim."""
+
+    def _stub_garnet(self, directory: Path, parse_exit: int) -> Path:
+        stub = directory / "garnet"
+        stub.write_text(
+            "#!" + sys.executable + "\n"
+            "import sys\n"
+            "from pathlib import Path\n"
+            "args = sys.argv[1:]\n"
+            "if args[0] == 'convert':\n"
+            "    out, lang, source = Path(args[2]), args[3], Path(args[4])\n"
+            "    out.mkdir(parents=True, exist_ok=True)\n"
+            "    (out / f'{source.stem}.{lang}.garnet').write_text('{}')\n"
+            "    print('  - 1 of 1 constructs mapped without a migration to-do')\n"
+            "    print('  - output parses: yes')\n"
+            "    sys.exit(0)\n"
+            f"if args[0] == 'parse':\n"
+            f"    print('parsed ' + args[1]) if {parse_exit} == 0 else print('parse error', file=sys.stderr)\n"
+            f"    sys.exit({parse_exit})\n"
+            "sys.exit(2)\n",
+            encoding="utf-8",
+        )
+        stub.chmod(0o755)
+        return stub
+
+    @unittest.skipIf(os.name == "nt", "the stub garnet is a POSIX script")
+    def test_a_written_file_that_does_not_parse_fails_the_probe(self) -> None:
+        for parse_exit, expected in ((1, "failed"), (0, "passed")):
+            with self.subTest(parse_exit=parse_exit), tempfile.TemporaryDirectory() as temp:
+                work = Path(temp)
+                fixtures = matrix.prepare_fixtures(work)
+                garnet = self._stub_garnet(work, parse_exit)
+                result = matrix.build_convert_parses_probe(
+                    garnet, work, "convert-rust-score", "Rust", "rust", fixtures["rust"]
+                )
+                self.assertEqual(expected, result.status, result.stderr_excerpt)
+
+
 class ChildInterpreterEnvironmentTests(unittest.TestCase):
     """The runner, not the caller's environment, decides how a probe's checks run."""
 

@@ -11,14 +11,14 @@ built for the code agents write and humans accept.</strong></p>
 
 <p align="center">
   <a href="https://github.com/Island-Dev-Crew/garnet/releases/latest">Release <!-- truth:latest_tag -->v0.8.2<!-- /truth --> · GPG-signed checksums</a> ·
-  <a href="LICENSE">MIT OR Apache-2.0</a> ·
+  <a href="#license">MIT OR Apache-2.0</a> ·
   <a href="https://garnet-lang.org">garnet-lang.org</a> ·
   <a href="https://garnet-lang.org/status.html">Verified today / Still open</a> ·
   <a href="C_Language_Specification/GARNET_v1_0_Mini_Spec.md">Mini-Spec v1.0</a> ·
   <a href="FAQ.md">FAQ</a>
 </p>
 
-<p align="center"><sub>Source on <code>main</code> is <!-- truth:version -->0.8.2<!-- /truth -->; the last release is <!-- truth:latest_tag -->v0.8.2<!-- /truth -->.</sub></p>
+<p align="center"><sub>Source on <code>main</code> is <!-- truth:version -->0.8.3<!-- /truth -->; the last release is <!-- truth:latest_tag -->v0.8.2<!-- /truth -->.</sub></p>
 
 <p align="center"><sub>The v0.8.2 binary lags <code>main</code>: it gates 15 host primitives, has no <code>mem</code> capability gate and emits seal/v1. The 24-row gate, <code>mem</code> and seal/v2 described below are on <code>main</code> and not yet in a release.</sub></p>
 
@@ -195,7 +195,16 @@ Contributing → [CONTRIBUTING.md](CONTRIBUTING.md) + [Code of Conduct](CODE_OF_
 
 ## License
 
-Dual-licensed **MIT OR Apache-2.0** — your choice. Either is fine for commercial use.
+Garnet is dual-licensed under either of
+
+- the Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE)), or
+- the MIT license ([LICENSE-MIT](LICENSE-MIT)),
+
+at your option. Either is fine for commercial use.
+
+Unless you explicitly state otherwise, any contribution intentionally submitted
+for inclusion in the work by you, as defined in the Apache-2.0 license, shall be
+dual licensed as above, without any additional terms or conditions.
 
 ---
 

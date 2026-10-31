@@ -16,6 +16,7 @@ PIN_MANIFEST = ROOT / ".github" / "rulesets" / "external-action-pins.json"
 MINIMUM_NODE24_ACTION_MAJORS = {
     "actions/checkout": 6,
     "actions/setup-python": 6,
+    "actions/setup-node": 6,
     "actions/cache": 5,
     "actions/upload-artifact": 6,
     "actions/download-artifact": 8,
