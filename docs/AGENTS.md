@@ -45,12 +45,14 @@ or another navigation disarms it. A rapid double-click removes its interim route
 from history. Home and original hero markup share identity.css: typography, image
 position, gold line, buttons and spacing must remain geometrically matched.
 
-The Garnet wordmark shows a gold framed halo on initial arrival, in both homepage
-presentations and detail routes. Its restrained 3.6-second pulse illuminates the
-inside and outside of the frame without changing letter colors. Navigation's
-armed state is independent of this always-visible cue. No particle layer or
-visible mode hint is added. Reduced motion and Pause motion retain a static
-halo. Escape disarms navigation without removing the reveal cue.
+The Garnet wordmark and two-activation menu links carry a red diamond before
+activation. The first activation returns to the intended homepage/chapter,
+arms gold text or the wordmark's framed 3.6-second pulse, and exposes a concise
+banner describing the next activation. Letter colours remain unchanged. The
+second activation opens the deeper destination through black. Escape or other
+navigation clears the armed state, glow and banner. Reduced motion retains a
+static armed halo; the arrival state has no glow. Slow clicks, taps and keyboard
+Enter remain equivalent. Do not reintroduce particles or an always-on pulse.
 
 The evidence banner has four equal desktop stages: Declare, Inspect, Review,
 Verify. Review describes the human decision, not an automatic acceptance proof.
@@ -218,3 +220,32 @@ desktop and mobile screenshots against the approved visual references.
 Building or passing static gates alone is not browser or visual acceptance.
 
 Run the root documentation-contract ladder when changing this file.
+
+## Authority spectrum
+
+`authority-spectrum.js` and `authority-spectrum.css` own the local SVG picture
+of eight authority kinds and a wildcard. A compact view closes the front-door
+workbench; the original `#caps` chapter adds explicit examples and the complete
+model. Keep the top heroes and closing Inscription unchanged.
+
+Bands follow exact returned `garnet.wasm.check/1` and
+`garnet.wasm.diff-caps/1` data. A named-call coverage diagnostic can mark a
+missing kind red; a diff can mark a newly gained declaration red. Gold means
+declared authority, not safety, execution, a signer or a general acceptance
+proof. The status distinguishes missing and newly gained; SVG labels and
+accessible text carry the meaning without colour. Ignore unknown capability
+names. Invalid results, engine errors, changed inputs and inactive scenarios
+clear the visual verdict; never substitute recorded output as live.
+
+The spectrum uses the existing committed WASM bytes and local decorative gem
+WebP. Reference examples check only after explicit activation, do not run host
+operations, reject stale results, and offer retry after an unavailable module.
+Their own chosen example survives mode round trips. Motion-off and reduced
+motion remove ray pulses; narrow layouts fan below the gem with every label
+inside the viewport. Match changed revision URLs and offline cache assets.
+
+The three-character reference example is exactly `@caps()` to `@caps(net)`;
+it is not a generic diff-size metric. Agent writes, checker checks, person
+decides is an explanation of roles, not a claim that model-review governance
+or cryptographic human acceptance is implemented by the browser. Detailed
+workbench boundaries also live in `status.html#workbench-scope`.

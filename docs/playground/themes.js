@@ -52,7 +52,7 @@
     cycle.className = 'theme-cycle';
     cycle.textContent = 'Next theme';
     cycle.setAttribute('aria-label', 'Next playground theme');
-    cycle.title = 'Next theme (T, outside the editor)';
+    cycle.title = 'Next theme (T, except while typing)';
     cycle.addEventListener('click', () => next());
     const hint = document.createElement('span');
     hint.className = 'theme-hint';
@@ -64,11 +64,15 @@
     slot.append(label, select, cycle, hint, status);
     controls.push({ select, status });
   }
+  const TYPING = 'textarea, select, [contenteditable]:not([contenteditable="false"]), [role="textbox"], input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=submit]):not([type=reset]):not([type=range])';
   const next = () => apply(themes[(themes.findIndex(theme => theme[0] === selected) + 1) % themes.length][0]);
   document.addEventListener('keydown', event => {
     if (event.defaultPrevented || event.repeat || event.isComposing || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
     const target = event.target;
-    if (target instanceof Element && target.closest('input, textarea, select, button, a, [contenteditable]:not([contenteditable="false"]), [role="textbox"]')) return;
+    // Only text entry and select type-ahead consume a printable T; buttons and links do not.
+    if (target instanceof Element && target.closest(TYPING)) return;
+    // A page-wide scope (playground.html themes <body>) is not a component: there, links and buttons keep T out.
+    if (target instanceof Element && target.closest('a, button') && !target.closest('[data-playground-theme]:not(body)')) return;
     if (event.key.toLowerCase() !== 't') return;
     // A single-key shortcut works only while keyboard focus is inside the playground (WCAG 2.1.4).
     if (!scopes.some(scope => scope.contains(document.activeElement))) return;

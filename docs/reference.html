@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Garnet lang — the evidence language</title>
-<meta name="description" content="English is how you tell an agent what to do. Garnet lang is how anyone else can trust what it did. A capability-bounded language whose checker rejects an undeclared call reached along a named call chain from an annotated function, cycles included on current source, whose diffs report widened authority, and whose builds and seals a stranger can recompute. By Island Dev Crew.">
+<meta name="description" content="English is how you tell an agent what to do. Garnet lang is how anyone else can trust what it did. A capability-bounded language whose checker rejects an undeclared call along the named call chains it traces from an annotated function, cycles included on current source, whose diffs report widened authority, and whose builds and seals a stranger can recompute. By Island Dev Crew.">
 <meta name="theme-color" content="#73021E">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/garnet-192.png">
@@ -1010,7 +1010,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 </script><link rel="stylesheet" href="site-return.css"><script defer src="site-return.js"></script>
-<link rel="stylesheet" href="site-shell.css?rev=20261007.3"><script defer src="site-shell.js?rev=20261009.2"></script><link rel="stylesheet" href="identity.css?rev=20261010.2"></head>
+<link rel="stylesheet" href="site-shell.css?rev=20261007.3"><script defer src="site-shell.js?rev=20261009.2"></script><link rel="stylesheet" href="identity.css?rev=20261029.2"><link rel="stylesheet" href="authority-spectrum.css?rev=20261029.2"><script defer src="authority-spectrum.js?rev=20261029.2"></script></head>
 <body><div class="site-return-bar"><a data-experience-return href="index.html#home">← Garnet</a><a href="scope.html">Build scope →</a></div>
 <div class="starfield"></div>
 <div class="stars"></div>
@@ -1065,7 +1065,7 @@ def main() {
 <span class="g">garnet seal:</span> cosign not installed — in-toto predicate emitted UNSIGNED (wrap-don't-rebuild: install cosign to attest; Garnet does not sign supply-chain itself)</pre>
     </div>
 
-    <p class="evidence-note">Captured unedited on 2026-09-02 from <code>garnet 0.8.1</code> built at main <code>fbd64bc5</code>, in a fresh directory with no <code>.garnet-cache</code>; only long JSON lines are elided with an ellipsis. The checker rejects an undeclared call reached along a named call chain from an annotated function, cycles included on current source &mdash; that is the bound the check holds to, and the <a href="https://github.com/Island-Dev-Crew/garnet/blob/main/C_Language_Specification/GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md">capability enforcement scope</a> states where it ends. <code>garnet run</code> does not invoke the checker. <a href="#try">Run check and diff-caps yourself, in the browser &rarr;</a></p>
+    <p class="evidence-note">Captured unedited on 2026-09-02 from <code>garnet 0.8.1</code> built at main <code>fbd64bc5</code>, in a fresh directory with no <code>.garnet-cache</code>; only long JSON lines are elided with an ellipsis. The checker rejects an undeclared call along the named call chains it traces from an annotated function, cycles included on current source &mdash; that is the bound the check holds to, and the <a href="https://github.com/Island-Dev-Crew/garnet/blob/main/C_Language_Specification/GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md">capability enforcement scope</a> states where it ends. <code>garnet run</code> does not invoke the checker. <a href="#try">Run check and diff-caps yourself, in the browser &rarr;</a></p>
   </div>
 </section>
 
@@ -1136,6 +1136,7 @@ def main() {
       review bottleneck (the binding constraint on accepting AI-written code)
       into a machine-checkable diff of the declared surface.
     </blockquote>
+    <div class="spectrum-roles" aria-label="Authorship, checking and acceptance"><article><span class="who">The agent</span><h4>writes.</h4><p>Produces the change and its declared authority.</p></article><article><span class="who">The checker</span><h4>checks.</h4><p>Returns named diagnostics and declaration deltas from the source.</p></article><article><span class="who">The person</span><h4>decides.</h4><p>Inspects the evidence and accepts or rejects the change.</p></article></div>
   </div>
 </section>
 
@@ -1301,7 +1302,7 @@ def main() {
       <div class="feature">
         <div class="icon">@caps(fs)</div>
         <h4>Capability Model</h4>
-        <p>A function declares its OS-authority budget with <code>@caps</code>. <code>garnet check</code> rejects an undeclared call reached along a named call chain from an annotated function, cycles included on current source, and the twenty-four gated host primitives (current source; the published v0.8.2 download has fifteen) also require the program entry's declared budget at run time.</p>
+        <p>A function declares its OS-authority budget with <code>@caps</code>. <code>garnet check</code> rejects an undeclared call along the named call chains it traces from an annotated function, cycles included on current source, and the twenty-four gated host primitives (current source; the published v0.8.2 download has fifteen) also require the program entry's declared budget at run time.</p>
       </div>
       <div class="feature">
         <div class="icon">memory · 4</div>
@@ -1351,11 +1352,16 @@ def main() {
 
 <!-- ═══════════════════════════════════════════════════════ CAPS -->
 <section id="caps">
-  <div class="container reveal">
+  <div class="container reveal" id="caps-chapter">
     <h3>The Capability Model</h3>
-    <h2>Read one token. <span class="accent">Know what the function declares.</span></h2>
-    <p class="lead"><code>@caps(fs)</code> is a semantic beacon: a single annotation that front-loads the function's declared OS-authority budget. Humans and language models can scan a file and read what each function claims, and <code>garnet check</code> rejects an undeclared call reached along a named call chain from an annotated function, cycles included on current source.</p>
+    <h2>Every program has <span class="accent">a spectrum.</span></h2>
+    <p class="lead"><code>@caps(fs)</code> is a semantic beacon: a single annotation that front-loads the function's declared OS-authority budget. Humans and language models can scan a file and read what each function claims, and <code>garnet check</code> rejects an undeclared call along the named call chains it traces from an annotated function, cycles included on current source.</p>
 
+    <div class="spectrum-reference" data-spectrum-reference>
+      <div class="spectrum-reference-grid"><div><h3 style="margin-bottom:16px;letter-spacing:0;text-transform:none;font:400 29px/1.2 var(--serif)">Three characters. A different review.</h3><p>Eight named authority kinds and a wildcard on current source; the v0.8.2 checker has seven, without <code>mem</code>. A small declaration edit can change what a reviewer needs to inspect.</p><div class="spectrum-example-tools" role="group" aria-label="Live spectrum examples"><button type="button" data-spectrum-example="undeclared" aria-pressed="false">Check undeclared fs</button><button type="button" data-spectrum-example="declared" aria-pressed="false">Declare fs &amp; check</button><button type="button" data-spectrum-example="diff" aria-pressed="false">Compare + net</button></div><pre class="spectrum-source" aria-label="Source for the selected spectrum example">Choose a live example.</pre><div class="spectrum-delta" aria-label="The network declaration edit" hidden><div><span>Source edit</span><strong>3 characters</strong></div><div><span>Declaration</span><strong>+ net</strong></div><div><span>Meaning</span><strong>More authority</strong></div></div></div><div data-spectrum-mount><p>The spectrum follows returned checker data.</p></div></div>
+      <details><summary>Inspect the actual checker result</summary><pre class="spectrum-result-json">No reference example has been checked yet.</pre></details>
+      <details><summary>What these bands mean</summary><p>Gold shows declared authority from the returned surface. Red identifies a missing declaration in a named-call diagnostic, or authority newly gained in a declaration diff. The status names which case applies; the colours never stand in for the verdict.</p><p>The diagram turns the checker’s returned authority data into a picture. Its scope and implementation detail live on Status.</p><a href="status.html#workbench-scope">Workbench details and current status →</a></details>
+    </div>
     <div class="caps-showcase">
       <div class="code-col garnet"><div class="head"><div class="swatch"></div>GARNET</div>
 <pre><span class="a">@caps(fs)</span>
@@ -1385,8 +1391,10 @@ def main() {
         </div>
         <div class="row">
           <div class="tag">@caps(time)</div>
-          <div class="desc">Wall + monotonic clocks, sleep. Checked by <code>garnet check</code>; not gated at run time.</div>
+          <div class="desc">Wall + monotonic clocks and sleep. The declaration is checked at the language boundary; source and release runtime coverage are distinguished on <a href="scope.html">Build scope</a>.</div>
         </div>
+        <div class="row"><div class="tag">@caps(net_internal)</div><div class="desc">The internal-network authority declaration. See <a href="scope.html">the current enforcement scope</a> for the actual network boundary.</div></div>
+        <div class="row"><div class="tag">@caps(mem)</div><div class="desc">The memory authority declaration on current source, alongside working, episodic, semantic and procedural memory roles. The v0.8.2 checker does not know <code>mem</code> and rejects it; see <a href="scope.html">Build scope</a>.</div></div>
         <div class="row">
           <div class="tag">@caps(proc)</div>
           <div class="desc">Subprocess spawn and wait, gated at run time.</div>
@@ -1765,7 +1773,7 @@ dist/Garnet Studio.app</pre>
       <a href="stdlib.html" class="doc-card">
         <div class="label">Reference</div>
         <h4>Stdlib Primitive Registry</h4>
-        <p>The current capability-tagged primitive table: pure string/array/crypto helpers plus explicit time, file, network, environment and process authority.</p>
+        <p>The current capability-tagged primitive table: pure string/array/crypto helpers plus explicit time, file, network, environment and process authority, and memory-tier authority on current source.</p>
       </a>
       <a href="synthesis.html" class="doc-card">
         <div class="label">The Reconciliation</div>

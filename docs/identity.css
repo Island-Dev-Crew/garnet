@@ -17,26 +17,26 @@
 .garnet-hero .hero-baseline { position:absolute; right:0; bottom:15px; left:0; display:flex; justify-content:center; align-items:center; gap:27px; color:#bbb1b3; font:10px/1.4 'SFMono-Regular',Consolas,monospace; letter-spacing:.1em; text-align:center; }
 .garnet-hero .hero-baseline span:first-child { color:#d7b572; }
 #garnet-brand { position:relative; touch-action:manipulation; outline-offset:9px; }
-/* The reveal cue is present on arrival; arming only controls navigation. */
-#garnet-brand::before { content:''; position:absolute; inset:-11px -14px; pointer-events:none; border:1px solid #b9955680; border-radius:5px; background:radial-gradient(ellipse at center,#d7b5720b,transparent 75%); box-shadow:0 0 17px #c6a05b38,0 0 12px #a5113c00,inset 0 0 16px #d7b57220; animation:brand-halo 3.6s ease-in-out infinite; }
-#garnet-brand:hover::before,#garnet-brand:focus-visible::before,#garnet-brand.is-armed::before { border-color:#ddbc79ba; }
+/* The red diamond is the arrival cue; a deliberate first activation arms the glow. */
+#garnet-brand::before { content:none; }
+#garnet-brand.is-armed::before { content:''; position:absolute; inset:-11px -14px; pointer-events:none; border:1px solid #ddbc79ba; border-radius:5px; background:radial-gradient(ellipse at center,#d7b5720b,transparent 75%); box-shadow:0 0 17px #c6a05b38,0 0 12px #a5113c00,inset 0 0 16px #d7b57220; animation:brand-halo 3.6s ease-in-out 2; }
 #navigation a.is-armed { color:var(--gold); text-shadow:0 0 15px #d7b57245; }
 #navigation a { touch-action:manipulation; }
 /* Keep outer/outer/inset shadow order identical so the pulse interpolates. */
 @keyframes brand-halo { 0%,100%{box-shadow:0 0 17px #c6a05b38,0 0 12px #a5113c00,inset 0 0 16px #d7b57220} 50%{box-shadow:0 0 30px #d7b57275,0 0 12px #a5113c24,inset 0 0 24px #d7b57236} }
-@media(max-width:1000px) and (min-width:701px){.garnet-hero .hero-sub{font-size:20px}.garnet-hero .btn{padding:12px 18px;font-size:13px}.garnet-hero h1{font-size:10.2vw}.garnet-hero .eyebrow{font-size:8px}}
+@media(max-width:1000px) and (min-width:701px){.garnet-hero .hero-sub{font-size:20px}.garnet-hero .btn{padding:12px 18px;font-size:13px}.garnet-hero h1{font-size:10.2vw}.garnet-hero .eyebrow{font-size:9.5px;letter-spacing:.16em}}
 @media(max-width:700px){
  .garnet-hero { --mobile-art-width:min(215vw,880px); height:auto; min-height:0; }
  .garnet-hero .hero-art { top:-10px; left:50%; width:var(--mobile-art-width); height:auto; object-fit:contain; transform:translateX(-27%); }
  .garnet-hero::after { background:linear-gradient(0deg,#08090b 0%,#08090b 39%,rgb(8 9 11 / 10%) 58%,transparent 73%); }
  .garnet-hero .hero-grid { display:block; width:calc(100% - 40px); padding-top:calc(var(--mobile-art-width) * .48); padding-bottom:83px; }
  .garnet-hero .hero-copy { position:static; height:auto; max-width:580px; margin:auto; padding:0; text-align:center; }
- .garnet-hero .eyebrow { position:static; margin:0 0 14px; font-size:9px; letter-spacing:.16em; }
+ .garnet-hero .eyebrow { position:static; margin:0 0 14px; font-size:10px; letter-spacing:.14em; }
  .garnet-hero h1 { position:static; font-size:clamp(76px,16vw,117px); transform:none; margin:0 0 19px; }
  .garnet-hero .hero-sub { position:static; margin:0 0 24px; font-size:clamp(22px,4vw,29px); }
  .garnet-hero .hero-actions { position:static; justify-content:center; }
  .garnet-hero .hero-note { position:static; margin:16px 0 0; }
- .garnet-hero .hero-baseline { bottom:19px; flex-wrap:wrap; gap:7px 18px; padding:0 24px; font-size:9px; }
+ .garnet-hero .hero-baseline { bottom:19px; flex-wrap:wrap; gap:7px 18px; padding:0 24px; font-size:10px; letter-spacing:.06em; }
 }
-@media(max-width:460px){.garnet-hero h1{font-size:clamp(72px,20vw,102px)}.garnet-hero .hero-sub{font-size:clamp(20px,5.7vw,27px)}.garnet-hero .hero-actions{flex-direction:column;gap:11px;width:100%}.garnet-hero .btn{justify-content:space-between;width:100%;min-height:51px;padding:12px 23px;font-size:14px}.garnet-hero .hero-note{font-size:10px}.garnet-hero .eyebrow{font-size:8px}.garnet-hero .hero-baseline{font-size:8px}}
+@media(max-width:460px){.garnet-hero h1{font-size:clamp(72px,20vw,102px)}.garnet-hero .hero-sub{font-size:clamp(20px,5.7vw,27px)}.garnet-hero .hero-actions{flex-direction:column;gap:11px;width:100%}.garnet-hero .btn{justify-content:space-between;width:100%;min-height:51px;padding:12px 23px;font-size:14px}.garnet-hero .hero-note{font-size:10px}.garnet-hero .eyebrow{font-size:10px;letter-spacing:.12em}.garnet-hero .hero-baseline{font-size:10px;letter-spacing:.06em}}
 @media(prefers-reduced-motion:reduce){#garnet-brand::before{animation:none!important;transition:none!important}}

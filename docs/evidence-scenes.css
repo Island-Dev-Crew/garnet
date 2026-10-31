@@ -12,7 +12,7 @@
 .evidence-scene .gate-body, .evidence-scene .seal-body { fill:color-mix(in srgb,var(--scene-gold),var(--surface) 92%); stroke:var(--scene-gold); stroke-width:1.5; }
 .evidence-scene .gate-line { fill:none; stroke:var(--scene-gold); opacity:.18; }
 .lock-body { fill:var(--surface2); stroke:var(--scene-gold); stroke-width:2; }.lock-shackle { fill:none; stroke:var(--scene-gold); stroke-width:2; }.lock-key { fill:var(--scene-gold); }
-.request-packet { opacity:0; }.request-packet rect { fill:var(--scene-gold); stroke:var(--scene-gold); }.request-packet text { fill:#08090b; font-size:19px; font-weight:600; }
+.request-packet { opacity:0; }.request-packet rect { fill:var(--scene-gold); stroke:var(--scene-gold); }.request-packet text { fill:var(--surface,#08090b); font-size:19px; font-weight:600; }
 .check-impact,.pass-ticket { opacity:0; }.check-impact { fill:none; stroke:var(--scene-red); stroke-width:2; }.pass-ticket { fill:var(--surface); stroke:var(--scene-green); stroke-width:2; }
 .scene-check[data-phase='checking'] .request-packet { animation:request-arrival 1.5s ease-in-out infinite; }
 .scene-check[data-phase='checking'] .authority-gate { animation:gate-scan 1.5s ease-in-out infinite; }

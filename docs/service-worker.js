@@ -1,5 +1,8 @@
-const CACHE_NAME = "garnet-web-v26";
+const CACHE_NAME = "garnet-web-v28";
 const OFFLINE_ASSETS = [
+  "authority-spectrum.js?rev=20261029.2",
+  "authority-spectrum.css?rev=20261029.2",
+  "assets/garnet-spectrum.webp",
   "assets/garnet_positioning_matrix_v2_1.png",
   "assets/dev_tools_market_growth_v2_1.png",
   "omarchy.html",
@@ -8,16 +11,15 @@ const OFFLINE_ASSETS = [
   "models.html",
   // Pages request these with ?rev= strings; precache exactly what they request.
   "models.css?rev=20261007.3",
-  "front-door.css?rev=20261012.1",
-  "front-door.js?rev=20261012.2",
-  "acceptance-demo.js?rev=20261012.2",
-  "spectrum.js?rev=20261012.1",
+  "front-door.css?rev=20261029.2",
+  "front-door.js?rev=20261029.2",
+  "acceptance-demo.js?rev=20261029.2",
   "site-shell.js?rev=20261009.2",
   "site-shell.css?rev=20261007.3",
-  "identity.css?rev=20261010.2",
-  "evidence-scenes.js?rev=20261012.1",
-  "evidence-scenes.css?rev=20261007.3",
-  "playground/themes.js?rev=20261012.1",
+  "identity.css?rev=20261029.2",
+  "evidence-scenes.js?rev=20261029.2",
+  "evidence-scenes.css?rev=20261029.2",
+  "playground/themes.js?rev=20261029.2",
   "playground/themes.css",
 
   "why.html",

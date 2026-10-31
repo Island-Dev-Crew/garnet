@@ -14,7 +14,7 @@
 /* Only the playground and example workspace wear the selected palette. */
 .lab[data-playground-theme] { padding: 0 18px 18px; border: 1px solid var(--muted); border-radius: 7px; background: var(--bg); }
 .lab[data-playground-theme] :is(.lab-nav,.editor,.live-output,.surface-set,.chain-node,.memory-cell,.actor-box,.message,.cap-chip) { background: var(--surface); border-color: var(--muted); }
-.lab[data-playground-theme] :is(.scenario-tab,.scenario-tab span:first-child,.filebar,.toggle-label,.node-label,.diagram-node small,.lab-foot,.raw-output,.demo-caption,.illustration-text,.illustration-text .comment,.depth-row) { color: var(--muted); border-color: var(--muted); }
+.lab[data-playground-theme] :is(.scenario-tab,.scenario-tab span:first-child,.filebar,.toggle-label,.lab-foot,.raw-output,.demo-caption,.illustration-text,.illustration-text .comment) { color: var(--muted); border-color: var(--muted); }
 .lab[data-playground-theme] :is(.source,.code-no,.raw-output pre) { color: var(--ink); }
 .lab[data-playground-theme] :is(.code-pink,.cap-chip.added) { color: var(--bright); }
 .lab[data-playground-theme] .code-green { color: var(--green); }
