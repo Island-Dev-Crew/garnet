@@ -30,13 +30,6 @@
     },
     {
       "action": "actions/setup-node",
-      "commit": "49933ea5288caeca8642d1e84afbd3f7d6820020",
-      "resolved_at": "2026-07-17T06:07:40Z",
-      "source_kind": "tag",
-      "source_ref": "v4"
-    },
-    {
-      "action": "actions/setup-node",
       "commit": "249970729cb0ef3589644e2896645e5dc5ba9c38",
       "resolved_at": "2026-07-17T06:07:40Z",
       "source_kind": "tag",

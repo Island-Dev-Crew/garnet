@@ -191,7 +191,7 @@ pub fn print_help() {
     println!("    mcp-caps [--format human|json] <file> Capability surface of an MCP tool-set");
     println!("    mcp-serve --package <dir>       Serve the one verified local Shelf package over raw-byte stdio");
     println!(
-        "    caps-log <file> [--log P] | --verify <log> Append-only capability transparency log"
+        "    caps-log <file> [--log P] | --verify <log> A local hash-chained capability log (stub)"
     );
     println!("    version                          Print toolchain versions + wordmark");
     println!("    help                             This message");

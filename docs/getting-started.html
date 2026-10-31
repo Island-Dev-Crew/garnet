@@ -47,7 +47,7 @@
 <pre><span class="p">$</span> curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh</pre>
   <p>This verifies the download, extracts <code>garnet</code>, and prints where it landed. Add that <code>bin</code> dir to your <code>PATH</code> if the installer warns it isn't there.</p>
   <p>On Windows, in PowerShell: <code>irm https://garnet-lang.org/install.ps1 | iex</code>. It checks the zip against <code>SHA256SUMS</code>, installs <code>garnet.exe</code> and adds it to your user <code>PATH</code>.</p>
-  <p>Both installers check integrity against <code>SHA256SUMS</code>; neither checks its GPG signature. To check authenticity as well, follow <a href="https://github.com/Island-Dev-Crew/garnet/blob/main/docs/release-signing.md">release signing</a>.</p>
+  <p>Both installers check the download against <code>SHA256SUMS</code>. When <code>gpg</code> is installed, they first check that <code>SHA256SUMS</code> is signed by the release key pinned for that version, and stop if it is not. Without <code>gpg</code> they warn and check integrity only; on Windows, Gpg4win provides <code>gpg</code>. <a href="https://github.com/Island-Dev-Crew/garnet/blob/main/docs/release-signing.md">Release signing</a> explains the check and how to verify by hand.</p>
   <p>Garnet is not published to crates.io, npm, PyPI or Homebrew. Packages named <code>garnet</code> there, and <code>garnet-cli</code> on npm, belong to unrelated projects. Install only through the two installers above or from source at <code>github.com/Island-Dev-Crew/garnet</code>, and treat any other install instruction for Garnet as untrusted.</p>
 
   <h2><span class="step">3</span>Scaffold a project</h2>

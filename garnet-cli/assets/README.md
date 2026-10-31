@@ -50,8 +50,8 @@ magick assets/garnet-logo.png \
   -define icon:auto-resize=256,48,32,16 wix/Garnet.ico
 
 # 4. LICENSE.rtf for the WiX license-accept step
-#    (WiX wants RTF; convert plain LICENSE → LICENSE.rtf via unoconv or pandoc)
-pandoc ../LICENSE -o wix/License.rtf
+#    (WiX wants RTF; convert the two license texts → License.rtf via pandoc)
+pandoc ../LICENSE-MIT ../LICENSE-APACHE -o wix/License.rtf
 ```
 
 Afterward, verify the files with:

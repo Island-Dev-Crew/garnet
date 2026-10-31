@@ -768,7 +768,7 @@ dependencies = [
 
 [[package]]
 name = "garnet-cli"
-version = "0.8.2"
+version = "0.8.3"
 dependencies = [
  "blake3",
  "ed25519-dalek",
@@ -798,6 +798,7 @@ name = "garnet-convert"
 version = "0.4.0"
 dependencies = [
  "blake3",
+ "garnet-parser",
 ]
 
 [[package]]
@@ -2184,9 +2185,9 @@ dependencies = [
 
 [[package]]
 name = "tokio"
-version = "1.52.3"
+version = "1.54.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8fc7f01b389ac15039e4dc9531aa973a135d7a4135281b12d7c1bc79fd57fffe"
+checksum = "b52fd3255258d26fac7264ab5a76b53c13367136dc011d3d6ad4f8ed070396a3"
 dependencies = [
  "pin-project-lite",
  "tokio-macros",
