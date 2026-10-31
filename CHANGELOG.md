@@ -314,27 +314,35 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 ### Website — the V2 front door
 
 - **garnet-lang.org opens on the experience page.** Its live workbench checks a
-  file write and an authority change with the real checker in WebAssembly. A
-  spectrum under the workbench draws the result across the nine kinds of
-  authority: gold for declared, red for reached without a declaration or newly
-  gained. The original homepage is now `docs/reference.html`, behind the same
-  shell.
+  file write and an authority change with the real checker in WebAssembly, and
+  the spectrum under it ("Every program has a spectrum") draws the result. The
+  original homepage is now `docs/reference.html`, behind the same shell. The
+  design is the Spectrum Fusion (2026-10-13) merged with #609's fixes, then a
+  2026-10-30 polish pass.
 - **The landing pages say it plainly; the specifics live on Status.** Installer
   behavior, what v0.8.2 does not publish, and the scope of each workbench scene
-  moved to `status.html` (`#release-details`, `#workbench-scope`). Each scene's
-  scope note links there.
+  are in `status.html` (`#release-details`, `#workbench-scope`), and each
+  scene's scope note links there.
+- **Motion, fenced.** Reveals run once, on first view; loops are finite. Pause
+  motion and reduced motion stop them, and print shows every reveal.
+- **One announcer.** A single polite region, `#site-announcer`, speaks verdicts,
+  decisions, failures with their remedy, and cues, and clears itself after 7 s.
+- **Checker load.** One 20-second bound covers loading the WebAssembly checker.
+  A slow load that finishes later still becomes the engine, and a stalled one
+  no longer strands the visitor.
 - **Lighter and steadier.**
-  - The service worker (cache `garnet-web-v26`) precaches what pages request.
-    The duplicate unversioned copies and an unused 691 KB image are gone, and the
-    stone is a 286 KB WebP instead of a 1.9 MB PNG. Precache: 6.6 MB → 4.2 MB.
-  - The reference page is not preloaded when the browser asks to save data.
+  - The service worker (cache `garnet-web-v28`) precaches exactly the `?rev=`
+    URLs the pages request: 56 entries, 4.4 MB.
+  - The spectrum image loads only as its figure approaches; the reference page
+    is not preloaded when the browser asks to save data.
   - A scene script that fails to load no longer stops the router.
-- **Accessibility.**
-  - The `T` theme shortcut works only while focus is inside the playground
-    (WCAG 2.1.4).
-  - The Pause button no longer reports a pressed state beside its changing
-    label.
-  - The workbench tabs show their focus ring.
+- **Accessibility.** The `T` theme shortcut works only while focus is inside the
+  playground (WCAG 2.1.4). New-tab links say so to screen readers. All eight
+  playground palettes reach 5.5:1 contrast or better.
+- **Copy.** getting-started no longer tells a v0.8.2 reader to write
+  `@caps(mem)`, which the v0.8.2 checker rejects. The checker's guarantee reads
+  "along the named call chains it traces". Scope and Status name match-guard
+  calls and same-named impl methods as not yet traced.
 - Install facts stay on v0.8.2 until the 0.8.3 assets are verified.
 
 ### Dogfood matrix — probes run without the caller's interpreter variables
