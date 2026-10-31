@@ -92,8 +92,10 @@ document.addEventListener('click',event=>{
 async function beginBoundaryTour(){await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));while(routing&&requestedHash==='#use-cases')await new Promise(resolve=>requestAnimationFrame(resolve));if(state.scenario!=='check'||activeHash!=='#use-cases')return;$('#allow-fs').checked=false;$('#allow-fs').dispatchEvent(new Event('change'));$('#run-demo').click();}
 document.addEventListener('keydown',event=>{if(event.key!=='Escape')return;disarm();if($('.navlinks').classList.contains('open')){$('.navlinks').classList.remove('open');$('.menu-toggle').setAttribute('aria-expanded','false');$('.menu-toggle').focus();}});
 document.addEventListener('click',event=>{if(!event.target.closest('header')&&$('.navlinks').classList.contains('open')){$('.navlinks').classList.remove('open');$('.menu-toggle').setAttribute('aria-expanded','false');}});
-window.addEventListener('hashchange',()=>{disarm();void route();});
-window.addEventListener('popstate',()=>{disarm();void route();});
+// A history step or a typed hash is a navigation of its own: it never carries a section
+// anchor, even when it lands before an earlier route has applied.
+window.addEventListener('hashchange',()=>{pendingAnchor=null;disarm();void route();});
+window.addEventListener('popstate',()=>{pendingAnchor=null;disarm();void route();});
 window.addEventListener('pageshow',event=>{if(!event.persisted)return;disarm();routeEpoch++;$('#mode-veil').getAnimations().forEach(a=>a.cancel());$('#mode-veil').style.opacity='0';routing=false;activeHash=null;void route();});
 $('.menu-toggle').onclick=()=>{const open=$('.navlinks').classList.toggle('open');$('.menu-toggle').setAttribute('aria-expanded',String(open));if(open)$('#navigation a').focus();};
 // Keep the original document ready without revealing a presentation selector,
