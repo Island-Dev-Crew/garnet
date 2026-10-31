@@ -293,6 +293,19 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   - The installers check the signature only when `gpg` is installed.
   - The macOS and Windows binaries are not code-signed.
 
+### Studio — tokio 1.54.1 for RUSTSEC-2026-0386 (2026-10-31)
+
+- **Fixed:** RUSTSEC-2026-0386 (tokio: `AsyncFd::new` and related constructors
+  violate I/O safety; patched in 1.53.3 and later) also matched the
+  Windows/Linux Studio's own lock, `apps/garnet-studio/src-tauri/Cargo.lock`,
+  which still pinned tokio 1.52.3 after #607 moved the root lock to 1.54.1. The
+  Studio lock now pins 1.54.1 too: tokio's version and checksum lines change,
+  and its dependency list and the other 434 locked packages do not. Studio gets
+  tokio only through `tauri`, and no Studio source uses `AsyncFd`.
+- `cargo audit` reported the advisory on that lock as an unsound warning, not a
+  failure; the Studio `cargo deny check advisories` pass succeeds before and
+  after.
+
 ### Decision records — models stay out of the trust path (ADRs 0016–0018)
 
 - **ADR 0016.** No model output reaches check, diff-caps, seal, verify, the
