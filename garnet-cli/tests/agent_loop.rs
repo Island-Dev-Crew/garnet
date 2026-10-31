@@ -253,3 +253,259 @@ fn duplicate_attestation_is_rejected_before_run() {
     assert!(!String::from_utf8_lossy(&out.stdout).contains("stage run"));
     assert!(String::from_utf8_lossy(&out.stderr).contains("before run"));
 }
+
+// T5b (C1-02, S37 option (b)): the loop refuses only a program-wide widening or a
+// new wildcard. Per-function changes are accepted but listed for human review.
+const PER_FN_BASELINE: &str = "@caps(fs)\ndef main() { helper() }\n@caps()\ndef helper() { 1 }\n";
+// `helper` gains `fs`, already in the aggregate, and `extra` is new with `fs`:
+// the program-wide surface stays {fs}.
+const PER_FN_PROPOSAL: &str =
+    "@caps(fs)\ndef main() { helper() + extra() }\n@caps(fs)\ndef helper() { 1 }\n@caps(fs)\ndef extra() { 2 }\n";
+
+fn run_recorded(baseline_src: &str, proposal_src: &str) -> (Output, tempfile::TempDir) {
+    let dir = tempfile::TempDir::new().unwrap();
+    let baseline = write(dir.path(), "baseline.garnet", baseline_src);
+    let proposal = write(dir.path(), "proposal.garnet", proposal_src);
+    let record = dir.path().join("record");
+    let out = garnet()
+        .args(["agent-loop", "--baseline"])
+        .arg(&baseline)
+        .arg("--proposal")
+        .arg(&proposal)
+        .arg("--seal-out")
+        .arg(dir.path().join("seal.json"))
+        .arg("--record-dir")
+        .arg(&record)
+        .args([
+            "--attest",
+            "agent=scripted-agent-v1",
+            "--gate-version",
+            "dogfood-gate-v1",
+        ])
+        .output()
+        .unwrap();
+    (out, dir)
+}
+
+#[test]
+fn accepted_decision_names_the_program_wide_surface() {
+    let (out, dir) = run_recorded(BASELINE, ACCEPT);
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(out.status.success(), "{stdout}");
+    assert!(
+        stdout.contains("stage diff-caps -> PASS (no program-wide authority expansion, band 5/5)"),
+        "{stdout}"
+    );
+    let decision = std::fs::read_to_string(dir.path().join("record/decision.md")).unwrap();
+    assert!(
+        decision.contains("the program-wide declared capability surface did not widen"),
+        "{decision}"
+    );
+    assert!(!decision.contains("per-function"), "{decision}");
+}
+
+#[test]
+fn per_function_changes_are_accepted_but_listed_for_review() {
+    let (out, dir) = run_recorded(PER_FN_BASELINE, PER_FN_PROPOSAL);
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        out.status.success(),
+        "a per-function gain is not a program-wide widening: {stdout}"
+    );
+    assert!(
+        stdout.contains("agent-loop: per-function changes for review (1 gained, 1 new):"),
+        "{stdout}"
+    );
+    let diff = std::fs::read_to_string(dir.path().join("record/diff_caps.txt")).unwrap();
+    assert!(diff.contains("~ helper gained: fs"), "{diff}");
+    let decision = std::fs::read_to_string(dir.path().join("record/decision.md")).unwrap();
+    assert!(
+        decision.contains(
+            "- per-function: 1 existing function(s) gained capabilities and 1 function(s) are new"
+        ),
+        "{decision}"
+    );
+    assert!(decision.contains("for human review"), "{decision}");
+}
+
+// Codex lane B on #607 (01751aca): without --record-dir nothing is written, yet the
+// loop said the per-function changes were "listed for review in diff_caps.txt".
+#[test]
+fn per_function_changes_without_a_record_dir_are_printed_not_promised() {
+    let dir = tempfile::TempDir::new().unwrap();
+    let baseline = write(dir.path(), "baseline.garnet", PER_FN_BASELINE);
+    let proposal = write(dir.path(), "proposal.garnet", PER_FN_PROPOSAL);
+    let out = garnet()
+        .args(["agent-loop", "--baseline"])
+        .arg(&baseline)
+        .arg("--proposal")
+        .arg(&proposal)
+        .arg("--seal-out")
+        .arg(dir.path().join("seal.json"))
+        .args([
+            "--attest",
+            "agent=scripted-agent-v1",
+            "--gate-version",
+            "dogfood-gate-v1",
+        ])
+        .output()
+        .unwrap();
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(out.status.success(), "{stdout}");
+    assert!(
+        !stdout.contains("diff_caps.txt"),
+        "nothing is written without --record-dir: {stdout}"
+    );
+    assert!(
+        stdout.contains("~ helper gained: fs"),
+        "the changes are named: {stdout}"
+    );
+    assert!(!dir.path().join("diff_caps.txt").exists());
+}
+
+// Codex delta review on #607 (3d77d8e9): a --record-dir artifact that cannot be
+// written was ignored, so the loop announced diff_caps.txt and exited 0 without it.
+#[test]
+fn a_record_artifact_that_cannot_be_written_fails_the_loop() {
+    let dir = tempfile::TempDir::new().unwrap();
+    let baseline = write(dir.path(), "baseline.garnet", PER_FN_BASELINE);
+    let proposal = write(dir.path(), "proposal.garnet", PER_FN_PROPOSAL);
+    let record = dir.path().join("record");
+    std::fs::create_dir_all(record.join("diff_caps.txt")).unwrap();
+    let out = garnet()
+        .args(["agent-loop", "--baseline"])
+        .arg(&baseline)
+        .arg("--proposal")
+        .arg(&proposal)
+        .arg("--seal-out")
+        .arg(dir.path().join("seal.json"))
+        .arg("--record-dir")
+        .arg(&record)
+        .args([
+            "--attest",
+            "agent=scripted-agent-v1",
+            "--gate-version",
+            "dogfood-gate-v1",
+        ])
+        .output()
+        .unwrap();
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        !out.status.success(),
+        "a missing record artifact must fail the loop:\n{stdout}\n{stderr}"
+    );
+    assert!(
+        stderr.contains("diff_caps.txt"),
+        "the failed artifact is named: {stderr}"
+    );
+    assert!(
+        stdout.contains("~ helper gained: fs"),
+        "the changes are still named: {stdout}"
+    );
+}
+
+// Codex delta round 3 on #607: with diff_caps.txt unwritable the loop exited 2, but
+// stdout and decision.md still said the changes were listed in diff_caps.txt.
+#[test]
+fn a_record_never_names_an_artifact_it_did_not_write() {
+    for blocked in ["diff_caps.txt", "seal.json"] {
+        let dir = tempfile::TempDir::new().unwrap();
+        let baseline = write(dir.path(), "baseline.garnet", PER_FN_BASELINE);
+        let proposal = write(dir.path(), "proposal.garnet", PER_FN_PROPOSAL);
+        let record = dir.path().join("record");
+        std::fs::create_dir_all(record.join(blocked)).unwrap();
+        let out = garnet()
+            .args(["agent-loop", "--baseline"])
+            .arg(&baseline)
+            .arg("--proposal")
+            .arg(&proposal)
+            .arg("--seal-out")
+            .arg(dir.path().join("seal.json"))
+            .arg("--record-dir")
+            .arg(&record)
+            .args([
+                "--attest",
+                "agent=scripted-agent-v1",
+                "--gate-version",
+                "dogfood-gate-v1",
+            ])
+            .output()
+            .unwrap();
+        let stdout = String::from_utf8_lossy(&out.stdout);
+        assert_eq!(Some(2), out.status.code(), "{blocked}: {stdout}");
+        assert!(
+            !stdout.contains("in diff_caps.txt"),
+            "{blocked}: stdout must not promise the record: {stdout}"
+        );
+        let decision = std::fs::read_to_string(record.join("decision.md")).unwrap();
+        if blocked == "diff_caps.txt" {
+            assert!(
+                !decision.contains("listed in `diff_caps.txt`"),
+                "{blocked}: {decision}"
+            );
+        }
+        assert!(
+            decision.contains("not written") && decision.contains(blocked),
+            "{blocked}: decision.md names what is missing: {decision}"
+        );
+    }
+}
+
+// Codex lane B, round 3 on #607 (7b788fd2): with check.txt unwritable the decision
+// still said "See `check.txt`". Every mention of an unwritten artifact is marked.
+#[test]
+fn a_decision_marks_every_artifact_it_could_not_write() {
+    const CHECK_FAIL: &str = "@caps()\ndef main( {\n";
+    let cases: [(&str, &[&str]); 4] = [
+        (
+            ACCEPT,
+            &[
+                "diff_caps.txt",
+                "capability_manifest.json",
+                "seal.json",
+                "transparency_log.jsonl",
+                "run_output.txt",
+            ],
+        ),
+        (WIDEN, &["diff_caps.txt"]),
+        (OVERDEPTH, &["diff_caps.txt", "run_trap.txt"]),
+        (CHECK_FAIL, &["diff_caps.txt", "check.txt"]),
+    ];
+    for (proposal_src, artifacts) in cases {
+        for blocked in artifacts {
+            let dir = tempfile::TempDir::new().unwrap();
+            let baseline = write(dir.path(), "baseline.garnet", BASELINE);
+            let proposal = write(dir.path(), "proposal.garnet", proposal_src);
+            let record = dir.path().join("record");
+            std::fs::create_dir_all(record.join(blocked)).unwrap();
+            let out = garnet()
+                .args(["agent-loop", "--baseline"])
+                .arg(&baseline)
+                .arg("--proposal")
+                .arg(&proposal)
+                .arg("--seal-out")
+                .arg(dir.path().join("seal.json"))
+                .arg("--record-dir")
+                .arg(&record)
+                .args([
+                    "--attest",
+                    "agent=scripted-agent-v1",
+                    "--gate-version",
+                    "dogfood-gate-v1",
+                ])
+                .output()
+                .unwrap();
+            assert_eq!(Some(2), out.status.code(), "{blocked}");
+            let decision = std::fs::read_to_string(record.join("decision.md")).unwrap();
+            let named = format!("`{blocked}`");
+            let marked = format!("`{blocked}` (not written");
+            assert!(decision.contains(&marked), "{blocked}: {decision}");
+            assert_eq!(
+                decision.matches(&named).count(),
+                decision.matches(&marked).count(),
+                "{blocked}: every mention is marked: {decision}"
+            );
+        }
+    }
+}

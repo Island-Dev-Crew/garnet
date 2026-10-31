@@ -7,12 +7,13 @@ from pathlib import Path
 ID_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_-]*$")
 PLAIN_TYPED_RE = re.compile(r"(?i:true|false|yes|no|on|off|null|~|[-+]?(?:(?:[0-9][0-9_]*)(?:\.[0-9_]*)?(?:e[-+]?[0-9]+)?|0x[0-9a-f_]+|0o[0-7_]+|\.[0-9_]+|\.inf|\.nan))")
 MATRIX_EXPR_RE = re.compile(r"\$\{\{\s*matrix\.([A-Za-z_][A-Za-z0-9_-]*)\s*\}\}")
+ENVIRONMENT_RE = re.compile(r"[A-Za-z0-9_.-]{1,255}")
 TOP_KEYS = {"name", "on", "permissions", "env", "concurrency", "jobs"}
 EVENTS = {"push", "pull_request", "pull_request_target", "schedule", "workflow_dispatch"}
 PR_FILTERS = {"branches", "branches-ignore", "paths", "paths-ignore", "types"}
 PUSH_FILTERS = (PR_FILTERS - {"types"}) | {"tags", "tags-ignore"}
 JOB_KEYS = {"name", "permissions", "needs", "if", "runs-on", "env", "timeout-minutes",
-            "continue-on-error", "container", "strategy", "steps", "uses"}
+            "continue-on-error", "container", "strategy", "steps", "uses", "environment"}
 STEP_KEYS = {"name", "if", "uses", "run", "shell", "with", "env", "continue-on-error",
              "timeout-minutes", "working-directory"}
 PERMISSION_SCOPES = {"actions", "artifact-metadata", "attestations", "checks", "code-quality", "contents",
@@ -219,6 +220,11 @@ def _job(job_id: str, node: object) -> JobProfile:
         _integer(values["timeout-minutes"], f"job {job_id}.timeout-minutes")
     if "container" in values:
         _text(values["container"], f"job {job_id}.container")
+    if "environment" in values:
+        # One static deployment environment name; no expression, no mapping form.
+        environment = _text(values["environment"], f"job {job_id}.environment")
+        _require(bool(ENVIRONMENT_RE.fullmatch(environment.value)),
+                 f"job {job_id}.environment must be one static name")
     raw_steps = values["steps"]
     _require(isinstance(raw_steps, yaml_policy.WorkflowSequence) and raw_steps.items,
              f"job {job_id}.steps must be a non-empty sequence")

@@ -212,8 +212,11 @@ converted Garnet back to its source origin.
 
 `emit(cir: Cir, opts: EmitOpts) -> EmittedSource` produces:
 
-- `source.garnet` — Garnet source with `@sandbox` at file level
-  (v4.0 SandboxMode default for all converted code)
+- `source.garnet` — Garnet source that starts with an `@sandbox` reviewer
+  comment (the parser has no `@sandbox` annotation; updated for 0.8.3,
+  C1-18) and that always parses: the emitter parses each statement and the
+  finished file, and keeps anything that would not parse as a
+  `@migrate_todo` comment. The CLI names it `<stem>.<lang>.garnet`.
 - `source.garnet.migrate_todo.md` — human-readable checklist of
   every `MigrateTodo` site and its note
 - `source.garnet.lineage.json` — witness mapping per §5
@@ -241,17 +244,18 @@ module ConvertedFromRust {
 }
 ```
 
-To lift the sandbox, a human reviewer:
+To finish a converted file, a human reviewer:
 
 1. Audits the file end-to-end
-2. Resolves every `@migrate_todo(...)` annotation
-3. Replaces `@sandbox` with `@sandbox(unquarantine)` — this IS the
-   audit-complete signal per v4.0 spec
-4. Adds appropriate `@caps(...)` based on what the reviewed code
+2. Resolves every `@migrate_todo` comment
+3. Adds appropriate `@caps(...)` based on what the reviewed code
    actually does
+4. Deletes the `@sandbox` reviewer comment and runs `garnet check`
 
-The converter **cannot** emit `@sandbox(unquarantine)` by design.
-This is the defense against malicious source crafting unsafe Garnet.
+As of 0.8.3 (C1-18) the marker is a comment, not an annotation: Garnet has
+no `@sandbox` or `@sandbox(unquarantine)` annotation, and the converter
+never emits either as code. The empty `@caps()` is what keeps unreviewed
+code from holding capabilities.
 
 ---
 
@@ -259,15 +263,17 @@ This is the defense against malicious source crafting unsafe Garnet.
 
 ```
 $ garnet convert rust src/foo.rs
-converted: src/foo.garnet (sandboxed)
-  - 142 Garnet AST nodes emitted
+converted: src/foo.rust.garnet (unreviewed: an @sandbox comment and an empty @caps() mark it)
+  - 139 of 142 constructs mapped without a migration to-do
   - 3 @migrate_todo annotations
   - 0 @untranslatable constructs
-  - lineage: src/foo.garnet.lineage.json
-  - checklist: src/foo.garnet.migrate_todo.md
+  - output parses: yes
+  - lineage: src/foo.rust.garnet.lineage.json
+  - checklist: src/foo.rust.garnet.migrate_todo.md
+  - metrics: src/foo.rust.garnet.metrics.json
 
-  review the file then change @sandbox to @sandbox(unquarantine)
-  and add @caps(...) based on your audit.
+  parsing is not correctness: review the file, resolve each @migrate_todo,
+  declare the @caps(...) it needs, then run garnet check.
 ```
 
 Flags:
