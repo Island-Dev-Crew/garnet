@@ -43,7 +43,14 @@ use std::collections::BTreeMap;
 use std::process::Command;
 
 pub const TRUTH_JSON_PATH: &str = "docs/truth.json";
-pub const STAMPED_FILES: &[&str] = &["README.md", "FAQ.md", "docs/index.html", "docs/status.html"];
+pub const STAMPED_FILES: &[&str] = &[
+    "README.md",
+    "FAQ.md",
+    "docs/index.html",
+    // The complete original homepage, behind the concise front door.
+    "docs/reference.html",
+    "docs/status.html",
+];
 
 const MARKER_OPEN: &str = "<!-- truth:";
 const MARKER_OPEN_END: &str = " -->";

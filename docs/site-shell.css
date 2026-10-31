@@ -1,0 +1,9 @@
+body.focused-mode, body.reference-mode { height: 100dvh; overflow: hidden; }
+body.focused-mode .footer, body.reference-mode .footer { display: none; }
+.focused-wrap, #reference-view { position: fixed; top: var(--header-height); left: 0; right: 0; bottom: 0; height: auto; padding: 0; }
+.focused-shell { height: 100%; position: relative; background: var(--bg); }
+.focused-shell iframe, #original-frame { display: block; width: 100%; height: 100%; border: 0; background: var(--bg); }
+html.focused-embedded .site-return-bar, html.focused-embedded body > nav, html.focused-embedded .doc-nav, html.original-embedded nav.top, html.original-embedded .site-return-bar { display: none; }
+html.focused-embedded body, html.original-embedded body { animation: none; opacity: 1; }
+html.original-embedded { --nav-h: 0px !important; scroll-padding-top: 24px; }
+html.focused-embedded .doc-wrap, html.focused-embedded .wrap { padding-top: 36px; }

@@ -65,7 +65,7 @@ def _slides(
             ],
             evidence=[
                 "scripts/garnet_mit_readiness_status.py",
-                "docs/index.html",
+                "docs/reference.html",
                 "docs/status.html",
             ],
             speaker_note="Open by saying this is not final MIT/productization acceptance and not full MIT/productization completion.",

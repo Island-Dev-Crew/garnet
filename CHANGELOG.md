@@ -311,6 +311,48 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 - **Scope.** These are records of decisions. No code, gate or enforcement claim
   changes in this entry.
 
+### Website — the V2 front door
+
+- **garnet-lang.org opens on the experience page.** Its live workbench checks a
+  file write and an authority change with the real checker in WebAssembly, and
+  the spectrum under it ("Every program has a spectrum") draws the result. The
+  original homepage is now `docs/reference.html`, behind the same shell. The
+  design is the Spectrum Fusion (2026-10-13) merged with #609's fixes, then a
+  2026-10-30 polish pass.
+- **The landing pages say it plainly; the specifics live on Status.** Installer
+  behavior, what v0.8.2 does not publish, and the scope of each workbench scene
+  are in `status.html` (`#release-details`, `#workbench-scope`), and each
+  scene's scope note links there. A link to one of those sections opens Status
+  at that section, from the front door and from inside its pages.
+- **Motion, fenced.** Reveals run once, on first view; loops are finite. Pause
+  motion and reduced motion stop them, and print shows every reveal.
+- **One announcer.** A single polite region, `#site-announcer`, speaks verdicts,
+  decisions, failures with their remedy, and cues, and clears itself after 7 s.
+- **Checker load.** One 20-second bound covers loading the WebAssembly checker.
+  A slow load that finishes later still becomes the engine, and a stalled one
+  no longer strands the visitor.
+- **Lighter and steadier.**
+  - The service worker (cache `garnet-web-v29`) precaches exactly the `?rev=`
+    URLs the pages request: 57 entries, 4.4 MB.
+  - The spectrum image loads only as its figure approaches; the reference page
+    is not preloaded when the browser asks to save data.
+  - A scene script that fails to load no longer stops the router.
+- **Accessibility.** The `T` theme shortcut works only while focus is inside the
+  playground (WCAG 2.1.4). New-tab links say so to screen readers. In all eight
+  playground palettes, every text color reaches at least 5.5:1 against the page
+  background and at least 4.5:1 (WCAG AA) on the panel surfaces; the lowest
+  pairs, 4.73:1, are on the raised surface in Latte and Nord.
+- **Copy.** getting-started no longer tells a v0.8.2 reader to write
+  `@caps(mem)`, which the v0.8.2 checker rejects. The checker's guarantee reads
+  "along the named call chains it traces". Scope and Status name match-guard
+  calls and same-named impl methods as not yet traced.
+- **Checks follow the pages.** W-PLAY binds every committed file the visited
+  pages request, 62 runtime inputs in all, and `garnet_wasm_readiness.py`
+  rejects a proof that requests a file outside them. The converter-status and
+  adoption-surface tests, the MIT deck outline and the MIT demo route read
+  `reference.html`, which now carries the text they pin or cite.
+- Install facts stay on v0.8.2 until the 0.8.3 assets are verified.
+
 ### Dogfood matrix — probes run without the caller's interpreter variables
 
 - **The caller's `PYTHON*` variables no longer reach any probe.** `run()` copied

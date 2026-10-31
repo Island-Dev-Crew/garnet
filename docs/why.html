@@ -20,9 +20,9 @@
 <meta name="twitter:description" content="A skill can be skipped. A type cannot.">
 <meta name="twitter:image" content="https://garnet-lang.org/assets/garnet-og-20260911.jpg">
 <meta name="theme-color" content="#9C2B2E">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+
+
 <style>
   :root{
     --void:#0a0a0f;--panel:#12121b;--panel-2:#16161f;--line:#26262f;--line-2:#33333f;
@@ -210,8 +210,9 @@
     .thesis,.thesis-body,.expand-mark{transition:none}
   }
 </style>
-</head>
-<body>
+<link rel="stylesheet" href="site-return.css"><script defer src="site-return.js"></script>
+<link rel="stylesheet" href="site-shell.css?rev=20261007.3"><script defer src="site-shell.js?rev=20261031.1"></script></head>
+<body><div class="site-return-bar"><a data-experience-return href="index.html#home">← Garnet</a><a href="scope.html">Build scope →</a></div>
 <nav class="nav" aria-label="Site">
   <div class="nav-in">
     <a class="brand" href="https://garnet-lang.org/">GARNET<span class="dot">.</span></a>
@@ -323,7 +324,7 @@
       <div class="thesis-body" id="body-compiler" role="region" aria-label="The Compiler, expanded">
         <div class="thesis-body-inner"><div class="thesis-body-content">
           <p>The review industry's best tools read finished code and estimate whether it's dangerous. The strongest of them catch roughly half of real runtime bugs — after the code exists, on every pull request, forever. That's a smarter reviewer. It is still a probability.</p>
-          <p>Garnet moves the question earlier and makes it binary. What code is <em>allowed</em> to do — which files, which network, which processes, which delegated authority — is written as a <span class="gold">capability type</span>. Where the trap is proven on <code>main</code> — the twenty&#8209;four entry&#8209;gated host&#8209;authority primitives and the first&#8209;class memory declarations, pinned in the boundary section below — code that invokes authority it never declared isn't flagged for a human to weigh: it fails, deterministically. What sits outside that trap is named, not hidden: the two unbridged network rows, the declared&#8209;only <code>ffi</code>/<code>net_internal</code> vocabulary, and the generated OS sandbox, each listed in the enforcement scope as not self&#8209;enforced.</p>
+          <p>Garnet moves the question earlier and makes it binary. What code is <em>allowed</em> to do — which files, which network, which processes, which delegated authority — is written as a <span class="gold">capability type</span>. Where the trap is proven on <code>main</code> — the twenty&#8209;four entry&#8209;gated host&#8209;authority primitives (<a href="scope.html">current source; the published v0.8.2 download has fifteen</a>) and the first&#8209;class memory declarations, pinned in the boundary section below — code that invokes authority it never declared isn't flagged for a human to weigh: it fails, deterministically. What sits outside that trap is named, not hidden: the two unbridged network rows, the declared&#8209;only <code>ffi</code>/<code>net_internal</code> vocabulary, and the generated OS sandbox, each listed in the enforcement scope as not self&#8209;enforced.</p>
           <p>The industry's own principle says the AI that wrote the code shouldn't be the one reviewing it. Its answer is a second model. Garnet's answer is a checker. A compiler doesn't have opinions; it has verdicts — and a verdict is the only kind of review that doesn't get tired, doesn't get noisy, and doesn't get argued past.</p>
           <div class="xrefs">
             <span class="xrefs-label">Reads with</span>

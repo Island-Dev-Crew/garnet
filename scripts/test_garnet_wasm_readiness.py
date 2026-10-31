@@ -5,6 +5,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import os
+import re
 import sys
 import tempfile
 import unittest
@@ -134,6 +135,29 @@ class WasmReadinessTests(unittest.TestCase):
         metadata = stale["runtime_inputs"]["files"]["docs/playground/live.js"]
         metadata["bytes"] += 1
         self.assertFalse(wasm.browser_proof_valid(stale))
+
+    def test_requested_file_outside_runtime_inputs_cannot_promote(self) -> None:
+        proof = wasm.read_browser_proof()
+        self.assertIsNotNone(proof)
+        assert proof is not None
+        widened = json.loads(json.dumps(proof))
+        self.assertNotIn("README.md", wasm.BROWSER_RUNTIME_INPUTS)
+        widened["network"]["requested_committed_files"].append("README.md")
+        self.assertFalse(wasm.browser_proof_valid(widened))
+
+    def test_runtime_inputs_bind_every_requested_committed_file(self) -> None:
+        proof = wasm.read_browser_proof()
+        self.assertIsNotNone(proof)
+        assert proof is not None
+        requested = set(proof["network"]["requested_committed_files"])
+        self.assertEqual(set(), requested - set(wasm.BROWSER_RUNTIME_INPUTS))
+
+    def test_recorder_and_reporter_bind_the_same_inputs_in_order(self) -> None:
+        smoke = (ROOT / "scripts" / "smoke_garnet_playground_browser.mjs").read_text(encoding="utf-8")
+        start = smoke.index("const RUNTIME_INPUTS = [")
+        block = smoke[start:smoke.index("];", start)]
+        recorded = re.findall(r'^\s*"([^"]+)",\s*$', block, flags=re.MULTILINE)
+        self.assertEqual(list(wasm.BROWSER_RUNTIME_INPUTS), recorded)
 
     def test_browser_proof_binds_current_inputs_and_locked_playwright(self) -> None:
         proof = wasm.read_browser_proof()

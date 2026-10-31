@@ -1,0 +1,8 @@
+.site-return-bar { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; padding:12px max(24px,calc((100% - 1120px)/2)); border-bottom:1px solid #4d4548; background:#090b0c; color:#ded3bf; font:12px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+.site-return-bar a { color:#e5c07b; text-decoration:none; }
+.site-return-bar a:hover { text-decoration:underline; }
+.site-return-bar a:focus-visible { outline:2px solid #e5c07b; outline-offset:4px; }
+html.reference-embedded .site-return-bar { display:none; }
+
+.site-return-bar { position:sticky; top:0; z-index:110; min-height:42px; }
+body:has(.site-return-bar) > nav { top:42px; }

@@ -36,6 +36,11 @@ PLAYGROUND_REPORTER = ROOT / "scripts" / "garnet_playground_readiness.py"
 PUBLIC_SURFACES = [
     ROOT / "README.md",
     ROOT / "docs" / "index.html",
+    # The complete original homepage behind the front door, and the new
+    # scope and models pages, carry public capability claims too.
+    ROOT / "docs" / "reference.html",
+    ROOT / "docs" / "scope.html",
+    ROOT / "docs" / "models.html",
     WHY_HTML,
 ]
 

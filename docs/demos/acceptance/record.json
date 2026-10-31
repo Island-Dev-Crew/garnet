@@ -1,0 +1,109 @@
+{
+  "schema": "garnet.website.cli-record/1",
+  "scope": "Recorded current-source CLI; seal/v2 content binding, unsigned. No program execution, signature verification, or human approval attestation.",
+  "source_revision": "aba11b329e3284845ba7c9cd4c870998503a9030",
+  "binary_sha256": "c77737d3ae5449391ce0027bebec2ce6cc8f628659bf70c7f6a7e39d270c8d85",
+  "repeat_seal_byte_identical": true,
+  "filesystem_call_executed": false,
+  "sources": {
+    "before.garnet": "45aab88c21db8afbcd3792ff0e6a9eabfcdfeb77ad4cc0a74819f05e144d2e5e",
+    "accepted.garnet": "be427230b6c325f6f466ff73b416124c7c0913c55a7b44e3002a396367ce2415",
+    "changed.garnet": "51339dab1082409619cb6731681129c618a78891dbbbfb77abe8bac35d321013"
+  },
+  "records": [
+    {
+      "command": "garnet check before.garnet",
+      "exit_code": 1,
+      "stdout": "caps coverage: function `main` does not declare `fs` but transitively calls `fs::write_file` which requires it\n\n1 functions checked, 1 boundary call sites, 1 diagnostics\n",
+      "stderr": ""
+    },
+    {
+      "command": "garnet check accepted.garnet",
+      "exit_code": 0,
+      "stdout": "\n1 functions checked, 1 boundary call sites, 0 diagnostics\n",
+      "stderr": ""
+    },
+    {
+      "command": "garnet diff-caps before.garnet accepted.garnet",
+      "exit_code": 1,
+      "stdout": "garnet diff-caps: before.garnet -> accepted.garnet\n  + caps GAINED:  fs\n  ~ main gained: fs\n\ndiff-caps: AUTHORITY EXPANDED \u2014 review required (capability band 2/5)\n",
+      "stderr": ""
+    },
+    {
+      "command": "garnet seal accepted.garnet --out seal.json",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "garnet seal: predicate written to seal.json\ngarnet seal: in-toto predicate emitted UNSIGNED (Garnet never signs); install cosign to sign it (wrap-don't-rebuild)\n"
+    },
+    {
+      "command": "garnet seal accepted.garnet --out repeat.json",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "garnet seal: predicate written to repeat.json\ngarnet seal: in-toto predicate emitted UNSIGNED (Garnet never signs); install cosign to sign it (wrap-don't-rebuild)\n"
+    },
+    {
+      "command": "garnet verify accepted.garnet seal.json",
+      "exit_code": 0,
+      "stdout": "OK accepted.garnet matches seal/v2 source and declared capabilities (content binding only; no signature verified)\n",
+      "stderr": ""
+    },
+    {
+      "command": "garnet verify changed.garnet seal.json",
+      "exit_code": 2,
+      "stdout": "",
+      "stderr": "FAIL seal content/binding mismatch or noncanonical fields/bytes\n"
+    }
+  ],
+  "seal": {
+    "_type": "https://in-toto.io/Statement/v1",
+    "subject": [
+      {
+        "name": "accepted",
+        "digest": {
+          "blake3": "85667aa638b09d0d39ae6129fbb189ee7d951d3d7a1ca4f58931d60347359350"
+        }
+      }
+    ],
+    "predicateType": "https://garnet-lang.org/attestation/seal/v2",
+    "predicate": {
+      "subject_identity": "garnet-source-lf-blake3-v1",
+      "signed": false,
+      "source_blake3": "85667aa638b09d0d39ae6129fbb189ee7d951d3d7a1ca4f58931d60347359350",
+      "build_manifest": {
+        "ast_hash": "33856b0975f14d08c9ced62b0acefb6897aa950025a9915a14564778d4f94af9",
+        "deterministic_flags": [
+          "lto=on",
+          "codegen-units=1",
+          "strip=symbols"
+        ],
+        "interp_version": "0.8.2",
+        "parser_version": "0.8.2",
+        "prelude_hash": "df4f1648cf79ea77d0842fd1cb8725aba82be1b2631d5a906952640f9a25cc6d",
+        "schema": "garnet-manifest-v1",
+        "signature": "",
+        "signer_pubkey": "",
+        "source_hash": "85667aa638b09d0d39ae6129fbb189ee7d951d3d7a1ca4f58931d60347359350",
+        "target_triple": "unknown-target"
+      },
+      "capability_manifest": {
+        "schema": "garnet-capability-manifest-v1",
+        "aggregate": [
+          "fs"
+        ],
+        "functions": [
+          {
+            "name": "main",
+            "caps": [
+              "fs"
+            ]
+          }
+        ],
+        "wildcard": false
+      },
+      "tooling": {
+        "cosign": "not used by garnet seal; this predicate is UNSIGNED. To sign it: cosign attest --predicate <file> --type custom",
+        "sbom": "garnet-capability-manifest (native SBOM-equivalent; CycloneDX/SPDX via syft/cyclonedx when present)"
+      }
+    }
+  }
+}

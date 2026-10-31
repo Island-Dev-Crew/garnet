@@ -20,7 +20,7 @@ a{color:var(--gold);text-decoration:none}a:hover{color:var(--garnet-2);transitio
 .doc-nav .tab:hover{color:var(--ink)}.doc-nav .tab.active{color:var(--garnet);border-bottom-color:var(--garnet);font-weight:600}
 .doc-nav .back{margin-left:auto;font-size:13px;color:var(--ink-muted);text-decoration:none;transition:color .2s;white-space:nowrap;display:flex;align-items:center;gap:4px}
 .doc-nav .back:hover{color:var(--gold)}
-.doc-wrap{max-width:var(--maxw);margin:0 auto;padding:calc(var(--nav-h) + 44px) 24px 100px}
+.doc-wrap{overflow-wrap:anywhere;max-width:var(--maxw);margin:0 auto;padding:calc(var(--nav-h) + 44px) 24px 100px}
 .doc-wrap h1{font-family:var(--serif);font-size:clamp(28px,4.2vw,42px);font-weight:bold;color:var(--ink);margin:0 0 10px;letter-spacing:.02em}
 .doc-wrap h2{font-family:var(--serif);font-size:clamp(22px,3vw,30px);color:var(--ink);margin:52px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--rule)}
 .doc-wrap h3{font-size:20px;color:var(--gold);margin:36px 0 12px;letter-spacing:.03em}
@@ -39,8 +39,10 @@ a{color:var(--gold);text-decoration:none}a:hover{color:var(--garnet-2);transitio
 @media(max-width:768px){.doc-nav .inner{gap:4px;padding:0 12px}.doc-nav .brand{font-size:13px;margin-right:10px}.doc-nav .tab{padding:14px 8px;font-size:12px}.doc-nav .back{font-size:12px}.doc-wrap{padding:calc(var(--nav-h) + 28px) 14px 72px}.doc-wrap pre{padding:14px 16px;font-size:12px}}
 
 </style>
-</head>
-<body>
+<link rel="stylesheet" href="site-return.css"><script defer src="site-return.js"></script>
+<style>html{overflow-x:clip}.doc-nav .inner{overflow-x:auto;overscroll-behavior-x:contain}.doc-nav .tab{flex-shrink:0}</style>
+<link rel="stylesheet" href="site-shell.css?rev=20261007.3"><script defer src="site-shell.js?rev=20261031.1"></script></head>
+<body><div class="site-return-bar"><a data-experience-return href="index.html#home">← Garnet</a><a href="scope.html">Build scope →</a></div>
 <nav class="doc-nav">
   <div class="inner">
     <a class="brand" href="index.html" aria-label="Garnet home">G<span class="a">A</span>RNET</a>
@@ -53,7 +55,7 @@ a{color:var(--gold);text-decoration:none}a:hover{color:var(--garnet-2);transitio
     <a class="back" href="index.html">&larr; Back to Site</a>
   </div>
 </nav>
-<div class="doc-wrap">
+<div class="doc-wrap"><p style="margin:24px;color:#E5C07B;font:14px/1.6 system-ui">Language specification · design and implementation are distinguished in <a href="scope.html">Build scope</a>.</p>
 <h1 id="garnet-v1.0-mini-spec">Garnet v1.0 Mini-Spec</h1>
 <p><strong>Supersedes:</strong> v0.3 Mini-Spec (April 16, 2026)
 <strong>Status:</strong> Normative draft — canonical specification for

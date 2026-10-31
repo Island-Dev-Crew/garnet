@@ -47,6 +47,10 @@ CONTRACT_RULES = {
             "handoff",
         ],
     },
+    "docs/AGENTS.md": {
+        "sections": ["## Front door", "## Playground visual preferences", "## Installation and release truth", "## Assets and offline behavior", "## Verification"],
+        "phrases": ["Experience", "Reference", "Reduced", "Rust 1.95+", "Playwright"],
+    },
     "garnet-parser-v0.3/AGENTS.md": {
         "phrases": ["Mini-Spec", "lexing", "parsing", "diagnostic span"],
     },

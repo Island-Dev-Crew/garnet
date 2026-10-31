@@ -108,7 +108,7 @@ def _beats() -> list[DemoBeat]:
             surface="repo reporter and public landing pulse",
             story="Show that Garnet separates 87/87 tracked slices from the live MIT/productization objective percentage.",
             command="python3 scripts/garnet_mit_readiness_status.py --format markdown",
-            evidence="scripts/garnet_mit_readiness_status.py plus docs/index.html Objective Pulse.",
+            evidence="scripts/garnet_mit_readiness_status.py plus docs/reference.html Objective Pulse.",
         ),
         DemoBeat(
             id="studio-continuation",

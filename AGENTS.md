@@ -7,6 +7,7 @@ Treat every `AGENTS.md` file as part of Garnet's runtime documentation contract,
 This repo uses a documentation hierarchy:
 
 - `/AGENTS.md` owns repo-wide rules, the contract index, and cross-cutting architecture.
+- `/docs/AGENTS.md` owns public website navigation, demonstrations, installation and visual preferences.
 - Crate-level `AGENTS.md` files own implementation contracts for each Rust crate.
 - Spec and project-management `AGENTS.md` files distinguish normative language truth from episodic handoff history.
 - Template docs under `garnet-cli/templates/` define what new Garnet projects should teach agents by default.
@@ -350,6 +351,7 @@ that comes from `SHA256SUMS.asc` (`docs/release-signing.md`).
 Every path below is part of the current contract surface and must remain present unless the owning scope is removed or renamed.
 
 - `/AGENTS.md`
+- `/docs/AGENTS.md`
 - `/C_Language_Specification/AGENTS.md`
 - `/F_Project_Management/AGENTS.md`
 - `/garnet-parser-v0.3/AGENTS.md`
@@ -523,3 +525,10 @@ until the proof is re-recorded, so the same PR must commit the edit, re-run
 `F_Project_Management/LAUNCH/W_PLAY_BROWSER_PROOF.json` and its screenshot. That
 re-record is not a WASM package rebuild. Do not remove either file from the
 runtime inputs; the proof would go stale against the page it tests.
+
+## Public website contract
+
+Read `docs/AGENTS.md` before changing the website. It owns the shared header,
+concise front door and complete original homepage, truthful demonstrations,
+installation controls, and playground themes. Candidate-bound browser proof
+rules remain in force; local design QA does not transfer prior approvals.
