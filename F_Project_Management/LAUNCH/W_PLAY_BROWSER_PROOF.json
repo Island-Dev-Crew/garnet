@@ -1,28 +1,28 @@
 {
   "schema": "garnet.w-play.browser-proof/1",
-  "captured_at": "2026-10-12T21:52:04.479Z",
+  "captured_at": "2026-10-31T19:50:22.926Z",
   "verdict": "pass",
-  "duration_ms": 7485,
+  "duration_ms": 8132,
   "execution": {
     "engine": "playwright-browser-page",
-    "browser": "154.0.8037.98",
+    "browser": "156.0.8078.79",
     "node_global_present": false,
     "runtime_ready": true,
     "service_workers": "blocked"
   },
   "git": {
-    "tested_commit": "9096c130ba33d2968df31cb7f53f3a3555077d46",
-    "tested_tree": "558d46c7542400c027741b274df2cf07c8182b94",
+    "tested_commit": "ecbebb8fadcb8263a91c56d7dce416c73f79a15b",
+    "tested_tree": "a81ca4f228da33b4538985520f8efea084396816",
     "runtime_inputs_clean": true
   },
   "host": {
     "os": "darwin",
     "arch": "arm64",
-    "node": "v22.22.3"
+    "node": "v22.22.2"
   },
   "package": {
     "schema": "garnet.playground.wasm-package/1",
-    "source_tree_sha256": "5cd74106a82716e85f561a3a37c2c6b8a02095ce2d324f32f392ab2c6ac8a822",
+    "source_tree_sha256": "0e05d1003986c16f425bb67aab8793f954456f74fb4d3849397c1a42180da68a",
     "artifacts": {
       "garnet_wasm.js": {
         "bytes": 6581,
@@ -36,51 +36,51 @@
   },
   "runtime_inputs": {
     "schema": "garnet.w-play.runtime-inputs/1",
-    "sha256": "1b73f3230ebcc67d6dcc852f7affd79b253216ea494bbb66edef10450b650038",
+    "sha256": "77d01f9afc77f7c72971ed0cc0eb5e88955992f7e22f6965fff93dcfa6065895",
     "files": {
       "apps/garnet-studio/package-lock.json": {
         "bytes": 44280,
-        "sha256": "911df15f8e4de68b8c63cb5a4f62f26bb6f89b043b40ad4ed6cfaaa5c5b54b1e"
+        "sha256": "d94935900e197c6585595f202728bd3a574b6e2ca684d5f7da242a671552a5dd"
       },
       "apps/garnet-studio/package.json": {
         "bytes": 495,
-        "sha256": "067b03003f8fb2cbe8d5f71c907e5ca270c18e207ba480cb9db5e242f1756881"
+        "sha256": "08823c7b0dc903ad0457a0198813b6951bff130acacf68eb1ab8f2ba4434c55a"
       },
       "docs/icons/garnet-192.png": {
         "bytes": 67820,
         "sha256": "790a70b22ea92e6f7004eec6196c0807f612d149a2bb40115d31d44ab68927fa"
       },
       "docs/index.html": {
-        "bytes": 17195,
-        "sha256": "dfe049b862a789863c6b35d46ef991079e0f61ecbb343c387b1040537a8b0509"
+        "bytes": 17738,
+        "sha256": "d99d1d11b47c726fed5e0aa88316af65501fa734a5f730d604e3f5de60241abb"
       },
       "docs/acceptance-demo.js": {
-        "bytes": 11926,
-        "sha256": "5b17787d790dbb84c1366e8eb0e5c37daeae21ffca1b53c6d9f66d8bd85c7bf7"
+        "bytes": 12475,
+        "sha256": "56f9945a3f159d43214ca6bd0de11a7c57083bf4f17e40020b3ce83e5024ee80"
       },
       "docs/evidence-scenes.css": {
-        "bytes": 12907,
-        "sha256": "de90f1ecf11abe72ffc2341f60ff98837f37e438eb243c2d40ee32cda7c8f62d"
+        "bytes": 12922,
+        "sha256": "08a658bf95e45937d3a6755e23595997e3521e6603d4c28392114e074ae68afc"
       },
       "docs/evidence-scenes.js": {
-        "bytes": 11120,
-        "sha256": "eb6bff73018bb88898aeeb6a4bad6574d0922f452684644e4f582d820f3e874c"
+        "bytes": 11101,
+        "sha256": "1a40d169e38726a3518022a74d59e13ff65325f80fb9ec701d0ec32a55bfe237"
       },
       "docs/front-door.css": {
-        "bytes": 53113,
-        "sha256": "594195e877a53448c5a4ec179a6c836f8393810143fce20e3aecd5eecfd43c23"
+        "bytes": 47040,
+        "sha256": "424fe5db0fcff4f9b8b918bf9eb1c5e033f146fc6eb0da7f56594c1e45d99ccd"
       },
       "docs/front-door.js": {
-        "bytes": 31770,
-        "sha256": "3ecc5b8be37b57dd5470be574e2fccae0bd115613aa14409bdbc343ed19dfea3"
+        "bytes": 37124,
+        "sha256": "307e9049741e772802fc126deb50b26eb0ca8005e2cbca72caf8837f3ca9871f"
       },
       "docs/identity.css": {
-        "bytes": 6057,
-        "sha256": "8fcb329ccf8ace00bf6055a30bc3a0a1ffdf0e8a231861539193d575684e476f"
+        "bytes": 6077,
+        "sha256": "7823dfc740652284836b2d6b488f0dc379eac8367a800d64f7033f0c07148eff"
       },
       "docs/reference.html": {
-        "bytes": 118229,
-        "sha256": "139d9229dc9185c752021153634c8bdb0c9590baf70d0861d887fcd55d39fc50"
+        "bytes": 121531,
+        "sha256": "d461379181ddf7733141e97da4c5c32e20734cbbce2a570d167c4d07a3bc3f7c"
       },
       "docs/site-return.css": {
         "bytes": 680,
@@ -98,25 +98,29 @@
         "bytes": 2376,
         "sha256": "56024688e6f2970dd633cd3afa7a01488f41c46f42611ae2d0e6714ff0a6e388"
       },
-      "docs/spectrum.js": {
-        "bytes": 5588,
-        "sha256": "31195fc8dccac5085ecb00e822ecd07a7e443978ba8a4a91ba58fbc0c21b83e0"
+      "docs/authority-spectrum.css": {
+        "bytes": 7937,
+        "sha256": "4e5341582e1ca5a50955d1f93a121e153fd8cb37def048c803241fb4045fef96"
+      },
+      "docs/authority-spectrum.js": {
+        "bytes": 10797,
+        "sha256": "2c2a8880255fe9cad258f15f9c150599836bb89031fe34c56cf61e5d3f9fbcc0"
       },
       "docs/playground/themes.css": {
-        "bytes": 4088,
-        "sha256": "98de8b8888754eda931cda2208dd0fd9da6f4aa2336e8204d320a55af1ab13a7"
+        "bytes": 4045,
+        "sha256": "df81b1c08cd8448334833fc8504756ed4dce7a9f3645a4f7cb833f4d2a173c07"
       },
       "docs/playground/themes.js": {
-        "bytes": 4966,
-        "sha256": "ac70aea514d80d77547ff1b9f14d0ea0e5da86c180019977afbca61c0ab4323a"
+        "bytes": 5432,
+        "sha256": "f964e1cf1f21b2c1ec42e38daee28054ec3dcfb9fa97cf962820868e27053883"
       },
       "docs/service-worker.js": {
-        "bytes": 3712,
-        "sha256": "60c6ccf3ca9e53acad3f8501ef34e319613ae9321a64d0fca3161d88842af7dc"
+        "bytes": 3798,
+        "sha256": "d659e706b1d8892890f4bb7007776a87953c0c06c3db27159a363f3417f22a20"
       },
       "docs/playground.html": {
         "bytes": 14738,
-        "sha256": "96dde3287daf271ed0cbdc933fa692e974edbfe231fa1d8ba2b453467a6c2a0d"
+        "sha256": "709ec6a9ae45cce5d9174ee3440b252493bab3744707a7acada7dd76ee047108"
       },
       "docs/playground/examples.json": {
         "bytes": 6628,
@@ -136,11 +140,11 @@
       },
       "docs/playground/pkg/provenance.json": {
         "bytes": 8589,
-        "sha256": "2be380957ef4a7d63baff789a7f6516f40ed2b340cf3aff2dcdafbb746e3a238"
+        "sha256": "82ae646ff19b7a58f90c66a62f381d3a40153df0d6aaa6f96eeac8efed417acf"
       },
       "scripts/smoke_garnet_playground_browser.mjs": {
-        "bytes": 21807,
-        "sha256": "d4f721de6ce53d77593cc6218f85ad6d8a7d66d53a05a934d6d3b0d56f6cbf8c"
+        "bytes": 21850,
+        "sha256": "8d93c39a21c2f6af16112b280675dbaeb89255fdc977c281ba0d7318d0171bc9"
       },
       "scripts/smoke_garnet_playground_phase1_journeys.mjs": {
         "bytes": 14032,
@@ -154,8 +158,8 @@
       "declared": "^1.49.1",
       "version": "1.61.1",
       "integrity": "sha512-8nKv6+0RJSL9FE4jYOEGXnPeM/Hg12qZpmqzZjRh3qM0Y7c3z1mrOTfFLids72RDQYVh9WpLEfR5WdpNX4fkig==",
-      "package_json_sha256": "067b03003f8fb2cbe8d5f71c907e5ca270c18e207ba480cb9db5e242f1756881",
-      "package_lock_sha256": "911df15f8e4de68b8c63cb5a4f62f26bb6f89b043b40ad4ed6cfaaa5c5b54b1e",
+      "package_json_sha256": "08823c7b0dc903ad0457a0198813b6951bff130acacf68eb1ab8f2ba4434c55a",
+      "package_lock_sha256": "d94935900e197c6585595f202728bd3a574b6e2ca684d5f7da242a671552a5dd",
       "install_command": "npm ci --ignore-scripts"
     }
   },
@@ -167,8 +171,11 @@
       "docs/assets/garnet-demonstration-poster.jpg",
       "docs/assets/garnet-demonstration.mp4",
       "docs/assets/garnet-hero.webp",
+      "docs/assets/garnet-spectrum.webp",
       "docs/assets/garnet-stone-cutout.webp",
       "docs/assets/garnet_positioning_matrix_v2_1.png",
+      "docs/authority-spectrum.css",
+      "docs/authority-spectrum.js",
       "docs/blog/feed.xml",
       "docs/blog/index.html",
       "docs/cra-article-14.html",
@@ -212,7 +219,6 @@
       "docs/site-return.js",
       "docs/site-shell.css",
       "docs/site-shell.js",
-      "docs/spectrum.js",
       "docs/status.html",
       "docs/stdlib.html",
       "docs/synthesis.html",
@@ -391,8 +397,11 @@
       "old_cache_retired": true,
       "cached": [
         {
-          "name": "garnet-web-v26",
+          "name": "garnet-web-v28",
           "paths": [
+            "/authority-spectrum.js",
+            "/authority-spectrum.css",
+            "/assets/garnet-spectrum.webp",
             "/assets/garnet_positioning_matrix_v2_1.png",
             "/assets/dev_tools_market_growth_v2_1.png",
             "/omarchy.html",
@@ -403,7 +412,6 @@
             "/front-door.css",
             "/front-door.js",
             "/acceptance-demo.js",
-            "/spectrum.js",
             "/site-shell.js",
             "/site-shell.css",
             "/identity.css",
@@ -455,7 +463,7 @@
   },
   "visual": {
     "screenshot": "ops/lane2a/evidence/30-playground-browser.png",
-    "screenshot_sha256": "e35ca5c29b1c79f8dcc0599621105e6e180d90db0e2ed46e738c37305ed3a935",
+    "screenshot_sha256": "0db8eabd7c4d0cac2c095aca86e9e866eb15210b775b7cfaee3113fd698cde6f",
     "desktop": {
       "horizontal_overflow": false,
       "runtime_state": "ready"
