@@ -18,7 +18,8 @@ Owns repository automation that is too project-specific for ordinary cargo comma
   sources only (workspace `Cargo.toml` version, `all_prims()` counts, the
   readiness reporters, `git tag`, a measured `cargo test --workspace` run)
   and stamps `<!-- truth:KEY -->VALUE<!-- /truth -->` markers in `README.md`,
-  `FAQ.md`, `docs/index.html`, and `docs/status.html` (RB-0d: the site's
+  `FAQ.md`, `docs/index.html`, `docs/reference.html` (the original homepage behind the
+  front door), and `docs/status.html` (RB-0d: the site's
   By-the-Numbers/readiness cards are stamped, not fetched — documented
   decision; one mechanism, no client-side failure mode). `--skip-tests`
   carries the previous test measurement forward with its provenance.

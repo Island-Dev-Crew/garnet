@@ -2055,12 +2055,17 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
 
     def test_public_site_surfaces_objective_accounting_without_overclaiming(self) -> None:
         docs_dir = Path(__file__).resolve().parents[1] / "docs"
-        site = (docs_dir / "index.html").read_text(
-            encoding="utf-8"
-        )
+        # The concise front door (index.html) opens the complete original
+        # homepage (reference.html); the bans below cover both pages.
+        site = (docs_dir / "index.html").read_text(encoding="utf-8") + (
+            docs_dir / "reference.html"
+        ).read_text(encoding="utf-8")
         status_site = (docs_dir / "status.html").read_text(encoding="utf-8")
 
-        self.assertIn("Objective accounting", site)
+        self.assertIn(
+            "Objective accounting",
+            (docs_dir / "reference.html").read_text(encoding="utf-8"),
+        )
         # T5a (C5-17): #545 replaced the front door and dropped the phrase
         # "MIT/productization objective" from index.html; the status page
         # carries the same objective under its "MIT/productization" label.

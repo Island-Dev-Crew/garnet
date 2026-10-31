@@ -141,7 +141,9 @@ class GarnetAdoptionSurfaceStatusTests(unittest.TestCase):
     def test_repo_and_site_point_to_the_adoption_surface_reporter(self) -> None:
         root = SCRIPT.parents[1]
         readme = (root / "README.md").read_text(encoding="utf-8")
-        site = (root / "docs" / "index.html").read_text(encoding="utf-8")
+        # The original homepage, which carries these pins, is docs/reference.html
+        # since the V2 front door.
+        site = (root / "docs" / "reference.html").read_text(encoding="utf-8")
 
         self.assertIn("scripts/garnet_adoption_surface_status.py", readme)
         self.assertIn("scripts/garnet_adoption_surface_status.py", site)

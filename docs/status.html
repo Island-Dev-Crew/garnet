@@ -33,6 +33,7 @@
   a { color: var(--gold); text-decoration: none; }
   .container { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
   nav { border-bottom: 1px solid var(--rule); background: rgba(10,10,15,.86); position: sticky; top: 0; }
+  section[id] { scroll-margin-top: 96px; }
   nav .container { display: flex; align-items: center; gap: 24px; padding-top: 14px; padding-bottom: 14px; }
   .brand { font-family: var(--serif); font-weight: 700; letter-spacing: .18em; color: var(--ink); }
   .brand span { color: var(--garnet); }
@@ -62,9 +63,12 @@
     /* A table never widens the page; wide rows scroll inside it. */
     table { display: block; overflow-x: auto; }
   }
+li a, p a:not(.btn) { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+li a:hover, p a:not(.btn):hover { text-decoration-thickness: 2px; }
 </style>
-</head>
-<body>
+<link rel="stylesheet" href="site-return.css"><script defer src="site-return.js"></script>
+<link rel="stylesheet" href="site-shell.css?rev=20261007.3"><script defer src="site-shell.js?rev=20261031.1"></script></head>
+<body><div class="site-return-bar"><a data-experience-return href="index.html#home">← Garnet</a><a href="scope.html">Build scope →</a></div>
 <nav>
   <div class="container">
     <a class="brand" href="index.html" aria-label="Garnet home">GAR<span>N</span>ET</a>
@@ -84,6 +88,35 @@
     <p class="lead" style="font-size:0.85em">Truth wiring (RB-0d): the numeric cards below are stamped from <code>docs/truth.json</code> by <code>cargo run -p xtask -- truth</code> and guarded by <code>truth --check</code>; the repo-native reporters (<code>scripts/garnet_readiness_status.py</code>, <code>scripts/garnet_mit_readiness_status.py</code>) remain the authoritative source the stamps derive from.</p>
   </div>
 </header>
+<section id="release-details">
+  <div class="container">
+    <h2>Release and Install Details</h2>
+    <p>The landing pages keep installation to one command. The specifics live here.</p>
+    <ul>
+      <li><strong>Installer behavior.</strong> <code>install.sh</code> installs the v0.8.2 release asset for the host and verifies it against <code>SHA256SUMS</code>. It falls back to a source install through <code>cargo install --locked</code> when no asset matches, the host glibc is older than 2.39, or the installed binary does not run. <code>install.ps1</code> installs the Windows x86_64 build after the same checksum comparison.</li>
+      <li><strong>Signer, then integrity.</strong> When <code>gpg</code> is installed, both installers first check that <code>SHA256SUMS</code> is signed by the release key pinned for the version being installed, v0.8.2 included, and stop if it is not. Without <code>gpg</code> they warn and check integrity only; on Windows, Gpg4win provides <code>gpg</code>. The <a href="https://github.com/Island-Dev-Crew/garnet/blob/main/docs/release-signing.md">signing guide</a> explains the check and how to verify by hand.</li>
+      <li><strong>Not published in v0.8.2.</strong> A signed macOS <code>.pkg</code>, a notarized Studio app, a native Windows ARM64 CLI, and an MSI.</li>
+      <li><strong>Linux.</strong> Packages and tarballs need glibc 2.39 or newer (Ubuntu 24.04+, Debian 13+, Fedora 40+).</li>
+      <li><strong>Source builds.</strong> Rust 1.95+ and native build tools; CI also tracks current stable.</li>
+      <li><strong>Release contents.</strong> CLI binaries for macOS (Apple Silicon and Intel), Linux (x86_64 and ARM64) and Windows x86_64, plus a CycloneDX SBOM.</li>
+    </ul>
+  </div>
+</section>
+<section id="workbench-scope">
+  <div class="container">
+    <h2>What the Front-Door Workbench Shows</h2>
+    <ul>
+      <li><strong>Check access (live).</strong> The checker inspects the example's annotated call; it does not run the call. Closure, function-value, actor-handler, string-interpolation, top-level-initializer and <code>method_missing</code> edges are outside its propagation, and unannotated function bodies are not checked. Match-guard calls, and same-named methods on impl types whose paths share a last segment, are not yet traced. Accept and Reject are a local review choice in the browser, not a signed approval. See the <a href="scope.html">scope page</a>.</li>
+      <li><strong>Review a change (live).</strong> The diff compares declared capability surfaces. It does not prove the absence of undeclared authority, and bound annotations are not compared.</li>
+      <li><strong>The spectrum.</strong> It draws only what the live checker reported for the example above it: declared kinds, kinds reached without a declaration, and newly gained kinds. A changed input invalidates the earlier verdict; an unavailable or failed check never lights a substituted result.</li>
+      <li><strong>Trace the source (recorded).</strong> The commands demonstrate an unsigned seal/v2 on current source; the v0.8.2 download uses seal/v1. Agent and model identity is self-declared. Digest binding is not independent proof of who created the source, and a signed manifest is not proof that a program is correct.</li>
+      <li><strong>Bound recursion (illustrated).</strong> <code>@max_depth</code> limits recursion of the annotated function. It is not a general time, memory, fuel or termination guarantee.</li>
+      <li><strong>Memory (illustrated).</strong> Four declaration kinds, reference stores, allocator adapters, observable root lifecycles and narrow episodic text persistence exist. Production backends, full ARC finalizers and broader persistence remain incomplete; the illustration is not a persistence or retrieval benchmark.</li>
+      <li><strong>Actors (illustrated).</strong> The reload path is a Rust actor-runtime API. Signature verification is not wired into that path; there is no managed Garnet <code>actor.reload_signed</code> call to demonstrate.</li>
+    </ul>
+  </div>
+</section>
+
 
 <section>
   <div class="container grid">
@@ -156,7 +189,7 @@
         <tr>
           <td><code>garnet-lsp/</code></td>
           <td>verified</td>
-          <td>Diagnostics, hover, go-to-definition, document/workspace symbols, rename, quick fixes, and semantic tokens must stay green.</td>
+          <td>Diagnostics, hover, go-to-definition, document/workspace symbols, rename, quick fixes, and semantic tokens must stay green. Diagnostics parity with <code>garnet check</code> is open.</td>
         </tr>
         <tr>
           <td><code>editors/vscode/</code></td>
@@ -327,6 +360,10 @@
     </table>
   </div>
 </section>
+
+
+
+
 
 <section>
   <div class="container">

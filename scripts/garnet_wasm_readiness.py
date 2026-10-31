@@ -47,6 +47,22 @@ BROWSER_RUNTIME_INPUTS = (
     "apps/garnet-studio/package.json",
     "docs/icons/garnet-192.png",
     "docs/index.html",
+    # The concise front door and the original homepage behind it load these.
+    "docs/acceptance-demo.js",
+    "docs/evidence-scenes.css",
+    "docs/evidence-scenes.js",
+    "docs/front-door.css",
+    "docs/front-door.js",
+    "docs/identity.css",
+    "docs/reference.html",
+    "docs/site-return.css",
+    "docs/site-return.js",
+    "docs/site-shell.css",
+    "docs/site-shell.js",
+    "docs/authority-spectrum.css",
+    "docs/authority-spectrum.js",
+    "docs/playground/themes.css",
+    "docs/playground/themes.js",
     "docs/service-worker.js",
     "docs/playground.html",
     "docs/playground/examples.json",
@@ -54,6 +70,42 @@ BROWSER_RUNTIME_INPUTS = (
     "docs/playground/pkg/garnet_wasm.js",
     "docs/playground/pkg/garnet_wasm_bg.wasm",
     "docs/playground/pkg/provenance.json",
+    # The visited pages also request these: the service worker's precache list,
+    # which the cold-install journey fetches, and the demonstration video.
+    "docs/assets/dev_tools_market_growth_v2_1.png",
+    "docs/assets/garnet-demonstration-poster.jpg",
+    "docs/assets/garnet-demonstration.mp4",
+    "docs/assets/garnet-hero.webp",
+    "docs/assets/garnet-spectrum.webp",
+    "docs/assets/garnet-stone-cutout.webp",
+    "docs/assets/garnet_positioning_matrix_v2_1.png",
+    "docs/assets/idc-palm-logo-64.webp",
+    "docs/blog/feed.xml",
+    "docs/blog/index.html",
+    "docs/cra-article-14.html",
+    "docs/demos/acceptance/README.md",
+    "docs/demos/acceptance/accepted.garnet",
+    "docs/demos/acceptance/before.garnet",
+    "docs/demos/acceptance/changed.garnet",
+    "docs/demos/acceptance/record.json",
+    "docs/demos/acceptance/replay.py",
+    "docs/getting-started.html",
+    "docs/governance.html",
+    "docs/icons/garnet-512.png",
+    "docs/install.sh",
+    "docs/ladder.html",
+    "docs/manifest.webmanifest",
+    "docs/minispec.html",
+    "docs/models.css",
+    "docs/models.html",
+    "docs/novel.html",
+    "docs/omarchy.html",
+    "docs/releases.xml",
+    "docs/scope.html",
+    "docs/status.html",
+    "docs/stdlib.html",
+    "docs/synthesis.html",
+    "docs/why.html",
     "scripts/smoke_garnet_playground_browser.mjs",
     "scripts/smoke_garnet_playground_phase1_journeys.mjs",
 )
@@ -375,9 +427,13 @@ def browser_proof_valid(proof: dict | None = None) -> bool:
         phase1 = journeys["phase1"]
         offline = journeys["offline"]
         requested = network["requested_committed_files"]
+        # Bounded: the cold-install journey requests every committed file the
+        # service worker precaches (57 entries in garnet-web-v29) plus the
+        # playground runtime. A larger site needs a reviewed bump here, and
+        # every requested file must be a bound runtime input.
         if (
             not isinstance(requested, list)
-            or not 1 <= len(requested) <= 32
+            or not 1 <= len(requested) <= 64
             or len(requested) != len(set(requested))
             or not all(isinstance(item, str) and _safe_repo_file(item) for item in requested)
         ):
@@ -390,6 +446,7 @@ def browser_proof_valid(proof: dict | None = None) -> bool:
         except ValueError:
             return False
         required_requests = {
+            "docs/reference.html",
             "docs/playground.html",
             "docs/playground/live.js",
             "docs/playground/pkg/garnet_wasm.js",
@@ -426,6 +483,7 @@ def browser_proof_valid(proof: dict | None = None) -> bool:
             and network.get("external_requests") == []
             and network.get("untracked_requests") == []
             and required_requests.issubset(requested)
+            and set(requested).issubset(BROWSER_RUNTIME_INPUTS)
             and tracked.returncode == 0
             and run == {
                 "schema": "garnet.wasm.run/1",

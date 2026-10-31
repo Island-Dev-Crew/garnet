@@ -13,6 +13,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "sync_garnet_promo_video_site.mjs"
 SITE = ROOT / "docs" / "index.html"
+# The complete original homepage behind the front door; it carries #demonstration.
+REFERENCE = ROOT / "docs" / "reference.html"
 SERVICE_WORKER = ROOT / "docs" / "service-worker.js"
 
 
@@ -39,13 +41,15 @@ class GarnetPromoSiteSyncTests(unittest.TestCase):
         # by #566, which replaced it with the #demonstration section and
         # garnet-demonstration.mp4. The page must not claim the retired embed,
         # and the promo snapshot records that no promo embed is present.
-        site = SITE.read_text(encoding="utf-8")
+        front_door = SITE.read_text(encoding="utf-8")
+        reference = REFERENCE.read_text(encoding="utf-8")
         worker = SERVICE_WORKER.read_text(encoding="utf-8")
 
-        self.assertNotIn('id="promo"', site)
-        self.assertNotIn("assets/garnet-promo.mp4", site)
+        for page in (front_door, reference):
+            self.assertNotIn('id="promo"', page)
+            self.assertNotIn("assets/garnet-promo.mp4", page)
         self.assertNotIn("assets/garnet-promo.mp4", worker)
-        self.assertIn('id="demonstration"', site)
+        self.assertIn('id="demonstration"', reference)
 
     def test_script_copies_media_assets_and_manifested_evidence(self) -> None:
         source = SCRIPT.read_text(encoding="utf-8")

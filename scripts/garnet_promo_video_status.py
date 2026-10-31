@@ -144,7 +144,12 @@ def _public_site_embed_passed(desktop: Path) -> bool:
         return False
     if not all(path.is_file() and path.stat().st_size > 0 for path in assets):
         return False
+    # The front door (index.html) and the complete original homepage it opens
+    # (reference.html) are one public site; an embed on either counts.
+    reference = ROOT / "docs" / "reference.html"
     site_text = site.read_text(encoding="utf-8")
+    if reference.is_file():
+        site_text += reference.read_text(encoding="utf-8")
     worker_text = worker.read_text(encoding="utf-8")
     return all(
         token in site_text
@@ -251,10 +256,12 @@ def _locked_assets() -> list[dict[str, str | bool]]:
 
 def _source_surfaces() -> list[dict[str, str | bool]]:
     return [
+        # The complete original homepage moved behind the concise front door
+        # into reference.html, with its objective accounting and install copy.
         _surface_entry(
             "public-site",
-            ROOT / "docs" / "index.html",
-            "public website copy and install/PWA surface",
+            ROOT / "docs" / "reference.html",
+            "public website reference homepage: copy and install surface",
             "Objective accounting",
         ),
         _surface_entry(

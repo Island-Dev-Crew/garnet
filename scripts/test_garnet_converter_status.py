@@ -130,7 +130,9 @@ class GarnetConverterStatusTests(unittest.TestCase):
         self.assertIn("safe-mode ownership candidates", rendered)
 
     def test_docs_converter_section_matches_current_truth(self) -> None:
-        site = (ROOT / "docs" / "index.html").read_text(encoding="utf-8")
+        # The original homepage, which carries the converter section, is
+        # docs/reference.html since the V2 front door.
+        site = (ROOT / "docs" / "reference.html").read_text(encoding="utf-8")
 
         self.assertIn("Rust · Ruby · Python · Go", site)
         self.assertIn("migration assistant, not a full transpiler", site)

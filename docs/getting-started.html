@@ -31,8 +31,9 @@
   .next{display:flex;flex-wrap:wrap;gap:14px 26px;margin-top:16px;font-size:15px;}
   footer{border-top:1px solid var(--rule);margin-top:64px;padding-top:22px;color:var(--ink-muted);font-size:13px;text-align:center;}
 </style>
-</head>
-<body>
+<link rel="stylesheet" href="site-return.css"><script defer src="site-return.js"></script>
+<link rel="stylesheet" href="site-shell.css?rev=20261007.3"><script defer src="site-shell.js?rev=20261031.1"></script></head>
+<body><div class="site-return-bar"><a data-experience-return href="index.html#home">← Garnet</a><a href="scope.html">Build scope →</a></div>
 <div class="wrap">
   <div class="top"><a href="/index.html">← garnet-lang.org</a> &nbsp;·&nbsp; <a href="/index.html#install">Install</a> &nbsp;·&nbsp; <a href="minispec.html">Mini-Spec</a> &nbsp;·&nbsp; <a href="https://github.com/Island-Dev-Crew/garnet" target="_blank" rel="noopener noreferrer">GitHub ↗</a></div>
 
@@ -71,7 +72,7 @@ def main() {
   println("Run `garnet run src/main.garnet` to execute.")
   0
 }</pre>
-  <p>The <code>@caps()</code> annotation declares the OS authority a function may use; empty declares none. Files, time, network, subprocesses and the memory tiers need <code>@caps(fs)</code>, <code>@caps(time)</code>, <code>@caps(net)</code>, <code>@caps(proc)</code> and <code>@caps(mem)</code>. <code>garnet check</code> rejects an undeclared call when it is reached through a named call chain from an annotated function, cycles included. On <code>main</code> (unreleased; the v0.8.2 release gates 15 and has no <code>mem</code> capability gate), the twenty-four gated host primitives (file I/O, outbound TCP, environment, processes, time and UUID v4/v7, file logging, memory tiers) also need the program entry's declared budget at run time. <code>garnet run</code> does not run the checker, so run <code>garnet check</code> first.</p>
+  <p>The <code>@caps()</code> annotation declares the OS authority a function may use; empty declares none. Files, time, network and subprocesses need <code>@caps(fs)</code>, <code>@caps(time)</code>, <code>@caps(net)</code> and <code>@caps(proc)</code>. <code>garnet check</code> rejects an undeclared call when it is reached along the named call chains it traces from an annotated function. On <code>main</code> (unreleased; the v0.8.2 release gates 15 and has no <code>mem</code> kind), the checker also follows cycles, the memory tiers need <code>@caps(mem)</code>, and the twenty-four gated host primitives (file I/O, outbound TCP, environment, processes, time and UUID v4/v7, file logging, memory tiers) need the program entry's declared budget at run time. <code>garnet run</code> does not run the checker, so run <code>garnet check</code> first.</p>
 
   <h2><span class="step">5</span>Test it</h2>
 <pre><span class="p">$</span> garnet test
@@ -88,7 +89,7 @@ def main() {
   Edit src/main.garnet to change this message.
   Run `garnet run src/main.garnet` to execute.
   =&gt; 0</pre>
-  <p>The trailing <code>=&gt; 0</code> is <code>main</code>'s return value (its exit code).</p>
+  <p>The trailing <code>=&gt; 0</code> is <code>main</code>'s printed return value. <code>garnet run</code> exits with status 0 after a successful run, regardless of that value; a runtime error exits with status 1.</p>
 
   <h2><span class="step">7</span>Make a change</h2>
   <p>Edit the first <code>println</code> in <code>src/main.garnet</code>, then re-run <code>garnet run src/main.garnet</code>. That edit/run loop is the whole inner cycle.</p>

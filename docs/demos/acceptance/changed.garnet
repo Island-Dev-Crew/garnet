@@ -1,0 +1,5 @@
+@caps(fs)
+def main() {
+  fs::write_file("report.txt", "Changed after review")
+  0
+}

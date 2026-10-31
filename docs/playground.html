@@ -224,8 +224,11 @@
   @media (max-width: 820px) { .line-numbers { height: 280px; } }
   @media (max-width: 520px) { .toolbar select { max-width: 100%; min-width: 0; } }
 </style>
-</head>
-<body>
+<link rel="stylesheet" href="playground/themes.css">
+<script defer src="playground/themes.js?rev=20261029.2"></script>
+<link rel="stylesheet" href="site-return.css"><script defer src="site-return.js"></script>
+<link rel="stylesheet" href="site-shell.css?rev=20261007.3"><script defer src="site-shell.js?rev=20261031.1"></script></head>
+<body class="playground-themed" data-playground-theme="garnet"><div class="site-return-bar"><a data-experience-return href="index.html#home">← Garnet</a><a href="scope.html">Build scope →</a></div>
 <main class="shell">
   <header class="topbar">
     <div class="brand">
@@ -241,6 +244,9 @@
     </div>
     <div id="runtime-status" class="runtime" data-state="loading" role="status" aria-live="polite">Loading runtime</div>
   </header>
+
+  <div class="theme-bar" data-theme-controls></div>
+  <p class="theme-credit">Make yourself at home. Theme switching inspired by <a href="https://omarchy.org/#themes" target="_blank" rel="noopener noreferrer">Omarchy by DHH</a>.</p>
 
   <div class="toolbar" aria-label="Playground commands">
     <select id="example-picker" aria-label="Example source">

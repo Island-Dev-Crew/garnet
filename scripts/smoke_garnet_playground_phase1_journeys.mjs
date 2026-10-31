@@ -115,7 +115,9 @@ export async function phase1Journeys(page, baseUrl, equal) {
   if (!/[a-f0-9]{64}/.test(evidence) || !evidence.includes('scripts/build_playground_wasm.py')) throw Error('evidence digest or rebuild command absent');
   await page.setViewportSize({width:375,height:844});
   equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, '375px overflow');
-  await page.goto(`${baseUrl}/index.html`, { waitUntil: 'domcontentloaded', timeout:15000 });
+  // The embedded playground lives in the complete original homepage, which the
+  // concise front door (index.html) opens; reference.html is that page.
+  await page.goto(`${baseUrl}/reference.html`, { waitUntil: 'domcontentloaded', timeout:15000 });
   await page.locator('#pg-load').click();
   const frame = page.frameLocator('#pg-mount iframe');
   await frame.locator('#runtime-status[data-state=ready]').waitFor();
@@ -164,7 +166,7 @@ export async function offlineJourney(browser, baseUrl, equal) {
     equal(await page.locator('#check-state').textContent(), 'Check passed', 'cold install offline check');
     await page.locator('#diff-caps').click();
     equal(await page.locator('#diff-verdict').textContent(), 'No authority expansion', 'cold install offline diff');
-    await page.goto(`${baseUrl}/index.html`, {waitUntil:'domcontentloaded'});
+    await page.goto(`${baseUrl}/reference.html`, {waitUntil:'domcontentloaded'});
     await page.locator('#pg-load').click();
     await page.frameLocator('#pg-mount iframe').locator('#runtime-status[data-state=ready]').waitFor();
     equal(external.length, 0, 'offline no external requests');
