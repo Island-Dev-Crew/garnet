@@ -10,7 +10,7 @@ built for the code agents write and humans accept.</strong></p>
 <p align="center"><em>No authority without evidence. Acceptance is a decision made on evidence your own toolchain recomputes.</em></p>
 
 <p align="center">
-  <a href="https://github.com/Island-Dev-Crew/garnet/releases/latest">Release <!-- truth:latest_tag -->v0.8.2<!-- /truth --> · GPG-signed checksums</a> ·
+  <a href="https://github.com/Island-Dev-Crew/garnet/releases/latest">Release <!-- truth:latest_tag -->v0.8.3<!-- /truth --> · GPG-signed checksums</a> ·
   <a href="#license">MIT OR Apache-2.0</a> ·
   <a href="https://garnet-lang.org">garnet-lang.org</a> ·
   <a href="https://garnet-lang.org/status.html">Verified today / Still open</a> ·
@@ -18,9 +18,9 @@ built for the code agents write and humans accept.</strong></p>
   <a href="FAQ.md">FAQ</a>
 </p>
 
-<p align="center"><sub>Source on <code>main</code> is <!-- truth:version -->0.8.3<!-- /truth -->; the last release is <!-- truth:latest_tag -->v0.8.2<!-- /truth -->.</sub></p>
+<p align="center"><sub>Source on <code>main</code> is <!-- truth:version -->0.8.3<!-- /truth -->; the last release is <!-- truth:latest_tag -->v0.8.3<!-- /truth -->.</sub></p>
 
-<p align="center"><sub>The v0.8.2 binary lags <code>main</code>: it gates 15 host primitives, has no <code>mem</code> capability gate and emits seal/v1. The 24-row gate, <code>mem</code> and seal/v2 described below are on <code>main</code> and not yet in a release.</sub></p>
+<p align="center"><sub>v0.8.3 ships the 24-row gate, <code>mem</code> and seal/v2 described below. The v0.8.2 binary gates 15 host primitives, has no <code>mem</code> capability gate and emits seal/v1.</sub></p>
 
 ---
 
@@ -98,7 +98,7 @@ and aimed at agent-authored code:
   must declare its budget. Reached instead through a function value, a closure, an actor handler,
   a top-level initializer, a string interpolation or `method_missing`, a call contributes no edge
   and the checker stays silent (finding U-91). A cycle in the call graph is followed: every function
-  in it inherits the cycle's requirements (U-117, cured 2026-09). `garnet run` does not invoke the checker. Under the `garnet` CLI on `main`
+  in it inherits the cycle's requirements (U-117, cured 2026-09). `garnet run` does not invoke the checker. Under the `garnet` CLI from v0.8.3
   (the v0.8.2 binary gates 15 and has no `mem` capability gate) the 24 gated host-authority primitives (fs, net, proc, env, time, log-to-file, and the four `memory::*`
   tiers under `mem`) additionally trap at run time
   unless the **program entry's** own declared budget covers the capability, whichever call edge
@@ -127,12 +127,11 @@ and aimed at agent-authored code:
 curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh
 ```
 
-Release-first, source-fallback. <!-- truth:latest_tag -->v0.8.2<!-- /truth --> ships
+Release-first, source-fallback. <!-- truth:latest_tag -->v0.8.3<!-- /truth --> ships
 `.deb` / `.rpm` packages and tarballs for Linux (x86_64, ARM64), macOS tarballs and a Windows
 zip, with a GPG-signed `SHA256SUMS`; verify per [docs/release-signing.md](docs/release-signing.md).
 The GPG signature covers `SHA256SUMS`, not the binaries.
-The v0.8.2 binary predates `main`'s 24-row runtime gate, the `mem` capability and seal/v2.
-The Linux assets need glibc 2.39+ (Ubuntu 24.04+, Debian 13+, Fedora 40+).
+The Linux assets need glibc 2.34+; CI installs them in clean Debian 12, Ubuntu 22.04 and AlmaLinux 9 containers.
 On Windows, run `irm https://garnet-lang.org/install.ps1 | iex` in PowerShell. No matching
 package for your platform? The installer builds from source (Rust 1.95+; CI also tracks current stable — per
 [CONTRIBUTING.md](CONTRIBUTING.md)), or:
@@ -158,12 +157,12 @@ garnet verify src/main.garnet src/main.garnet.manifest.json --signature
 
 ## Verified today / Still open
 
-Garnet is a **research-grade prototype (<!-- truth:latest_tag -->v0.8.2<!-- /truth -->), not
+Garnet is a **research-grade prototype (<!-- truth:latest_tag -->v0.8.3<!-- /truth -->), not
 production-complete** — and this README will never tell you otherwise.
 
 | Verified today | Still open |
 |---|---|
-| <!-- truth:latest_tag -->v0.8.2<!-- /truth --> release: Linux x86_64/ARM64 `.deb`, `.rpm` and tarballs, macOS tarballs, Windows zip, SBOM, GPG-signed `SHA256SUMS` | macOS `.pkg` notarization, Windows `.msi` (credential-gated) |
+| <!-- truth:latest_tag -->v0.8.3<!-- /truth --> release: Linux x86_64/ARM64 `.deb`, `.rpm` and tarballs, macOS tarballs, Windows zip, SBOM, GPG-signed `SHA256SUMS` | macOS `.pkg` notarization, Windows `.msi` (credential-gated) |
 | `@caps` + `@max_depth` enforced on interpreter **and** VM; cross-OS trap parity recorded | OS-sandbox enforcement beyond Linux seccomp |
 | Capability-bounded acceptance demo: agent code accepted *and refused* on evidence, sealed | **Under construction:** `garnet build --evidence` (W-SHIP; no shipping CLI flag); independent verification of the self-found red-team fix |
 | <!-- truth:primitive_count -->84<!-- /truth --> capability- and stability-tagged stdlib primitives | Production VM performance (unbenchmarked, unclaimed) |

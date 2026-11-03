@@ -111,7 +111,7 @@ automated reviewers.
 .TP
 .B seal \fIFILE\fR
 Check source and emit a seal/v2 in-toto attestation, ready for external signing.
-seal/v2 is on main and not yet released; the v0.8.2 release emits seal/v1.
+seal/v2 ships from v0.8.3; the v0.8.2 release emits seal/v1.
 The subject binds LF-normalized source, including capability declarations.
 Fatal checker diagnostics prevent output; advisories remain nonfatal.
 The seal is content provenance, not a signature.
@@ -248,7 +248,7 @@ The capabilities are \fBfs\fR (file-system read and write), \fBnet\fR
 primitive is gated on them.
 
 .SH ENFORCEMENT SCOPE
-On main (unreleased; the v0.8.2 release gates 15 and has no \fBmem\fR
+From v0.8.3 (the v0.8.2 release gates 15 and has no \fBmem\fR
 capability gate), at run
 time \fI@caps\fR is enforced for the 24 entry-gated host primitives:
 the file-system calls (\fIread_file\fR, \fIwrite_file\fR, \fIread_bytes\fR,

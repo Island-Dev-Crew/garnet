@@ -2,8 +2,9 @@
 
 The website checks the filesystem example with its committed WASM package.
 `record.json` is a separate recording of seven actual CLI commands, built from
-current source at `aba11b329e3284845ba7c9cd4c870998503a9030` on 5 October 2026.
-That source implements seal/v2; the published v0.8.2 release implements seal/v1.
+source at `aba11b329e3284845ba7c9cd4c870998503a9030` on 5 October 2026.
+That source and the published v0.8.3 release implement seal/v2; the v0.8.2
+release implements seal/v1.
 
 Download `replay.py`, `before.garnet`, `accepted.garnet`, and `changed.garnet`
 into one directory. Build the CLI from the pinned source, then run:

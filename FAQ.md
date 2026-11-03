@@ -1,6 +1,6 @@
 # Garnet — Frequently Asked Questions
 
-Last updated: 2026-09-11 · latest tag <!-- truth:latest_tag -->v0.8.2<!-- /truth --> (research-grade milestone; the Release ships CLI binaries for macOS, Linux and Windows, checksum-verified against a GPG-signed `SHA256SUMS`, plus an SBOM)
+Last updated: 2026-11-03 · latest tag <!-- truth:latest_tag -->v0.8.3<!-- /truth --> (research-grade milestone; the Release ships CLI binaries for macOS, Linux and Windows, checksum-verified against a GPG-signed `SHA256SUMS`, plus an SBOM)
 
 ---
 
@@ -50,7 +50,7 @@ Memory: Paper VI Experiment 4 measured 21% peak RSS reduction on the multi-agent
 
 ## Is Garnet production-ready?
 
-**<!-- truth:latest_tag -->v0.8.2<!-- /truth --> is research-grade and not production-complete.** Specifically:
+**<!-- truth:latest_tag -->v0.8.3<!-- /truth --> is research-grade and not production-complete.** Specifically:
 
 - **Ready**: scaffolding (`garnet new`), the four-language converter (`garnet convert`), deterministic + signed builds (`garnet build --deterministic --sign`), CapCaps checking plus the runtime entry gate on 24 primitives, scaffolded `garnet test`, the <!-- truth:primitive_count -->84<!-- /truth --> bridged stdlib registry primitives, parser fuzz harness, rules-based compiler advisory mode, the S16 LSP surface (diagnostics, hover, go-to-definition, document/workspace symbols, CST-precise rename), release-backed VSIX assets, Linux, macOS and Windows CLI release assets under a GPG-signed `SHA256SUMS`, and deterministic cross-machine CI.
 - **Active-partial**: macOS Studio packaging without Developer ID notarization, Windows/Linux Studio target proof, bytecode VM performance path, LSP hover/go-to-def screenshot hardening, promo video human/aesthetic acceptance, proof/benchmark measurements, and provider-neutral advisory handoffs.
@@ -132,10 +132,9 @@ Signing is opt-in. Without `--sign`, the build still produces a deterministic ma
 
 The full corpus in this repository: seven research papers plus four addenda, the canonical Mini-Spec v1.0, the engineering workspace, current examples, v0.5 slice ledger, release evidence, public site/blog artifacts, and stage handoff documents. Start with [CURRENT_STATE.md](CURRENT_STATE.md), [F_Project_Management/GARNET_CURRENT_VS_HISTORICAL_LEDGER.md](F_Project_Management/GARNET_CURRENT_VS_HISTORICAL_LEDGER.md), and [F_Project_Management/GARNET_v0_5_SLICE_DOGFOOD.md](F_Project_Management/GARNET_v0_5_SLICE_DOGFOOD.md) before relying on older v4.2 handoffs.
 
-## What's coming after v0.8.2?
+## What's coming after v0.8.3?
 
-- Front door + truth guard: machine-generated public numbers (`docs/truth.json`), README/site truth wiring, and version-narrative cleanup — the W-REBUILD RB-0 band.
-- Foundation rebuild (zero language-semantics change): caps bitset, crash-surface sweep, registry-derived stdlib dispatch, parser-substrate unification, environment rebuild — then a Jon-gated backend-decision memo.
+- Foundation rebuild (zero language-semantics change): the remaining W-REBUILD work, then a backend-decision memo.
 - Trust hardening (parallel lanes): independent re-verification of the self-found red-team fix, SLSA/Sigstore planning.
 - Product gates: Apple Developer ID notarization, Windows installer/`.msi`, Linux desktop GUI proof, Marketplace/OpenVSX publication, and fuller clean-machine reproduction evidence.
 - Try-it path before any public launch wave: package registry beyond stub. The [browser playground](https://garnet-lang.org/playground.html) shipped.

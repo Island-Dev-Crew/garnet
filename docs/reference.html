@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Garnet lang — the evidence language</title>
-<meta name="description" content="English is how you tell an agent what to do. Garnet lang is how anyone else can trust what it did. A capability-bounded language whose checker rejects an undeclared call along the named call chains it traces from an annotated function, cycles included on current source, whose diffs report widened authority, and whose builds and seals a stranger can recompute. By Island Dev Crew.">
+<meta name="description" content="English is how you tell an agent what to do. Garnet lang is how anyone else can trust what it did. A capability-bounded language whose checker rejects an undeclared call along the named call chains it traces from an annotated function, cycles included, whose diffs report widened authority, and whose builds and seals a stranger can recompute. By Island Dev Crew.">
 <meta name="theme-color" content="#73021E">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/garnet-192.png">
@@ -1033,7 +1033,7 @@ document.addEventListener('DOMContentLoaded', () => {
 </nav>
 
 <!-- ═════════════════════════════════════════════════════════════ HERO -->
-<section class="hero garnet-hero" id="top" aria-labelledby="hero-title"><img class="hero-art" src="assets/garnet-hero.webp" alt="A cut garnet fused with a weathered metal lattice, crossed by a single gold line." width="1672" height="941"><div class="hero-grid wrap"><div aria-hidden="true"></div><div class="hero-copy"><p class="eyebrow">A language for agent-authored code</p><h1 id="hero-title" aria-label="Garnet">Garne<span>T</span></h1><p class="hero-sub">English is how you tell an agent what to do.<br>Garnet is how anyone else can trust what it did.</p><div class="hero-actions"><a class="btn primary" href="index.html#install">Get started <span class="arrow" aria-hidden="true">→</span></a><a class="btn" href="index.html#use-cases" data-boundary-tour>See the boundary <span class="arrow" aria-hidden="true">↓</span></a></div><p class="hero-note">macOS · Windows · Linux</p></div></div><div class="hero-baseline"><span>NO AUTHORITY WITHOUT EVIDENCE</span><span>v0.8.2</span></div></section>
+<section class="hero garnet-hero" id="top" aria-labelledby="hero-title"><img class="hero-art" src="assets/garnet-hero.webp" alt="A cut garnet fused with a weathered metal lattice, crossed by a single gold line." width="1672" height="941"><div class="hero-grid wrap"><div aria-hidden="true"></div><div class="hero-copy"><p class="eyebrow">A language for agent-authored code</p><h1 id="hero-title" aria-label="Garnet">Garne<span>T</span></h1><p class="hero-sub">English is how you tell an agent what to do.<br>Garnet is how anyone else can trust what it did.</p><div class="hero-actions"><a class="btn primary" href="index.html#install">Get started <span class="arrow" aria-hidden="true">→</span></a><a class="btn" href="index.html#use-cases" data-boundary-tour>See the boundary <span class="arrow" aria-hidden="true">↓</span></a></div><p class="hero-note">macOS · Windows · Linux</p></div></div><div class="hero-baseline"><span>NO AUTHORITY WITHOUT EVIDENCE</span><span>v0.8.3</span></div></section>
 
 <!-- ═══════════════════════════════════════════ PROOF — the first code -->
 <section id="proof" class="proof-sec">
@@ -1065,7 +1065,7 @@ def main() {
 <span class="g">garnet seal:</span> cosign not installed — in-toto predicate emitted UNSIGNED (wrap-don't-rebuild: install cosign to attest; Garnet does not sign supply-chain itself)</pre>
     </div>
 
-    <p class="evidence-note">Captured unedited on 2026-09-02 from <code>garnet 0.8.1</code> built at main <code>fbd64bc5</code>, in a fresh directory with no <code>.garnet-cache</code>; only long JSON lines are elided with an ellipsis. The checker rejects an undeclared call along the named call chains it traces from an annotated function, cycles included on current source &mdash; that is the bound the check holds to, and the <a href="https://github.com/Island-Dev-Crew/garnet/blob/main/C_Language_Specification/GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md">capability enforcement scope</a> states where it ends. <code>garnet run</code> does not invoke the checker. <a href="#try">Run check and diff-caps yourself, in the browser &rarr;</a></p>
+    <p class="evidence-note">Captured unedited on 2026-09-02 from <code>garnet 0.8.1</code> built at main <code>fbd64bc5</code>, in a fresh directory with no <code>.garnet-cache</code>; only long JSON lines are elided with an ellipsis. The checker rejects an undeclared call along the named call chains it traces from an annotated function, cycles included from v0.8.3 &mdash; that is the bound the check holds to, and the <a href="https://github.com/Island-Dev-Crew/garnet/blob/main/C_Language_Specification/GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md">capability enforcement scope</a> states where it ends. <code>garnet run</code> does not invoke the checker. <a href="#try">Run check and diff-caps yourself, in the browser &rarr;</a></p>
   </div>
 </section>
 
@@ -1302,12 +1302,12 @@ def main() {
       <div class="feature">
         <div class="icon">@caps(fs)</div>
         <h4>Capability Model</h4>
-        <p>A function declares its OS-authority budget with <code>@caps</code>. <code>garnet check</code> rejects an undeclared call along the named call chains it traces from an annotated function, cycles included on current source, and the twenty-four gated host primitives (current source; the published v0.8.2 download has fifteen) also require the program entry's declared budget at run time.</p>
+        <p>A function declares its OS-authority budget with <code>@caps</code>. <code>garnet check</code> rejects an undeclared call along the named call chains it traces from an annotated function, cycles included, and the twenty-four gated host primitives (v0.8.3; the v0.8.2 download has fifteen) also require the program entry's declared budget at run time.</p>
       </div>
       <div class="feature">
         <div class="icon">memory · 4</div>
         <h4>Agent-Native Memory</h4>
-        <p>First-class <code>memory working|episodic|semantic|procedural</code> declarations, each backed by a reference store (Mnemos). Kind-aware allocator adapters, observable root lifecycles and narrow episodic text persistence are implemented. Production backends, full ARC finalizers and broader persistence remain on the <a href="https://github.com/Island-Dev-Crew/garnet/blob/aba11b329e3284845ba7c9cd4c870998503a9030/C_Language_Specification/MEMORY_CORE_ROADMAP.md">Memory Core roadmap</a>. Paper VI Contribution 4.</p>
+        <p>First-class <code>memory working|episodic|semantic|procedural</code> declarations, each backed by a reference store (Mnemos). Kind-aware allocator adapters, observable root lifecycles and narrow episodic text persistence are implemented. Production backends, full ARC finalizers and broader persistence remain on the <a href="https://github.com/Island-Dev-Crew/garnet/blob/2ada7881c45b914ab9eb488af17d4653c1f8e8e5/C_Language_Specification/MEMORY_CORE_ROADMAP.md">Memory Core roadmap</a>. Paper VI Contribution 4.</p>
       </div>
       <div class="feature">
         <div class="icon">reload</div>
@@ -1355,10 +1355,10 @@ def main() {
   <div class="container reveal" id="caps-chapter">
     <h3>The Capability Model</h3>
     <h2>Every program has <span class="accent">a spectrum.</span></h2>
-    <p class="lead"><code>@caps(fs)</code> is a semantic beacon: a single annotation that front-loads the function's declared OS-authority budget. Humans and language models can scan a file and read what each function claims, and <code>garnet check</code> rejects an undeclared call along the named call chains it traces from an annotated function, cycles included on current source.</p>
+    <p class="lead"><code>@caps(fs)</code> is a semantic beacon: a single annotation that front-loads the function's declared OS-authority budget. Humans and language models can scan a file and read what each function claims, and <code>garnet check</code> rejects an undeclared call along the named call chains it traces from an annotated function, cycles included.</p>
 
     <div class="spectrum-reference" data-spectrum-reference>
-      <div class="spectrum-reference-grid"><div><h3 style="margin-bottom:16px;letter-spacing:0;text-transform:none;font:400 29px/1.2 var(--serif)">Three characters. A different review.</h3><p>Eight named authority kinds and a wildcard on current source; the v0.8.2 checker has seven, without <code>mem</code>. A small declaration edit can change what a reviewer needs to inspect.</p><div class="spectrum-example-tools" role="group" aria-label="Live spectrum examples"><button type="button" data-spectrum-example="undeclared" aria-pressed="false">Check undeclared fs</button><button type="button" data-spectrum-example="declared" aria-pressed="false">Declare fs &amp; check</button><button type="button" data-spectrum-example="diff" aria-pressed="false">Compare + net</button></div><pre class="spectrum-source" aria-label="Source for the selected spectrum example">Choose a live example.</pre><div class="spectrum-delta" aria-label="The network declaration edit" hidden><div><span>Source edit</span><strong>3 characters</strong></div><div><span>Declaration</span><strong>+ net</strong></div><div><span>Meaning</span><strong>More authority</strong></div></div></div><div data-spectrum-mount><p>The spectrum follows returned checker data.</p></div></div>
+      <div class="spectrum-reference-grid"><div><h3 style="margin-bottom:16px;letter-spacing:0;text-transform:none;font:400 29px/1.2 var(--serif)">Three characters. A different review.</h3><p>Eight named authority kinds and a wildcard; the v0.8.2 checker has seven, without <code>mem</code>. A small declaration edit can change what a reviewer needs to inspect.</p><div class="spectrum-example-tools" role="group" aria-label="Live spectrum examples"><button type="button" data-spectrum-example="undeclared" aria-pressed="false">Check undeclared fs</button><button type="button" data-spectrum-example="declared" aria-pressed="false">Declare fs &amp; check</button><button type="button" data-spectrum-example="diff" aria-pressed="false">Compare + net</button></div><pre class="spectrum-source" aria-label="Source for the selected spectrum example">Choose a live example.</pre><div class="spectrum-delta" aria-label="The network declaration edit" hidden><div><span>Source edit</span><strong>3 characters</strong></div><div><span>Declaration</span><strong>+ net</strong></div><div><span>Meaning</span><strong>More authority</strong></div></div></div><div data-spectrum-mount><p>The spectrum follows returned checker data.</p></div></div>
       <details><summary>Inspect the actual checker result</summary><pre class="spectrum-result-json">No reference example has been checked yet.</pre></details>
       <details><summary>What these bands mean</summary><p>Gold shows declared authority from the returned surface. Red identifies a missing declaration in a named-call diagnostic, or authority newly gained in a declaration diff. The status names which case applies; the colours never stand in for the verdict.</p><p>The diagram turns the checker’s returned authority data into a picture. Its scope and implementation detail live on Status.</p><a href="status.html#workbench-scope">Workbench details and current status →</a></details>
     </div>
@@ -1394,7 +1394,7 @@ def main() {
           <div class="desc">Wall + monotonic clocks and sleep. The declaration is checked at the language boundary; source and release runtime coverage are distinguished on <a href="scope.html">Build scope</a>.</div>
         </div>
         <div class="row"><div class="tag">@caps(net_internal)</div><div class="desc">The internal-network authority declaration. See <a href="scope.html">the current enforcement scope</a> for the actual network boundary.</div></div>
-        <div class="row"><div class="tag">@caps(mem)</div><div class="desc">The memory authority declaration on current source, alongside working, episodic, semantic and procedural memory roles. The v0.8.2 checker does not know <code>mem</code> and rejects it; see <a href="scope.html">Build scope</a>.</div></div>
+        <div class="row"><div class="tag">@caps(mem)</div><div class="desc">The memory authority declaration from v0.8.3, alongside working, episodic, semantic and procedural memory roles. The v0.8.2 checker does not know <code>mem</code> and rejects it; see <a href="scope.html">Build scope</a>.</div></div>
         <div class="row">
           <div class="tag">@caps(proc)</div>
           <div class="desc">Subprocess spawn and wait, gated at run time.</div>
@@ -1473,7 +1473,7 @@ def main() {
   <div class="container reveal">
     <div class="section-head"><h3>Get Garnet</h3><a class="section-offer" href="getting-started.html">Getting Started guide <span aria-hidden="true">&rarr;</span></a></div>
     <h2>Install with one curl command.</h2>
-    <p class="lead">One command installs the <strong>v0.8.2</strong> CLI for your platform, and release packages are verified against the published checksums. Prebuilt for macOS, Linux (x86_64 and ARM64) and Windows. Installer behavior and release details are on <a href="status.html#release-details">Status</a>.</p>
+    <p class="lead">One command installs the <strong>v0.8.3</strong> CLI for your platform, and release packages are verified against the published checksums. Prebuilt for macOS, Linux (x86_64 and ARM64) and Windows. Installer behavior and release details are on <a href="status.html#release-details">Status</a>.</p>
 
     <div id="os-detect" hidden style="display:none;align-items:center;gap:12px;margin:0 0 18px;padding:12px 16px;border:1px solid var(--rule);border-radius:10px;background:var(--bg-soft);font-size:14px;color:var(--ink-soft);">
       <span id="os-detect-msg"></span>
@@ -1503,16 +1503,16 @@ def main() {
     </script>
 
     <div class="install-note" style="margin:8px 0 26px;padding:16px 18px;border:1px solid var(--rule);border-radius:10px;background:var(--bg-soft);font-size:14.5px;color:var(--ink-soft);">
-      <strong style="color:var(--ink);">Before you install.</strong> Prebuilt packages need <em>no toolchain</em>. Building from source needs <strong>Rust 1.95+</strong>. Every v0.8.2 asset:
+      <strong style="color:var(--ink);">Before you install.</strong> Prebuilt packages need <em>no toolchain</em>. Building from source needs <strong>Rust 1.95+</strong>. Every v0.8.3 asset:
       <table style="border-collapse:collapse;margin:12px 0 4px;font-size:13.5px;width:100%;">
-        <tr style="color:var(--ink);"><th style="text-align:left;padding:4px 10px;border-bottom:1px solid var(--rule);">Platform</th><th style="text-align:left;padding:4px 10px;border-bottom:1px solid var(--rule);">v0.8.2 asset</th><th style="text-align:left;padding:4px 10px;border-bottom:1px solid var(--rule);">Install path</th></tr>
-        <tr><td style="padding:4px 10px;">macOS · Apple Silicon</td><td style="padding:4px 10px;"><code>garnet-0.8.2-aarch64-apple-darwin.tar.gz</code></td><td style="padding:4px 10px;">install.sh or the tarball</td></tr>
-        <tr><td style="padding:4px 10px;">macOS · Intel</td><td style="padding:4px 10px;"><code>garnet-0.8.2-x86_64-apple-darwin.tar.gz</code></td><td style="padding:4px 10px;">install.sh or the tarball</td></tr>
-        <tr><td style="padding:4px 10px;">Linux x86_64</td><td style="padding:4px 10px;"><code>garnet_0.8.2-1_amd64.deb</code> · <code>garnet-0.8.2-1.x86_64.rpm</code> · <code>garnet-0.8.2-x86_64-unknown-linux-gnu.tar.gz</code></td><td style="padding:4px 10px;">install.sh, a package or the tarball</td></tr>
-        <tr><td style="padding:4px 10px;">Linux ARM64</td><td style="padding:4px 10px;"><code>garnet_0.8.2-1_arm64.deb</code> · <code>garnet-0.8.2-1.aarch64.rpm</code> · <code>garnet-0.8.2-aarch64-unknown-linux-gnu.tar.gz</code></td><td style="padding:4px 10px;">install.sh, a package or the tarball</td></tr>
-        <tr><td style="padding:4px 10px;">Windows x86_64</td><td style="padding:4px 10px;"><code>garnet-0.8.2-x86_64-pc-windows-msvc.zip</code></td><td style="padding:4px 10px;">install.ps1 or the zip</td></tr>
+        <tr style="color:var(--ink);"><th style="text-align:left;padding:4px 10px;border-bottom:1px solid var(--rule);">Platform</th><th style="text-align:left;padding:4px 10px;border-bottom:1px solid var(--rule);">v0.8.3 asset</th><th style="text-align:left;padding:4px 10px;border-bottom:1px solid var(--rule);">Install path</th></tr>
+        <tr><td style="padding:4px 10px;">macOS · Apple Silicon</td><td style="padding:4px 10px;"><code>garnet-0.8.3-aarch64-apple-darwin.tar.gz</code></td><td style="padding:4px 10px;">install.sh or the tarball</td></tr>
+        <tr><td style="padding:4px 10px;">macOS · Intel</td><td style="padding:4px 10px;"><code>garnet-0.8.3-x86_64-apple-darwin.tar.gz</code></td><td style="padding:4px 10px;">install.sh or the tarball</td></tr>
+        <tr><td style="padding:4px 10px;">Linux x86_64</td><td style="padding:4px 10px;"><code>garnet_0.8.3-1_amd64.deb</code> · <code>garnet-0.8.3-1.x86_64.rpm</code> · <code>garnet-0.8.3-x86_64-unknown-linux-gnu.tar.gz</code></td><td style="padding:4px 10px;">install.sh, a package or the tarball</td></tr>
+        <tr><td style="padding:4px 10px;">Linux ARM64</td><td style="padding:4px 10px;"><code>garnet_0.8.3-1_arm64.deb</code> · <code>garnet-0.8.3-1.aarch64.rpm</code> · <code>garnet-0.8.3-aarch64-unknown-linux-gnu.tar.gz</code></td><td style="padding:4px 10px;">install.sh, a package or the tarball</td></tr>
+        <tr><td style="padding:4px 10px;">Windows x86_64</td><td style="padding:4px 10px;"><code>garnet-0.8.3-x86_64-pc-windows-msvc.zip</code></td><td style="padding:4px 10px;">install.ps1 or the zip</td></tr>
       </table>
-      <div style="margin-top:10px;">Linux packages need glibc 2.39 or newer (Ubuntu 24.04+, Debian 13+, Fedora 40+). On older distributions, the installer builds from source.</div>
+      <div style="margin-top:10px;">Linux packages need glibc 2.34 or newer; CI installs them in clean Debian 12, Ubuntu 22.04 and AlmaLinux 9 containers. On older distributions, the installer builds from source.</div>
       <div style="margin-top:10px;">Check a manual download from the folder that holds it and <code>SHA256SUMS</code>. To confirm who signed the checksums, follow the <a href="https://github.com/Island-Dev-Crew/garnet/blob/main/docs/release-signing.md">signing guide</a>.</div>
 <pre style="margin:8px 0 0;">shasum -a 256 --ignore-missing -c SHA256SUMS</pre>
     </div>
@@ -1542,7 +1542,7 @@ curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | GARNET
         <div class="install-wrap">
           <button class="copy" data-copy="curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh">Copy</button>
 <pre># Recommended — universal installer:
-# installs the checksum-verified v0.8.2 CLI for Apple Silicon or Intel.
+# installs the checksum-verified v0.8.3 CLI for Apple Silicon or Intel.
 curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh
 
 # Source install (any arch, needs a Rust toolchain):
@@ -1555,14 +1555,14 @@ git clone https://github.com/Island-Dev-Crew/garnet && cd garnet/garnet-cli && c
 <pre># Recommended — universal installer (SHA256SUMS-verified):
 curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh
 
-# Published v0.8.2 release assets:
-#   https://github.com/Island-Dev-Crew/garnet/releases/tag/v0.8.2
+# Published v0.8.3 release assets:
+#   https://github.com/Island-Dev-Crew/garnet/releases/tag/v0.8.3
 
-# Debian/Ubuntu (on ARM64: garnet_0.8.2-1_arm64.deb):
-sudo apt install ./garnet_0.8.2-1_amd64.deb
+# Debian/Ubuntu (on ARM64: garnet_0.8.3-1_arm64.deb):
+sudo apt install ./garnet_0.8.3-1_amd64.deb
 
-# Fedora/RHEL (on ARM64: garnet-0.8.2-1.aarch64.rpm):
-sudo dnf install ./garnet-0.8.2-1.x86_64.rpm
+# Fedora/RHEL (on ARM64: garnet-0.8.3-1.aarch64.rpm):
+sudo dnf install ./garnet-0.8.3-1.x86_64.rpm
 
 # Source install (any arch, needs a Rust toolchain):
 git clone https://github.com/Island-Dev-Crew/garnet && cd garnet/garnet-cli && cargo install --path .</pre>
@@ -1572,7 +1572,7 @@ git clone https://github.com/Island-Dev-Crew/garnet && cd garnet/garnet-cli && c
         <div class="install-wrap">
           <button class="copy" data-copy="irm https://garnet-lang.org/install.ps1 | iex">Copy</button>
 <pre># PowerShell (Windows PowerShell 5.1 or PowerShell 7+):
-# installs the v0.8.2 x86_64 build after verifying it against SHA256SUMS.
+# installs the v0.8.3 x86_64 build after verifying it against SHA256SUMS.
 irm https://garnet-lang.org/install.ps1 | iex
 
 # Source install (needs a Rust toolchain):
@@ -1772,7 +1772,7 @@ dist/Garnet Studio.app</pre>
       <a href="stdlib.html" class="doc-card">
         <div class="label">Reference</div>
         <h4>Stdlib Primitive Registry</h4>
-        <p>The current capability-tagged primitive table: pure string/array/crypto helpers plus explicit time, file, network, environment and process authority, and memory-tier authority on current source.</p>
+        <p>The current capability-tagged primitive table: pure string/array/crypto helpers plus explicit time, file, network, environment and process authority, and memory-tier authority.</p>
       </a>
       <a href="synthesis.html" class="doc-card">
         <div class="label">The Reconciliation</div>
@@ -1845,7 +1845,7 @@ dist/Garnet Studio.app</pre>
       © 2026 Island Development Crew · Dual-licensed MIT OR Apache-2.0 · garnet-lang.org
     </div>
     <div class="copyright" style="margin-top:6px;font-size:12px;">
-      Latest tag Garnet <!-- truth:latest_tag -->v0.8.2<!-- /truth --> (research-grade milestone; the Release ships CLI binaries for macOS, Linux and Windows, checksum-verified against a GPG-signed SHA256SUMS, plus an SBOM)
+      Latest tag Garnet <!-- truth:latest_tag -->v0.8.3<!-- /truth --> (research-grade milestone; the Release ships CLI binaries for macOS, Linux and Windows, checksum-verified against a GPG-signed SHA256SUMS, plus an SBOM)
     </div>
     <div class="copyright" style="margin-top:6px;font-size:12px;">
       No social accounts yet — follow development by watching the <a href="https://github.com/Island-Dev-Crew/garnet" target="_blank" rel="noopener noreferrer">repository</a>.

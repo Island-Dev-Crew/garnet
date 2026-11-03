@@ -12,7 +12,7 @@
 #
 # The script takes no parameters, so it works through `iex`. Override with
 # environment variables instead:
-#   GARNET_VERSION          release version (default 0.8.2)
+#   GARNET_VERSION          release version (default 0.8.3)
 #   GARNET_REPO             GitHub owner/name (default Island-Dev-Crew/garnet)
 #   GARNET_BASE_URL         release download base: https:// (every redirect
 #                           must stay on https), or file:/// for a local path
@@ -47,7 +47,7 @@
         Fail "this installer is for Windows. On macOS and Linux run: curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh"
     }
 
-    $version = '0.8.2'
+    $version = '0.8.3'
     if ($env:GARNET_VERSION) { $version = $env:GARNET_VERSION.TrimStart('v') }
     $repo = 'Island-Dev-Crew/garnet'
     if ($env:GARNET_REPO) { $repo = $env:GARNET_REPO }
@@ -129,6 +129,7 @@
     function Get-PinnedSigningKey([string]$Version) {
         if ($env:GARNET_SIGNING_KEY_FPR) { return $env:GARNET_SIGNING_KEY_FPR }
         if ($Version -eq '0.8.1' -or $Version -eq '0.8.2') { return '04D56F91F03817DDFFEBC62AC14DF6E713956ED1' }
+        if ($Version -eq '0.8.3') { return '7431F1BFAC2A395DE8975A3C3DB8CC713A6BCD50' }
         return $releaseKey083
     }
 

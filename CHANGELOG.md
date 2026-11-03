@@ -7,12 +7,46 @@ This file is updated in the same PR as the work it tracks (per the v0.5 slice
 contract). Lines added here are part of the calibrated record — if a
 slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
-## [0.8.3] — not yet tagged (the workspace moved to 0.8.3 on 2026-09-30)
+## [0.8.3] — 2026-11-03 (tag `v0.8.3` → `2ada7881`; the workspace moved to 0.8.3 on 2026-09-30)
 
-> Cut truth: the in-tree version is 0.8.3, so the release candidate reports
-> it. The `v0.8.3` tag is the maintainer's act and has not been cut; until it
-> is, the published release is v0.8.2. The sections below are everything merged
-> to `main` since v0.8.2, in their original order.
+### Released 0.8.3 — signature-checking installers, older-distro Linux, the 24-row gate (2026-11-03)
+
+- **Released:** the `v0.8.3` GitHub Release carries nine binary assets (Linux
+  x86_64 and ARM64 `.deb`, `.rpm` and tarballs; macOS arm64 and x86_64 tarballs;
+  a Windows x86_64 zip), a CycloneDX SBOM, two VSIX files, `SHA256SUMS` and
+  `SHA256SUMS.asc`. Verified after publishing:
+  - GPG `VALIDSIG` by `7431 F1BF AC2A 395D E897  5A3C 3DB8 CC71 3A6B CD50`
+    against `docs/garnet-release-keys.asc`, and all ten checksums OK.
+  - The macOS arm64 binary, and the x86_64 binary under Rosetta, report
+    `garnet 0.8.3`. Both Linux binaries need at most `GLIBC_2.34`.
+  - `install.sh` with `GARNET_VERSION=0.8.3` installs it; the same run pinned to
+    the previous key refuses, exits 1 and leaves no binary.
+  - The site's source command, `cargo install --locked --git … --tag v0.8.3
+    garnet-cli`, builds 0.8.3.
+  - On the published arm64 binary, `check` and `run` refuse an undeclared
+    `time::now_ms` and `memory::working`, `check` follows a cycle to report
+    `fs` on the functions that call into it, and `seal` emits seal/v2.
+- **Not exercised after publishing:** the Linux and Windows binaries on a host
+  of their own (CI's smoke jobs installed and ran the Linux packages),
+  `install.ps1` against the published release, and the two VSIX files.
+- **Known limits:**
+  - `.github/workflows/vscode-extension.yml` publishes the VSIX files on the tag
+    without the `release` environment's approval, so from 05:54Z until the
+    `release` job finished at 15:33Z the non-draft Release held only those two
+    files. They are not covered by `SHA256SUMS`.
+  - The man page inside the 0.8.3 packages still says seal/v2 and the 24-row gate
+    are unreleased. The source is corrected here, for the next release.
+- **Surfaces:** both installers now default to 0.8.3, so the published install
+  command serves it. README, FAQ, SECURITY, CLAUDE.md, CURRENT_STATE, the
+  specifications' version notes, the release feed, and the site's install panel,
+  status, scope, getting-started, funding, stdlib, CRA and why pages name v0.8.3 and
+  describe what it does. `scope.html` is a new snapshot at `2ada7881`, with v0.8.2
+  in a sentence below the table. The install panel's signing-guide link leaves a
+  commit whose guide lists only the previous key. The service worker moves to
+  `garnet-web-v30`.
+
+The sections below are everything merged to `main` since v0.8.2, in their
+original order.
 
 ### Limits in 0.8.3
 
@@ -364,7 +398,7 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   rejects a proof that requests a file outside them. The converter-status and
   adoption-surface tests, the MIT deck outline and the MIT demo route read
   `reference.html`, which now carries the text they pin or cite.
-- Install facts stay on v0.8.2 until the 0.8.3 assets are verified.
+- Install facts stayed on v0.8.2 until the 0.8.3 assets were verified.
 
 ### Dogfood matrix — probes run without the caller's interpreter variables
 
