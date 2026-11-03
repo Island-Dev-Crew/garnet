@@ -45,6 +45,10 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   commit whose guide lists only the previous key. The reference page's terminal
   capture is re-shot on the published macOS arm64 binary, showing seal/v2 and a
   changed source refused with exit 2. The service worker moves to `garnet-web-v30`.
+- **FAQ and specification corrections (cross-family review):** the FAQ no longer
+  says the installers skip the signature, that the parser rejects the converter's
+  note, that the mode bridge is wired, or that all 84 primitives are bridged. A
+  specification example no longer carries a personal address; `hello@` replaces it.
 
 The sections below are everything merged to `main` since v0.8.2, in their
 original order.

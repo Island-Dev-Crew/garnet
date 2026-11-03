@@ -27,7 +27,7 @@ Garnet ships a unified CLI that handles build, test, format, lint, doc, REPL, an
 name = "my-agent"
 version = "0.1.0"
 edition = "2026"
-authors = ["Jon <jon@islanddevcrew.com>"]
+authors = ["Island Development Crew <hello@garnet-lang.org>"]
 license = "MIT OR Apache-2.0"
 description = "An agent-native service built with Garnet"
 repository = "https://github.com/islanddevcrew/my-agent"

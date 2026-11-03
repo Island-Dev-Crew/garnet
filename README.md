@@ -133,7 +133,7 @@ zip, with a GPG-signed `SHA256SUMS`; verify per [docs/release-signing.md](docs/r
 The GPG signature covers `SHA256SUMS`, not the binaries.
 The Linux assets need glibc 2.34+; CI installs them in clean Debian 12, Ubuntu 22.04 and AlmaLinux 9 containers.
 On Windows, run `irm https://garnet-lang.org/install.ps1 | iex` in PowerShell. No matching
-package for your platform? The installer builds from source (Rust 1.95+; CI also tracks current stable — per
+package for your platform? `install.sh` builds from source (Rust 1.95+; CI also tracks current stable — per
 [CONTRIBUTING.md](CONTRIBUTING.md)), or:
 
 ```sh
