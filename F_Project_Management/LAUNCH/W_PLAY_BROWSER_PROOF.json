@@ -1,18 +1,18 @@
 {
   "schema": "garnet.w-play.browser-proof/1",
-  "captured_at": "2026-10-31T21:15:03.542Z",
+  "captured_at": "2026-11-03T17:33:09.718Z",
   "verdict": "pass",
-  "duration_ms": 7420,
+  "duration_ms": 9024,
   "execution": {
     "engine": "playwright-browser-page",
-    "browser": "156.0.8078.79",
+    "browser": "156.0.8078.80",
     "node_global_present": false,
     "runtime_ready": true,
     "service_workers": "blocked"
   },
   "git": {
-    "tested_commit": "ff5028d8262e0970551731be8a68c6c9ac481e70",
-    "tested_tree": "dceac37dc45bc54d87322776810560bbb7f70c93",
+    "tested_commit": "d921d35ed0dd6d7fda474e9c8ff671f53e582df6",
+    "tested_tree": "40dc2c7fb74afad1abaafe734e93da4e835caef6",
     "runtime_inputs_clean": true
   },
   "host": {
@@ -36,7 +36,7 @@
   },
   "runtime_inputs": {
     "schema": "garnet.w-play.runtime-inputs/1",
-    "sha256": "817663494b1c5bba5c3c36cb98b6d916df55796ccfce1aca6c90d65fd87ec0cd",
+    "sha256": "953ce8ada6fa6c71ce0dea7880f8388303a11b3f9652e39cd50995f26af02a1a",
     "files": {
       "apps/garnet-studio/package-lock.json": {
         "bytes": 44280,
@@ -52,11 +52,11 @@
       },
       "docs/index.html": {
         "bytes": 17738,
-        "sha256": "e8c2c5877b0c26b848067f04537b791372a84073a9b354e43bed8d7b6a2a2a69"
+        "sha256": "1890f660c82265825f9f22a4aaa7b63a7fed0829cb11bc72070777833163a7df"
       },
       "docs/acceptance-demo.js": {
-        "bytes": 12475,
-        "sha256": "56f9945a3f159d43214ca6bd0de11a7c57083bf4f17e40020b3ce83e5024ee80"
+        "bytes": 12500,
+        "sha256": "63315ef21e8b2341eae7fcfaa26dd1a71e2b444f64986962f52ea3509a257a63"
       },
       "docs/evidence-scenes.css": {
         "bytes": 12922,
@@ -72,15 +72,15 @@
       },
       "docs/front-door.js": {
         "bytes": 38506,
-        "sha256": "7436db413d39f2990f31d10a24c22f20a8456943dc2aafee75b840a9206c1c47"
+        "sha256": "4c4689de201ce32e4bd43461276a29f5f597b45889378c089bdcb8f201617613"
       },
       "docs/identity.css": {
         "bytes": 6077,
         "sha256": "7823dfc740652284836b2d6b488f0dc379eac8367a800d64f7033f0c07148eff"
       },
       "docs/reference.html": {
-        "bytes": 121519,
-        "sha256": "1d20b637dbca11eb957942467d23e9200945df6da85cf3c43d8678ed927cb188"
+        "bytes": 121793,
+        "sha256": "2e6f7d700dbcc5ec904b51b147570485be33bfebebfae685ffd16267a58a96c5"
       },
       "docs/site-return.css": {
         "bytes": 680,
@@ -116,7 +116,7 @@
       },
       "docs/service-worker.js": {
         "bytes": 3832,
-        "sha256": "11366f4aba8e442b43268182ff64169d0a837a0f5e86a76ec44505fc5de5f629"
+        "sha256": "9f137544f13396a94aeb857cc9bcaec3481cd119077a4d49a094bc9a0625cf64"
       },
       "docs/playground.html": {
         "bytes": 14738,
@@ -183,12 +183,12 @@
         "sha256": "baabff6e8c7a4d041a29419004cdc3719f57edf340c99135c242c12c692114ea"
       },
       "docs/cra-article-14.html": {
-        "bytes": 9655,
-        "sha256": "2bf7a97eb570891a5eb2e5357068f26d64e97a0734ddad86869d4f933f05d3aa"
+        "bytes": 9605,
+        "sha256": "bef621b4e3a831823d05ae8ec2ae3be194a8d805749f117e42907ec3e07dd97a"
       },
       "docs/demos/acceptance/README.md": {
-        "bytes": 1225,
-        "sha256": "afa4791b798b37876f5099f82fdb4f2a3cdd114373e89d8304cf413531c278bf"
+        "bytes": 1239,
+        "sha256": "c7a1769a4fc81e6f64f1fdba6312c05c6c3b95d9f192caba21d663e771712863"
       },
       "docs/demos/acceptance/accepted.garnet": {
         "bytes": 80,
@@ -211,8 +211,8 @@
         "sha256": "8a704726026798c7f9f51e187fc23abe86e4bdfeb4e6fdb7cce60cab61a71d89"
       },
       "docs/getting-started.html": {
-        "bytes": 9314,
-        "sha256": "e0883b251aa75e720547fd3270ce8a90cf92bc54e7882328f29613d2315bc559"
+        "bytes": 9293,
+        "sha256": "5e4e4a4fc296c7b806c88f4ff309a2a01115bd002aa9e48f34fe753293b44ecf"
       },
       "docs/governance.html": {
         "bytes": 7132,
@@ -223,8 +223,8 @@
         "sha256": "9466ea835e1b255fb3e08652f8b8747c1513be6ed3c5d3d93a65d47b26004580"
       },
       "docs/install.sh": {
-        "bytes": 20204,
-        "sha256": "52f4f6d1fe7692be905a81bdfe6bbf7e26a2ee6cf0ac292b7937851ce4824827"
+        "bytes": 20277,
+        "sha256": "1dd2c856cfe835792770889ded70a7266501ac60fa256fd64b8c6ca23708f2e8"
       },
       "docs/ladder.html": {
         "bytes": 28132,
@@ -255,28 +255,28 @@
         "sha256": "07d5e99239d0706d3317742b8fcabd29ab5ac7941a9c5d0365a6649321b9c793"
       },
       "docs/releases.xml": {
-        "bytes": 3651,
-        "sha256": "768d47416d012651406b58881d46134c35a2b8e693b11189ff0384d3b328df98"
+        "bytes": 4555,
+        "sha256": "577ad3d495e089b38c1ccf5cac6cb1b42d65811478957a9f8c96af86aac0410f"
       },
       "docs/scope.html": {
-        "bytes": 7352,
-        "sha256": "2e93e80fa68c1f3565fb97d1f584846f7471207350993bac6eda13679706cb65"
+        "bytes": 7688,
+        "sha256": "732af7a1af710985531eddc0f088fd9913043f4821e38b183be4ac9926ef75dd"
       },
       "docs/status.html": {
-        "bytes": 21937,
-        "sha256": "932cb3522f7da70d63d7124cb7245a7e1768617a1578bc4ef664b6fae709024a"
+        "bytes": 22370,
+        "sha256": "c5bc5b668caa0464a443a15650daf4c33ff119721f3aa15771710b315859ebae"
       },
       "docs/stdlib.html": {
-        "bytes": 15861,
-        "sha256": "f369b216aafb1d365d461c2dfd075d0c5c81553a9a56b58826e2c002d3dc3dc8"
+        "bytes": 15850,
+        "sha256": "dc430c50f7979da80f87b81da6c40e68993485ff67e8765f06eefa2b24a80795"
       },
       "docs/synthesis.html": {
         "bytes": 24771,
         "sha256": "e2b5d735a021ebf991cc70f194b2091ccda3b5065e1bc78b9fae5c40cd252fe6"
       },
       "docs/why.html": {
-        "bytes": 67363,
-        "sha256": "d2167f65568411a699dbcd24b4e5cbfe315df429e2c4e885ec7266de8325cb01"
+        "bytes": 67460,
+        "sha256": "70315fd118aea20e0a429a23949d79c5bf5981979986c321372b4f4852dc8a2b"
       },
       "scripts/smoke_garnet_playground_browser.mjs": {
         "bytes": 23073,
@@ -534,7 +534,7 @@
       "old_cache_retired": true,
       "cached": [
         {
-          "name": "garnet-web-v29",
+          "name": "garnet-web-v30",
           "paths": [
             "/authority-spectrum.js",
             "/authority-spectrum.css",

@@ -124,13 +124,13 @@ The guided check must invalidate its verdict and review choice after source
 declaration changes, reset, or a stale asynchronous response. Moving to another
 scenario must cancel rendering of an earlier check/record response. The editor
 handoff uses the existing v1 playground fragment and never executes automatically.
-`demos/acceptance/record.json` contains seven actual current-source CLI commands,
+`demos/acceptance/record.json` contains seven actual CLI commands from a pinned source build,
 their exact exit codes, source hashes and an unsigned seal/v2. `replay.py` checks
 missing/repaired declarations, the expansion exit-1 signal, byte-identical seals,
 positive source verification and changed-source refusal in a temporary directory.
 Regenerate it only by executing the script against a freshly built, identified
-CLI. Do not present the capture as a browser-generated seal or the published
-v0.8.2 behavior. Failed record loads must offer retry, without fabricated output.
+CLI. Do not present the capture as a browser-generated seal or as output of a
+published binary. Failed record loads must offer retry, without fabricated output.
 
 `scope.html` owns the compact published/current-source/roadmap distinction.
 Snapshot claims name the release, source revision and date. Capability holes,
@@ -187,13 +187,13 @@ reseal old evidence to make this visual change look accepted.
 
 ## Installation and release truth
 
-The release selector is pinned to the published v0.8.2 distribution. Prebuilt
+The release selector is pinned to the published v0.8.3 distribution. Prebuilt
 CLI binaries require no Rust compiler; source builds require Rust 1.95+ and
 native build prerequisites. Suggest an operating system while preserving all
 three platform overrides. Browser OS detection is not processor detection:
 manual processor choice is required before enabling package downloads.
 macOS/Linux use the shell installer: release mode by default, source mode on request. Windows ARM uses x64
-emulation. Linux release packages require glibc 2.39+. Keep SHA-256 integrity
+emulation. Linux release packages require glibc 2.34+. Keep SHA-256 integrity
 verification distinct from separate GPG authentication. Studio is an optional
 source-checkout workbench; do not offer an unpublished signed app package.
 Installation controls copy commands or link assets; they never run installers.

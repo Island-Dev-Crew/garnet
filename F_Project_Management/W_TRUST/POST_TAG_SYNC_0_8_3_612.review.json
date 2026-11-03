@@ -1,0 +1,29 @@
+{
+  "author_emails": [
+    "email:275140286+islanddevcrew@users.noreply.github.com"
+  ],
+  "author_ids": [
+    275140286
+  ],
+  "base_commit": "2ada7881c45b914ab9eb488af17d4653c1f8e8e5",
+  "blocking_findings": [],
+  "content_digest": "sha256:604623e263397f5a830bd7dfab7cdbcfed638b609bf0a4a5e9d12a0659247365",
+  "head_repository": "Island-Dev-Crew/garnet",
+  "head_repository_id": 1218183013,
+  "pull_request_id": 5140826126,
+  "pull_request_number": 612,
+  "repository": "Island-Dev-Crew/garnet",
+  "repository_id": 1218183013,
+  "review_scope": "Content proof binds exactly reviewed_head 5e51a9a4aa42f1c924631425b445bad97cff05da (tree 5c0c9586eca5d9d62b10d6ca3c9205a2aba3c4ec) on base 2ada7881c45b914ab9eb488af17d4653c1f8e8e5 and does not extend or backdate reviewed_head coverage. No approval is claimed for any earlier head: exact-head IDC-Trust-Review approval of the head that adds this record remains required. SCOPE: PR #612 is the post-tag sync for the published v0.8.3 release, whose tag points at the base commit: 34 changed files, 10 commits, one trust path. Both installers default to 0.8.3 and pin the rotated key for it by name; the public surfaces name v0.8.3 and say what it does in place of the release-lags-main wording; the install panel's signing-guide link leaves a commit whose guide lists only the previous key; the reference page's terminal capture is re-shot on the published macOS arm64 binary. No gate script, workflow, ruleset or Rust source changes. docs/why.html changes in exactly four places: its three version statements, and one sentence added after the sentence scripts/garnet_capability_scope_status.py pins, saying the W-PLAY gate has passed on macOS arm64 in Chrome at the commit its proof record names. The pinned sentence is unchanged, and the fuller rewrite with a re-pin stays with the next record-bound train. CROSS-FAMILY SEAT: OpenAI Codex (gpt-6-astra, reasoning effort max), each round from a fresh clone of origin detached at the reviewed head, in a workspace-write sandbox with no network and no browser; no tracked file changed in any round. Round P1 (the whole PR at 0d20efdd5058fb1ad59b270d02be042b99bc2ee1) returned REJECT with one HIGH (a personal address in a specification's manifest example) and five MEDIUM, all retained statements that predate this PR: the FAQ's installer paragraph, its converter paragraphs, its mode-boundary paragraph, its count of bridged primitives, and why.html understating the W-PLAY pass. Round P2 (0d20efdd..1c57e8676ecb856ee5e4b3f169128d78e74ac80d) confirmed the address cure by sweeping 126 public text files, the converter cure with a real convert and check on the published binary, the mode-boundary cure on both backends of that binary, and the count by enumerating the registry and running the two unbridged calls on both backends, and returned REJECT with two MEDIUM (the installer paragraph still imprecise; why.html not yet corrected) and one LOW (the capture said unedited while omitting three exit-status pairs). Round P3 (1c57e867..f0ad5bf33f7719d63a4365ea059e727db678aae0) confirmed the why.html sentence against the proof record and reproduced the re-recorded capture byte for byte, and returned REJECT with one MEDIUM on the installer paragraph in FAQ.md and docs/status.html. Round P4 (f0ad5bf3..5e51a9a4aa42f1c924631425b445bad97cff05da) returned CONFIRM with no open finding: every sentence of the two paragraphs true as a default-install summary, read with their explicit error qualifications, against docs/install.sh and docs/install.ps1, 62 W-PLAY input digests matching at the tested commit and at the reviewed head, 58 requested files all bound, and this digest recomputed independently. Each verdict is posted on the PR. IMPLEMENTER CHECKS at the reviewed head: all 100 single-line python steps of the agent documentation contracts job run locally, 99 passing and the non-pull-request rolling review step failing on the missing record; four browser suites on Chromium, Firefox and WebKit and one Node data suite. At 0d20efdd, before the docs-only delta: cargo test --workspace, 2469 passed and 0 failed. AUTHORS: the commits carry the GitHub noreply identity for IslandDevCrew; the authenticated GitHub author and committer principal of every commit, per pulls/612/commits, is IslandDevCrew ID 275140286. MERGE AUTHORITY: this PR touches a trust-kernel path, so it takes this record plus an authenticated approval from a principal disjoint from the author set at the exact candidate head, then Jon merges. Implementer seat: Claude Code (Claude Opus 5.5) for the edits, the W-PLAY re-records and this record. Content digest sha256:604623e263397f5a830bd7dfab7cdbcfed638b609bf0a4a5e9d12a0659247365 over 1 touched trust path. This premerge record is reviewer evidence only; it is not carrier approval, a GitHub approval, re-evaluation, merge, commit, push, tag, or release.",
+  "review_state": "APPROVED",
+  "reviewed_head": "5e51a9a4aa42f1c924631425b445bad97cff05da",
+  "reviewed_tree": "5c0c9586eca5d9d62b10d6ca3c9205a2aba3c4ec",
+  "reviewer_id": 306739987,
+  "reviewer_login": "IDC-Trust-Review",
+  "schema": "garnet.trust_kernel_review_record/v2",
+  "state": "premerge",
+  "touched_paths": [
+    "docs/why.html"
+  ],
+  "verdict": "pass"
+}

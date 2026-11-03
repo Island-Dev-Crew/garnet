@@ -1,6 +1,6 @@
 # Garnet v1.0 Mini-Spec
 **Supersedes:** v0.3 Mini-Spec (April 16, 2026)
-**Status:** Normative draft — canonical specification for Rungs 2–4 of the engineering ladder. It specifies ahead of the implementation: the released toolchain is v0.8.2, a research-grade prototype, and `GARNET_v0_4_2_Conformance_Matrix.md` records which sections are implemented.
+**Status:** Normative draft — canonical specification for Rungs 2–4 of the engineering ladder. It specifies ahead of the implementation: the released toolchain is v0.8.3, a research-grade prototype, and `GARNET_v0_4_2_Conformance_Matrix.md` records which sections are implemented.
 **Date:** April 16, 2026 (Phase 1B promotion)
 **Author:** Claude Code (Opus 4.7) at the direction of Jon — Island Development Crew
 **Anchor:** *"Where there is no vision, the people perish." — Proverbs 29:18*
@@ -923,7 +923,7 @@ Swift's `Sendable` evolved over multiple releases; v1.0 takes the SE-0302 mature
 
 ## 10. Recursive Execution Guardrails *(unchanged from v0.3 §10)*
 
-> **Implementation note (v0.8.2).** The MUSTs in this section are not implemented
+> **Implementation note (v0.8.3).** The MUSTs in this section are not implemented
 > as written. What ships is a per-function **runtime** recursion trap for
 > `@max_depth(N)`, identical on the interpreter and the VM
 > (`GARNET_BOUNDED_ENFORCEMENT.md`). There is no static rejection of spawn chains,

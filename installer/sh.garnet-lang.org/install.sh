@@ -1,5 +1,5 @@
 #!/bin/sh
-# Garnet universal installer, v0.8.2 stable-release default.
+# Garnet universal installer, v0.8.3 stable-release default.
 #
 # Public bootstrap URL:
 #   curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh
@@ -27,7 +27,7 @@
 
 set -eu
 
-GARNET_VERSION="${GARNET_VERSION:-0.8.2}"
+GARNET_VERSION="${GARNET_VERSION:-0.8.3}"
 case "${GARNET_VERSION}" in
   v*)
     GARNET_VERSION="${GARNET_VERSION#v}"
@@ -240,6 +240,7 @@ expected_sha256() {
 pinned_signing_key() {
     case "$1" in
         0.8.1|0.8.2) printf '%s' '04D56F91F03817DDFFEBC62AC14DF6E713956ED1' ;;
+        0.8.3) printf '%s' '7431F1BFAC2A395DE8975A3C3DB8CC713A6BCD50' ;;
         *) printf '%s' "$GARNET_RELEASE_KEY_0_8_3" ;;
     esac
 }
