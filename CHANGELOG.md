@@ -42,8 +42,9 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   status, scope, getting-started, funding, stdlib, CRA and why pages name v0.8.3 and
   describe what it does. `scope.html` is a new snapshot at `2ada7881`, with v0.8.2
   in a sentence below the table. The install panel's signing-guide link leaves a
-  commit whose guide lists only the previous key. The service worker moves to
-  `garnet-web-v30`.
+  commit whose guide lists only the previous key. The reference page's terminal
+  capture is re-shot on the published macOS arm64 binary, showing seal/v2 and a
+  changed source refused with exit 2. The service worker moves to `garnet-web-v30`.
 
 The sections below are everything merged to `main` since v0.8.2, in their
 original order.

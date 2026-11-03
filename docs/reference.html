@@ -1043,7 +1043,7 @@ document.addEventListener('DOMContentLoaded', () => {
     <p class="lead">Most language sites open with a greeting. This one opens with a rejection, because that is the product. The function below is annotated <code>@caps()</code> and calls <code>net::tcp_connect</code>; <code>garnet check</code> refuses it and exits 1. A diff then answers <em>what new authority does this change declare?</em>, and a seal writes the paperwork out of evidence that already exists.</p>
 
     <div class="term">
-        <div class="term-bar" aria-hidden="true"><i class="dotr"></i><i class="dotr"></i><i class="dotr"></i><span>garnet 0.8.1 · fresh directory</span><span class="real">real capture</span></div>
+        <div class="term-bar" aria-hidden="true"><i class="dotr"></i><i class="dotr"></i><i class="dotr"></i><span>garnet 0.8.3 · fresh directory</span><span class="real">real capture</span></div>
         <pre><span class="c">$ cat exfil.garnet</span>
 @caps()
 def main() {
@@ -1060,12 +1060,21 @@ def main() {
 <span class="c">$ garnet diff-caps --machine hello.garnet declared.garnet</span>
 {"schema":"garnet.diff-caps.machine/1","verdict":<span class="au">"authority-expanded"</span>,"authority_expanded":true,"capability_band":"2/5","exit_code":1,"aggregate_gained":[<span class="au">"net"</span>],…"scope":"declared-surface-only; does not prove absence of undeclared authority; bound annotations are not part of this surface"}
 
-<span class="c">$ garnet seal hello.garnet</span>
-{"_type":"https://in-toto.io/Statement/v1","subject":[{"name":"hello","digest":{"blake3":"be28668b…bf8845c2"}}],"predicateType":"https://garnet-lang.org/attestation/seal/v1",…
-<span class="g">garnet seal:</span> cosign not installed — in-toto predicate emitted UNSIGNED (wrap-don't-rebuild: install cosign to attest; Garnet does not sign supply-chain itself)</pre>
+<span class="c">$ garnet seal hello.garnet --out hello.seal.json</span>
+<span class="g">garnet seal:</span> predicate written to hello.seal.json
+<span class="g">garnet seal:</span> in-toto predicate emitted UNSIGNED (Garnet never signs); install cosign to sign it (wrap-don't-rebuild)
+
+<span class="c">$ garnet verify hello.garnet hello.seal.json</span>
+OK hello.garnet matches seal/v2 source and declared capabilities (content binding only; no signature verified)
+
+<span class="c">$ sed 's/world!/world?/' hello.garnet &gt; changed.garnet</span>
+<span class="c">$ garnet verify changed.garnet hello.seal.json</span>
+<span class="r">FAIL seal content/binding mismatch or noncanonical fields/bytes</span>
+<span class="c">$ echo $?</span>
+<span class="r">2</span></pre>
     </div>
 
-    <p class="evidence-note">Captured unedited on 2026-09-02 from <code>garnet 0.8.1</code> built at main <code>fbd64bc5</code>, in a fresh directory with no <code>.garnet-cache</code>; only long JSON lines are elided with an ellipsis. The checker rejects an undeclared call along the named call chains it traces from an annotated function, cycles included from v0.8.3 &mdash; that is the bound the check holds to, and the <a href="https://github.com/Island-Dev-Crew/garnet/blob/main/C_Language_Specification/GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md">capability enforcement scope</a> states where it ends. <code>garnet run</code> does not invoke the checker. <a href="#try">Run check and diff-caps yourself, in the browser &rarr;</a></p>
+    <p class="evidence-note">Captured unedited on 2026-11-03 from the published <code>garnet 0.8.3</code> macOS arm64 binary, in a fresh directory with no <code>.garnet-cache</code>; only the long JSON line is elided with an ellipsis. The seal is unsigned. The checker rejects an undeclared call along the named call chains it traces from an annotated function, cycles included from v0.8.3 &mdash; that is the bound the check holds to, and the <a href="https://github.com/Island-Dev-Crew/garnet/blob/main/C_Language_Specification/GARNET_CAPABILITY_ENFORCEMENT_SCOPE.md">capability enforcement scope</a> states where it ends. <code>garnet run</code> does not invoke the checker. <a href="#try">Run check and diff-caps yourself, in the browser &rarr;</a></p>
   </div>
 </section>
 
@@ -1391,7 +1400,7 @@ def main() {
         </div>
         <div class="row">
           <div class="tag">@caps(time)</div>
-          <div class="desc">Wall + monotonic clocks and sleep. The declaration is checked at the language boundary; source and release runtime coverage are distinguished on <a href="scope.html">Build scope</a>.</div>
+          <div class="desc">Wall + monotonic clocks and sleep. From v0.8.3 these are gated at run time, so the program entry must declare <code>time</code>; see <a href="scope.html">Build scope</a>.</div>
         </div>
         <div class="row"><div class="tag">@caps(net_internal)</div><div class="desc">The internal-network authority declaration. See <a href="scope.html">the current enforcement scope</a> for the actual network boundary.</div></div>
         <div class="row"><div class="tag">@caps(mem)</div><div class="desc">The memory authority declaration from v0.8.3, alongside working, episodic, semantic and procedural memory roles. The v0.8.2 checker does not know <code>mem</code> and rejects it; see <a href="scope.html">Build scope</a>.</div></div>
