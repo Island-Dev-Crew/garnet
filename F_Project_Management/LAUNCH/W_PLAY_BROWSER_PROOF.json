@@ -1,8 +1,8 @@
 {
   "schema": "garnet.w-play.browser-proof/1",
-  "captured_at": "2026-11-03T16:48:48.004Z",
+  "captured_at": "2026-11-03T17:13:13.602Z",
   "verdict": "pass",
-  "duration_ms": 11652,
+  "duration_ms": 9080,
   "execution": {
     "engine": "playwright-browser-page",
     "browser": "156.0.8078.80",
@@ -11,8 +11,8 @@
     "service_workers": "blocked"
   },
   "git": {
-    "tested_commit": "8f9888aa976c50e6dbf0eab06e8cf16f1c48861f",
-    "tested_tree": "c31da400e94ae865b5342da10ce0f92b72692d6a",
+    "tested_commit": "0e8cbb91a41501da0b582ab58668de3a753185f3",
+    "tested_tree": "6ab12ca614b9bbb5baa30bab60ee918a284d1c7c",
     "runtime_inputs_clean": true
   },
   "host": {
@@ -36,7 +36,7 @@
   },
   "runtime_inputs": {
     "schema": "garnet.w-play.runtime-inputs/1",
-    "sha256": "46e7ee7655133eb353f3260dcee758a44255e1c0775c94173073a79c43fbe64b",
+    "sha256": "19acad4bb5a30178560c7430580c46be8d112c07266ace79fe6c996af0aff6e6",
     "files": {
       "apps/garnet-studio/package-lock.json": {
         "bytes": 44280,
@@ -263,8 +263,8 @@
         "sha256": "732af7a1af710985531eddc0f088fd9913043f4821e38b183be4ac9926ef75dd"
       },
       "docs/status.html": {
-        "bytes": 22025,
-        "sha256": "9bb6b59ea619da4b88ace9893b5da5d40b428221d03732e5c6896659a79543b6"
+        "bytes": 22098,
+        "sha256": "33dbd365dacfd546f9d3153e747f24f9357d1415db6f4d5204588425b1cfbbd4"
       },
       "docs/stdlib.html": {
         "bytes": 15850,
@@ -275,8 +275,8 @@
         "sha256": "e2b5d735a021ebf991cc70f194b2091ccda3b5065e1bc78b9fae5c40cd252fe6"
       },
       "docs/why.html": {
-        "bytes": 67261,
-        "sha256": "06ffa303d7d7736320561da42d51f11bb87e525044aef1e05e2d6b92a2741ce6"
+        "bytes": 67460,
+        "sha256": "70315fd118aea20e0a429a23949d79c5bf5981979986c321372b4f4852dc8a2b"
       },
       "scripts/smoke_garnet_playground_browser.mjs": {
         "bytes": 23073,
