@@ -49,6 +49,8 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   says the installers skip the signature, that the parser rejects the converter's
   note, that the mode bridge is wired, or that all 84 primitives are bridged. A
   specification example no longer carries a personal address; `hello@` replaces it.
+  `docs/why.html` keeps its pinned sentence on the W-PLAY gate and now adds that the
+  gate has passed.
 
 The sections below are everything merged to `main` since v0.8.2, in their
 original order.
