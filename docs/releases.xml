@@ -5,8 +5,16 @@
   <link href="https://garnet-lang.org/releases.xml" rel="self"/>
   <link href="https://github.com/Island-Dev-Crew/garnet/releases"/>
   <id>https://garnet-lang.org/releases.xml</id>
-  <updated>2026-09-11T18:24:02Z</updated>
+  <updated>2026-11-03T15:33:54Z</updated>
   <author><name>Island Development Crew</name></author>
+  <entry>
+    <title>Garnet v0.8.3</title>
+    <id>https://github.com/Island-Dev-Crew/garnet/releases/tag/v0.8.3</id>
+    <link href="https://github.com/Island-Dev-Crew/garnet/releases/tag/v0.8.3"/>
+    <updated>2026-11-03T15:33:54Z</updated>
+    <published>2026-11-03T05:54:30Z</published>
+    <summary>v0.8.3 — CLI binaries for Linux x86_64 and ARM64 (.deb, .rpm, tarballs; glibc 2.34+), macOS Apple-Silicon and Intel tarballs and a Windows x86_64 zip, plus a CycloneDX SBOM, host-native VSIX assets, SHA256SUMS and its GPG signature SHA256SUMS.asc by the rotated release key. The binaries are not code-signed. The installers check that signature against the key they pin for the version when gpg is installed. 24 host primitives are entry-gated at run time, memory tiers need the mem capability, and garnet seal emits seal/v2. Research-grade prototype, not production-complete.</summary>
+  </entry>
   <entry>
     <title>Garnet v0.8.2</title>
     <id>https://github.com/Island-Dev-Crew/garnet/releases/tag/v0.8.2</id>

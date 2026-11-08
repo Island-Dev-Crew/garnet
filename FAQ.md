@@ -1,6 +1,6 @@
 # Garnet — Frequently Asked Questions
 
-Last updated: 2026-09-11 · latest tag <!-- truth:latest_tag -->v0.8.2<!-- /truth --> (research-grade milestone; the Release ships CLI binaries for macOS, Linux and Windows, checksum-verified against a GPG-signed `SHA256SUMS`, plus an SBOM)
+Last updated: 2026-11-03 · latest tag <!-- truth:latest_tag -->v0.8.3<!-- /truth --> (research-grade milestone; the Release ships CLI binaries for macOS, Linux and Windows, checksum-verified against a GPG-signed `SHA256SUMS`, plus an SBOM)
 
 ---
 
@@ -14,7 +14,7 @@ Every team that builds ambitious software eventually makes the same bargain: Rus
 
 ## How does the mode boundary actually work?
 
-A managed function calling a safe function sees raised exceptions where the safe code returned `Err(...)`. A safe function calling a managed function sees `Result<T, RaisedException>` where the managed code raised. ARC values flowing into safe scope auto-decay to affine references; affine values flowing back into managed scope re-promote to `Rc`. The compiler inserts the bridging adapters at the call sites; you write each function in the register that fits its job, and the boundary takes care of itself.
+It is specified and not wired. In the planned design, a managed function calling a safe function sees raised exceptions where the safe code returned `Err(...)`, a safe function calling a managed function sees `Result<T, RaisedException>` where the managed code raised, and ARC values auto-decay to affine references on the way into safe scope and re-promote to `Rc` on the way back. The grammar accepts both registers today, but that bridge is deferred: in v0.8.3 a safe function's `Result::Err` comes back to managed code as a plain value, and no exception is raised. See the [scope page](https://garnet-lang.org/scope.html).
 
 ## What's the capability model?
 
@@ -50,9 +50,9 @@ Memory: Paper VI Experiment 4 measured 21% peak RSS reduction on the multi-agent
 
 ## Is Garnet production-ready?
 
-**<!-- truth:latest_tag -->v0.8.2<!-- /truth --> is research-grade and not production-complete.** Specifically:
+**<!-- truth:latest_tag -->v0.8.3<!-- /truth --> is research-grade and not production-complete.** Specifically:
 
-- **Ready**: scaffolding (`garnet new`), the four-language converter (`garnet convert`), deterministic + signed builds (`garnet build --deterministic --sign`), CapCaps checking plus the runtime entry gate on 24 primitives, scaffolded `garnet test`, the <!-- truth:primitive_count -->84<!-- /truth --> bridged stdlib registry primitives, parser fuzz harness, rules-based compiler advisory mode, the S16 LSP surface (diagnostics, hover, go-to-definition, document/workspace symbols, CST-precise rename), release-backed VSIX assets, Linux, macOS and Windows CLI release assets under a GPG-signed `SHA256SUMS`, and deterministic cross-machine CI.
+- **Ready**: scaffolding (`garnet new`), the four-language converter (`garnet convert`), deterministic + signed builds (`garnet build --deterministic --sign`), CapCaps checking plus the runtime entry gate on 24 primitives, scaffolded `garnet test`, the <!-- truth:primitive_count -->84<!-- /truth --> stdlib registry primitives (two of them, `net::tcp_listen` and `net::udp_bind`, are unbridged stubs that do not execute), parser fuzz harness, rules-based compiler advisory mode, the S16 LSP surface (diagnostics, hover, go-to-definition, document/workspace symbols, CST-precise rename), release-backed VSIX assets, Linux, macOS and Windows CLI release assets under a GPG-signed `SHA256SUMS`, and deterministic cross-machine CI.
 - **Active-partial**: macOS Studio packaging without Developer ID notarization, Windows/Linux Studio target proof, bytecode VM performance path, LSP hover/go-to-def screenshot hardening, promo video human/aesthetic acceptance, proof/benchmark measurements, and provider-neutral advisory handoffs.
 - **Pending**: Apple Developer ID notarization, signed `.pkg`, Windows `.msi`, Linux desktop package/runtime proof, Marketplace/OpenVSX publication, provider-backed LLM assist, mechanized proof, external empirical study data, and native backend lowering.
 
@@ -60,7 +60,7 @@ For prototype agents, research demos, and source-checkout dogfood, Garnet is use
 
 ## How do I migrate from Ruby / Rust / Python / Go?
 
-`garnet convert <lang> <file>` reads source in any of the four languages and emits Garnet. Every output file starts with `@sandbox` and `@caps()`. Both are reviewer notes: the parser does not accept the `@sandbox` line, so the emitted file does not pass `garnet check` until a reviewer removes it and adds the `@caps(...)` the code needs.
+`garnet convert <lang> <file>` reads source in any of the four languages and emits Garnet. Every output file starts with a `# @sandbox` comment and `@caps()`. Both are reviewer notes, and neither is enforced: the comment is not a boundary, and a `@caps()` before a module does not bind the functions inside it. Every emitted file parses, because the converter fails rather than write one the parser rejects. Parsing is not correctness: review the file, resolve each `@migrate_todo`, declare the `@caps(...)` it needs, then run `garnet check`.
 
 The converter ships a lineage JSON for each output mapping every emitted Garnet AST node back to its source span. Migrate one file at a time; unconverted files stay in their source language. See [v4_1_Converter_Architecture.md](C_Language_Specification/v4_1_Converter_Architecture.md) for the full pipeline.
 
@@ -68,7 +68,7 @@ Input-dialect scope: each frontend targets a **stylized subset** of its source l
 
 ## What's `@sandbox` for?
 
-A `@sandbox` line is the converter's note that it produced the file from another language and granted no capabilities. Nothing enforces it: the parser rejects the line, so the file fails `garnet check` until a reviewer reads it, removes the line and adds the `@caps(...)` the code needs. The review is a human step, not a checker gate.
+A `# @sandbox` comment is the converter's note that it produced the file from another language and that nobody has reviewed it yet. Nothing enforces it. A reviewer reads the file, resolves each `@migrate_todo` and adds the `@caps(...)` the code needs. The review is a human step, not a checker gate.
 
 ## Where do I report bugs / request features?
 
@@ -88,7 +88,7 @@ Yes — the dual MIT / Apache-2.0 license explicitly permits commercial use, mod
 
 ## Do I need the Rust toolchain to use Garnet?
 
-Not on platforms with a matching published release asset. The installers (`install.sh`, and `install.ps1` on Windows) prefer the release asset for your platform, verify it against `SHA256SUMS`, and use source fallback only when no matching package exists or when you force `GARNET_INSTALL_MODE=source`. Source fallback requires Rust 1.95+ (the same floor as building from source below; Garnet CI tracks current stable). `SHA256SUMS` is itself GPG-signed, but the installers do not check that signature; [`docs/release-signing.md`](docs/release-signing.md) shows how to check it yourself.
+Not on platforms with a matching published release asset. `install.sh` installs from the release first. It picks a `.deb` or `.rpm` where `dpkg` or `rpm` is present and the tarball otherwise (macOS always uses the tarball), checks the file against `SHA256SUMS`, and retries with the tarball if a package install fails. If the release route returns a recoverable failure, such as no matching asset, a failed download, a host glibc older than the release's Linux assets need, or an installed binary that does not run, it falls back to a source build, unless you set `GARNET_INSTALL_MODE=release` or `GARNET_SOURCE_FALLBACK=0`. `GARNET_INSTALL_MODE=source` goes straight to a source build. Source builds require Rust 1.95+ (the same floor as building from source below; Garnet CI tracks current stable). `install.ps1` installs the Windows x86_64 zip and has no source fallback. When `gpg` is installed, both installers first check that `SHA256SUMS` is signed by the release key they pin for the version; without `gpg` they warn and check integrity only. Other failures stop the install with an error and no fallback, including a wrong signature or checksum and a missing required tool. [`docs/release-signing.md`](docs/release-signing.md) shows how to check it yourself.
 
 ## Is Garnet on crates.io, npm, PyPI or Homebrew?
 
@@ -132,10 +132,9 @@ Signing is opt-in. Without `--sign`, the build still produces a deterministic ma
 
 The full corpus in this repository: seven research papers plus four addenda, the canonical Mini-Spec v1.0, the engineering workspace, current examples, v0.5 slice ledger, release evidence, public site/blog artifacts, and stage handoff documents. Start with [CURRENT_STATE.md](CURRENT_STATE.md), [F_Project_Management/GARNET_CURRENT_VS_HISTORICAL_LEDGER.md](F_Project_Management/GARNET_CURRENT_VS_HISTORICAL_LEDGER.md), and [F_Project_Management/GARNET_v0_5_SLICE_DOGFOOD.md](F_Project_Management/GARNET_v0_5_SLICE_DOGFOOD.md) before relying on older v4.2 handoffs.
 
-## What's coming after v0.8.2?
+## What's coming after v0.8.3?
 
-- Front door + truth guard: machine-generated public numbers (`docs/truth.json`), README/site truth wiring, and version-narrative cleanup — the W-REBUILD RB-0 band.
-- Foundation rebuild (zero language-semantics change): caps bitset, crash-surface sweep, registry-derived stdlib dispatch, parser-substrate unification, environment rebuild — then a Jon-gated backend-decision memo.
+- Foundation rebuild (zero language-semantics change): the remaining W-REBUILD work, then a backend-decision memo.
 - Trust hardening (parallel lanes): independent re-verification of the self-found red-team fix, SLSA/Sigstore planning.
 - Product gates: Apple Developer ID notarization, Windows installer/`.msi`, Linux desktop GUI proof, Marketplace/OpenVSX publication, and fuller clean-machine reproduction evidence.
 - Try-it path before any public launch wave: package registry beyond stub. The [browser playground](https://garnet-lang.org/playground.html) shipped.
