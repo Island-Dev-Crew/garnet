@@ -1,5 +1,5 @@
 use crate::paths;
-use chrono::Local;
+use jiff::ZonedDateTime;
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 use std::fs;
@@ -13,7 +13,7 @@ pub struct EvidenceBundle {
 }
 
 pub fn timestamp() -> String {
-    Local::now().format("%Y%m%d-%H%M%S").to_string()
+    ZonedDateTime::now().strftime("%Y%m%d-%H%M%S").to_string()
 }
 
 pub fn create_bundle() -> Result<EvidenceBundle, String> {

@@ -608,9 +608,9 @@ fn run_interactive(interp: &mut Interpreter) -> io::Result<()> {
                     }
                 }
             },
-            Ok(Signal::CtrlC) => continue, // abandon the current line
-            Ok(Signal::CtrlD) => break,    // EOF — leave
-            Ok(_) => continue,             // other signals (e.g. host payloads) — ignore
+            Ok(Signal::CtrlC(_)) => continue, // abandon the current line
+            Ok(Signal::CtrlD) => break,       // EOF — leave
+            Ok(_) => continue,                // other signals (e.g. host payloads) — ignore
             Err(e) => return Err(e),
         }
     }
@@ -622,13 +622,14 @@ struct GarnetCompleter {
 }
 
 impl reedline::Completer for GarnetCompleter {
-    fn complete(&mut self, line: &str, pos: usize) -> Vec<reedline::Suggestion> {
+    fn complete(&mut self, line: &str, pos: usize) -> reedline::CompletionResult {
         let candidates = match self.shared.lock() {
             Ok(c) => c.clone(),
-            Err(_) => return Vec::new(),
+            Err(_) => return reedline::CompletionResult::fresh(Vec::new()),
         };
         let (start, hits) = completion_candidates(&candidates, line, pos);
-        hits.into_iter()
+        let suggestions: Vec<reedline::Suggestion> = hits
+            .into_iter()
             .map(|c| reedline::Suggestion {
                 value: c.value.clone(),
                 description: Some(c.kind.to_string()),
@@ -639,7 +640,8 @@ impl reedline::Completer for GarnetCompleter {
                 display_override: None,
                 match_indices: None,
             })
-            .collect()
+            .collect();
+        reedline::CompletionResult::fresh(suggestions)
     }
 }
 
