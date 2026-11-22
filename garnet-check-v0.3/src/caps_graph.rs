@@ -481,8 +481,13 @@ impl CapsGraph {
                     self.walk_expr_for_callees(a, out);
                 }
             }
-            Expr::Binary { lhs, rhs, .. } => {
+            Expr::Binary { op, lhs, rhs, .. } => {
                 self.walk_expr_for_callees(lhs, out);
+                if *op == garnet_parser::ast::BinOp::Pipeline {
+                    if let Some(target) = self.resolve_callee(rhs) {
+                        out.insert(target);
+                    }
+                }
                 self.walk_expr_for_callees(rhs, out);
             }
             Expr::Unary { expr, .. } => self.walk_expr_for_callees(expr, out),
@@ -584,29 +589,58 @@ impl CapsGraph {
         lit: &garnet_parser::ast::StringLit,
         out: &mut BTreeSet<CalleeRef>,
     ) {
-        use std::cell::Cell;
-        const MAX_INTERP_DEPTH: usize = 8;
+        // Each `StrPart::Interp(src)` strictly shrinks the source string length by
+        // at least 4 bytes (`"#{` + `}"`). Draining nested interpolations through a
+        // heap worklist avoids any arbitrary nesting cutoff while keeping stack depth O(1).
+        use std::cell::RefCell;
         thread_local! {
-            static CAPS_INTERP_DEPTH: Cell<usize> = const { Cell::new(0) };
+            static CAPS_INTERP_QUEUE: RefCell<Option<Vec<String>>> = const { RefCell::new(None) };
         }
-        let depth = CAPS_INTERP_DEPTH.with(Cell::get);
-        if depth >= MAX_INTERP_DEPTH {
+        let mut initial: Vec<String> = lit
+            .parts
+            .iter()
+            .filter_map(|p| match p {
+                garnet_parser::token::StrPart::Interp(src) => Some(src.clone()),
+                garnet_parser::token::StrPart::Lit(_) => None,
+            })
+            .collect();
+        if initial.is_empty() {
             return;
         }
-        CAPS_INTERP_DEPTH.with(|d| d.set(depth + 1));
-        for part in &lit.parts {
-            if let garnet_parser::token::StrPart::Interp(src) = part {
-                let wrapped = format!("def __interp__() {{ {src} }}");
-                if let Ok(module) = garnet_parser::parse_source(&wrapped) {
-                    for item in &module.items {
-                        if let Item::Fn(f) = item {
-                            self.walk_block(&f.body, out);
-                        }
+        let already_draining = CAPS_INTERP_QUEUE.with(|cell| {
+            let mut guard = cell.borrow_mut();
+            if let Some(queue) = guard.as_mut() {
+                queue.append(&mut initial);
+                true
+            } else {
+                *guard = Some(initial);
+                false
+            }
+        });
+        if already_draining {
+            return;
+        }
+        struct ResetQueue;
+        impl Drop for ResetQueue {
+            fn drop(&mut self) {
+                CAPS_INTERP_QUEUE.with(|cell| {
+                    *cell.borrow_mut() = None;
+                });
+            }
+        }
+        let _reset = ResetQueue;
+        loop {
+            let next = CAPS_INTERP_QUEUE.with(|cell| cell.borrow_mut().as_mut().and_then(Vec::pop));
+            let Some(src) = next else { break };
+            let wrapped = format!("def __interp__() {{ {src} }}");
+            if let Ok(module) = garnet_parser::parse_source(&wrapped) {
+                for item in &module.items {
+                    if let Item::Fn(f) = item {
+                        self.walk_block(&f.body, out);
                     }
                 }
             }
         }
-        CAPS_INTERP_DEPTH.with(|d| d.set(depth));
     }
 
     fn walk_block(&self, b: &garnet_parser::ast::Block, out: &mut BTreeSet<CalleeRef>) {

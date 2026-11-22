@@ -168,3 +168,92 @@ def main() {
         report.errors
     );
 }
+
+fn nest_interp(inner: &str, depth: usize) -> String {
+    let mut s = inner.to_string();
+    for _ in 0..depth {
+        s = format!("\"#{{{s}}}\"");
+    }
+    s
+}
+
+#[test]
+fn fe_f4_deeply_nested_interpolation_is_still_rejected_without_cutoff() {
+    let nested = nest_interp("try { raise :x } rescue e { 7 }", 12);
+    let direct_src = format!("@safe\n@caps()\nfn main() -> String {{\n    {nested}\n}}\n");
+    let m1 = garnet_parser::parse_source(&direct_src).expect("parse deep direct");
+    let r1 = check_module(&m1);
+    assert!(
+        !r1.ok()
+            && r1
+                .errors
+                .iter()
+                .any(|e| matches!(e, CheckError::SafeModeViolation(msg) if msg.contains("try"))),
+        "expected SafeModeViolation at 12-level nested interpolation, got {:?}",
+        r1.errors
+    );
+
+    let pat_src = format!(
+        "@safe\n@caps()\nfn pat(s: String) -> Int {{\n    match s {{\n        {nested} => 1\n        _ => 0\n    }}\n}}\n"
+    );
+    let m2 = garnet_parser::parse_source(&pat_src).expect("parse deep pattern");
+    let r2 = check_module(&m2);
+    assert!(
+        !r2.ok()
+            && r2
+                .errors
+                .iter()
+                .any(|e| matches!(e, CheckError::SafeModeViolation(msg) if msg.contains("try"))),
+        "expected SafeModeViolation for 12-level nested interpolation in Pattern::Literal, got {:?}",
+        r2.errors
+    );
+}
+
+#[test]
+fn caps_graph_deeply_nested_interpolation_and_pipeline_calls_are_rejected() {
+    let nested = nest_interp("memory::working(1)", 12);
+    let deep_src = format!("@caps()\ndef main() {{\n    {nested}\n}}\n");
+    let m1 = garnet_parser::parse_source(&deep_src).expect("parse deep caps");
+    let r1 = check_module(&m1);
+    assert!(
+        !r1.ok()
+            && r1
+                .errors
+                .iter()
+                .any(|e| matches!(e, CheckError::CapsCoverage { .. })),
+        "expected CapsCoverage at 12-level nested interpolation, got {:?}",
+        r1.errors
+    );
+
+    let pipe_src = r#"
+@caps()
+def main() {
+    1 |> memory::working
+}
+"#;
+    let m2 = garnet_parser::parse_source(pipe_src).expect("parse pipe");
+    let r2 = check_module(&m2);
+    assert!(
+        !r2.ok()
+            && r2
+                .errors
+                .iter()
+                .any(|e| matches!(e, CheckError::CapsCoverage { .. })),
+        "expected CapsCoverage for pipeline call `1 |> memory::working`, got {:?}",
+        r2.errors
+    );
+
+    let pipe_declared = r#"
+@caps(mem)
+def main() {
+    1 |> memory::working
+}
+"#;
+    let m3 = garnet_parser::parse_source(pipe_declared).expect("parse pipe declared");
+    let r3 = check_module(&m3);
+    assert!(
+        r3.ok(),
+        "expected declared @caps(mem) pipeline call to pass, got {:?}",
+        r3.errors
+    );
+}

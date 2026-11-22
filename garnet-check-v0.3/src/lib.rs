@@ -811,29 +811,61 @@ fn walk_interp_for_safe_violations(
     report: &mut CheckReport,
     effective_safe: bool,
 ) {
-    use std::cell::Cell;
-    const MAX_INTERP_DEPTH: usize = 8;
+    // Each `StrPart::Interp(src)` strictly shrinks the source string length by
+    // at least 4 bytes (`"#{` + `}"`). Draining nested interpolations through a
+    // heap worklist guarantees termination in O(1) Rust stack depth across
+    // nesting levels with no arbitrary depth cutoff.
+    use std::cell::RefCell;
     thread_local! {
-        static SAFE_INTERP_DEPTH: Cell<usize> = const { Cell::new(0) };
+        static SAFE_INTERP_QUEUE: RefCell<Option<Vec<(String, bool)>>> = const { RefCell::new(None) };
     }
-    let depth = SAFE_INTERP_DEPTH.with(Cell::get);
-    if depth >= MAX_INTERP_DEPTH {
+    let mut initial: Vec<(String, bool)> = lit
+        .parts
+        .iter()
+        .filter_map(|p| match p {
+            garnet_parser::token::StrPart::Interp(src) => Some((src.clone(), effective_safe)),
+            garnet_parser::token::StrPart::Lit(_) => None,
+        })
+        .collect();
+    if initial.is_empty() {
         return;
     }
-    SAFE_INTERP_DEPTH.with(|d| d.set(depth + 1));
-    for part in &lit.parts {
-        if let garnet_parser::token::StrPart::Interp(src) = part {
-            let wrapped = format!("def __interp__() {{ {src} }}");
-            if let Ok(module) = garnet_parser::parse_source(&wrapped) {
-                for item in &module.items {
-                    if let Item::Fn(f) = item {
-                        walk_block_for_safe_violations(&f.body, fn_name, report, effective_safe);
-                    }
+    let already_draining = SAFE_INTERP_QUEUE.with(|cell| {
+        let mut guard = cell.borrow_mut();
+        if let Some(queue) = guard.as_mut() {
+            queue.append(&mut initial);
+            true
+        } else {
+            *guard = Some(initial);
+            false
+        }
+    });
+    if already_draining {
+        return;
+    }
+    struct ResetQueue;
+    impl Drop for ResetQueue {
+        fn drop(&mut self) {
+            SAFE_INTERP_QUEUE.with(|cell| {
+                *cell.borrow_mut() = None;
+            });
+        }
+    }
+    let _reset = ResetQueue;
+    loop {
+        let next = SAFE_INTERP_QUEUE.with(|cell| cell.borrow_mut().as_mut().and_then(Vec::pop));
+        let Some((src, safe_flag)) = next else {
+            break;
+        };
+        let wrapped = format!("def __interp__() {{ {src} }}");
+        if let Ok(module) = garnet_parser::parse_source(&wrapped) {
+            for item in &module.items {
+                if let Item::Fn(f) = item {
+                    walk_block_for_safe_violations(&f.body, fn_name, report, safe_flag);
                 }
             }
         }
     }
-    SAFE_INTERP_DEPTH.with(|d| d.set(depth));
 }
 
 #[cfg(test)]
