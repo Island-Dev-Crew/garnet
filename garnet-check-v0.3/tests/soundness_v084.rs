@@ -100,3 +100,71 @@ fn bad_return(x: Int) -> Int {
         report.errors
     );
 }
+
+#[test]
+fn fe_f4_try_inside_string_interpolation_and_match_pattern_is_rejected() {
+    let interp_src = r##"
+@safe
+@caps()
+fn main() -> String {
+    "#{try { raise :oops } rescue e { 7 }}"
+}
+"##;
+    let m1 = garnet_parser::parse_source(interp_src).expect("parse interp");
+    let r1 = check_module(&m1);
+    assert!(
+        !r1.ok()
+            && r1
+                .errors
+                .iter()
+                .any(|e| matches!(e, CheckError::SafeModeViolation(msg) if msg.contains("try"))),
+        "expected SafeModeViolation for try inside string interpolation, got {:?}",
+        r1.errors
+    );
+
+    let pat_src = r##"
+@safe
+@caps()
+fn pat(s: String) -> Int {
+    match s {
+        "#{try { raise :oops } rescue e { 7 }}" => 1
+        _ => 0
+    }
+}
+"##;
+    let m2 = garnet_parser::parse_source(pat_src).expect("parse pat");
+    let r2 = check_module(&m2);
+    assert!(
+        !r2.ok()
+            && r2
+                .errors
+                .iter()
+                .any(|e| matches!(e, CheckError::SafeModeViolation(msg) if msg.contains("try"))),
+        "expected SafeModeViolation for try inside match literal pattern, got {:?}",
+        r2.errors
+    );
+}
+
+#[test]
+fn caps_graph_walks_match_pattern_interpolation_and_closures() {
+    let src = r##"
+@caps()
+def main() {
+    match "x" {
+        "#{memory::working(1)}" => 1
+        _ => 0
+    }
+}
+"##;
+    let module = garnet_parser::parse_source(src).expect("parse");
+    let report = check_module(&module);
+    assert!(
+        !report.ok()
+            && report
+                .errors
+                .iter()
+                .any(|e| matches!(e, CheckError::CapsCoverage { .. })),
+        "expected CapsCoverage for interpolated call in match literal pattern, got {:?}",
+        report.errors
+    );
+}

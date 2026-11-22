@@ -82,7 +82,13 @@ pub fn eval_try(
         ),
         Err(other) => Err(other),
     };
-    // Ensure always runs.
+    // Traps raised inside a `rescue` handler must also bypass `ensure` so
+    // `ensure { return ... }`, `ensure { break }`, or an ensure-raised error
+    // cannot mask a rescue-origin enforcement trap.
+    if let Err(err @ RuntimeError::Trap(_)) = outcome {
+        return Err(err);
+    }
+    // Ensure always runs for non-trap outcomes.
     if let Some(ensure_block) = ensure {
         exec_block_value(ensure_block, env)?;
     }

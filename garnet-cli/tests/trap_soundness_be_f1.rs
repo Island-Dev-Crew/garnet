@@ -215,3 +215,107 @@ def main() {
     );
     assert!(stdout.contains("=> caught"), "stdout={stdout:?}");
 }
+
+#[test]
+fn be_f1_rescue_origin_traps_cannot_be_masked_by_ensure_return_break_or_nested_rescue() {
+    let cases = [
+        (
+            "rescue_caps_ensure_return",
+            r#"
+@caps()
+def main() {
+    try {
+        raise :start
+    } rescue e {
+        memory::working(1)
+    } ensure {
+        return "masked"
+    }
+}
+"#,
+        ),
+        (
+            "rescue_caps_ensure_break",
+            r#"
+@caps()
+def main() {
+    var out = "init"
+    loop {
+        try {
+            raise :start
+        } rescue e {
+            memory::working(1)
+        } ensure {
+            out = "masked"
+            break
+        }
+    }
+    out
+}
+"#,
+        ),
+        (
+            "rescue_caps_ensure_raise_nested",
+            r#"
+@caps()
+def main() {
+    try {
+        try {
+            raise :start
+        } rescue e {
+            memory::working(1)
+        } ensure {
+            raise :replacement
+        }
+    } rescue outer {
+        "masked"
+    }
+}
+"#,
+        ),
+        (
+            "rescue_depth_ensure_return",
+            r#"
+@max_depth(2)
+@caps()
+def deep(n) {
+    if n <= 0 { 0 } else { deep(n - 1) }
+}
+
+@caps()
+def main() {
+    try {
+        raise :start
+    } rescue e {
+        deep(10)
+    } ensure {
+        return "masked"
+    }
+}
+"#,
+        ),
+    ];
+
+    let dir = tempfile::tempdir().expect("tempdir");
+    for (name, src) in cases {
+        let prog = dir.path().join(format!("{name}.garnet"));
+        std::fs::write(&prog, src).expect("write");
+        for backend in ["--interp", "--vm"] {
+            let out = Command::new(garnet_bin())
+                .args(["run", backend])
+                .arg(&prog)
+                .output()
+                .expect("spawn garnet run");
+            let stdout = String::from_utf8_lossy(&out.stdout);
+            let stderr = String::from_utf8_lossy(&out.stderr);
+            assert!(
+                !out.status.success(),
+                "{name} on {backend} exited 0! stdout={stdout:?} stderr={stderr:?}"
+            );
+            assert!(
+                !stdout.contains("masked"),
+                "{name} on {backend} masked trap! stdout={stdout:?}"
+            );
+        }
+    }
+}

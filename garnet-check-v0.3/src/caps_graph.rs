@@ -514,6 +514,7 @@ impl CapsGraph {
             Expr::Match { subject, arms, .. } => {
                 self.walk_expr_for_callees(subject, out);
                 for arm in arms {
+                    self.walk_pattern_for_callees(&arm.pattern, out);
                     if let Some(guard) = &arm.guard {
                         self.walk_expr_for_callees(guard, out);
                     }
@@ -546,16 +547,66 @@ impl CapsGraph {
                 }
             }
             Expr::Spawn { expr, .. } => self.walk_expr_for_callees(expr, out),
-            Expr::Closure { .. }
-            | Expr::Ident(_, _)
+            Expr::Closure { body, .. } => match body.as_ref() {
+                garnet_parser::ast::ClosureBody::Block(b) => self.walk_block(b, out),
+                garnet_parser::ast::ClosureBody::Expr(e) => self.walk_expr_for_callees(e, out),
+            },
+            Expr::Str(lit, _) => self.walk_interp_for_callees(lit, out),
+            Expr::Ident(_, _)
             | Expr::Path(_, _)
             | Expr::Int(_, _)
             | Expr::Float(_, _)
             | Expr::Bool(_, _)
             | Expr::Nil(_)
-            | Expr::Str(_, _)
             | Expr::Symbol(_, _) => {}
         }
+    }
+
+    fn walk_pattern_for_callees(
+        &self,
+        pattern: &garnet_parser::ast::Pattern,
+        out: &mut BTreeSet<CalleeRef>,
+    ) {
+        use garnet_parser::ast::Pattern;
+        match pattern {
+            Pattern::Literal(expr, _) => self.walk_expr_for_callees(expr, out),
+            Pattern::Tuple(items, _) | Pattern::Enum(_, items, _) => {
+                for item in items {
+                    self.walk_pattern_for_callees(item, out);
+                }
+            }
+            Pattern::Ident(..) | Pattern::Wildcard(_) | Pattern::Rest(_) => {}
+        }
+    }
+
+    fn walk_interp_for_callees(
+        &self,
+        lit: &garnet_parser::ast::StringLit,
+        out: &mut BTreeSet<CalleeRef>,
+    ) {
+        use std::cell::Cell;
+        const MAX_INTERP_DEPTH: usize = 8;
+        thread_local! {
+            static CAPS_INTERP_DEPTH: Cell<usize> = const { Cell::new(0) };
+        }
+        let depth = CAPS_INTERP_DEPTH.with(Cell::get);
+        if depth >= MAX_INTERP_DEPTH {
+            return;
+        }
+        CAPS_INTERP_DEPTH.with(|d| d.set(depth + 1));
+        for part in &lit.parts {
+            if let garnet_parser::token::StrPart::Interp(src) = part {
+                let wrapped = format!("def __interp__() {{ {src} }}");
+                if let Ok(module) = garnet_parser::parse_source(&wrapped) {
+                    for item in &module.items {
+                        if let Item::Fn(f) = item {
+                            self.walk_block(&f.body, out);
+                        }
+                    }
+                }
+            }
+        }
+        CAPS_INTERP_DEPTH.with(|d| d.set(depth));
     }
 
     fn walk_block(&self, b: &garnet_parser::ast::Block, out: &mut BTreeSet<CalleeRef>) {

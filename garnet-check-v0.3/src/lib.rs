@@ -722,6 +722,7 @@ fn walk_expr_for_safe_violations(
         Match { subject, arms, .. } => {
             walk_expr_for_safe_violations(subject, fn_name, report, effective_safe);
             for arm in arms {
+                walk_pattern_for_safe_violations(&arm.pattern, fn_name, report, effective_safe);
                 if let Some(guard) = &arm.guard {
                     walk_expr_for_safe_violations(guard, fn_name, report, effective_safe);
                 }
@@ -777,8 +778,62 @@ fn walk_expr_for_safe_violations(
             }
             report.boundary_call_sites += 1;
         }
-        Int(..) | Float(..) | Bool(..) | Nil(..) | Str(..) | Symbol(..) | Ident(..) | Path(..) => {}
+        Str(lit, _) => {
+            walk_interp_for_safe_violations(lit, fn_name, report, effective_safe);
+        }
+        Int(..) | Float(..) | Bool(..) | Nil(..) | Symbol(..) | Ident(..) | Path(..) => {}
     }
+}
+
+fn walk_pattern_for_safe_violations(
+    pattern: &garnet_parser::ast::Pattern,
+    fn_name: &str,
+    report: &mut CheckReport,
+    effective_safe: bool,
+) {
+    use garnet_parser::ast::Pattern;
+    match pattern {
+        Pattern::Literal(expr, _) => {
+            walk_expr_for_safe_violations(expr, fn_name, report, effective_safe);
+        }
+        Pattern::Tuple(items, _) | Pattern::Enum(_, items, _) => {
+            for item in items {
+                walk_pattern_for_safe_violations(item, fn_name, report, effective_safe);
+            }
+        }
+        Pattern::Ident(..) | Pattern::Wildcard(_) | Pattern::Rest(_) => {}
+    }
+}
+
+fn walk_interp_for_safe_violations(
+    lit: &garnet_parser::ast::StringLit,
+    fn_name: &str,
+    report: &mut CheckReport,
+    effective_safe: bool,
+) {
+    use std::cell::Cell;
+    const MAX_INTERP_DEPTH: usize = 8;
+    thread_local! {
+        static SAFE_INTERP_DEPTH: Cell<usize> = const { Cell::new(0) };
+    }
+    let depth = SAFE_INTERP_DEPTH.with(Cell::get);
+    if depth >= MAX_INTERP_DEPTH {
+        return;
+    }
+    SAFE_INTERP_DEPTH.with(|d| d.set(depth + 1));
+    for part in &lit.parts {
+        if let garnet_parser::token::StrPart::Interp(src) = part {
+            let wrapped = format!("def __interp__() {{ {src} }}");
+            if let Ok(module) = garnet_parser::parse_source(&wrapped) {
+                for item in &module.items {
+                    if let Item::Fn(f) = item {
+                        walk_block_for_safe_violations(&f.body, fn_name, report, effective_safe);
+                    }
+                }
+            }
+        }
+    }
+    SAFE_INTERP_DEPTH.with(|d| d.set(depth));
 }
 
 #[cfg(test)]

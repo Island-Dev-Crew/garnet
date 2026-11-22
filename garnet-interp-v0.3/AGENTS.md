@@ -62,10 +62,12 @@ Owns managed-mode tree-walk execution, expression evaluation, stdlib bridging, a
 - Enforcement traps are uncatchable (C1 / BE-F1, v0.8.4). Capability refusals
   (`require_capability`, `require_entry_capability`) and `@max_depth` breaches
   return `RuntimeError::Trap`, which unwinds past `try`/`rescue` and skips
-  `ensure` in `control::eval_try` so user code cannot swallow a trap or mask
-  it with an `ensure { return ... }` override. Ordinary raised values and
-  program errors remain rescuable. `garnet-cli/tests/trap_soundness_be_f1.rs`
-  pins this invariant across `--interp`, `--vm`, and `agent-loop`.
+  `ensure` in `control::eval_try` — both when raised in the `try` body and when
+  raised inside a `rescue` handler — so user code cannot swallow a trap or mask
+  it with `ensure { return ... }`, `ensure { break }`, or a nested replacement
+  `raise`. Ordinary raised values and program errors remain rescuable.
+  `garnet-cli/tests/trap_soundness_be_f1.rs` pins this invariant across
+  `--interp`, `--vm`, and `agent-loop`.
 - Maintain compatibility with `garnet run`, `garnet eval`, and `garnet test` expectations.
 - REPL introspection (RB-7): `Interpreter::live_binding_names` / `lookup_binding`
   and `Env::local_names` are **additive, read-only** accessors the CLI REPL uses
