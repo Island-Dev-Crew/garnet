@@ -1,0 +1,31 @@
+{
+  "author_emails": [
+    "email:275140286+islanddevcrew@users.noreply.github.com"
+  ],
+  "author_ids": [
+    275140286
+  ],
+  "base_commit": "7f5d6c081adacf272b984fe4e6716bb27b3e9e95",
+  "blocking_findings": [],
+  "content_digest": "sha256:14e9a9a733e97e80cb1fa45617ca6c6460e5807c38c2dcf3e5f86fc47f051eec",
+  "head_repository": "Island-Dev-Crew/garnet",
+  "head_repository_id": 1218183013,
+  "pull_request_id": 5433266000,
+  "pull_request_number": 614,
+  "repository": "Island-Dev-Crew/garnet",
+  "repository_id": 1218183013,
+  "review_scope": "Content proof binds exactly reviewed_head 49e1af8386b3f6eff281bf5e756c0fa158879959 (tree c0248f116ecfc92eacf0562af961571f728b85eb) on base 7f5d6c081adacf272b984fe4e6716bb27b3e9e95 and does not extend or backdate reviewed_head coverage. Touched trust-kernel paths: Cargo.lock, garnet-cli/Cargo.toml, and garnet-cli/src/cmd/repl.rs (content digest sha256:14e9a9a733e97e80cb1fa45617ca6c6460e5807c38c2dcf3e5f86fc47f051eec across 11 changed files). SCOPE: Closes RUSTSEC-2026-0459 (libsqlite3-sys 0.30.1 -> 0.40.0 via rusqlite 0.32 -> 0.43) and RUSTSEC-2026-0543 (drops chrono from garnet-cli via reedline 0.48 -> 0.53 and replaces chrono::Local with jiff::ZonedDateTime in apps/garnet-studio/src-tauri/src/evidence.rs), updates two reedline 0.53 API lines in garnet-cli/src/cmd/repl.rs (Signal::CtrlC(_) and CompletionResult::fresh), bumps anyhow 1.0.104 and rustix 1.1.6 across root/Studio/fuzz locks with zero deny.toml ignore entries, and rematerializes docs/playground/pkg/ + W_PLAY_BROWSER_PROOF.json under pinned node v22.22.2 so WASM readiness passes against the updated Cargo.lock. CROSS-FAMILY SEAT: OpenAI Codex (gpt-6-astra, reasoning effort max) reviewed 49e1af8386b3f6eff281bf5e756c0fa158879959 over 7f5d6c081adacf272b984fe4e6716bb27b3e9e95 in a read-only sandbox on a detached linked worktree (disclosing that a linked worktree is not a fresh clone) with no network and returned VERDICT: CONFIRM with zero High/Medium findings and one nonblocking Low qualification noting that Studio's Cargo.lock still lists optional chrono 0.4.44 via serde_with (confirmed inactive by cargo tree --all-features --target all -i chrono). IMPLEMENTER CHECKS & CI AT 49e1af83: local cargo audit (0 vulns), cargo deny --all-features check (all ok), cargo clippy --workspace --all-targets -- -D warnings, cargo test --workspace (2469 passed, 0 failed), Studio cargo test (61 passed, 0 failed), WASM readiness (--gate blockers=[]), MSRV (--gate), text-byte policy (--gate), and agent contracts (25 contracts) all passed. Remote GitHub CI on 49e1af83 passed all non-trust-review jobs (including Security/cargo audit, Security/cargo-deny check, Determinism, Linux packages, VSIX, macOS + Windows Studio, Agentic dogfood matrix, Dogfood readiness, Web PWA Readiness, and machine-truth drift guard). AUTHORS: Every commit carries the GitHub noreply identity for IslandDevCrew (ID 275140286). MERGE AUTHORITY: This premerge record is reviewer evidence only; exact-head authenticated GitHub approval by IDC-Trust-Review (ID 306739987) and Jon's merge remain required.",
+  "review_state": "APPROVED",
+  "reviewed_head": "49e1af8386b3f6eff281bf5e756c0fa158879959",
+  "reviewed_tree": "c0248f116ecfc92eacf0562af961571f728b85eb",
+  "reviewer_id": 306739987,
+  "reviewer_login": "IDC-Trust-Review",
+  "schema": "garnet.trust_kernel_review_record/v2",
+  "state": "premerge",
+  "touched_paths": [
+    "Cargo.lock",
+    "garnet-cli/Cargo.toml",
+    "garnet-cli/src/cmd/repl.rs"
+  ],
+  "verdict": "pass"
+}

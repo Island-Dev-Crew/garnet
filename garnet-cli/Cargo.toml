@@ -23,11 +23,11 @@ garnet-registry-stub = { version = "0.5.0", path = "../garnet-registry-stub" }
 garnet-stdlib = { version = "0.4.0", path = "../garnet-stdlib" }
 miette = { version = "7.6", features = ["fancy"] }
 blake3 = "1.5"
-rusqlite = { version = "0.32", features = ["bundled"] }
+rusqlite = { version = "0.43", features = ["bundled"] }
 getrandom = "0.2"
 ed25519-dalek = { version = "2.1", features = ["rand_core"] }
 rand_core = { version = "0.6", features = ["std"] }
-reedline = "0.48.0"
+reedline = "0.53.0"
 serde_json = "1"
 fluent-uri = "0.4.1"
 same-file = "=1.0.6"

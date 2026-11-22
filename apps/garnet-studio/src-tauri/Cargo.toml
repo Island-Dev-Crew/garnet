@@ -22,6 +22,6 @@ tauri-build = { version = "2", features = [] }
 tauri = { version = "2", features = [] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-chrono = "0.4"
+jiff = "1"
 dirs = "6"
 sha2 = "0.10"
