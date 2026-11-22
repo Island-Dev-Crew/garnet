@@ -1,18 +1,18 @@
 {
   "schema": "garnet.w-play.browser-proof/1",
-  "captured_at": "2026-11-03T17:33:09.718Z",
+  "captured_at": "2026-11-22T06:55:03.798Z",
   "verdict": "pass",
-  "duration_ms": 9024,
+  "duration_ms": 8084,
   "execution": {
     "engine": "playwright-browser-page",
-    "browser": "156.0.8078.80",
+    "browser": "157.0.8103.80",
     "node_global_present": false,
     "runtime_ready": true,
     "service_workers": "blocked"
   },
   "git": {
-    "tested_commit": "d921d35ed0dd6d7fda474e9c8ff671f53e582df6",
-    "tested_tree": "40dc2c7fb74afad1abaafe734e93da4e835caef6",
+    "tested_commit": "6b870db9e1f219ce143c6e98b213dd32c51892c2",
+    "tested_tree": "e55068c741beb543f4fe00cd8f227510f9d836bf",
     "runtime_inputs_clean": true
   },
   "host": {
@@ -22,7 +22,7 @@
   },
   "package": {
     "schema": "garnet.playground.wasm-package/1",
-    "source_tree_sha256": "0e05d1003986c16f425bb67aab8793f954456f74fb4d3849397c1a42180da68a",
+    "source_tree_sha256": "66e2a486c7e7bc8050b84933537c401445abd90c1573d4fb7f32bf5419cb7ee7",
     "artifacts": {
       "garnet_wasm.js": {
         "bytes": 6581,
@@ -30,13 +30,13 @@
       },
       "garnet_wasm_bg.wasm": {
         "bytes": 2234789,
-        "sha256": "e24737d7e13725df529bea80d3581358cd21718c6c43aef21d9869bd33511134"
+        "sha256": "72f16c6b32294b7d166fd8682b004cfc5a690032368056e982befba41315d975"
       }
     }
   },
   "runtime_inputs": {
     "schema": "garnet.w-play.runtime-inputs/1",
-    "sha256": "953ce8ada6fa6c71ce0dea7880f8388303a11b3f9652e39cd50995f26af02a1a",
+    "sha256": "d6584e06fad72da7943ecb030d0451d4d4ebc1cfe1ced93ea74fc43bb3b46b26",
     "files": {
       "apps/garnet-studio/package-lock.json": {
         "bytes": 44280,
@@ -136,11 +136,11 @@
       },
       "docs/playground/pkg/garnet_wasm_bg.wasm": {
         "bytes": 2234789,
-        "sha256": "e24737d7e13725df529bea80d3581358cd21718c6c43aef21d9869bd33511134"
+        "sha256": "72f16c6b32294b7d166fd8682b004cfc5a690032368056e982befba41315d975"
       },
       "docs/playground/pkg/provenance.json": {
         "bytes": 8589,
-        "sha256": "82ae646ff19b7a58f90c66a62f381d3a40153df0d6aaa6f96eeac8efed417acf"
+        "sha256": "d3ea82a1d277570ff44fc9b347ca499a7f2db1a9c95929bf54bae9319fbc9db3"
       },
       "docs/assets/dev_tools_market_growth_v2_1.png": {
         "bytes": 51317,
@@ -601,7 +601,7 @@
   },
   "visual": {
     "screenshot": "ops/lane2a/evidence/30-playground-browser.png",
-    "screenshot_sha256": "0db8eabd7c4d0cac2c095aca86e9e866eb15210b775b7cfaee3113fd698cde6f",
+    "screenshot_sha256": "d0b62fa9fd1209b8d0e83c0e30753a531d897f4aca56dbeb3631d2b3f7151bec",
     "desktop": {
       "horizontal_overflow": false,
       "runtime_state": "ready"
