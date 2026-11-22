@@ -10,6 +10,12 @@ pub enum RuntimeError {
     #[error("{0}")]
     Message(String),
 
+    /// An uncatchable enforcement trap (capability refusal or `@max_depth`
+    /// breach). Never caught by `try`/`rescue` and never masked by `ensure`
+    /// (`BE-F1`).
+    #[error("{0}")]
+    Trap(String),
+
     /// A parse error encountered while loading source.
     #[error("parse error: {0}")]
     Parse(String),
@@ -55,6 +61,10 @@ pub enum RuntimeError {
 impl RuntimeError {
     pub fn msg(s: impl Into<String>) -> Self {
         RuntimeError::Message(s.into())
+    }
+
+    pub fn trap(s: impl Into<String>) -> Self {
+        RuntimeError::Trap(s.into())
     }
 
     pub fn type_err(expected: &str, got: &Value) -> Self {

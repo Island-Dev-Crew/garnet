@@ -514,6 +514,9 @@ impl CapsGraph {
             Expr::Match { subject, arms, .. } => {
                 self.walk_expr_for_callees(subject, out);
                 for arm in arms {
+                    if let Some(guard) = &arm.guard {
+                        self.walk_expr_for_callees(guard, out);
+                    }
                     self.walk_block(&arm.body, out);
                 }
             }

@@ -61,6 +61,9 @@ pub fn eval_try(
     let result = exec_block_value(body, env);
     let outcome = match result {
         Ok(v) => Ok(v),
+        // Enforcement traps (capability refusals, `@max_depth` breaches) are
+        // uncatchable and must not be rescued or overridden by `ensure` (BE-F1).
+        Err(err @ RuntimeError::Trap(_)) => return Err(err),
         Err(RuntimeError::Raised(ex_value)) => try_rescue(ex_value, rescues, env),
         Err(RuntimeError::Message(msg)) => {
             // Message-style errors can also be caught via untyped rescue.

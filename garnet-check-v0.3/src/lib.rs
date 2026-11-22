@@ -607,28 +607,57 @@ fn walk_stmts_for_safe_violations(
 ) {
     for s in stmts {
         match s {
-            Stmt::Var(_) if effective_safe => {
-                report.errors.push(CheckError::SafeModeViolation(format!(
-                    "safe function '{}' uses `var`; use `let mut` instead",
-                    fn_name
-                )));
+            Stmt::Var(decl) => {
+                if effective_safe {
+                    report.errors.push(CheckError::SafeModeViolation(format!(
+                        "safe function '{}' uses `var`; use `let mut` instead",
+                        fn_name
+                    )));
+                }
+                walk_expr_for_safe_violations(&decl.value, fn_name, report, effective_safe);
             }
-            Stmt::Raise { .. } if effective_safe => {
-                report.errors.push(CheckError::SafeModeViolation(format!(
-                    "safe function '{}' uses `raise`; return Result::Err(...) instead",
-                    fn_name
-                )));
+            Stmt::Let(decl) => {
+                walk_expr_for_safe_violations(&decl.value, fn_name, report, effective_safe);
             }
-            Stmt::Yield { value, .. } | Stmt::Next { value, .. } => {
+            Stmt::Const(decl) => {
+                walk_expr_for_safe_violations(&decl.value, fn_name, report, effective_safe);
+            }
+            Stmt::Assign { target, value, .. } => {
+                walk_expr_for_safe_violations(target, fn_name, report, effective_safe);
+                walk_expr_for_safe_violations(value, fn_name, report, effective_safe);
+            }
+            Stmt::Raise { value, .. } => {
+                if effective_safe {
+                    report.errors.push(CheckError::SafeModeViolation(format!(
+                        "safe function '{}' uses `raise`; return Result::Err(...) instead",
+                        fn_name
+                    )));
+                }
+                walk_expr_for_safe_violations(value, fn_name, report, effective_safe);
+            }
+            Stmt::Return { value, .. }
+            | Stmt::Break { value, .. }
+            | Stmt::Yield { value, .. }
+            | Stmt::Next { value, .. } => {
                 if let Some(value) = value {
                     walk_expr_for_safe_violations(value, fn_name, report, effective_safe);
                 }
             }
-            Stmt::While { body, .. } | Stmt::For { body, .. } | Stmt::Loop { body, .. } => {
+            Stmt::While {
+                condition, body, ..
+            } => {
+                walk_expr_for_safe_violations(condition, fn_name, report, effective_safe);
+                walk_block_for_safe_violations(body, fn_name, report, effective_safe);
+            }
+            Stmt::For { iter, body, .. } => {
+                walk_expr_for_safe_violations(iter, fn_name, report, effective_safe);
+                walk_block_for_safe_violations(body, fn_name, report, effective_safe);
+            }
+            Stmt::Loop { body, .. } => {
                 walk_block_for_safe_violations(body, fn_name, report, effective_safe);
             }
             Stmt::Expr(e) => walk_expr_for_safe_violations(e, fn_name, report, effective_safe),
-            _ => {}
+            Stmt::Continue { .. } => {}
         }
     }
 }
@@ -651,30 +680,51 @@ fn walk_expr_for_safe_violations(
     report: &mut CheckReport,
     effective_safe: bool,
 ) {
-    use garnet_parser::ast::Expr::*;
+    use garnet_parser::ast::{ClosureBody, Expr::*};
     match expr {
-        Try { .. } if effective_safe => {
-            report.errors.push(CheckError::SafeModeViolation(format!(
-                "safe function '{}' uses `try`/`rescue`; use Result<T, E> and `?` instead",
-                fn_name
-            )));
+        Try {
+            body,
+            rescues,
+            ensure,
+            ..
+        } => {
+            if effective_safe {
+                report.errors.push(CheckError::SafeModeViolation(format!(
+                    "safe function '{}' uses `try`/`rescue`; use Result<T, E> and `?` instead",
+                    fn_name
+                )));
+            }
+            walk_block_for_safe_violations(body, fn_name, report, effective_safe);
+            for r in rescues {
+                walk_block_for_safe_violations(&r.body, fn_name, report, effective_safe);
+            }
+            if let Some(e) = ensure {
+                walk_block_for_safe_violations(e, fn_name, report, effective_safe);
+            }
         }
         If {
+            condition,
             then_block,
             elsif_clauses,
             else_block,
             ..
         } => {
+            walk_expr_for_safe_violations(condition, fn_name, report, effective_safe);
             walk_block_for_safe_violations(then_block, fn_name, report, effective_safe);
-            for (_, b) in elsif_clauses {
+            for (c, b) in elsif_clauses {
+                walk_expr_for_safe_violations(c, fn_name, report, effective_safe);
                 walk_block_for_safe_violations(b, fn_name, report, effective_safe);
             }
             if let Some(b) = else_block {
                 walk_block_for_safe_violations(b, fn_name, report, effective_safe);
             }
         }
-        Match { arms, .. } => {
+        Match { subject, arms, .. } => {
+            walk_expr_for_safe_violations(subject, fn_name, report, effective_safe);
             for arm in arms {
+                if let Some(guard) = &arm.guard {
+                    walk_expr_for_safe_violations(guard, fn_name, report, effective_safe);
+                }
                 walk_block_for_safe_violations(&arm.body, fn_name, report, effective_safe);
             }
         }
@@ -682,6 +732,39 @@ fn walk_expr_for_safe_violations(
             walk_expr_for_safe_violations(lhs, fn_name, report, effective_safe);
             walk_expr_for_safe_violations(rhs, fn_name, report, effective_safe);
         }
+        Unary { expr: inner, .. }
+        | Field {
+            receiver: inner, ..
+        }
+        | Cast { expr: inner, .. }
+        | Spawn { expr: inner, .. } => {
+            walk_expr_for_safe_violations(inner, fn_name, report, effective_safe);
+        }
+        Index {
+            receiver, index, ..
+        } => {
+            walk_expr_for_safe_violations(receiver, fn_name, report, effective_safe);
+            walk_expr_for_safe_violations(index, fn_name, report, effective_safe);
+        }
+        Array { elements, .. } => {
+            for e in elements {
+                walk_expr_for_safe_violations(e, fn_name, report, effective_safe);
+            }
+        }
+        Map { entries, .. } => {
+            for (k, v) in entries {
+                walk_expr_for_safe_violations(k, fn_name, report, effective_safe);
+                walk_expr_for_safe_violations(v, fn_name, report, effective_safe);
+            }
+        }
+        Closure { body, .. } => match body.as_ref() {
+            ClosureBody::Block(b) => {
+                walk_block_for_safe_violations(b, fn_name, report, effective_safe);
+            }
+            ClosureBody::Expr(e) => {
+                walk_expr_for_safe_violations(e, fn_name, report, effective_safe);
+            }
+        },
         Call { callee, args, .. }
         | Method {
             receiver: callee,
@@ -694,7 +777,7 @@ fn walk_expr_for_safe_violations(
             }
             report.boundary_call_sites += 1;
         }
-        _ => {}
+        Int(..) | Float(..) | Bool(..) | Nil(..) | Str(..) | Symbol(..) | Ident(..) | Path(..) => {}
     }
 }
 
