@@ -1,0 +1,30 @@
+{
+  "author_emails": [
+    "email:275140286+islanddevcrew@users.noreply.github.com"
+  ],
+  "author_ids": [
+    275140286
+  ],
+  "base_commit": "c65ba03d112a1444350ddf25b5224827050ae433",
+  "blocking_findings": [],
+  "content_digest": "sha256:96d534b7f33d4edef77615e755a5870062f9cd4713b56b4547fe4ff6754c7cbc",
+  "head_repository": "Island-Dev-Crew/garnet",
+  "head_repository_id": 1218183013,
+  "pull_request_id": 5449918282,
+  "pull_request_number": 621,
+  "repository": "Island-Dev-Crew/garnet",
+  "repository_id": 1218183013,
+  "review_scope": "Content proof binds exactly reviewed_head c61de24cd02278fdc1b252772f0c051512b129bf (tree 956eb6becf9f7f5e9aba373a37bf96e318cc6952) on base c65ba03d112a1444350ddf25b5224827050ae433 and does not extend or backdate reviewed_head coverage. Touched trust-kernel paths: garnet-cli/src/provenance.rs, garnet-cli/src/strategies.rs (content digest sha256:96d534b7f33d4edef77615e755a5870062f9cd4713b56b4547fe4ff6754c7cbc). SCOPE: Implements ADR 0017 (No track record or history lightens review): (1) removes `skip_check_if_unchanged_since_last_ok` synthesis from `garnet-cli/src/strategies.rs` so the miner only proposes scrutiny-adding `warn_repeated_<error_kind>` rules after >= 2 same-kind failures; (2) unconditionally quarantines any persisted legacy `skip_check_if_unchanged_since_last_ok` row in `garnet-cli/src/provenance.rs` citing ADR 0017 even when validly HMAC-signed and backed by signed `ok` episodes; (3) adds `garnet-cli/tests/adr_0017_cache_invariance.rs` proving synthesis prohibition, unit & live CLI subprocess quarantine of a validly signed legacy row, and full-verdict cold-vs-warm invariance across `check` (`caps coverage`), `diff-caps --machine` (complete JSON equality on per-function gain), and `agent-loop` (`diff-caps` / `REJECTED`); (4) updates `garnet-cli/tests/{provenance,knowledge_strategies,cache_episodes}.rs`, `garnet-cli/examples/cache_hmac_smoke.rs`, `garnet-cli/AGENTS.md`, and `F_Project_Management/ADR/0017-no-track-record-lightens-review.md` (marking the separate future auto-merge lane predicate as still conditional/unimplemented). CROSS-FAMILY SEAT: OpenAI Codex (gpt-6-astra, reasoning=xhigh, non-building fresh clone) performed Round 1 at eb50d6c4 (VERDICT: CONFIRM, 0H/2M/1L) followed by a focused exact-head delta verification at c61de24cd02278fdc1b252772f0c051512b129bf confirming all 2 Mediums and 1 Low resolved with zero regressions -> VERDICT: CONFIRM (0H/0M/0L). IMPLEMENTER CHECKS: local cargo fmt --check, cargo clippy -p garnet-cli --all-targets --locked -- -D warnings, 31 targeted garnet-cli integration tests (adr_0017_cache_invariance, provenance, knowledge_strategies, cache_episodes), cache_hmac_smoke example, WASM readiness (--gate blockers=[]), xtask truth --check, text-byte policy (--gate), dogfood PR body, and agent contracts (25/25) all passed. AUTHORS: Every commit carries the GitHub noreply identity for IslandDevCrew (ID 275140286). MERGE AUTHORITY: This premerge record is reviewer evidence only; exact-head authenticated GitHub approval by IDC-Trust-Review (ID 306739987) and Jon's merge remain required.",
+  "review_state": "APPROVED",
+  "reviewed_head": "c61de24cd02278fdc1b252772f0c051512b129bf",
+  "reviewed_tree": "956eb6becf9f7f5e9aba373a37bf96e318cc6952",
+  "reviewer_id": 306739987,
+  "reviewer_login": "IDC-Trust-Review",
+  "schema": "garnet.trust_kernel_review_record/v2",
+  "state": "premerge",
+  "touched_paths": [
+    "garnet-cli/src/provenance.rs",
+    "garnet-cli/src/strategies.rs"
+  ],
+  "verdict": "pass"
+}
