@@ -1,0 +1,31 @@
+{
+  "author_emails": [
+    "email:275140286+islanddevcrew@users.noreply.github.com"
+  ],
+  "author_ids": [
+    275140286
+  ],
+  "base_commit": "f7ffaa0cf1a18a35b4943a73723001291ddac99b",
+  "blocking_findings": [],
+  "content_digest": "sha256:ce57cd4e77b5188b244554c39c99116efc822b5618a5326a30d7df55d724b7c3",
+  "head_repository": "Island-Dev-Crew/garnet",
+  "head_repository_id": 1218183013,
+  "pull_request_id": 5447821888,
+  "pull_request_number": 618,
+  "repository": "Island-Dev-Crew/garnet",
+  "repository_id": 1218183013,
+  "review_scope": "Content proof binds exactly reviewed_head 39b4e95df7d11ea33ab4fb4e3a974598695b21b9 (tree 85de1d1eb1b56fb776787872de9f18de683b0f29) on base f7ffaa0cf1a18a35b4943a73723001291ddac99b and does not extend or backdate reviewed_head coverage. Touched trust-kernel paths: .github/workflows/vscode-extension.yml, Cargo.lock, scripts/test_garnet_vscode_release_assets.py (content digest sha256:ce57cd4e77b5188b244554c39c99116efc822b5618a5326a30d7df55d724b7c3). SCOPE: (1) Hardens .github/workflows/vscode-extension.yml by adding `environment: release` to `release-vsix` (closing the v0.8.3 known limit where tag-triggered VSIX assets published prior to release environment approval) while leaving the required `build-vsix` job and its pinned semantic fingerprint byte-identical; (2) asserts `environment: release` strictly inside the `release-vsix` job block and rejects `environment:` on `build-vsix` in scripts/test_garnet_vscode_release_assets.py; (3) bumps workspace, VS Code extension, and Garnet Studio manifests and lockfiles from 0.8.3 to 0.8.4 (only `garnet-cli` in Cargo.lock and `garnet-studio` in Studio Cargo.lock change; zero third-party dependency mutations); (4) adds curated release notes in .github/release-notes/v0.8.4.md and promotes CHANGELOG.md to `0.8.4 (release candidate)`; (5) rematerializes docs/playground/pkg/provenance.json (reproducible: true), refreshes docs/truth.json and stamped surfaces (keeping latest_tag at v0.8.3 until v0.8.4 is tagged and published), and re-records F_Project_Management/LAUNCH/W_PLAY_BROWSER_PROOF.json. CROSS-FAMILY SEAT: OpenAI Codex (gpt-6-astra, reasoning=xhigh, non-building fresh clone) performed a full fresh-clone review at 5da049cf (VERDICT: CONFIRM, 0H/1M/1L) followed by a focused exact-head delta verification at 39b4e95df7d11ea33ab4fb4e3a974598695b21b9 verifying all 6 negative placement probes on `environment: release`, accurate Studio `chrono` qualification in v0.8.4.md, byte-identical preservation of all other 4,320 tracked entries, and passing WASM readiness -> VERDICT: CONFIRM (0H/0M/0L). IMPLEMENTER CHECKS: local cargo audit (root + Studio), cargo deny check, cargo fmt --check, cargo clippy --workspace --all-targets --locked -- -D warnings, cargo test --workspace --locked (0 failures), xtask truth --check, WASM readiness (--gate blockers=[]), cross-OS policy manifest (38/38 parity pin matched), MSRV (--gate), action integrity (107/107), signed release lanes (12/12), release job (6/6), VSIX release assets (10/10), text-byte policy (--gate), dogfood PR body, and agent contracts (25/25) all passed. AUTHORS: Every commit carries the GitHub noreply identity for IslandDevCrew (ID 275140286). MERGE AUTHORITY: This premerge record is reviewer evidence only; exact-head authenticated GitHub approval by IDC-Trust-Review (ID 306739987) and Jon's merge remain required.",
+  "review_state": "APPROVED",
+  "reviewed_head": "39b4e95df7d11ea33ab4fb4e3a974598695b21b9",
+  "reviewed_tree": "85de1d1eb1b56fb776787872de9f18de683b0f29",
+  "reviewer_id": 306739987,
+  "reviewer_login": "IDC-Trust-Review",
+  "schema": "garnet.trust_kernel_review_record/v2",
+  "state": "premerge",
+  "touched_paths": [
+    ".github/workflows/vscode-extension.yml",
+    "Cargo.lock",
+    "scripts/test_garnet_vscode_release_assets.py"
+  ],
+  "verdict": "pass"
+}
