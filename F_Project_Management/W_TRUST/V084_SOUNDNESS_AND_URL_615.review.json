@@ -1,0 +1,34 @@
+{
+  "author_emails": [
+    "email:275140286+islanddevcrew@users.noreply.github.com"
+  ],
+  "author_ids": [
+    275140286
+  ],
+  "base_commit": "c2e656283ad8c4e78363790db5d76984823e3082",
+  "blocking_findings": [],
+  "content_digest": "sha256:059a72006e88d57c8bd090ae2e981014752f1a3a2070c321500767d31c493901",
+  "head_repository": "Island-Dev-Crew/garnet",
+  "head_repository_id": 1218183013,
+  "pull_request_id": 5436757852,
+  "pull_request_number": 615,
+  "repository": "Island-Dev-Crew/garnet",
+  "repository_id": 1218183013,
+  "review_scope": "Content proof binds exactly reviewed_head d413eb9d69ac7b9054083be01af6d0fa6b0fd31e (tree 6bf15fae436ca36eb0a8ab075429d580457d3358) on base c2e656283ad8c4e78363790db5d76984823e3082 and does not extend or backdate reviewed_head coverage. Touched trust-kernel paths: Cargo.lock, garnet-check-v0.3/src/caps_graph.rs, garnet-check-v0.3/src/lib.rs, garnet-interp-v0.3/src/control.rs, garnet-interp-v0.3/src/error.rs, garnet-interp-v0.3/src/eval.rs (content digest sha256:059a72006e88d57c8bd090ae2e981014752f1a3a2070c321500767d31c493901). SCOPE: (1) Closes Critical C1/BE-F1 by separating RuntimeError::Trap from rescuable exceptions across body, rescue, and ensure origins (blocking ensure { return/break/raise }) on interpreter and VM fallback; (2) closes FE-F4 safe-mode try/rescue walk across expressions, Pattern::Literal, closures, and arbitrarily nested string interpolations via an O(1)-stack iterative worklist; (3) closes FE-F2b and CapsGraph blind spots across match guards, Pattern::Literal, closures, BinOp::Pipeline (`1 |> memory::working`), and iterative string interpolations; (4) bumps url 2.5.8 -> 2.5.9 and form_urlencoded 1.2.2 -> 1.2.3 in root Cargo.lock and Studio Cargo.lock to resolve RUSTSEC-2026-0592; (5) rematerializes docs/playground/pkg/ and W_PLAY_BROWSER_PROOF.json and updates crate AGENTS.md contracts. CROSS-FAMILY SEAT: OpenAI Codex (gpt-6-astra, reasoning effort max) reviewed PR #615 across three full fresh-clone rounds through a549d9a5 (136/136 targeted checker probes through 128 interpolation nesting levels + pipeline, 16/16 regressions, 40/40 trap probes, 3/3 ordinary exception controls -> VERDICT: CONFIRM, 0H/0M/0L) plus a fresh-clone exact-head delta review of d413eb9d69ac7b9054083be01af6d0fa6b0fd31e verifying identical soundness subtrees, clean url 2.5.9 lockfile updates, and passing WASM readiness -> VERDICT: CONFIRM (0H/0M/0L). IMPLEMENTER CHECKS: local cargo audit, cargo deny check, cargo fmt --check, cargo clippy --workspace --all-targets -- -D warnings, full workspace tests, garnet-lsp tests, WASM readiness (--gate blockers=[]), MSRV (--gate), text-byte policy (--gate), and agent contracts (25 contracts) all passed. AUTHORS: Every commit carries the GitHub noreply identity for IslandDevCrew (ID 275140286). MERGE AUTHORITY: This premerge record is reviewer evidence only; exact-head authenticated GitHub approval by IDC-Trust-Review (ID 306739987) and Jon's merge remain required.",
+  "review_state": "APPROVED",
+  "reviewed_head": "d413eb9d69ac7b9054083be01af6d0fa6b0fd31e",
+  "reviewed_tree": "6bf15fae436ca36eb0a8ab075429d580457d3358",
+  "reviewer_id": 306739987,
+  "reviewer_login": "IDC-Trust-Review",
+  "schema": "garnet.trust_kernel_review_record/v2",
+  "state": "premerge",
+  "touched_paths": [
+    "Cargo.lock",
+    "garnet-check-v0.3/src/caps_graph.rs",
+    "garnet-check-v0.3/src/lib.rs",
+    "garnet-interp-v0.3/src/control.rs",
+    "garnet-interp-v0.3/src/error.rs",
+    "garnet-interp-v0.3/src/eval.rs"
+  ],
+  "verdict": "pass"
+}

@@ -481,8 +481,13 @@ impl CapsGraph {
                     self.walk_expr_for_callees(a, out);
                 }
             }
-            Expr::Binary { lhs, rhs, .. } => {
+            Expr::Binary { op, lhs, rhs, .. } => {
                 self.walk_expr_for_callees(lhs, out);
+                if *op == garnet_parser::ast::BinOp::Pipeline {
+                    if let Some(target) = self.resolve_callee(rhs) {
+                        out.insert(target);
+                    }
+                }
                 self.walk_expr_for_callees(rhs, out);
             }
             Expr::Unary { expr, .. } => self.walk_expr_for_callees(expr, out),
@@ -514,6 +519,10 @@ impl CapsGraph {
             Expr::Match { subject, arms, .. } => {
                 self.walk_expr_for_callees(subject, out);
                 for arm in arms {
+                    self.walk_pattern_for_callees(&arm.pattern, out);
+                    if let Some(guard) = &arm.guard {
+                        self.walk_expr_for_callees(guard, out);
+                    }
                     self.walk_block(&arm.body, out);
                 }
             }
@@ -543,15 +552,94 @@ impl CapsGraph {
                 }
             }
             Expr::Spawn { expr, .. } => self.walk_expr_for_callees(expr, out),
-            Expr::Closure { .. }
-            | Expr::Ident(_, _)
+            Expr::Closure { body, .. } => match body.as_ref() {
+                garnet_parser::ast::ClosureBody::Block(b) => self.walk_block(b, out),
+                garnet_parser::ast::ClosureBody::Expr(e) => self.walk_expr_for_callees(e, out),
+            },
+            Expr::Str(lit, _) => self.walk_interp_for_callees(lit, out),
+            Expr::Ident(_, _)
             | Expr::Path(_, _)
             | Expr::Int(_, _)
             | Expr::Float(_, _)
             | Expr::Bool(_, _)
             | Expr::Nil(_)
-            | Expr::Str(_, _)
             | Expr::Symbol(_, _) => {}
+        }
+    }
+
+    fn walk_pattern_for_callees(
+        &self,
+        pattern: &garnet_parser::ast::Pattern,
+        out: &mut BTreeSet<CalleeRef>,
+    ) {
+        use garnet_parser::ast::Pattern;
+        match pattern {
+            Pattern::Literal(expr, _) => self.walk_expr_for_callees(expr, out),
+            Pattern::Tuple(items, _) | Pattern::Enum(_, items, _) => {
+                for item in items {
+                    self.walk_pattern_for_callees(item, out);
+                }
+            }
+            Pattern::Ident(..) | Pattern::Wildcard(_) | Pattern::Rest(_) => {}
+        }
+    }
+
+    fn walk_interp_for_callees(
+        &self,
+        lit: &garnet_parser::ast::StringLit,
+        out: &mut BTreeSet<CalleeRef>,
+    ) {
+        // Each `StrPart::Interp(src)` strictly shrinks the source string length by
+        // at least 4 bytes (`"#{` + `}"`). Draining nested interpolations through a
+        // heap worklist avoids any arbitrary nesting cutoff while keeping stack depth O(1).
+        use std::cell::RefCell;
+        thread_local! {
+            static CAPS_INTERP_QUEUE: RefCell<Option<Vec<String>>> = const { RefCell::new(None) };
+        }
+        let mut initial: Vec<String> = lit
+            .parts
+            .iter()
+            .filter_map(|p| match p {
+                garnet_parser::token::StrPart::Interp(src) => Some(src.clone()),
+                garnet_parser::token::StrPart::Lit(_) => None,
+            })
+            .collect();
+        if initial.is_empty() {
+            return;
+        }
+        let already_draining = CAPS_INTERP_QUEUE.with(|cell| {
+            let mut guard = cell.borrow_mut();
+            if let Some(queue) = guard.as_mut() {
+                queue.append(&mut initial);
+                true
+            } else {
+                *guard = Some(initial);
+                false
+            }
+        });
+        if already_draining {
+            return;
+        }
+        struct ResetQueue;
+        impl Drop for ResetQueue {
+            fn drop(&mut self) {
+                CAPS_INTERP_QUEUE.with(|cell| {
+                    *cell.borrow_mut() = None;
+                });
+            }
+        }
+        let _reset = ResetQueue;
+        loop {
+            let next = CAPS_INTERP_QUEUE.with(|cell| cell.borrow_mut().as_mut().and_then(Vec::pop));
+            let Some(src) = next else { break };
+            let wrapped = format!("def __interp__() {{ {src} }}");
+            if let Ok(module) = garnet_parser::parse_source(&wrapped) {
+                for item in &module.items {
+                    if let Item::Fn(f) = item {
+                        self.walk_block(&f.body, out);
+                    }
+                }
+            }
         }
     }
 

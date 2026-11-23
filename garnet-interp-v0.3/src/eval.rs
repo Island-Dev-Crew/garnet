@@ -777,7 +777,7 @@ pub(crate) fn require_capability(needed: &str, fn_name: &str) -> Result<(), Runt
         let c = c.borrow();
         if c.active_frames == 0 {
             if deny_no_frame() {
-                return Err(RuntimeError::msg(format!(
+                return Err(RuntimeError::trap(format!(
                     "capability: `{fn_name}` requires @caps({needed}), not declared in the calling chain"
                 )));
             }
@@ -787,7 +787,7 @@ pub(crate) fn require_capability(needed: &str, fn_name: &str) -> Result<(), Runt
         if has("*") || has(needed) {
             Ok(())
         } else {
-            Err(RuntimeError::msg(format!(
+            Err(RuntimeError::trap(format!(
                 "capability: `{fn_name}` requires @caps({needed}), not declared in the calling chain"
             )))
         }
@@ -820,7 +820,7 @@ pub(crate) fn require_entry_capability(needed: &str, fn_name: &str) -> Result<()
         let c = c.borrow();
         if c.entry_frames == 0 {
             if deny_no_frame() {
-                return Err(RuntimeError::msg(format!(
+                return Err(RuntimeError::trap(format!(
                     "capability: `{fn_name}` requires program entry @caps({needed}), not declared by the entry point"
                 )));
             }
@@ -830,7 +830,7 @@ pub(crate) fn require_entry_capability(needed: &str, fn_name: &str) -> Result<()
         if has("*") || has(needed) {
             Ok(())
         } else {
-            Err(RuntimeError::msg(format!(
+            Err(RuntimeError::trap(format!(
                 "capability: `{fn_name}` requires program entry @caps({needed}), not declared by the entry point"
             )))
         }
@@ -916,7 +916,7 @@ fn call_fn(f: &FnValue, mut args: Vec<Value>) -> Result<Value, RuntimeError> {
         Some(n) => {
             let guard = MaxDepthGuard::enter(f.def.name.clone());
             if guard.depth > n as u64 {
-                return Err(RuntimeError::msg(format!(
+                return Err(RuntimeError::trap(format!(
                     "bounded: @max_depth({n}) exceeded for `{}` (recursion depth {})",
                     f.def.name, guard.depth
                 )));
