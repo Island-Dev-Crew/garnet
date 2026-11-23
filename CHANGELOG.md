@@ -7,6 +7,24 @@ This file is updated in the same PR as the work it tracks (per the v0.5 slice
 contract). Lines added here are part of the calibrated record — if a
 slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
+## [Unreleased — 0.8.4-dev]
+
+### Soundness, Security & Truth Milestones Merged Since `v0.8.3`
+
+- **Uncatchable Enforcement Traps (`C1 / BE-F1`) & Exhaustive Checker Soundness (`FE-F2b`, `FE-F4`) (#615, `65cb502c`):**
+  - Separated `RuntimeError::Trap` from rescuable user exceptions across `garnet-interp-v0.3/src/{error,control,eval}.rs` and VM fallback: `rescue` re-propagates `Trap` unconditionally, and `ensure { return / break / continue / raise }` cannot mask a `Trap` raised in a `try` body, inside a `rescue` handler, or inside `ensure` itself.
+  - Closed safe-mode `try`/`rescue` walk gaps (`FE-F4`) in `garnet-check-v0.3/src/lib.rs` across expressions, `Pattern::Literal`, closures, and arbitrarily nested string interpolations via an O(1)-stack iterative heap worklist (verified to 128 nesting levels).
+  - Closed `CapsGraph` capability propagation blind spots (`FE-F2b` and preexisting pipeline omission) in `garnet-check-v0.3/src/caps_graph.rs` across `match` guards, `Pattern::Literal`, closures, `BinOp::Pipeline` (`1 |> memory::working`), and iterative nested string interpolations.
+  - Bumped `url 2.5.8 -> 2.5.9` and `form_urlencoded 1.2.2 -> 1.2.3` in root `Cargo.lock` and Studio `Cargo.lock`, clearing **`RUSTSEC-2026-0592`**.
+  - Rematerialized `docs/playground/pkg/` WASM bundle and refreshed `F_Project_Management/LAUNCH/W_PLAY_BROWSER_PROOF.json` (`garnet_wasm_readiness.py --gate` green).
+  - Verified by 4 rounds of fresh-clone cross-family review (`gpt-6-astra`, max reasoning: `VERDICT: CONFIRM`, 0 High / 0 Medium / 0 Low; 136 checker probes + 40 trap probes in committed WASM) and exact-head `IDC-Trust-Review` approval.
+- **RustSec Security Maintenance (#614, `c2e65628`):**
+  - Resolved **`RUSTSEC-2026-0459`** (`rusqlite` / `libsqlite3-sys` SQLite CVE-2026-119375) and **`RUSTSEC-2026-0543`** (removed unmaintained `chrono` transitive dependency), keeping `cargo audit` and `cargo-deny check` green under the exact Rust `1.95.0` MSRV floor.
+- **Live Machine-Truth Refresh (#613, `270ee045`):**
+  - Refreshed `docs/truth.json` via `cargo run -p xtask -- truth --with-tests` to **`2,483` passing workspace tests** (`0` failed) on post-#615 `main` (`xtask truth --check` green).
+- **Paper VI Reproducibility Harness (`benchmarks/paper_vi_exp7_trap_and_checker_soundness/`):**
+  - Added a deterministic, provider-free benchmark runner verifying `BE-F1` trap non-catchability (body, `rescue`, and `ensure` origins) and `FE-F2b` / `FE-F4` static checker coverage (guards, `Pattern::Literal`, closures, `BinOp::Pipeline`, and 128-level nested string interpolations) directly against a compiled `garnet` binary with SHA-256 provenance.
+
 ## [0.8.3] — 2026-11-03 (tag `v0.8.3` → `2ada7881`; the workspace moved to 0.8.3 on 2026-09-30)
 
 ### Released 0.8.3 — signature-checking installers, older-distro Linux, the 24-row gate (2026-11-03)
