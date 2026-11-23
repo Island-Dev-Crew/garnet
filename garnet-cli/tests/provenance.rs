@@ -3,8 +3,8 @@
 //! Closes the *strategy-miner adversarial training* threat.
 //!
 //! Proves:
-//!   - A legitimately-mined strategy (from ≥3 locally-signed ok episodes)
-//!     passes provenance verification.
+//!   - A legitimately-mined scrutiny strategy (from ≥2 locally-signed
+//!     same-kind failure episodes) passes provenance verification.
 //!   - A strategy whose justifying episodes were deleted → quarantined.
 //!   - A strategy whose justifying episodes were tampered with → quarantined.
 //!   - A strategy synthesised from foreign (wrong-key) episodes →

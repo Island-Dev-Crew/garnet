@@ -12,10 +12,11 @@ Integrity rule 1 decides who merges a gate change, and rule 2 sends any widening
 of declared authority to a human ruling. Three proposals or mechanisms would let
 past results lighten that review:
 
-- The strategy miner in `garnet-cli/src/strategies.rs` proposes
-  `skip_check_if_unchanged` after the same source hash succeeds three times. Its
-  own notes in `provenance.rs` say such a strategy turns the checker off. Today
-  the CLI only prints a note on standard error when one applies.
+- Historically, the strategy miner in `garnet-cli/src/strategies.rs` proposed
+  `skip_check_if_unchanged_since_last_ok` after the same source hash succeeded
+  three times (its own notes in `provenance.rs` warned that such a strategy
+  would weaken checking, though the CLI only printed a note on stderr).
+  That strategy is now retired and quarantined on load.
 - A lane that merges changes with no authority expansion without a human.
 - A ledger of past agreement between reviewers and verdicts, used to pick that lane.
 

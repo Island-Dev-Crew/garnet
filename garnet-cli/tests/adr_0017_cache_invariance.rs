@@ -11,12 +11,14 @@
 //!    capability), or `garnet agent-loop`.
 
 use garnet_cli::cache::{record_episode_in_with_key, Episode};
+use garnet_cli::knowledge;
+use garnet_cli::machine_key;
 use garnet_cli::provenance::{verify_strategy, QuarantineReason};
 use garnet_cli::strategies::{
     self, record_strategy_with_key, synthesize_from_episodes_with_ids, NewStrategy,
 };
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 
 fn fresh_dir(name: &str) -> PathBuf {
@@ -36,6 +38,13 @@ fn fresh_dir(name: &str) -> PathBuf {
 
 fn garnet_bin() -> PathBuf {
     PathBuf::from(env!("CARGO_BIN_EXE_garnet"))
+}
+
+fn garnet_cmd(dir: &Path, key_path: &Path) -> Command {
+    let mut cmd = Command::new(garnet_bin());
+    cmd.current_dir(dir)
+        .env("GARNET_MACHINE_KEY_PATH", key_path);
+    cmd
 }
 
 #[test]
@@ -114,9 +123,11 @@ fn legacy_persisted_skip_check_strategy_is_always_quarantined() {
 }
 
 #[test]
-fn cache_history_never_changes_check_diff_caps_or_agent_loop_verdicts() {
+fn cache_history_and_legacy_skip_row_never_change_gate_verdicts() {
     let cold_dir = fresh_dir("cold");
     let warm_dir = fresh_dir("warm");
+    let cold_key_path = cold_dir.join("machine.key");
+    let warm_key_path = warm_dir.join("machine.key");
 
     let ok_src =
         "@caps(fs)\ndef reader() { fs::read_file(\"/tmp/a\") }\n@caps()\ndef main() { 1 }\n";
@@ -126,51 +137,82 @@ fn cache_history_never_changes_check_diff_caps_or_agent_loop_verdicts() {
         "@caps(fs)\ndef reader() { fs::read_file(\"/tmp/a\") }\n@caps(fs)\ndef main() { 1 }\n";
     let widened_src = "@caps(fs, net)\ndef main() { 1 }\n";
 
-    // Warm `.garnet-cache` with 4 passing `check` runs first.
+    // Warm `.garnet-cache` with 4 passing `check` runs first, then ALSO inject a
+    // validly HMAC-signed legacy `skip_check_if_unchanged_since_last_ok` row
+    // matching `bad_check_src`'s AST fingerprint and citing the 4 signed local
+    // "ok" episodes.
     let warm_ok = warm_dir.join("ok.garnet");
     fs::write(&warm_ok, ok_src).unwrap();
     for _ in 0..4 {
-        let out = Command::new(garnet_bin())
-            .current_dir(&warm_dir)
+        let out = garnet_cmd(&warm_dir, &warm_key_path)
             .args(["check", warm_ok.to_str().unwrap()])
             .output()
             .unwrap();
         assert!(out.status.success(), "warm-up check should succeed");
     }
 
-    // 1. `garnet check` on failing source must reject identically cold vs warm.
+    let warm_key = machine_key::load_or_generate_key(&warm_key_path).unwrap();
+    let bad_module = garnet_parser::parse_source(bad_check_src).unwrap();
+    let bad_fp = knowledge::fingerprint(&bad_module);
+    let legacy_row = NewStrategy {
+        trigger_fingerprint: bad_fp,
+        heuristic: "skip_check_if_unchanged_since_last_ok".to_string(),
+        justifying_episode_ids: vec![0, 1, 2, 3],
+    };
+    let conn = strategies::open(&warm_dir).unwrap();
+    record_strategy_with_key(&conn, &legacy_row, 2026, &warm_key).unwrap();
+    drop(conn);
+
+    // 1. `garnet check` on failing source must quarantine the validly-signed legacy
+    //    skip-check row, omit any applicability note, and emit the exact same
+    //    capability-coverage failure as a cold directory.
     let cold_bad = cold_dir.join("bad.garnet");
     let warm_bad = warm_dir.join("bad.garnet");
     fs::write(&cold_bad, bad_check_src).unwrap();
     fs::write(&warm_bad, bad_check_src).unwrap();
-    let cold_check = Command::new(garnet_bin())
-        .current_dir(&cold_dir)
+    let cold_check = garnet_cmd(&cold_dir, &cold_key_path)
         .args(["check", cold_bad.to_str().unwrap()])
         .output()
         .unwrap();
-    let warm_check = Command::new(garnet_bin())
-        .current_dir(&warm_dir)
+    let warm_check = garnet_cmd(&warm_dir, &warm_key_path)
         .args(["check", warm_bad.to_str().unwrap()])
         .output()
         .unwrap();
     assert!(!cold_check.status.success());
     assert_eq!(cold_check.status.code(), warm_check.status.code());
+    let cold_check_out = format!(
+        "{}{}",
+        String::from_utf8_lossy(&cold_check.stdout),
+        String::from_utf8_lossy(&cold_check.stderr)
+    );
+    let warm_check_err = String::from_utf8_lossy(&warm_check.stderr);
+    let warm_check_out = format!(
+        "{}{}",
+        String::from_utf8_lossy(&warm_check.stdout),
+        warm_check_err
+    );
     assert!(
-        !String::from_utf8_lossy(&warm_check.stderr)
-            .contains("skip_check_if_unchanged_since_last_ok"),
-        "retired skip-check strategy must never surface"
+        cold_check_out.contains("caps coverage") && warm_check_out.contains("caps coverage"),
+        "expected caps coverage diagnostic in both runs:\ncold={cold_check_out}\nwarm={warm_check_out}"
+    );
+    assert!(
+        warm_check_err.contains("quarantined 1 untrusted strategy record"),
+        "validly signed legacy skip-check row must be quarantined by CLI subprocess:\n{warm_check_err}"
+    );
+    assert!(
+        !warm_check_err.contains("strategy 'skip_check_if_unchanged_since_last_ok' applies"),
+        "retired skip-check strategy must never surface as applicable:\n{warm_check_err}"
     );
 
-    // 2. `garnet diff-caps --machine` on per-function gain must report the exact
-    //    same JSON surface cold vs warm.
+    // 2. `garnet diff-caps --machine` on per-function gain must emit the exact
+    //    same complete machine verdict cold vs warm.
     let cold_base = cold_dir.join("base.garnet");
     let cold_gain = cold_dir.join("gain.garnet");
     let warm_gain = warm_dir.join("gain.garnet");
     fs::write(&cold_base, ok_src).unwrap();
     fs::write(&cold_gain, per_fn_gain_src).unwrap();
     fs::write(&warm_gain, per_fn_gain_src).unwrap();
-    let cold_diff = Command::new(garnet_bin())
-        .current_dir(&cold_dir)
+    let cold_diff = garnet_cmd(&cold_dir, &cold_key_path)
         .args([
             "diff-caps",
             "--machine",
@@ -179,8 +221,7 @@ fn cache_history_never_changes_check_diff_caps_or_agent_loop_verdicts() {
         ])
         .output()
         .unwrap();
-    let warm_diff = Command::new(garnet_bin())
-        .current_dir(&warm_dir)
+    let warm_diff = garnet_cmd(&warm_dir, &warm_key_path)
         .args([
             "diff-caps",
             "--machine",
@@ -193,8 +234,8 @@ fn cache_history_never_changes_check_diff_caps_or_agent_loop_verdicts() {
     let cold_json: serde_json::Value = serde_json::from_slice(&cold_diff.stdout).unwrap();
     let warm_json: serde_json::Value = serde_json::from_slice(&warm_diff.stdout).unwrap();
     assert_eq!(
-        cold_json["functions_caps_expanded"],
-        warm_json["functions_caps_expanded"]
+        cold_json, warm_json,
+        "complete machine diff-caps verdict must be identical cold vs warm"
     );
     assert!(
         !warm_json["functions_caps_expanded"]
@@ -204,13 +245,13 @@ fn cache_history_never_changes_check_diff_caps_or_agent_loop_verdicts() {
         "per-function gain on `main` must still be listed after warm cache"
     );
 
-    // 3. `garnet agent-loop` on authority widening must reject identically cold vs warm.
+    // 3. `garnet agent-loop` on authority widening must reject at the same
+    //    diff-caps stage cold vs warm.
     let cold_wide = cold_dir.join("wide.garnet");
     let warm_wide = warm_dir.join("wide.garnet");
     fs::write(&cold_wide, widened_src).unwrap();
     fs::write(&warm_wide, widened_src).unwrap();
-    let cold_loop = Command::new(garnet_bin())
-        .current_dir(&cold_dir)
+    let cold_loop = garnet_cmd(&cold_dir, &cold_key_path)
         .args([
             "agent-loop",
             "--baseline",
@@ -220,8 +261,7 @@ fn cache_history_never_changes_check_diff_caps_or_agent_loop_verdicts() {
         ])
         .output()
         .unwrap();
-    let warm_loop = Command::new(garnet_bin())
-        .current_dir(&warm_dir)
+    let warm_loop = garnet_cmd(&warm_dir, &warm_key_path)
         .args([
             "agent-loop",
             "--baseline",
@@ -233,4 +273,22 @@ fn cache_history_never_changes_check_diff_caps_or_agent_loop_verdicts() {
         .unwrap();
     assert!(!cold_loop.status.success());
     assert_eq!(cold_loop.status.code(), warm_loop.status.code());
+    let cold_loop_text = format!(
+        "{}{}",
+        String::from_utf8_lossy(&cold_loop.stdout),
+        String::from_utf8_lossy(&cold_loop.stderr)
+    );
+    let warm_loop_text = format!(
+        "{}{}",
+        String::from_utf8_lossy(&warm_loop.stdout),
+        String::from_utf8_lossy(&warm_loop.stderr)
+    );
+    assert!(
+        cold_loop_text.contains("diff-caps") && warm_loop_text.contains("diff-caps"),
+        "agent-loop must reject at diff-caps stage in both runs:\ncold={cold_loop_text}\nwarm={warm_loop_text}"
+    );
+    assert!(
+        cold_loop_text.contains("REJECTED") && warm_loop_text.contains("REJECTED"),
+        "agent-loop must report REJECTED in both runs:\ncold={cold_loop_text}\nwarm={warm_loop_text}"
+    );
 }

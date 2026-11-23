@@ -1,23 +1,19 @@
 //! ProvenanceStrategy — re-derivable strategy verification.
 //! v3.3 Security Layer 1 (hardening #6).
 //!
-//! ## The threat (Garnet-specific, novel)
+//! ## Historical threat & ADR 0017 retirement
 //!
-//! The compiler-as-agent strategy miner (`strategies.rs`) proposes
-//! rules like `skip_check_if_unchanged_since_last_ok` when it observes
-//! "the same source_hash succeeded ≥3 times." A successful strategy
-//! genuinely turns OFF the safety checker on that hash.
+//! Historically (v3.2), the compiler-as-agent strategy miner (`strategies.rs`)
+//! proposed `skip_check_if_unchanged_since_last_ok` when the same source_hash
+//! succeeded ≥3 times. ADR 0017 retired that rule: `strategies.rs` now proposes
+//! only scrutiny-adding `warn_repeated_<error_kind>` diagnostics, and
+//! `check_predicate_reholds` below unconditionally quarantines any persisted
+//! legacy `skip_check_if_unchanged_since_last_ok` row even if validly signed.
 //!
-//! An attacker who can write to `episodes.log` (shared `.garnet-cache/`,
-//! co-tenant in a tmp dir, or a malicious dependency that runs
-//! `garnet build` in an install script) can pre-seed 3 fake successes
-//! under their chosen source_hash — and the miner will then suppress
-//! checks on THAT hash permanently.
-//!
-//! CacheHMAC addresses this at the episode layer: unverified episodes
-//! are ignored. But strategies persisted from an earlier-poisoned run
-//! would still be trusted once saved to `strategies.db` with a valid
-//! HMAC.
+//! Provenance verification also defends against strategy-miner poisoning on
+//! active scrutiny heuristics: unverified episodes are ignored by CacheHMAC,
+//! and persisted strategies must still re-satisfy their miner predicate on
+//! verified local episodes.
 //!
 //! ## The fix
 //!

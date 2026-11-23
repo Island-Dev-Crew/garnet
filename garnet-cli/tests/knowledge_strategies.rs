@@ -3,8 +3,9 @@
 //! Verifies:
 //! - Records persist in `compilation_contexts`.
 //! - `similar_contexts` returns top-k by Hamming distance.
-//! - `synthesize_from_episodes` proposes the expected heuristics for the
-//!   sample patterns (3+ ok = skip_check; 2+ same-error = warn).
+//! - `synthesize_from_episodes` proposes scrutiny-adding `warn_repeated_*`
+//!   heuristics after 2+ same-kind failures and never proposes `skip_check`
+//!   after repeated `ok` runs (ADR 0017).
 //! - Reading the DBs from disk after the CLI ran works.
 
 use garnet_cli::cache::Episode;
