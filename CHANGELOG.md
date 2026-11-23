@@ -22,8 +22,8 @@ slice ships labeled "partial," its CHANGELOG entry says so explicitly.
   - Resolved **`RUSTSEC-2026-0459`** (`rusqlite` / `libsqlite3-sys` SQLite CVE-2026-119375) and **`RUSTSEC-2026-0543`** (removed unmaintained `chrono` transitive dependency), keeping `cargo audit` and `cargo-deny check` green under the exact Rust `1.95.0` MSRV floor.
 - **Live Machine-Truth Refresh (#613, `270ee045`):**
   - Refreshed `docs/truth.json` via `cargo run -p xtask -- truth --with-tests` to **`2,483` passing workspace tests** (`0` failed) on post-#615 `main` (`xtask truth --check` green).
-- **Paper VI Reproducibility Harness (`benchmarks/paper_vi_exp7_trap_and_checker_soundness/`):**
-  - Added a deterministic, provider-free benchmark runner verifying `BE-F1` trap non-catchability (body, `rescue`, and `ensure` origins) and `FE-F2b` / `FE-F4` static checker coverage (guards, `Pattern::Literal`, closures, `BinOp::Pipeline`, and 128-level nested string interpolations) directly against a compiled `garnet` binary with SHA-256 provenance.
+- **Paper VI Reproducibility Harnesses (`benchmarks/paper_vi_exp{2,4,5,6,7}_*/`):**
+  - Added deterministic, provider-free benchmark harnesses for Paper VI Experiments 2 (progressive type-disclosure), 4 (kind-aware allocation / Mnemos memory), 5 (error-model bridging), 6 (signed hot-reload & seal fingerprint stability), and 7 (`BE-F1` trap non-catchability & `FE-F2b`/`FE-F4` static checker coverage), each outputting SHA-256 binary provenance directly against the compiled `garnet` CLI.
 
 ## [0.8.3] — 2026-11-03 (tag `v0.8.3` → `2ada7881`; the workspace moved to 0.8.3 on 2026-09-30)
 
