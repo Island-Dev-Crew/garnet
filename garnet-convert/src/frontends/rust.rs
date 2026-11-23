@@ -24,7 +24,10 @@ struct RustParser<'a> {
     source: &'a str,
     filename: String,
     pos: usize,
+    expr_depth: usize,
 }
+
+const MAX_EXPR_DEPTH: usize = 64;
 
 impl<'a> RustParser<'a> {
     fn new(source: &'a str, filename: &str) -> Self {
@@ -32,6 +35,7 @@ impl<'a> RustParser<'a> {
             source,
             filename: filename.to_string(),
             pos: 0,
+            expr_depth: 0,
         }
     }
 
@@ -472,16 +476,191 @@ impl<'a> RustParser<'a> {
     }
 
     fn parse_expr(&mut self) -> Result<Cir, ConvertError> {
-        // Simple: literal | ident | call | field access. No operator
-        // precedence for the v4.1 initial release; the production
-        // tree-sitter frontend handles it.
-        let start = self.pos;
+        if self.expr_depth >= MAX_EXPR_DEPTH {
+            return Ok(Cir::Literal(CirLit::Nil, self.lineage(self.pos)));
+        }
+        self.expr_depth += 1;
+        let res = self.parse_or();
+        self.expr_depth -= 1;
+        res
+    }
+
+    fn eat_exact_op(&mut self, op: &str, disallowed_next: &[u8]) -> bool {
         self.skip_ws();
         let rem = self.remaining();
-        if rem.is_empty() {
+        if !rem.starts_with(op) {
+            return false;
+        }
+        if let Some(&next) = rem.as_bytes().get(op.len()) {
+            if disallowed_next.contains(&next) {
+                return false;
+            }
+        }
+        self.pos += op.len();
+        true
+    }
+
+    fn eat_keyword(&mut self, kw: &str) -> bool {
+        self.skip_ws();
+        let rem = self.remaining();
+        if !rem.starts_with(kw) {
+            return false;
+        }
+        if let Some(next) = rem[kw.len()..].chars().next() {
+            if next.is_alphanumeric() || next == '_' {
+                return false;
+            }
+        }
+        self.pos += kw.len();
+        true
+    }
+
+    fn parse_or(&mut self) -> Result<Cir, ConvertError> {
+        let start = self.pos;
+        let mut lhs = self.parse_and()?;
+        while self.eat_exact_op("||", b"=") {
+            let rhs = self.parse_and()?;
+            lhs = Cir::BinOp {
+                op: "or".to_string(),
+                lhs: Box::new(lhs),
+                rhs: Box::new(rhs),
+                lineage: self.lineage(start),
+            };
+        }
+        Ok(lhs)
+    }
+
+    fn parse_and(&mut self) -> Result<Cir, ConvertError> {
+        let start = self.pos;
+        let mut lhs = self.parse_cmp()?;
+        while self.eat_exact_op("&&", b"=") {
+            let rhs = self.parse_cmp()?;
+            lhs = Cir::BinOp {
+                op: "and".to_string(),
+                lhs: Box::new(lhs),
+                rhs: Box::new(rhs),
+                lineage: self.lineage(start),
+            };
+        }
+        Ok(lhs)
+    }
+
+    fn parse_cmp(&mut self) -> Result<Cir, ConvertError> {
+        let start = self.pos;
+        let mut lhs = self.parse_add()?;
+        loop {
+            let op = if self.eat_exact_op("==", b"") {
+                "=="
+            } else if self.eat_exact_op("!=", b"") {
+                "!="
+            } else if self.eat_exact_op("<=", b"") {
+                "<="
+            } else if self.eat_exact_op(">=", b"") {
+                ">="
+            } else if self.eat_exact_op("<", b"<=") {
+                "<"
+            } else if self.eat_exact_op(">", b">=") {
+                ">"
+            } else {
+                break;
+            };
+            let rhs = self.parse_add()?;
+            lhs = Cir::BinOp {
+                op: op.to_string(),
+                lhs: Box::new(lhs),
+                rhs: Box::new(rhs),
+                lineage: self.lineage(start),
+            };
+        }
+        Ok(lhs)
+    }
+
+    fn parse_add(&mut self) -> Result<Cir, ConvertError> {
+        let start = self.pos;
+        let mut lhs = self.parse_mul()?;
+        loop {
+            let op = if self.eat_exact_op("+", b"=") {
+                "+"
+            } else if self.eat_exact_op("-", b"=>") {
+                "-"
+            } else {
+                break;
+            };
+            let rhs = self.parse_mul()?;
+            lhs = Cir::BinOp {
+                op: op.to_string(),
+                lhs: Box::new(lhs),
+                rhs: Box::new(rhs),
+                lineage: self.lineage(start),
+            };
+        }
+        Ok(lhs)
+    }
+
+    fn parse_mul(&mut self) -> Result<Cir, ConvertError> {
+        let start = self.pos;
+        let mut lhs = self.parse_unary()?;
+        loop {
+            let op = if self.eat_exact_op("*", b"=") {
+                "*"
+            } else if self.eat_exact_op("/", b"=/*") {
+                "/"
+            } else if self.eat_exact_op("%", b"=") {
+                "%"
+            } else {
+                break;
+            };
+            let rhs = self.parse_unary()?;
+            lhs = Cir::BinOp {
+                op: op.to_string(),
+                lhs: Box::new(lhs),
+                rhs: Box::new(rhs),
+                lineage: self.lineage(start),
+            };
+        }
+        Ok(lhs)
+    }
+
+    fn parse_unary(&mut self) -> Result<Cir, ConvertError> {
+        let start = self.pos;
+        if self.expr_depth >= MAX_EXPR_DEPTH {
             return Ok(Cir::Literal(CirLit::Nil, self.lineage(start)));
         }
-        let ch = rem.chars().next().unwrap_or(' ');
+        if self.eat_exact_op("-", b"=>") {
+            self.expr_depth += 1;
+            let operand = self.parse_unary();
+            self.expr_depth -= 1;
+            return Ok(Cir::UnOp {
+                op: "-".to_string(),
+                operand: Box::new(operand?),
+                lineage: self.lineage(start),
+            });
+        }
+        if self.eat_exact_op("!", b"=") {
+            self.expr_depth += 1;
+            let operand = self.parse_unary();
+            self.expr_depth -= 1;
+            return Ok(Cir::UnOp {
+                op: "!".to_string(),
+                operand: Box::new(operand?),
+                lineage: self.lineage(start),
+            });
+        }
+        self.parse_primary()
+    }
+
+    fn parse_primary(&mut self) -> Result<Cir, ConvertError> {
+        let start = self.pos;
+        self.skip_ws();
+        if self.remaining().is_empty() {
+            return Ok(Cir::Literal(CirLit::Nil, self.lineage(start)));
+        }
+        if self.eat("(") {
+            let inner = self.parse_expr()?;
+            self.eat(")");
+            return Ok(inner);
+        }
+        let ch = self.remaining().chars().next().unwrap_or(' ');
         if ch == '"' {
             // String literal
             self.pos += 1;
@@ -490,20 +669,36 @@ impl<'a> RustParser<'a> {
             return Ok(Cir::Literal(CirLit::Str(content), self.lineage(start)));
         }
         if ch.is_numeric() {
-            let mut n = 0i64;
-            let bytes = rem.as_bytes();
-            let mut i = 0;
-            while i < bytes.len() && bytes[i].is_ascii_digit() {
-                n = n * 10 + (bytes[i] - b'0') as i64;
-                i += 1;
+            let (parsed_float, parsed_int, consumed) = {
+                let rem = self.remaining();
+                let bytes = rem.as_bytes();
+                let mut i = 0;
+                while i < bytes.len() && bytes[i].is_ascii_digit() {
+                    i += 1;
+                }
+                if i + 1 < bytes.len() && bytes[i] == b'.' && bytes[i + 1].is_ascii_digit() {
+                    i += 1;
+                    while i < bytes.len() && bytes[i].is_ascii_digit() {
+                        i += 1;
+                    }
+                    (rem[..i].parse::<f64>().ok(), None, i)
+                } else {
+                    (None, rem[..i].parse::<i64>().ok(), i)
+                }
+            };
+            self.pos += consumed;
+            if let Some(f) = parsed_float {
+                return Ok(Cir::Literal(CirLit::Float(f), self.lineage(start)));
             }
-            self.pos += i;
-            return Ok(Cir::Literal(CirLit::Int(n), self.lineage(start)));
+            return Ok(Cir::Literal(
+                CirLit::Int(parsed_int.unwrap_or(0)),
+                self.lineage(start),
+            ));
         }
-        if self.eat("true") {
+        if self.eat_keyword("true") {
             return Ok(Cir::Literal(CirLit::Bool(true), self.lineage(start)));
         }
-        if self.eat("false") {
+        if self.eat_keyword("false") {
             return Ok(Cir::Literal(CirLit::Bool(false), self.lineage(start)));
         }
         if let Some(name) = self.read_ident() {
