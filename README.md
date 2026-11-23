@@ -10,7 +10,7 @@ built for the code agents write and humans accept.</strong></p>
 <p align="center"><em>No authority without evidence. Acceptance is a decision made on evidence your own toolchain recomputes.</em></p>
 
 <p align="center">
-  <a href="https://github.com/Island-Dev-Crew/garnet/releases/latest">Release <!-- truth:latest_tag -->v0.8.3<!-- /truth --> · GPG-signed checksums</a> ·
+  <a href="https://github.com/Island-Dev-Crew/garnet/releases/latest">Release <!-- truth:latest_tag -->v0.8.4<!-- /truth --> · GPG-signed checksums</a> ·
   <a href="#license">MIT OR Apache-2.0</a> ·
   <a href="https://garnet-lang.org">garnet-lang.org</a> ·
   <a href="https://garnet-lang.org/status.html">Verified today / Still open</a> ·
@@ -18,7 +18,7 @@ built for the code agents write and humans accept.</strong></p>
   <a href="FAQ.md">FAQ</a>
 </p>
 
-<p align="center"><sub>Source on <code>main</code> is <!-- truth:version -->0.8.4<!-- /truth -->; the last release is <!-- truth:latest_tag -->v0.8.3<!-- /truth -->.</sub></p>
+<p align="center"><sub>Source on <code>main</code> is <!-- truth:version -->0.8.4<!-- /truth -->; the last release is <!-- truth:latest_tag -->v0.8.4<!-- /truth -->.</sub></p>
 
 <p align="center"><sub>v0.8.3 ships the 24-row gate, <code>mem</code> and seal/v2 described below. The v0.8.2 binary gates 15 host primitives, has no <code>mem</code> capability gate and emits seal/v1.</sub></p>
 
@@ -127,7 +127,7 @@ and aimed at agent-authored code:
 curl --proto '=https' --tlsv1.2 -sSf https://garnet-lang.org/install.sh | sh
 ```
 
-Release-first, source-fallback. <!-- truth:latest_tag -->v0.8.3<!-- /truth --> ships
+Release-first, source-fallback. <!-- truth:latest_tag -->v0.8.4<!-- /truth --> ships
 `.deb` / `.rpm` packages and tarballs for Linux (x86_64, ARM64), macOS tarballs and a Windows
 zip, with a GPG-signed `SHA256SUMS`; verify per [docs/release-signing.md](docs/release-signing.md).
 The GPG signature covers `SHA256SUMS`, not the binaries.
@@ -157,12 +157,12 @@ garnet verify src/main.garnet src/main.garnet.manifest.json --signature
 
 ## Verified today / Still open
 
-Garnet is a **research-grade prototype (<!-- truth:latest_tag -->v0.8.3<!-- /truth -->), not
+Garnet is a **research-grade prototype (<!-- truth:latest_tag -->v0.8.4<!-- /truth -->), not
 production-complete** — and this README will never tell you otherwise.
 
 | Verified today | Still open |
 |---|---|
-| <!-- truth:latest_tag -->v0.8.3<!-- /truth --> release: Linux x86_64/ARM64 `.deb`, `.rpm` and tarballs, macOS tarballs, Windows zip, SBOM, GPG-signed `SHA256SUMS` | macOS `.pkg` notarization, Windows `.msi` (credential-gated) |
+| <!-- truth:latest_tag -->v0.8.4<!-- /truth --> release: Linux x86_64/ARM64 `.deb`, `.rpm` and tarballs, macOS tarballs, Windows zip, SBOM, GPG-signed `SHA256SUMS` | macOS `.pkg` notarization, Windows `.msi` (credential-gated) |
 | `@caps` + `@max_depth` enforced on interpreter **and** VM; cross-OS trap parity recorded | OS-sandbox enforcement beyond Linux seccomp |
 | Capability-bounded acceptance demo: agent code accepted *and refused* on evidence, sealed | **Under construction:** `garnet build --evidence` (W-SHIP; no shipping CLI flag); independent verification of the self-found red-team fix |
 | <!-- truth:primitive_count -->84<!-- /truth --> capability- and stability-tagged stdlib primitives | Production VM performance (unbenchmarked, unclaimed) |

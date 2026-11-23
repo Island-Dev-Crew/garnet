@@ -1,6 +1,6 @@
 # Garnet — Frequently Asked Questions
 
-Last updated: 2026-11-03 · latest tag <!-- truth:latest_tag -->v0.8.3<!-- /truth --> (research-grade milestone; the Release ships CLI binaries for macOS, Linux and Windows, checksum-verified against a GPG-signed `SHA256SUMS`, plus an SBOM)
+Last updated: 2026-11-03 · latest tag <!-- truth:latest_tag -->v0.8.4<!-- /truth --> (research-grade milestone; the Release ships CLI binaries for macOS, Linux and Windows, checksum-verified against a GPG-signed `SHA256SUMS`, plus an SBOM)
 
 ---
 
@@ -50,7 +50,7 @@ Memory: Paper VI Experiment 4 measured 21% peak RSS reduction on the multi-agent
 
 ## Is Garnet production-ready?
 
-**<!-- truth:latest_tag -->v0.8.3<!-- /truth --> is research-grade and not production-complete.** Specifically:
+**<!-- truth:latest_tag -->v0.8.4<!-- /truth --> is research-grade and not production-complete.** Specifically:
 
 - **Ready**: scaffolding (`garnet new`), the four-language converter (`garnet convert`), deterministic + signed builds (`garnet build --deterministic --sign`), CapCaps checking plus the runtime entry gate on 24 primitives, scaffolded `garnet test`, the <!-- truth:primitive_count -->84<!-- /truth --> stdlib registry primitives (two of them, `net::tcp_listen` and `net::udp_bind`, are unbridged stubs that do not execute), parser fuzz harness, rules-based compiler advisory mode, the S16 LSP surface (diagnostics, hover, go-to-definition, document/workspace symbols, CST-precise rename), release-backed VSIX assets, Linux, macOS and Windows CLI release assets under a GPG-signed `SHA256SUMS`, and deterministic cross-machine CI.
 - **Active-partial**: macOS Studio packaging without Developer ID notarization, Windows/Linux Studio target proof, bytecode VM performance path, LSP hover/go-to-def screenshot hardening, promo video human/aesthetic acceptance, proof/benchmark measurements, and provider-neutral advisory handoffs.
