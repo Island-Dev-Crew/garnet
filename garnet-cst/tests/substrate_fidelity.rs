@@ -185,6 +185,18 @@ fn span_exact_on_transparent_wrapper_constructs() {
             "multi_param_paren",
             "@caps()\nfn f(a: Int, b: (Str)) -> Int { 1 }\n",
         ),
+        (
+            "paren_free_method_do_block",
+            "@caps()\ndef main() { [1, 2, 3].map do |x| x * 2 end }\n",
+        ),
+        (
+            "chained_paren_free_do_blocks",
+            "@caps()\ndef main() {\n  [1, 2, 3].map do |x|\n    x * 2\n  end.filter do |y|\n    y > 2\n  end\n}\n",
+        ),
+        (
+            "zero_param_paren_free_do_block",
+            "@caps()\ndef main() { runner.run do 42 end }\n",
+        ),
     ];
     let mut diffs = Vec::new();
     for (label, src) in cases {
