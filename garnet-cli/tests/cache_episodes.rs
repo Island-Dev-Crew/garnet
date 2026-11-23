@@ -417,18 +417,21 @@ fn copied_same_machine_strategy_with_replayed_episodes_is_quarantined() {
     let attacker = fresh_temp_dir("attacker_same_machine_strategy");
     let victim = fresh_temp_dir("victim_same_machine_strategy");
     let shared_key_path = victim.join("shared-machine.key");
-    let source = "def main() { 42 }";
-    let attacker_file = attacker.join("safe.garnet");
-    let victim_file = victim.join("safe.garnet");
-    std::fs::write(&attacker_file, source).unwrap();
-    std::fs::write(&victim_file, source).unwrap();
+    let attacker_file = attacker.join("bad.garnet");
+    let victim_file = victim.join("bad.garnet");
+    let bad_source = "def main() { fs::read_file(\"/tmp/x\") }";
+    std::fs::write(&attacker_file, bad_source).unwrap();
+    std::fs::write(&victim_file, bad_source).unwrap();
 
-    for _ in 0..3 {
+    for _ in 0..2 {
         let out = garnet_cmd_with_key(&attacker, &shared_key_path)
-            .args(["parse", attacker_file.to_str().unwrap()])
+            .args(["check", attacker_file.to_str().unwrap()])
             .output()
             .unwrap();
-        assert!(out.status.success(), "attacker parse should succeed");
+        assert!(
+            !out.status.success(),
+            "attacker check should fail on missing cap"
+        );
     }
 
     let victim_cache = victim.join(".garnet-cache");
@@ -442,13 +445,13 @@ fn copied_same_machine_strategy_with_replayed_episodes_is_quarantined() {
     }
 
     let out = garnet_cmd_with_key(&victim, &shared_key_path)
-        .args(["parse", victim_file.to_str().unwrap()])
+        .args(["check", victim_file.to_str().unwrap()])
         .output()
         .unwrap();
-    assert!(out.status.success(), "victim parse should still succeed");
+    assert!(!out.status.success(), "victim check must still fail");
     let stderr = String::from_utf8_lossy(&out.stderr);
     assert!(
-        stderr.contains("ignored 3 untrusted cache record"),
+        stderr.contains("ignored 2 untrusted cache record"),
         "expected copied source-tree cache warning, got stderr: {stderr}"
     );
     assert!(
@@ -456,7 +459,7 @@ fn copied_same_machine_strategy_with_replayed_episodes_is_quarantined() {
         "expected copied source-tree strategy quarantine, got stderr: {stderr}"
     );
     assert!(
-        !stderr.contains("strategy 'skip_check_if_unchanged_since_last_ok' applies"),
+        !stderr.contains("strategy 'warn_repeated_"),
         "copied same-machine strategy must not influence diagnostics: {stderr}"
     );
 }

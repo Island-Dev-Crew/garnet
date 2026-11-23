@@ -3,8 +3,8 @@
 //! Closes the *strategy-miner adversarial training* threat.
 //!
 //! Proves:
-//!   - A legitimately-mined strategy (from ≥3 locally-signed ok episodes)
-//!     passes provenance verification.
+//!   - A legitimately-mined scrutiny strategy (from ≥2 locally-signed
+//!     same-kind failure episodes) passes provenance verification.
 //!   - A strategy whose justifying episodes were deleted → quarantined.
 //!   - A strategy whose justifying episodes were tampered with → quarantined.
 //!   - A strategy synthesised from foreign (wrong-key) episodes →
@@ -36,11 +36,12 @@ fn fresh_dir(name: &str) -> PathBuf {
     dir
 }
 
-// A helper to record N signed "ok" episodes for the same source_hash
-// and return their line indices (which the miner uses as episode IDs).
-fn record_n_signed_oks(
+// A helper to record N signed failure episodes for the same source_hash
+// and error_kind and return their line indices.
+fn record_n_signed_failures(
     cache_dir: &std::path::Path,
     hash: &str,
+    error_kind: &str,
     n: usize,
     key: &[u8; 32],
 ) -> Vec<i64> {
@@ -50,10 +51,10 @@ fn record_n_signed_oks(
             "check",
             format!("f{i}.garnet"),
             hash,
-            "ok",
-            None,
+            "check_err",
+            Some(error_kind.to_string()),
             i as u64,
-            0,
+            1,
         );
         record_episode_in_with_key(cache_dir, &ep, key);
         ids.push(i as i64);
@@ -69,11 +70,11 @@ fn legitimately_mined_strategy_passes_provenance() {
     let cache_dir = dir.join(".garnet-cache");
     let key = [0xAAu8; 32];
 
-    let ids = record_n_signed_oks(&cache_dir, "hashA", 3, &key);
+    let ids = record_n_signed_failures(&cache_dir, "hashA", "caps_coverage", 2, &key);
     let fp = [0x01u8; 32];
     let strat = NewStrategy {
         trigger_fingerprint: fp,
-        heuristic: "skip_check_if_unchanged_since_last_ok".to_string(),
+        heuristic: "warn_repeated_caps_coverage".to_string(),
         justifying_episode_ids: ids,
     };
 
@@ -89,7 +90,7 @@ fn legitimately_mined_strategy_passes_provenance() {
     let result = verify_strategy(persisted, &dir, &key);
     assert!(
         result.is_ok(),
-        "legitimately mined strategy must pass provenance: {result:?}"
+        "legitimately mined scrutiny strategy must pass provenance: {result:?}"
     );
 }
 
@@ -101,14 +102,14 @@ fn strategy_with_deleted_justification_is_quarantined() {
     let cache_dir = dir.join(".garnet-cache");
     let key = [0xBBu8; 32];
 
-    record_n_signed_oks(&cache_dir, "hashB", 3, &key);
+    record_n_signed_failures(&cache_dir, "hashB", "caps_coverage", 2, &key);
 
     // Forge a strategy citing justification IDs that don't exist
     // (attacker-picked IDs, or IDs of episodes that were deleted).
     let strat = NewStrategy {
         trigger_fingerprint: [0x02u8; 32],
-        heuristic: "skip_check_if_unchanged_since_last_ok".to_string(),
-        justifying_episode_ids: vec![0, 1, 2, 999_999], // 999_999 doesn't exist
+        heuristic: "warn_repeated_caps_coverage".to_string(),
+        justifying_episode_ids: vec![0, 1, 999_999], // 999_999 doesn't exist
     };
 
     let conn = strategies::open(&dir).unwrap();
@@ -136,16 +137,16 @@ fn strategy_with_tampered_justification_is_quarantined() {
     let cache_dir = dir.join(".garnet-cache");
     let key = [0xCCu8; 32];
 
-    let ids = record_n_signed_oks(&cache_dir, "hashC", 3, &key);
+    let ids = record_n_signed_failures(&cache_dir, "hashC", "caps_coverage", 3, &key);
     let strat = NewStrategy {
         trigger_fingerprint: [0x03u8; 32],
-        heuristic: "skip_check_if_unchanged_since_last_ok".to_string(),
+        heuristic: "warn_repeated_caps_coverage".to_string(),
         justifying_episode_ids: ids,
     };
     let conn = strategies::open(&dir).unwrap();
     record_strategy_with_key(&conn, &strat, 1002, &key).unwrap();
 
-    // Tamper with the middle episode's outcome (flip "ok" → "err").
+    // Tamper with the middle episode's outcome.
     let log_path = cache_dir.join("episodes.log");
     let contents = fs::read_to_string(&log_path).unwrap();
     let lines: Vec<&str> = contents.lines().collect();
@@ -154,7 +155,8 @@ fn strategy_with_tampered_justification_is_quarantined() {
         if i == 1 {
             // Flip this record's outcome. HMAC was over old bytes so
             // this tampered line fails verification.
-            new_contents.push(line.replace("\"outcome\":\"ok\"", "\"outcome\":\"tampered\""));
+            new_contents
+                .push(line.replace("\"outcome\":\"check_err\"", "\"outcome\":\"tampered\""));
         } else {
             new_contents.push((*line).to_string());
         }
@@ -183,11 +185,11 @@ fn strategy_with_empty_justification_is_quarantined() {
     let dir = fresh_dir("empty");
     let cache_dir = dir.join(".garnet-cache");
     let key = [0xDDu8; 32];
-    record_n_signed_oks(&cache_dir, "hashD", 3, &key);
+    record_n_signed_failures(&cache_dir, "hashD", "caps_coverage", 2, &key);
 
     let strat = NewStrategy {
         trigger_fingerprint: [0x04u8; 32],
-        heuristic: "skip_check_if_unchanged_since_last_ok".to_string(),
+        heuristic: "warn_repeated_caps_coverage".to_string(),
         justifying_episode_ids: vec![], // no provenance
     };
     let conn = strategies::open(&dir).unwrap();
@@ -206,36 +208,41 @@ fn strategy_with_empty_justification_is_quarantined() {
 
 #[test]
 fn strategy_citing_mismatched_source_hashes_is_quarantined() {
-    // Attacker sneaks real episode IDs that happen to verify but whose
-    // source_hashes don't all match — the miner's predicate requires
-    // ≥3 oks against the SAME source_hash. Provenance re-runs the
-    // predicate and rejects the mismatch.
     let dir = fresh_dir("mixed");
     let cache_dir = dir.join(".garnet-cache");
     let key = [0xEEu8; 32];
 
-    // Two episodes for hash X, one for hash Y — together they verify
-    // (same key) but don't satisfy the "same source_hash × 3" predicate.
     record_episode_in_with_key(
         &cache_dir,
-        &Episode::now("check", "a.garnet", "X", "ok", None, 1, 0),
+        &Episode::now(
+            "check",
+            "a.garnet",
+            "X",
+            "check_err",
+            Some("caps_coverage".to_string()),
+            1,
+            1,
+        ),
         &key,
     );
     record_episode_in_with_key(
         &cache_dir,
-        &Episode::now("check", "b.garnet", "X", "ok", None, 2, 0),
-        &key,
-    );
-    record_episode_in_with_key(
-        &cache_dir,
-        &Episode::now("check", "c.garnet", "Y", "ok", None, 3, 0),
+        &Episode::now(
+            "check",
+            "b.garnet",
+            "Y",
+            "check_err",
+            Some("caps_coverage".to_string()),
+            2,
+            1,
+        ),
         &key,
     );
 
     let strat = NewStrategy {
         trigger_fingerprint: [0x05u8; 32],
-        heuristic: "skip_check_if_unchanged_since_last_ok".to_string(),
-        justifying_episode_ids: vec![0, 1, 2], // citing all three
+        heuristic: "warn_repeated_caps_coverage".to_string(),
+        justifying_episode_ids: vec![0, 1],
     };
     let conn = strategies::open(&dir).unwrap();
     record_strategy_with_key(&conn, &strat, 1004, &key).unwrap();
@@ -263,14 +270,17 @@ fn strategy_with_foreign_hmac_is_quarantined() {
     let our_key = [0xAAu8; 32];
     let foreign_key = [0x55u8; 32];
 
-    // Attacker builds a cache with THEIR episodes + THEIR strategy using
-    // the foreign key, commits it to a repo. When we open it, neither
-    // the episodes nor the strategy verify against our key.
-    record_n_signed_oks(&cache_dir, "attacker_hash", 3, &foreign_key);
+    record_n_signed_failures(
+        &cache_dir,
+        "attacker_hash",
+        "caps_coverage",
+        2,
+        &foreign_key,
+    );
     let strat = NewStrategy {
         trigger_fingerprint: [0x06u8; 32],
-        heuristic: "skip_check_if_unchanged_since_last_ok".to_string(),
-        justifying_episode_ids: vec![0, 1, 2],
+        heuristic: "warn_repeated_caps_coverage".to_string(),
+        justifying_episode_ids: vec![0, 1],
     };
     let conn = strategies::open(&dir).unwrap();
     record_strategy_with_key(&conn, &strat, 1005, &foreign_key).unwrap();
@@ -298,20 +308,18 @@ fn synthesiser_produces_strategies_with_provenance() {
     let cache_dir = dir.join(".garnet-cache");
     let key = [0x77u8; 32];
 
-    let ids = record_n_signed_oks(&cache_dir, "hashS", 4, &key);
+    let ids = record_n_signed_failures(&cache_dir, "hashS", "caps_coverage", 3, &key);
 
-    // Simulate calling the miner: build a list of Episode refs and
-    // the matching id_of closure.
     let mut episodes = Vec::new();
-    for i in 0..4 {
+    for i in 0..3 {
         let mut ep = Episode::now(
             "check",
             format!("f{i}.garnet"),
             "hashS",
-            "ok",
-            None,
+            "check_err",
+            Some("caps_coverage".to_string()),
             i as u64,
-            0,
+            1,
         );
         ep.sign_with_key(&key);
         episodes.push(ep);
@@ -330,14 +338,15 @@ fn synthesiser_produces_strategies_with_provenance() {
 
     assert!(
         !strategies.is_empty(),
-        "4 signed oks must fire the skip_check_if_unchanged rule"
+        "3 signed same-kind failures must fire the warn_repeated_caps_coverage rule"
     );
     for s in &strategies {
+        assert_eq!(s.heuristic, "warn_repeated_caps_coverage");
         assert!(
             !s.justifying_episode_ids.is_empty(),
             "synthesiser must attach provenance to every strategy"
         );
     }
 
-    let _ = ids; // silence unused warning — the real IDs are derived above
+    let _ = ids;
 }

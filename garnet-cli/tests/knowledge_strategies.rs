@@ -3,8 +3,9 @@
 //! Verifies:
 //! - Records persist in `compilation_contexts`.
 //! - `similar_contexts` returns top-k by Hamming distance.
-//! - `synthesize_from_episodes` proposes the expected heuristics for the
-//!   sample patterns (3+ ok = skip_check; 2+ same-error = warn).
+//! - `synthesize_from_episodes` proposes scrutiny-adding `warn_repeated_*`
+//!   heuristics after 2+ same-kind failures and never proposes `skip_check`
+//!   after repeated `ok` runs (ADR 0017).
 //! - Reading the DBs from disk after the CLI ran works.
 
 use garnet_cli::cache::Episode;
@@ -72,9 +73,9 @@ fn similar_contexts_returns_top_k_by_hamming() {
 }
 
 #[test]
-fn synthesize_proposes_skip_check_after_three_ok() {
+fn synthesize_never_proposes_skip_check_after_repeated_ok() {
     let mut episodes = Vec::new();
-    for _ in 0..3 {
+    for _ in 0..5 {
         episodes.push(Episode::now(
             "parse", "x.garnet", "h_abc", "ok", None, 10, 0,
         ));
@@ -91,9 +92,10 @@ fn synthesize_proposes_skip_check_after_three_ok() {
                 }
             },
         );
-    assert!(proposed
-        .iter()
-        .any(|s| s.heuristic.starts_with("skip_check")));
+    assert!(
+        proposed.is_empty(),
+        "ADR 0017: repeated ok episodes must never synthesize a skip-check strategy, got {proposed:?}"
+    );
 }
 
 #[test]
@@ -153,7 +155,7 @@ fn cli_populates_knowledge_db_after_parse() {
 }
 
 #[test]
-fn cli_populates_strategies_db_after_three_ok_parses() {
+fn cli_does_not_populate_skip_check_after_three_ok_parses() {
     let dir = fresh_dir("cli_strat");
     let f = dir.join("ok.garnet");
     std::fs::write(&f, "def main() { 42 }").unwrap();
@@ -169,9 +171,9 @@ fn cli_populates_strategies_db_after_three_ok_parses() {
 
     let conn = strategies::open(&dir).unwrap();
     let count = strategies::count_strategies(&conn).unwrap();
-    assert!(
-        count >= 1,
-        "expected ≥1 strategy after 3 ok parses, got {count}"
+    assert_eq!(
+        count, 0,
+        "ADR 0017: repeated ok parses must not synthesize a skip-check strategy, got {count}"
     );
 }
 
@@ -182,8 +184,8 @@ fn record_strategy_is_idempotent() {
     let fp = [3u8; 32];
     let s = NewStrategy {
         trigger_fingerprint: fp,
-        heuristic: "skip_check_if_unchanged_since_last_ok".to_string(),
-        justifying_episode_ids: vec![0, 1, 2],
+        heuristic: "warn_repeated_UnexpectedToken".to_string(),
+        justifying_episode_ids: vec![0, 1],
     };
     strategies::record_strategy(&conn, &s, 1).unwrap();
     strategies::record_strategy(&conn, &s, 2).unwrap(); // same trigger+heuristic

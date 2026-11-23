@@ -112,22 +112,22 @@ fn main() {
     let dir3 = fresh_dir("prov_happy");
     let cache_dir3 = dir3.join(".garnet-cache");
     let mut ids = Vec::new();
-    for i in 0..3 {
+    for i in 0..2 {
         let ep = Episode::now(
             "check",
             format!("f{i}.garnet"),
             "hashA",
-            "ok",
-            None,
+            "check_err",
+            Some("caps_coverage".to_string()),
             i as u64,
-            0,
+            1,
         );
         record_episode_in_with_key(&cache_dir3, &ep, &k1);
         ids.push(i as i64);
     }
     let strat = NewStrategy {
         trigger_fingerprint: [0x01u8; 32],
-        heuristic: "skip_check_if_unchanged_since_last_ok".to_string(),
+        heuristic: "warn_repeated_caps_coverage".to_string(),
         justifying_episode_ids: ids,
     };
     let conn = strategies::open(&dir3).unwrap();
@@ -144,8 +144,8 @@ fn main() {
     // Missing justification — quarantined.
     let strat2 = NewStrategy {
         trigger_fingerprint: [0x02u8; 32],
-        heuristic: "skip_check_if_unchanged_since_last_ok".to_string(),
-        justifying_episode_ids: vec![0, 1, 2, 999],
+        heuristic: "warn_repeated_caps_coverage".to_string(),
+        justifying_episode_ids: vec![0, 1, 999],
     };
     record_strategy_with_key(&conn, &strat2, 1001, &k1).unwrap();
     let consulted2 =
@@ -163,7 +163,7 @@ fn main() {
     // No justification — quarantined.
     let strat3 = NewStrategy {
         trigger_fingerprint: [0x03u8; 32],
-        heuristic: "skip_check_if_unchanged_since_last_ok".to_string(),
+        heuristic: "warn_repeated_caps_coverage".to_string(),
         justifying_episode_ids: vec![],
     };
     record_strategy_with_key(&conn, &strat3, 1002, &k1).unwrap();
@@ -179,14 +179,17 @@ fn main() {
     // Foreign-key strategy — not even retrieved by consult.
     let strat4 = NewStrategy {
         trigger_fingerprint: [0x04u8; 32],
-        heuristic: "skip_check_if_unchanged_since_last_ok".to_string(),
-        justifying_episode_ids: vec![0, 1, 2],
+        heuristic: "warn_repeated_caps_coverage".to_string(),
+        justifying_episode_ids: vec![0, 1],
     };
     record_strategy_with_key(&conn, &strat4, 1003, &k2).unwrap();
     let consulted4 =
         strategies::consult_with_audit(&conn, &strat4.trigger_fingerprint, 10, &k1).unwrap();
     check(
-        consulted4.strategies.is_empty(),
+        consulted4
+            .strategies
+            .iter()
+            .all(|(_, s)| s.trigger_fingerprint != strat4.trigger_fingerprint),
         "foreign-key strategy filtered out",
     );
     check(
