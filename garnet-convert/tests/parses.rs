@@ -2018,3 +2018,55 @@ fn a_loop_condition_survives_a_fork_inside_its_parentheses() {
         );
     }
 }
+
+#[test]
+fn rust_binary_unary_and_parenthesized_expressions_preserve_precedence() {
+    let (add_out, _) = convert_src(
+        "fn add(a: i64, b: i64) -> i64 {\n    a + b\n}\n",
+        SourceLang::Rust,
+        "rust",
+        "add.rs",
+    );
+    assert_parses(&add_out);
+    assert!(
+        add_out.contains("(a + b)"),
+        "expected `(a + b)`, got:\n{add_out}"
+    );
+    assert!(
+        !code_lines(&add_out).contains(&"nil"),
+        "binary operator must not decay to `nil`:\n{add_out}"
+    );
+
+    let (prec_out, _) = convert_src(
+        "fn calc(a: i64, b: i64, c: i64, flag: bool, true_val: i64) -> bool {\n    let x = a + b * c;\n    let y = (a + b) * c - -true_val;\n    let z = 3.14 * 2.0;\n    return x <= y && c != 0 || !flag;\n}\n",
+        SourceLang::Rust,
+        "rust",
+        "calc.rs",
+    );
+    assert_parses(&prec_out);
+    assert!(
+        prec_out.contains("(a + (b * c))"),
+        "precedence failed:\n{prec_out}"
+    );
+    assert!(
+        prec_out.contains("(((a + b) * c) - -true_val)"),
+        "grouping/unary/keyword-boundary failed:\n{prec_out}"
+    );
+    assert!(
+        prec_out.contains("(3.14 * 2)"),
+        "float literal failed:\n{prec_out}"
+    );
+    assert!(
+        prec_out.contains("(((x <= y) and (c != 0)) or !flag)"),
+        "boolean operator mapping failed:\n{prec_out}"
+    );
+
+    // Deeply nested parentheses must stay bounded without overflowing the stack.
+    let deep = format!(
+        "fn deep() -> i64 {{\n    {}1{}\n}}\n",
+        "(".repeat(120),
+        ")".repeat(120)
+    );
+    let (deep_out, _) = convert_src(&deep, SourceLang::Rust, "rust", "deep.rs");
+    assert_parses(&deep_out);
+}
