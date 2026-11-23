@@ -7,7 +7,12 @@ This file is updated in the same PR as the work it tracks (per the v0.5 slice
 contract). Lines added here are part of the calibrated record — if a
 slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
-## [Unreleased — 0.8.4-dev]
+## [0.8.4] — 2026-11-22 (release candidate)
+
+### Release Candidate Hardening & Version Cut (`v0.8.4`)
+
+- **VSIX Release Environment Gate (`vscode-extension.yml`):** Added `environment: release` to `release-vsix` (and asserted it in `scripts/test_garnet_vscode_release_assets.py`), closing the `v0.8.3` known limit where tag-triggered VSIX assets published prior to maintainer approval of the `release` environment.
+- **Curated Release Notes & Workspace Bump:** Added `.github/release-notes/v0.8.4.md`, bumped workspace crates, VS Code extension, and Garnet Studio manifests/lockfiles to `0.8.4`, rematerialized `docs/playground/pkg/` + `W_PLAY_BROWSER_PROOF.json`, and refreshed `docs/truth.json`.
 
 ### Soundness, Security & Truth Milestones Merged Since `v0.8.3`
 

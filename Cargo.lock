@@ -735,7 +735,7 @@ dependencies = [
 
 [[package]]
 name = "garnet-cli"
-version = "0.8.3"
+version = "0.8.4"
 dependencies = [
  "blake3",
  "ed25519-dalek",
