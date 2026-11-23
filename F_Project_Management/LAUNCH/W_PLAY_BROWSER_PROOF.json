@@ -1,8 +1,8 @@
 {
   "schema": "garnet.w-play.browser-proof/1",
-  "captured_at": "2026-11-22T16:51:14.970Z",
+  "captured_at": "2026-11-23T05:40:19.956Z",
   "verdict": "pass",
-  "duration_ms": 7560,
+  "duration_ms": 7496,
   "execution": {
     "engine": "playwright-browser-page",
     "browser": "157.0.8103.80",
@@ -11,8 +11,8 @@
     "service_workers": "blocked"
   },
   "git": {
-    "tested_commit": "894088943e31f1d03f19605a6e485f1f4d96c182",
-    "tested_tree": "45af1a247e5fa5b07eb6637cc23d36149a088d46",
+    "tested_commit": "80bad44f22ff0d8d46dcba134477e28aa631cd36",
+    "tested_tree": "fdeb3f8eb80a6321c9dfb90f20d0507626d69db6",
     "runtime_inputs_clean": true
   },
   "host": {
@@ -22,7 +22,7 @@
   },
   "package": {
     "schema": "garnet.playground.wasm-package/1",
-    "source_tree_sha256": "82a4abed37bd0ccb96a199fd70534d8f01d196dc5e6b90668c777eb96a91178b",
+    "source_tree_sha256": "f86be7a906815bb5c0de89172f3fae80068a439b0427141a260cb6193b324f09",
     "artifacts": {
       "garnet_wasm.js": {
         "bytes": 6581,
@@ -36,15 +36,15 @@
   },
   "runtime_inputs": {
     "schema": "garnet.w-play.runtime-inputs/1",
-    "sha256": "0d31cc661b20698f1eb0eb2658f7a74cd4c30e8627b20f5139c9cabe2ac5cab0",
+    "sha256": "4e3cbee2b7a7da5a41ef3100a873236232334669856924c23023bdb9cfc3237a",
     "files": {
       "apps/garnet-studio/package-lock.json": {
         "bytes": 44280,
-        "sha256": "d94935900e197c6585595f202728bd3a574b6e2ca684d5f7da242a671552a5dd"
+        "sha256": "9d2c42effce8f5378d81a1a4a2c463fbdbbf71846b75133fb0d45c62b3fb491d"
       },
       "apps/garnet-studio/package.json": {
         "bytes": 495,
-        "sha256": "08823c7b0dc903ad0457a0198813b6951bff130acacf68eb1ab8f2ba4434c55a"
+        "sha256": "4a7f17ec5e0dcd397d5e20bafc81d5765c71aedb9d430f3ea30926ce04af1391"
       },
       "docs/icons/garnet-192.png": {
         "bytes": 67820,
@@ -52,7 +52,7 @@
       },
       "docs/index.html": {
         "bytes": 17738,
-        "sha256": "1890f660c82265825f9f22a4aaa7b63a7fed0829cb11bc72070777833163a7df"
+        "sha256": "2dd29e5f624a8bbbe9ce00a29188e1865cd05bcbed3cae21a0740b3de508c016"
       },
       "docs/acceptance-demo.js": {
         "bytes": 12500,
@@ -80,7 +80,7 @@
       },
       "docs/reference.html": {
         "bytes": 121793,
-        "sha256": "2e6f7d700dbcc5ec904b51b147570485be33bfebebfae685ffd16267a58a96c5"
+        "sha256": "2713ce44a4474f11b0e38ae792c8aa6ebb4a4c93c7e424eb29acbf20d34c27d9"
       },
       "docs/site-return.css": {
         "bytes": 680,
@@ -140,7 +140,7 @@
       },
       "docs/playground/pkg/provenance.json": {
         "bytes": 8633,
-        "sha256": "80ab435612f5690cd95e357a63e0cec1fb4a66cabe8e4d8abf2f3871d8a85412"
+        "sha256": "83f3aae0e4af22aa4a5150a45ccb1e81e722f555a78920ce577878380163cf43"
       },
       "docs/assets/dev_tools_market_growth_v2_1.png": {
         "bytes": 51317,
@@ -264,7 +264,7 @@
       },
       "docs/status.html": {
         "bytes": 22370,
-        "sha256": "c5bc5b668caa0464a443a15650daf4c33ff119721f3aa15771710b315859ebae"
+        "sha256": "8cb8932aabdd12a9b91e764d9d18861ad17284f55899b3b5a81c51a33425633f"
       },
       "docs/stdlib.html": {
         "bytes": 15850,
@@ -294,8 +294,8 @@
       "declared": "^1.49.1",
       "version": "1.61.1",
       "integrity": "sha512-8nKv6+0RJSL9FE4jYOEGXnPeM/Hg12qZpmqzZjRh3qM0Y7c3z1mrOTfFLids72RDQYVh9WpLEfR5WdpNX4fkig==",
-      "package_json_sha256": "08823c7b0dc903ad0457a0198813b6951bff130acacf68eb1ab8f2ba4434c55a",
-      "package_lock_sha256": "d94935900e197c6585595f202728bd3a574b6e2ca684d5f7da242a671552a5dd",
+      "package_json_sha256": "4a7f17ec5e0dcd397d5e20bafc81d5765c71aedb9d430f3ea30926ce04af1391",
+      "package_lock_sha256": "9d2c42effce8f5378d81a1a4a2c463fbdbbf71846b75133fb0d45c62b3fb491d",
       "install_command": "npm ci --ignore-scripts"
     }
   },

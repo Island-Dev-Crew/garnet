@@ -18,7 +18,7 @@ built for the code agents write and humans accept.</strong></p>
   <a href="FAQ.md">FAQ</a>
 </p>
 
-<p align="center"><sub>Source on <code>main</code> is <!-- truth:version -->0.8.3<!-- /truth -->; the last release is <!-- truth:latest_tag -->v0.8.3<!-- /truth -->.</sub></p>
+<p align="center"><sub>Source on <code>main</code> is <!-- truth:version -->0.8.4<!-- /truth -->; the last release is <!-- truth:latest_tag -->v0.8.3<!-- /truth -->.</sub></p>
 
 <p align="center"><sub>v0.8.3 ships the 24-row gate, <code>mem</code> and seal/v2 described below. The v0.8.2 binary gates 15 host primitives, has no <code>mem</code> capability gate and emits seal/v1.</sub></p>
 

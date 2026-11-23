@@ -65,6 +65,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
     needs: build-vsix
     runs-on: ubuntu-latest
+    environment: release
     permissions:
       contents: write
     steps:
