@@ -7,7 +7,18 @@ This file is updated in the same PR as the work it tracks (per the v0.5 slice
 contract). Lines added here are part of the calibrated record — if a
 slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
-## [0.8.4] — 2026-11-22 (release candidate)
+## [0.8.4] — 2026-11-23 (tag `v0.8.4` → `6da57732`)
+
+### Released 0.8.4 — uncatchable enforcement traps, exhaustive checker coverage, and release-gated VSIX publishing (2026-11-23)
+
+- **Released:** the `v0.8.4` GitHub Release carries all fourteen assets: nine binary assets (Linux x86_64 and ARM64 `.deb`, `.rpm`, and tarballs; macOS arm64 and x86_64 tarballs; Windows x86_64 zip), a CycloneDX SBOM, two host-native VSIX files (`darwin-arm64` and `linux-x64`), `SHA256SUMS`, and `SHA256SUMS.asc`. Both `Linux packages` (`release`) and `VS Code extension` (`release-vsix`) held at the `release` environment gate; `Linux packages` published the curated release body and signed checksums first, followed by `release-vsix` attaching the two VSIX files.
+- **Verified after publishing:**
+  - GPG `VALIDSIG` by `7431 F1BF AC2A 395D E897  5A3C 3DB8 CC71 3A6B CD50` against `docs/garnet-release-keys.asc` over the ten-entry `SHA256SUMS`.
+  - `garnet-0.8.4-aarch64-apple-darwin.tar.gz` matched `SHA256SUMS` (`b887f154…`) and reported `garnet 0.8.4`.
+  - On the published macOS arm64 binary, `try { fs::read_file("/etc/hosts") } rescue e { print("SWALLOWED") }` trapped with exit 1 instead of rescuing (`C1/BE-F1`), and `garnet check` flagged `fs::read_file` inside a `match` arm guard (`FE-F2b`) with exit 1.
+  - `install.sh` with `GARNET_VERSION=0.8.4` verified the `SHA256SUMS.asc` signature against key `7431F1BFAC2A395DE8975A3C3DB8CC713A6BCD50`, checked `SHA256SUMS`, and installed `garnet 0.8.4`.
+- **Not exercised after publishing:** Linux/Windows binaries on native hosts (Linux packages were installed and smoke-tested in CI containers), `install.ps1` against the published release, and the two VSIX files.
+- **Surfaces:** `docs/install.sh`, `installer/sh.garnet-lang.org/install.sh`, and `docs/install.ps1` now default to `0.8.4`; `docs/truth.json`, `README.md`, `FAQ.md`, `CLAUDE.md`, `CURRENT_STATE.md`, `docs/index.html`, `docs/reference.html`, `docs/status.html`, `docs/front-door.js`, and `docs/releases.xml` name `v0.8.4`; service worker moves to `garnet-web-v31`.
 
 ### Release Candidate Hardening & Version Cut (`v0.8.4`)
 

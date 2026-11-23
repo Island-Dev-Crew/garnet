@@ -25,10 +25,10 @@ PRs outrank all three.
 
 Verify with `git` before relying on any line here.
 
-- **Latest tagged release: `v0.8.3`** (annotated tag → commit `2ada7881`,
-  2026-11-03). `v0.8.2` (`f25ffb5`), `v0.8.1` (`8107c01`), `v0.8.0` (`cc165e8`) and
+- **Latest tagged release: `v0.8.4`** (annotated tag → commit `6da57732`,
+  2026-11-23). `v0.8.3` (`2ada7881`), `v0.8.2` (`f25ffb5`), `v0.8.1` (`8107c01`), `v0.8.0` (`cc165e8`) and
   `v0.4.2`/`v0.5.0` precede it.
-- **Binary status:** the `v0.8.3` Release ships **`garnet-0.8.3-*` CLI
+- **Binary status:** the `v0.8.4` Release ships **`garnet-0.8.4-*` CLI
   binaries (not code-signed; checksums in a GPG-signed `SHA256SUMS`)**: Linux
   x86_64 and ARM64 `.deb`/`.rpm`/tarballs (glibc 2.34+), macOS arm64/x86_64 tarballs and a Windows x86_64 zip, plus a CycloneDX SBOM and a
   GPG-signed `SHA256SUMS.asc` (public key in `docs/garnet-release-signing.pub.asc`,

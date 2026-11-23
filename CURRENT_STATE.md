@@ -7,9 +7,11 @@ This is the first file a fresh MIT reviewer, contributor, or agent should read
 after `README.md`. It separates current executable truth from historical proof,
 research corpus material, generated artifacts, and local scratch.
 
-> **Latest release: `v0.8.3` (2026-11-03, tag → `2ada7881`).** Checksum-verified binaries
-> for Linux x86_64/ARM64 (glibc 2.34+), macOS and Windows; see `CHANGELOG.md`
-> `[0.8.3]`. The v0.8.1 summary below remains accurate for that release.
+> **Latest release: `v0.8.4` (2026-11-23, tag → `6da57732`).** Checksum-verified binaries
+> for Linux x86_64/ARM64 (glibc 2.34+), macOS and Windows, plus uncatchable
+> enforcement traps (`C1/BE-F1`), exhaustive checker coverage (`FE-F2b`/`FE-F4`),
+> and release-environment-gated VSIX publishing; see `CHANGELOG.md`
+> `[0.8.4]`. The v0.8.1 summary below remains accurate for that release.
 >
 > **v0.8.1 milestone truth (re-cut 2026-06-07).** `v0.8.1`
 > (annotated → commit `8107c01`) was a research-grade milestone covering the
