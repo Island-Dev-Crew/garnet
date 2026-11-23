@@ -1,8 +1,10 @@
 # ADR 0017 — No track record or history lightens review
 
-**Status.** Accepted (2026-10-04). Not implemented: the test that cache history
-never changes a gate's output, and the retirement of the skip-check strategy, come
-in a later trust-kernel PR.
+**Status.** Implemented (2026-11-23; accepted 2026-10-04). `skip_check_if_unchanged_since_last_ok`
+is retired from `garnet-cli/src/strategies.rs` and quarantined on load in
+`garnet-cli/src/provenance.rs`; `garnet-cli/tests/adr_0017_cache_invariance.rs`
+proves that cache history never changes `check`, `diff-caps`, or `agent-loop`
+gate verdicts (including per-function capability gains).
 
 ## Context
 

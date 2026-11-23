@@ -1,11 +1,11 @@
 //! Compiler-as-Agent strategy synthesis — Paper VI Contribution 3 (layer 3).
 //!
-//! `.garnet-cache/strategies.db` is a SQLite store that records optimization
-//! and validation heuristics the compiler discovers from past episodes. The
-//! synthesizer is intentionally simple in v3.2: it observes patterns in
-//! `(source_hash, outcome)` tuples and proposes `skip_check_if_unchanged`
-//! and `warn_pattern_X` rules. The CLI consults strategies before each
-//! compile and surfaces matching ones as `note:` lines.
+//! `.garnet-cache/strategies.db` is a SQLite store that records scrutiny-adding
+//! diagnostics heuristics the compiler discovers from past episodes. Per
+//! ADR 0017 (`No track record or history lightens review`), the synthesizer
+//! only proposes `warn_repeated_<error_kind>` rules after repeated failures and
+//! never synthesizes check-skipping strategies. The CLI consults verified
+//! strategies before each compile and surfaces matching ones as `note:` lines.
 //!
 //! **v3.3 hardening (CacheHMAC + ProvenanceStrategy).**
 //!
@@ -97,11 +97,12 @@ pub struct NewStrategy {
     pub justifying_episode_ids: Vec<i64>,
 }
 
-/// Walk an episode log and propose strategies. Currently fires on two
-/// patterns:
-/// - **skip_check_if_unchanged**: the same source_hash succeeded ≥3 times.
+/// Walk an episode log and propose scrutiny-adding strategies. Fires on:
 /// - **warn_repeated_failure**: the same source_hash failed ≥2 times with
 ///   the same error_kind.
+///
+/// Per ADR 0017, repeated `"ok"` outcomes never synthesize a skip-check
+/// strategy: no track record or cache history may lighten review.
 ///
 /// v3.3: the caller can pass an `id_of` closure mapping each episode
 /// back to its rowid so the returned strategies carry provenance. If
@@ -113,37 +114,21 @@ pub fn synthesize_from_episodes_with_ids(
     fingerprint_of: impl Fn(&str) -> Option<[u8; 32]>,
     mut id_of: impl FnMut(&Episode) -> Option<i64>,
 ) -> Vec<NewStrategy> {
-    let mut by_hash_ok: HashMap<&str, Vec<i64>> = HashMap::new();
     let mut by_hash_err: HashMap<(&str, &str), Vec<i64>> = HashMap::new();
     for ep in episodes {
         let id = id_of(ep);
-        if ep.outcome == "ok" {
-            if let Some(i) = id {
-                by_hash_ok.entry(&ep.source_hash).or_default().push(i);
-            } else {
-                by_hash_ok.entry(&ep.source_hash).or_default();
-            }
-        } else if let Some(ek) = ep.error_kind.as_deref() {
-            if let Some(i) = id {
-                by_hash_err
-                    .entry((&ep.source_hash, ek))
-                    .or_default()
-                    .push(i);
+        if ep.outcome != "ok" {
+            if let Some(ek) = ep.error_kind.as_deref() {
+                if let Some(i) = id {
+                    by_hash_err
+                        .entry((&ep.source_hash, ek))
+                        .or_default()
+                        .push(i);
+                }
             }
         }
     }
     let mut out = Vec::new();
-    for (hash, ids) in by_hash_ok {
-        if ids.len() >= 3 {
-            if let Some(fp) = fingerprint_of(hash) {
-                out.push(NewStrategy {
-                    trigger_fingerprint: fp,
-                    heuristic: "skip_check_if_unchanged_since_last_ok".to_string(),
-                    justifying_episode_ids: ids,
-                });
-            }
-        }
-    }
     for ((hash, kind), ids) in by_hash_err {
         if ids.len() >= 2 {
             if let Some(fp) = fingerprint_of(hash) {

@@ -68,6 +68,12 @@ Owns the `garnet` binary, subcommand routing, template embedding, deterministic 
   written is named on stderr and the loop exits 2. `decision.md` is written
   last: every mention of an artifact that could not be written is marked
   "(not written)", and the missing ones are listed.
+- **ADR 0017 (No track record lightens review):** `garnet-cli/src/strategies.rs`
+  only synthesizes scrutiny-adding `warn_repeated_<error_kind>` heuristics and
+  never synthesizes `skip_check_if_unchanged_since_last_ok`. `garnet-cli/src/provenance.rs`
+  explicitly quarantines any legacy persisted `skip_check_if_unchanged_since_last_ok`
+  row even if validly HMAC-signed. `garnet-cli/tests/adr_0017_cache_invariance.rs`
+  guards this invariant across `check`, `diff-caps`, and `agent-loop`.
 - `garnet convert` writes `<stem>.<lang>.garnet` and its three sidecars. It
   refuses an existing output path that is not a regular file, and any output
   that is the same file as the source or another output (compared by file

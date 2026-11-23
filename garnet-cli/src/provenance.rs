@@ -127,32 +127,12 @@ fn check_predicate_reholds(
 ) -> Result<(), QuarantineReason> {
     let heuristic = &strategy.heuristic;
     if heuristic == "skip_check_if_unchanged_since_last_ok" {
-        // Predicate: at least 3 episodes, all with the same source_hash,
-        // all with outcome "ok". Guards against an attacker submitting
-        // 3 real episode IDs that happen to have different source hashes.
-        if resolved.len() < 3 {
-            return Err(QuarantineReason::PredicateMismatch {
-                heuristic: heuristic.clone(),
-                reason: format!("needs ≥3 justifications, got {}", resolved.len()),
-            });
-        }
-        let first_hash = &resolved[0].source_hash;
-        for ep in resolved {
-            if &ep.source_hash != first_hash {
-                return Err(QuarantineReason::PredicateMismatch {
-                    heuristic: heuristic.clone(),
-                    reason: "justifications span multiple source_hashes".into(),
-                });
-            }
-            if ep.outcome != "ok" {
-                return Err(QuarantineReason::PredicateMismatch {
-                    heuristic: heuristic.clone(),
-                    reason: format!("justification outcome '{}' is not 'ok'", ep.outcome),
-                });
-            }
-        }
-        Ok(())
-    } else if let Some(kind) = heuristic.strip_prefix("warn_repeated_") {
+        return Err(QuarantineReason::PredicateMismatch {
+            heuristic: heuristic.clone(),
+            reason: "retired by ADR 0017: no track record or cache history lightens review".into(),
+        });
+    }
+    if let Some(kind) = heuristic.strip_prefix("warn_repeated_") {
         // Predicate: ≥2 episodes, same source_hash, same error_kind == kind.
         if resolved.len() < 2 {
             return Err(QuarantineReason::PredicateMismatch {
