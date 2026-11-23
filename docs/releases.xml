@@ -5,8 +5,16 @@
   <link href="https://garnet-lang.org/releases.xml" rel="self"/>
   <link href="https://github.com/Island-Dev-Crew/garnet/releases"/>
   <id>https://garnet-lang.org/releases.xml</id>
-  <updated>2026-11-03T15:33:54Z</updated>
+  <updated>2026-11-23T06:48:59Z</updated>
   <author><name>Island Development Crew</name></author>
+  <entry>
+    <title>Garnet v0.8.4</title>
+    <id>https://github.com/Island-Dev-Crew/garnet/releases/tag/v0.8.4</id>
+    <link href="https://github.com/Island-Dev-Crew/garnet/releases/tag/v0.8.4"/>
+    <updated>2026-11-23T06:48:59Z</updated>
+    <published>2026-11-23T06:48:59Z</published>
+    <summary>v0.8.4 — Uncatchable enforcement traps (C1/BE-F1) across interpreter and VM fallback, exhaustive static checker coverage (FE-F2b/FE-F4) across match guards, patterns, closures, pipelines, and nested interpolations, release-environment gating on VSIX publishing, RustSec maintenance (RUSTSEC-2026-0459/0543/0592), and deterministic Paper VI reproducibility harnesses (Experiments 2, 4, 5, 6, 7). Ships nine CLI binaries, a CycloneDX SBOM, two host-native VSIX files, SHA256SUMS, and its GPG signature SHA256SUMS.asc. Research-grade prototype, not production-complete.</summary>
+  </entry>
   <entry>
     <title>Garnet v0.8.3</title>
     <id>https://github.com/Island-Dev-Crew/garnet/releases/tag/v0.8.3</id>
