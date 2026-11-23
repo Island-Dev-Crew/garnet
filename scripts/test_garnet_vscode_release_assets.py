@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 import sys
 import tempfile
@@ -39,7 +40,15 @@ class GarnetVSCodeReleaseAssetsTests(unittest.TestCase):
         self.assertIn("./scripts/package_garnet_vscode_extension.sh --output-dir target/vscode", text)
         self.assertIn("target/vscode/*.vsix", text)
         self.assertIn("if: startsWith(github.ref, 'refs/tags/v')", text)
-        self.assertIn("environment: release", text)
+        release_vsix_start = text.index("\n  release-vsix:\n")
+        following = re.search(r"\n  [a-z0-9-]+:\n", text[release_vsix_start + 1:])
+        release_vsix_job = text[
+            release_vsix_start : release_vsix_start + 1 + following.start()
+            if following
+            else len(text)
+        ]
+        self.assertRegex(release_vsix_job, r"\n    environment: release\n")
+        self.assertNotRegex(text[:release_vsix_start], r"\n    environment:")
         self.assertIn(
             "softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64",
             text,
