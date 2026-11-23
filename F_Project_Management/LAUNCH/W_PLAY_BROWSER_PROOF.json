@@ -1,8 +1,8 @@
 {
   "schema": "garnet.w-play.browser-proof/1",
-  "captured_at": "2026-11-23T05:40:19.956Z",
+  "captured_at": "2026-11-23T07:13:46.873Z",
   "verdict": "pass",
-  "duration_ms": 7496,
+  "duration_ms": 8177,
   "execution": {
     "engine": "playwright-browser-page",
     "browser": "157.0.8103.80",
@@ -11,8 +11,8 @@
     "service_workers": "blocked"
   },
   "git": {
-    "tested_commit": "80bad44f22ff0d8d46dcba134477e28aa631cd36",
-    "tested_tree": "fdeb3f8eb80a6321c9dfb90f20d0507626d69db6",
+    "tested_commit": "9b13667f4238caaf8acef40822e74780d79919ed",
+    "tested_tree": "cb0bce19dcf4d5fbb53db442c6e3d6304489b553",
     "runtime_inputs_clean": true
   },
   "host": {
@@ -36,7 +36,7 @@
   },
   "runtime_inputs": {
     "schema": "garnet.w-play.runtime-inputs/1",
-    "sha256": "4e3cbee2b7a7da5a41ef3100a873236232334669856924c23023bdb9cfc3237a",
+    "sha256": "e91936cc59cd52fc2763abc873b4a0ca75c07bcd2102c55a1579f341c2a077d6",
     "files": {
       "apps/garnet-studio/package-lock.json": {
         "bytes": 44280,
@@ -52,7 +52,7 @@
       },
       "docs/index.html": {
         "bytes": 17738,
-        "sha256": "2dd29e5f624a8bbbe9ce00a29188e1865cd05bcbed3cae21a0740b3de508c016"
+        "sha256": "3e3bf7bfe72483dfc7fa1ddb3615354735816fed94feda6abcb1585186d5d727"
       },
       "docs/acceptance-demo.js": {
         "bytes": 12500,
@@ -72,7 +72,7 @@
       },
       "docs/front-door.js": {
         "bytes": 38506,
-        "sha256": "4c4689de201ce32e4bd43461276a29f5f597b45889378c089bdcb8f201617613"
+        "sha256": "af3dc2c8209770b4c07e1e834b88e11fec87fa21145763e2e091a95be2cf472d"
       },
       "docs/identity.css": {
         "bytes": 6077,
@@ -80,7 +80,7 @@
       },
       "docs/reference.html": {
         "bytes": 121793,
-        "sha256": "2713ce44a4474f11b0e38ae792c8aa6ebb4a4c93c7e424eb29acbf20d34c27d9"
+        "sha256": "4b333e93f81e07e4234bfca182e552589e5958aed5571553757cb421bb12e6ce"
       },
       "docs/site-return.css": {
         "bytes": 680,
@@ -116,7 +116,7 @@
       },
       "docs/service-worker.js": {
         "bytes": 3832,
-        "sha256": "9f137544f13396a94aeb857cc9bcaec3481cd119077a4d49a094bc9a0625cf64"
+        "sha256": "f955483a4729d690d5aaf5730ebba3c6615d6803eab657ae15180c1a685a2b3c"
       },
       "docs/playground.html": {
         "bytes": 14738,
@@ -223,8 +223,8 @@
         "sha256": "9466ea835e1b255fb3e08652f8b8747c1513be6ed3c5d3d93a65d47b26004580"
       },
       "docs/install.sh": {
-        "bytes": 20277,
-        "sha256": "1dd2c856cfe835792770889ded70a7266501ac60fa256fd64b8c6ca23708f2e8"
+        "bytes": 20283,
+        "sha256": "d1f55bbb0c8ab575e42cbfd3daa26f7fd0bd1cbca9d59619fc578da62c5c76bf"
       },
       "docs/ladder.html": {
         "bytes": 28132,
@@ -255,8 +255,8 @@
         "sha256": "07d5e99239d0706d3317742b8fcabd29ab5ac7941a9c5d0365a6649321b9c793"
       },
       "docs/releases.xml": {
-        "bytes": 4555,
-        "sha256": "577ad3d495e089b38c1ccf5cac6cb1b42d65811478957a9f8c96af86aac0410f"
+        "bytes": 5449,
+        "sha256": "e06d1861f4ec1124f09757315d534440515e62c803982a33730498edb3f5bdae"
       },
       "docs/scope.html": {
         "bytes": 7688,
@@ -264,7 +264,7 @@
       },
       "docs/status.html": {
         "bytes": 22370,
-        "sha256": "8cb8932aabdd12a9b91e764d9d18861ad17284f55899b3b5a81c51a33425633f"
+        "sha256": "ecd261d31e896b62ac0e49093fad493087c58434b1754d9ccfebe9041ea2d9d4"
       },
       "docs/stdlib.html": {
         "bytes": 15850,
@@ -534,7 +534,7 @@
       "old_cache_retired": true,
       "cached": [
         {
-          "name": "garnet-web-v30",
+          "name": "garnet-web-v31",
           "paths": [
             "/authority-spectrum.js",
             "/authority-spectrum.css",
