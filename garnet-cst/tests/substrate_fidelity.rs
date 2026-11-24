@@ -197,6 +197,18 @@ fn span_exact_on_transparent_wrapper_constructs() {
             "zero_param_paren_free_do_block",
             "@caps()\ndef main() { runner.run do 42 end }\n",
         ),
+        (
+            "ruby_unless_expr",
+            "@caps()\ndef f(x) { unless x { 1 } else { 2 } }\n",
+        ),
+        (
+            "ruby_unless_no_else",
+            "@caps()\nfn f(x: Bool) -> Int { unless x { return 1 }\n 2 }\n",
+        ),
+        (
+            "ruby_until_loop",
+            "@caps()\ndef f() { let mut i = 0\n until i == 3 { i = i + 1 }\n i }\n",
+        ),
     ];
     let mut diffs = Vec::new();
     for (label, src) in cases {

@@ -259,6 +259,53 @@ fn plain_field_access_unchanged_without_do_block() {
 }
 
 #[test]
+fn parses_ruby_unless_and_until_desugaring() {
+    let src = r#"
+        @caps()
+        def main(flag) {
+            let mut n = 0
+            until n >= 3 {
+                n = n + 1
+            }
+            unless flag {
+                n
+            } else {
+                0
+            }
+        }
+    "#;
+    let module = parse_source(src).unwrap();
+    let Item::Fn(function) = &module.items[0] else {
+        panic!("expected function");
+    };
+    assert!(matches!(
+        &function.body.stmts[1],
+        Stmt::While {
+            condition: Expr::Unary {
+                op: garnet_parser::ast::UnOp::Not,
+                ..
+            },
+            ..
+        }
+    ));
+    assert!(matches!(
+        function.body.tail_expr.as_deref(),
+        Some(Expr::If {
+            condition,
+            elsif_clauses,
+            else_block: Some(_),
+            ..
+        }) if matches!(
+            condition.as_ref(),
+            Expr::Unary {
+                op: garnet_parser::ast::UnOp::Not,
+                ..
+            }
+        ) && elsif_clauses.is_empty()
+    ));
+}
+
+#[test]
 fn preserves_dynamic_and_nonsendable_type_annotations() {
     let src = r#"
         @dynamic

@@ -151,6 +151,7 @@ stmt           = let-decl
                | const-decl
                | assignment
                | while-stmt
+               | until-stmt
                | for-stmt
                | loop-stmt
                | break-stmt
@@ -166,6 +167,7 @@ assignment     = expr , assign-op , expr ;
 assign-op      = "=" | "+=" | "-=" | "*=" | "/=" | "%=" ;
 
 while-stmt     = "while" , expr , block ;
+until-stmt     = "until" , expr , block ;
 for-stmt       = "for" , IDENT , "in" , expr , block ;
 loop-stmt      = "loop" , block ;
 break-stmt     = "break" , [ expr ] ;
@@ -208,6 +210,7 @@ primary        = INTEGER | FLOAT | STRING | RAW_STRING | SYMBOL
                | "[" , [ arg-list ] , "]"                          (* array literal *)
                | "{" , [ map-entries ] , "}"                       (* map literal *)
                | if-expr
+               | unless-expr
                | match-expr
                | try-expr
                | closure
@@ -222,6 +225,8 @@ map-entries    = expr , "=>" , expr , { "," , expr , "=>" , expr } ;
 ```ebnf
 if-expr        = "if" , expr , block ,
                  { "elsif" , expr , block } ,
+                 [ "else" , block ] ;
+unless-expr    = "unless" , expr , block ,
                  [ "else" , block ] ;
 
 match-expr     = "match" , expr , "{" , { match-arm , "," } , "}" ;

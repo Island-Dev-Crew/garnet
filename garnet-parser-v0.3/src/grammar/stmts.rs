@@ -108,6 +108,23 @@ fn parse_stmt_or_expr(p: &mut Parser) -> Result<StmtOrExpr, ParseError> {
                 span,
             }))
         }
+        TokenKind::KwUntil => {
+            let start = p.bump().span;
+            let raw_cond = expr::parse_expr(p)?;
+            let cond_span = raw_cond.span();
+            let condition = Expr::Unary {
+                op: UnOp::Not,
+                expr: Box::new(raw_cond),
+                span: cond_span,
+            };
+            let body = parse_block(p)?;
+            let span = start.join(body.span);
+            Ok(StmtOrExpr::Stmt(Stmt::While {
+                condition,
+                body,
+                span,
+            }))
+        }
         TokenKind::KwFor => {
             let start = p.bump().span;
             let (var, _) = p.expect_ident("for loop")?;

@@ -102,9 +102,11 @@ syntax_kinds! {
 
     // ── Keyword tokens (control flow) ──
     IfKw,
+    UnlessKw,
     ElsifKw,
     ElseKw,
     WhileKw,
+    UntilKw,
     ForKw,
     InKw,
     LoopKw,
@@ -353,9 +355,11 @@ impl SyntaxKind {
             TokenKind::KwSpawn => SyntaxKind::SpawnKw,
             TokenKind::KwSend => SyntaxKind::SendKw,
             TokenKind::KwIf => SyntaxKind::IfKw,
+            TokenKind::KwUnless => SyntaxKind::UnlessKw,
             TokenKind::KwElsif => SyntaxKind::ElsifKw,
             TokenKind::KwElse => SyntaxKind::ElseKw,
             TokenKind::KwWhile => SyntaxKind::WhileKw,
+            TokenKind::KwUntil => SyntaxKind::UntilKw,
             TokenKind::KwFor => SyntaxKind::ForKw,
             TokenKind::KwIn => SyntaxKind::InKw,
             TokenKind::KwLoop => SyntaxKind::LoopKw,
