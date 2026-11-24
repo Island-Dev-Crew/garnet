@@ -2070,3 +2070,30 @@ fn rust_binary_unary_and_parenthesized_expressions_preserve_precedence() {
     let (deep_out, _) = convert_src(&deep, SourceLang::Rust, "rust", "deep.rs");
     assert_parses(&deep_out);
 }
+
+#[test]
+fn go_short_var_typed_var_and_defer_convert_safely() {
+    let src = "package main\n\nfunc calc(a int, b int) int {\n\tx := a + b\n\tvar y int = x * 2\n\tdefer close()\n\treturn y\n}\n";
+    let (garnet, checklist) = convert_src(src, SourceLang::Go, "go", "calc.go");
+    assert_parses(&garnet);
+    let code = code_lines(&garnet);
+    assert!(
+        code.contains(&"let mut x = a + b"),
+        "short-var declaration should lower to let mut:\n{garnet}"
+    );
+    assert!(
+        code.contains(&"let mut y: Int = x * 2"),
+        "typed var declaration should lower to typed let mut:\n{garnet}"
+    );
+    assert_inactive(&garnet, "defer close()");
+    assert!(
+        checklist.contains("defer"),
+        "defer should appear in migrate checklist:\n{checklist}"
+    );
+
+    // Quoted strings with interpolation-like text inside `:=` stay safely quarantined.
+    let quoted = "package main\n\nfunc greet() {\n\ts := \"hello #{world}\"\n}\n";
+    let (q_out, _) = convert_src(quoted, SourceLang::Go, "go", "greet.go");
+    assert_parses(&q_out);
+    assert_inactive(&q_out, "#{world}");
+}
