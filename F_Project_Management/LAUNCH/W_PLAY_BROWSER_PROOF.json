@@ -1,8 +1,8 @@
 {
   "schema": "garnet.w-play.browser-proof/1",
-  "captured_at": "2026-11-26T15:33:15.566Z",
+  "captured_at": "2026-11-26T15:42:24.572Z",
   "verdict": "pass",
-  "duration_ms": 7874,
+  "duration_ms": 8042,
   "execution": {
     "engine": "playwright-browser-page",
     "browser": "158.0.8127.37",
@@ -11,8 +11,8 @@
     "service_workers": "blocked"
   },
   "git": {
-    "tested_commit": "ccbb607fd8c0414ee8bce5c0aa722588b4ba1513",
-    "tested_tree": "4d60e9669e1281083ab20b14dfbda2fd05422224",
+    "tested_commit": "6dbe33f885d9efe281a9ab520b305cf75d90b9d0",
+    "tested_tree": "8688c1986062d7218c1b9ef0089d6fe2a71fce3f",
     "runtime_inputs_clean": true
   },
   "host": {
