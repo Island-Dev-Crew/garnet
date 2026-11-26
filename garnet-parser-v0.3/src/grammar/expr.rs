@@ -477,6 +477,7 @@ fn parse_primary(p: &mut Parser) -> Result<Expr, ParseError> {
         }
         TokenKind::LBrace => parse_map_literal(p),
         TokenKind::KwIf => control_flow::parse_if_expr(p),
+        TokenKind::KwUnless => control_flow::parse_unless_expr(p),
         TokenKind::KwMatch => control_flow::parse_match_expr(p),
         TokenKind::KwTry => control_flow::parse_try_expr(p),
         TokenKind::KwSpawn => {

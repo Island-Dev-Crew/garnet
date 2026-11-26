@@ -42,6 +42,42 @@ pub fn parse_if_expr(p: &mut Parser) -> Result<Expr, ParseError> {
     })
 }
 
+/// Parse: `unless expr block [else block]`
+///
+/// Desugars to `if !expr block [else block]` so downstream checker,
+/// interpreter, VM, and capability analysis require zero special cases.
+pub fn parse_unless_expr(p: &mut Parser) -> Result<Expr, ParseError> {
+    let start = p.expect(&TokenKind::KwUnless, "unless expression")?.span;
+    let raw_cond = expr::parse_expr(p)?;
+    let cond_span = raw_cond.span();
+    let condition = Expr::Unary {
+        op: UnOp::Not,
+        expr: Box::new(raw_cond),
+        span: cond_span,
+    };
+    let then_block = stmts::parse_block(p)?;
+
+    let else_block = if p.eat(&TokenKind::KwElse) {
+        Some(stmts::parse_block(p)?)
+    } else {
+        None
+    };
+
+    let end_span = else_block
+        .as_ref()
+        .map(|b| b.span)
+        .unwrap_or(then_block.span);
+    let span = start.join(end_span);
+
+    Ok(Expr::If {
+        condition: Box::new(condition),
+        then_block,
+        elsif_clauses: Vec::new(),
+        else_block,
+        span,
+    })
+}
+
 /// Parse: `match expr { arm, arm, ... }`
 pub fn parse_match_expr(p: &mut Parser) -> Result<Expr, ParseError> {
     let start = p.expect(&TokenKind::KwMatch, "match expression")?.span;

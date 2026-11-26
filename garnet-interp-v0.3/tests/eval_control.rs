@@ -287,3 +287,30 @@ fn raise_and_rescue() {
     "#;
     assert!(matches!(run(src, "handled"), Value::Int(99)));
 }
+
+#[test]
+fn ruby_unless_and_until_work_in_managed_and_safe_modes() {
+    let src = r#"
+        @caps()
+        fn count_up(limit: Int) -> Int {
+            let mut i = 0
+            until i >= limit {
+                i = i + 1
+            }
+            unless i == 0 {
+                i * 10
+            } else {
+                -1
+            }
+        }
+
+        def main() {
+            let a = count_up(4)
+            let b = unless true { 1 } else { 2 }
+            let c = unless false { 3 }
+            a + b + c
+        }
+    "#;
+    // 40 + 2 + 3 = 45
+    assert!(matches!(run(src, "main"), Value::Int(45)));
+}

@@ -1118,9 +1118,11 @@ fn is_keyword_kind(kind: &TokenKind) -> bool {
             | TokenKind::KwSpawn
             | TokenKind::KwSend
             | TokenKind::KwIf
+            | TokenKind::KwUnless
             | TokenKind::KwElsif
             | TokenKind::KwElse
             | TokenKind::KwWhile
+            | TokenKind::KwUntil
             | TokenKind::KwFor
             | TokenKind::KwIn
             | TokenKind::KwLoop

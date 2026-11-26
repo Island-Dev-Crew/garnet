@@ -833,13 +833,26 @@ fn lower_stmt(node: &SyntaxNode) -> Option<Stmt> {
                 span,
             }
         }
-        WhileStmt => Stmt::While {
-            condition: first_expr(node).unwrap_or(Expr::Nil(span)),
-            body: child(node, SyntaxKind::Block)
-                .map(|b| lower_block(&b))
-                .unwrap_or_else(|| empty_block(span)),
-            span,
-        },
+        WhileStmt => {
+            let raw_cond = first_expr(node).unwrap_or(Expr::Nil(span));
+            let condition = if has_token(node, UntilKw) {
+                let cond_span = raw_cond.span();
+                Expr::Unary {
+                    op: UnOp::Not,
+                    expr: Box::new(raw_cond),
+                    span: cond_span,
+                }
+            } else {
+                raw_cond
+            };
+            Stmt::While {
+                condition,
+                body: child(node, SyntaxKind::Block)
+                    .map(|b| lower_block(&b))
+                    .unwrap_or_else(|| empty_block(span)),
+                span,
+            }
+        }
         ForStmt => Stmt::For {
             var: child_name(node),
             iter: first_expr(node).unwrap_or(Expr::Nil(span)),
@@ -1179,7 +1192,17 @@ fn lower_if(node: &SyntaxNode, span: Span) -> Expr {
         .children()
         .filter(|n| n.kind() == SyntaxKind::Block)
         .collect();
-    let condition = exprs.first().map(lower_expr).unwrap_or(Expr::Nil(span));
+    let raw_condition = exprs.first().map(lower_expr).unwrap_or(Expr::Nil(span));
+    let condition = if has_token(node, UnlessKw) {
+        let cond_span = raw_condition.span();
+        Expr::Unary {
+            op: UnOp::Not,
+            expr: Box::new(raw_condition),
+            span: cond_span,
+        }
+    } else {
+        raw_condition
+    };
     let then_block = blocks
         .first()
         .map(lower_block)

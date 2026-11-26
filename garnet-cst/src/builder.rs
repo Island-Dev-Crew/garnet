@@ -780,7 +780,7 @@ impl<'a> Builder<'a> {
                 self.parse_const_rest();
                 self.wrap();
             }
-            TokenKind::KwWhile => {
+            TokenKind::KwWhile | TokenKind::KwUntil => {
                 self.start(WhileStmt);
                 self.bump();
                 self.parse_expr();
@@ -1162,6 +1162,7 @@ impl<'a> Builder<'a> {
             }
             TokenKind::LBrace => self.parse_map_literal(),
             TokenKind::KwIf => self.parse_if(),
+            TokenKind::KwUnless => self.parse_unless(),
             TokenKind::KwMatch => self.parse_match(),
             TokenKind::KwTry => self.parse_try(),
             TokenKind::KwSpawn => {
@@ -1223,6 +1224,17 @@ impl<'a> Builder<'a> {
             self.parse_expr();
             self.parse_block();
         }
+        if self.eat(is_else) {
+            self.parse_block();
+        }
+        self.wrap();
+    }
+
+    fn parse_unless(&mut self) {
+        self.start(IfExpr);
+        self.bump(); // unless
+        self.parse_expr();
+        self.parse_block();
         if self.eat(is_else) {
             self.parse_block();
         }
