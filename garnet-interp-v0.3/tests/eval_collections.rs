@@ -115,3 +115,20 @@ fn string_methods() {
         other => panic!("expected string, got {other:?}"),
     }
 }
+
+#[test]
+fn array_paren_free_ruby_do_blocks_and_chaining() {
+    let src = r#"
+        def main() {
+            [1, 2, 3, 4].map do |x|
+                x * 2
+            end.filter do |y|
+                y > 4
+            end.reduce(0) do |acc, n|
+                acc + n
+            end
+        }
+    "#;
+    // [2, 4, 6, 8] -> [6, 8] -> 14
+    assert!(matches!(run(src, "main"), Value::Int(14)));
+}

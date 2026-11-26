@@ -261,6 +261,14 @@ fn parse_postfix(p: &mut Parser) -> Result<Expr, ParseError> {
                         args,
                         span,
                     };
+                } else if let Some(block) = parse_trailing_do_block(p)? {
+                    let span = expr.span().join(block.span());
+                    expr = Expr::Method {
+                        receiver: Box::new(expr),
+                        method: name,
+                        args: vec![block],
+                        span,
+                    };
                 } else {
                     let span = expr.span().join(name_span);
                     expr = Expr::Field {

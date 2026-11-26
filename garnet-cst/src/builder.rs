@@ -992,6 +992,10 @@ impl<'a> Builder<'a> {
                         self.parse_arg_list();
                         self.parse_trailing_do_block();
                         self.wrap();
+                    } else if matches!(self.nth(0), TokenKind::KwDo) {
+                        self.start_at(cp, MethodCallExpr);
+                        self.parse_trailing_do_block();
+                        self.wrap();
                     } else {
                         self.start_at(cp, FieldExpr);
                         self.wrap();
