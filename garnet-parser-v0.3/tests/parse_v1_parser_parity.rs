@@ -157,6 +157,108 @@ fn parses_do_end_block_argument() {
 }
 
 #[test]
+fn parses_paren_free_method_do_end_block_and_chaining() {
+    let src = r#"
+        @caps()
+        def main() {
+            [1, 2, 3].map do |x|
+                x * 2
+            end.filter do |y|
+                y > 2
+            end
+        }
+    "#;
+
+    let module = parse_source(src).unwrap();
+    let function = match &module.items[0] {
+        Item::Fn(f) => f,
+        other => panic!("expected function, got {other:?}"),
+    };
+    let Some(Expr::Method {
+        receiver,
+        method,
+        args,
+        ..
+    }) = function.body.tail_expr.as_deref()
+    else {
+        panic!("expected outer Method expr for chained .filter do...end");
+    };
+    assert_eq!(method, "filter");
+    assert_eq!(args.len(), 1);
+    assert!(matches!(
+        &args[0],
+        Expr::Closure {
+            is_do_block: true,
+            ..
+        }
+    ));
+
+    let Expr::Method {
+        method: inner_method,
+        args: inner_args,
+        ..
+    } = receiver.as_ref()
+    else {
+        panic!("expected inner Method expr for .map do...end");
+    };
+    assert_eq!(inner_method, "map");
+    assert_eq!(inner_args.len(), 1);
+    assert!(matches!(
+        &inner_args[0],
+        Expr::Closure {
+            is_do_block: true,
+            ..
+        }
+    ));
+}
+
+#[test]
+fn parses_zero_param_paren_free_method_do_end_block() {
+    let src = r#"
+        @caps()
+        def main() {
+            runner.run do
+                42
+            end
+        }
+    "#;
+
+    let module = parse_source(src).unwrap();
+    let Item::Fn(function) = &module.items[0] else {
+        panic!("expected function");
+    };
+    let Some(Expr::Method { method, args, .. }) = function.body.tail_expr.as_deref() else {
+        panic!("expected paren-free method call");
+    };
+    assert_eq!(method, "run");
+    assert_eq!(args.len(), 1);
+    match &args[0] {
+        Expr::Closure {
+            params,
+            is_do_block,
+            ..
+        } => {
+            assert!(params.is_empty());
+            assert!(*is_do_block);
+        }
+        other => panic!("expected do-block closure arg, got {other:?}"),
+    }
+}
+
+#[test]
+fn plain_field_access_unchanged_without_do_block() {
+    let src = "@caps()\ndef main() { obj.field }\n";
+    let module = parse_source(src).unwrap();
+    let Item::Fn(function) = &module.items[0] else {
+        panic!("expected function");
+    };
+    assert!(matches!(
+        function.body.tail_expr.as_deref(),
+        Some(Expr::Field { field, .. }) if field == "field"
+    ));
+}
+
+#[test]
 fn preserves_dynamic_and_nonsendable_type_annotations() {
     let src = r#"
         @dynamic

@@ -192,11 +192,14 @@ addition       = multiplication , { ( "+" | "-" ) , multiplication } ;
 multiplication = unary , { ( "*" | "/" | "%" ) , unary } ;
 unary          = [ "-" | "!" ] , postfix ;
 postfix        = primary , { postfix-op } ;
-postfix-op     = "." , IDENT , [ "(" , [ arg-list ] , ")" ]      (* method call *)
-               | "(" , [ arg-list ] , ")"                         (* function call *)
+postfix-op     = "." , IDENT , "(" , [ arg-list ] , ")" , [ do-block ] (* method call *)
+               | "." , IDENT , do-block                            (* paren-free method block *)
+               | "." , IDENT                                       (* field access *)
+               | "(" , [ arg-list ] , ")" , [ do-block ]           (* function call *)
                | "[" , expr , "]"                                  (* index *)
                | "::" , IDENT                                      (* path access *)
                | "?" ;                                             (* error propagation *)
+do-block       = "do" , [ "|" , [ param-list ] , "|" ] , { stmt } , "end" ;
 
 primary        = INTEGER | FLOAT | STRING | RAW_STRING | SYMBOL
                | "true" | "false" | "nil"
