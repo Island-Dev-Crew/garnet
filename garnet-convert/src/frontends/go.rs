@@ -308,7 +308,7 @@ impl<'a> GoParser<'a> {
                     },
                     lineage: self.lineage(start),
                 });
-            } else if t.starts_with("go ") {
+            } else if t.starts_with("go ") || t.starts_with("go\t") {
                 stmts.push(Cir::MigrateTodo {
                     placeholder: Box::new(Cir::Literal(CirLit::Nil, self.lineage(start))),
                     note: format!(
@@ -317,10 +317,35 @@ impl<'a> GoParser<'a> {
                     ),
                     lineage: self.lineage(start),
                 });
+            } else if t.starts_with("defer ") || t.starts_with("defer\t") {
+                stmts.push(Cir::MigrateTodo {
+                    placeholder: Box::new(Cir::Literal(CirLit::Nil, self.lineage(start))),
+                    note: format!(
+                        "Go defer '{}' — translate to `try {{ ... }} ensure {{ ... }}`",
+                        t
+                    ),
+                    lineage: self.lineage(start),
+                });
+            } else if t.contains("unsafe.Pointer") {
+                stmts.push(Cir::Untranslatable {
+                    reason: format!(
+                        "Go unsafe.Pointer in '{}' — no equivalent in Garnet @safe",
+                        t
+                    ),
+                    lineage: self.lineage(start),
+                });
             } else if t.contains("<-") {
                 stmts.push(Cir::MigrateTodo {
                     placeholder: Box::new(Cir::Literal(CirLit::Nil, self.lineage(start))),
                     note: format!("Go channel op '{}' — translate to actor ask/tell", t),
+                    lineage: self.lineage(start),
+                });
+            } else if let Some((name, ty, rhs)) = parse_go_single_binding(t) {
+                stmts.push(Cir::Let {
+                    name,
+                    ty,
+                    mutable: true,
+                    value: Some(Box::new(Cir::Ident(rhs, self.lineage(start)))),
                     lineage: self.lineage(start),
                 });
             } else {
@@ -798,6 +823,65 @@ fn parse_ty_string(s: &str) -> CirTy {
     }
 }
 
+/// Parse a single-variable Go binding on one line:
+/// - `name := expr`
+/// - `var name = expr`
+/// - `var name Type = expr`
+///
+/// Multi-name bindings (`a, b := ...`), blank identifiers (`_ := ...`), and
+/// semicolon-chained lines return `None` so they stay safe for the emitter's
+/// fallback/TODO handling.
+fn parse_go_single_binding(line: &str) -> Option<(String, CirTy, String)> {
+    let trimmed = line.trim();
+    if trimmed.contains(';') {
+        return None;
+    }
+    if let Some(rest) = trimmed
+        .strip_prefix("var ")
+        .or_else(|| trimmed.strip_prefix("var\t"))
+    {
+        let (lhs, rhs) = rest.split_once('=')?;
+        if rhs.starts_with('=') {
+            return None;
+        }
+        let lhs = lhs.trim();
+        let rhs = rhs.trim();
+        if rhs.is_empty() {
+            return None;
+        }
+        let mut parts = lhs.split_whitespace();
+        let name = parts.next()?;
+        if !is_simple_go_ident(name) {
+            return None;
+        }
+        let ty_str = parts.collect::<Vec<_>>().join(" ");
+        let ty = if ty_str.is_empty() {
+            CirTy::Inferred
+        } else {
+            parse_ty_string(&ty_str)
+        };
+        return Some((name.to_string(), ty, rhs.to_string()));
+    }
+    let (lhs, rhs) = trimmed.split_once(":=")?;
+    let name = lhs.trim();
+    let rhs = rhs.trim();
+    if !is_simple_go_ident(name) || rhs.is_empty() {
+        return None;
+    }
+    Some((name.to_string(), CirTy::Inferred, rhs.to_string()))
+}
+
+fn is_simple_go_ident(s: &str) -> bool {
+    let mut chars = s.chars();
+    let Some(first) = chars.next() else {
+        return false;
+    };
+    if !(first.is_ascii_alphabetic() || first == '_') {
+        return false;
+    }
+    s != "_" && chars.all(|c| c.is_ascii_alphanumeric() || c == '_')
+}
+
 fn derive_module_name(filename: &str) -> String {
     let base = filename
         .rsplit(&['/', '\\'][..])
@@ -899,5 +983,38 @@ mod tests {
             parse_ty_string("interface{}"),
             CirTy::Concrete(s) if s == "dyn Any"
         ));
+    }
+
+    #[test]
+    fn short_var_and_typed_var_lift_to_let() {
+        let src = "package main\nfunc calc(a int, b int) int {\n  x := a + b\n  var y int = x * 2\n  return y\n}\n";
+        let cir = parse_and_lift(src, "calc.go").unwrap();
+        let Cir::Module { items, .. } = cir else {
+            panic!("expected Module");
+        };
+        let Cir::Func { body, .. } = &items[0] else {
+            panic!("expected Func");
+        };
+        assert!(matches!(
+            &body[0],
+            Cir::Let { name, ty: CirTy::Inferred, mutable: true, value: Some(_), .. } if name == "x"
+        ));
+        assert!(matches!(
+            &body[1],
+            Cir::Let { name, ty: CirTy::Concrete(t), mutable: true, value: Some(_), .. } if name == "y" && t == "Int"
+        ));
+    }
+
+    #[test]
+    fn defer_stmt_flagged_as_todo() {
+        let src = "package main\nfunc f() {\n  defer close()\n  return\n}\n";
+        let cir = parse_and_lift(src, "d.go").unwrap();
+        let Cir::Module { items, .. } = cir else {
+            panic!("expected Module");
+        };
+        let Cir::Func { body, .. } = &items[0] else {
+            panic!("expected Func");
+        };
+        assert!(matches!(&body[0], Cir::MigrateTodo { note, .. } if note.contains("defer")));
     }
 }
