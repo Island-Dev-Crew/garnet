@@ -158,6 +158,7 @@ stmt           = let-decl
                | continue-stmt
                | return-stmt
                | raise-stmt
+               | defer-stmt
                | expr-stmt ;
 
 let-decl       = "let" , [ "mut" ] , IDENT , [ ":" , type ] , "=" , expr ;
@@ -174,6 +175,7 @@ break-stmt     = "break" , [ expr ] ;
 continue-stmt  = "continue" ;
 return-stmt    = "return" , [ expr ] ;
 raise-stmt     = "raise" , expr ;
+defer-stmt     = "defer" , ( block | expr ) ;
 expr-stmt      = expr ;
 ```
 

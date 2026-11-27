@@ -430,6 +430,27 @@ pub enum Stmt {
     Expr(Expr),
 }
 
+impl Stmt {
+    pub fn span(&self) -> Span {
+        match self {
+            Stmt::Let(decl) => decl.span,
+            Stmt::Var(decl) => decl.span,
+            Stmt::Const(decl) => decl.span,
+            Stmt::Assign { span, .. }
+            | Stmt::While { span, .. }
+            | Stmt::For { span, .. }
+            | Stmt::Loop { span, .. }
+            | Stmt::Break { span, .. }
+            | Stmt::Continue { span }
+            | Stmt::Return { span, .. }
+            | Stmt::Yield { span, .. }
+            | Stmt::Next { span, .. }
+            | Stmt::Raise { span, .. } => *span,
+            Stmt::Expr(expr) => expr.span(),
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct LetDecl {
     pub mutable: bool,

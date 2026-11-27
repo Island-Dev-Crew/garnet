@@ -727,23 +727,180 @@ fn empty_block(span: Span) -> Block {
     }
 }
 
-fn lower_block(node: &SyntaxNode) -> Block {
-    let stmt_nodes: Vec<SyntaxNode> = node.children().filter(|n| is_stmt_node(n.kind())).collect();
-    let mut stmts = Vec::new();
-    let mut tail_expr = None;
-    let last = stmt_nodes.len().saturating_sub(1);
-    for (i, n) in stmt_nodes.iter().enumerate() {
-        if i == last && n.kind() == ExprStmt {
-            tail_expr = first_expr(n).map(Box::new);
-        } else if let Some(stmt) = lower_stmt(n) {
-            stmts.push(stmt);
+enum BlockItem {
+    Stmt(Stmt),
+    Expr(Expr),
+    Defer { span: Span, cleanup: Block },
+}
+
+fn block_item_span(item: &BlockItem) -> Span {
+    match item {
+        BlockItem::Stmt(s) => s.span(),
+        BlockItem::Expr(e) => e.span(),
+        BlockItem::Defer { span, .. } => *span,
+    }
+}
+
+fn lower_defer_item(node: &SyntaxNode) -> BlockItem {
+    let fallback_span = span_of(node);
+    let defer_kw_span = node
+        .children_with_tokens()
+        .filter_map(|e| e.into_token())
+        .find(|t| t.kind() == DeferKw)
+        .map(|t| {
+            let r = t.text_range();
+            Span::new(usize::from(r.start()), usize::from(r.len()))
+        })
+        .unwrap_or(fallback_span);
+    let cleanup = if let Some(b) = child(node, SyntaxKind::Block) {
+        lower_block(&b)
+    } else if let Some(e) = first_expr(node) {
+        let expr_span = e.span();
+        Block {
+            stmts: Vec::new(),
+            tail_expr: Some(Box::new(e)),
+            span: expr_span,
+        }
+    } else {
+        empty_block(fallback_span)
+    };
+    let span = defer_kw_span.join(cleanup.span);
+    BlockItem::Defer { span, cleanup }
+}
+
+fn lower_block_items(node: &SyntaxNode, block_span: Span) -> Block {
+    let items: Vec<BlockItem> = node
+        .children()
+        .filter(|n| is_stmt_node(n.kind()))
+        .filter_map(|n| match n.kind() {
+            DeferStmt => Some(lower_defer_item(&n)),
+            ExprStmt => Some(BlockItem::Expr(
+                first_expr(&n).unwrap_or(Expr::Nil(span_of(&n))),
+            )),
+            _ => lower_stmt(&n).map(BlockItem::Stmt),
+        })
+        .collect();
+
+    if !items
+        .iter()
+        .any(|item| matches!(item, BlockItem::Defer { .. }))
+    {
+        let mut stmts = Vec::with_capacity(items.len());
+        let mut tail_expr = None;
+        let last = items.len().saturating_sub(1);
+        for (i, item) in items.into_iter().enumerate() {
+            match item {
+                BlockItem::Stmt(s) => stmts.push(s),
+                BlockItem::Expr(e) => {
+                    if i == last {
+                        tail_expr = Some(Box::new(e));
+                    } else {
+                        stmts.push(Stmt::Expr(e));
+                    }
+                }
+                BlockItem::Defer { .. } => unreachable!(),
+            }
+        }
+        return Block {
+            stmts,
+            tail_expr,
+            span: block_span,
+        };
+    }
+
+    let mut deferred_segments: Vec<(Vec<BlockItem>, Span, Block)> = Vec::new();
+    let mut current: Vec<BlockItem> = Vec::new();
+    for item in items {
+        match item {
+            BlockItem::Defer { span, cleanup } => {
+                deferred_segments.push((std::mem::take(&mut current), span, cleanup));
+            }
+            other => current.push(other),
         }
     }
+
+    let Some((mut seg_items, defer_span, cleanup)) = deferred_segments.pop() else {
+        unreachable!("checked that at least one Defer is present");
+    };
+
+    let rest_span = match (current.first(), current.last()) {
+        (Some(first), Some(last)) => block_item_span(first).join(block_item_span(last)),
+        _ => defer_span,
+    };
+    let mut rest_stmts = Vec::with_capacity(current.len());
+    let mut rest_tail = None;
+    let last_idx = current.len().saturating_sub(1);
+    for (i, item) in current.into_iter().enumerate() {
+        match item {
+            BlockItem::Stmt(s) => rest_stmts.push(s),
+            BlockItem::Expr(e) => {
+                if i == last_idx {
+                    rest_tail = Some(Box::new(e));
+                } else {
+                    rest_stmts.push(Stmt::Expr(e));
+                }
+            }
+            BlockItem::Defer { .. } => unreachable!(),
+        }
+    }
+    let rest_block = Block {
+        stmts: rest_stmts,
+        tail_expr: rest_tail,
+        span: rest_span,
+    };
+    let try_span = defer_span.join(rest_block.span);
+    let mut wrapped = Expr::Try {
+        body: rest_block,
+        rescues: Vec::new(),
+        ensure: Some(cleanup),
+        span: try_span,
+    };
+
+    while let Some((prev_seg, prev_defer_span, prev_cleanup)) = deferred_segments.pop() {
+        let seg_span = match seg_items.first() {
+            Some(first) => block_item_span(first).join(wrapped.span()),
+            None => wrapped.span(),
+        };
+        let stmts: Vec<Stmt> = seg_items
+            .into_iter()
+            .map(|item| match item {
+                BlockItem::Stmt(s) => s,
+                BlockItem::Expr(e) => Stmt::Expr(e),
+                BlockItem::Defer { .. } => unreachable!(),
+            })
+            .collect();
+        let body = Block {
+            stmts,
+            tail_expr: Some(Box::new(wrapped)),
+            span: seg_span,
+        };
+        let span = prev_defer_span.join(body.span);
+        wrapped = Expr::Try {
+            body,
+            rescues: Vec::new(),
+            ensure: Some(prev_cleanup),
+            span,
+        };
+        seg_items = prev_seg;
+    }
+
+    let stmts: Vec<Stmt> = seg_items
+        .into_iter()
+        .map(|item| match item {
+            BlockItem::Stmt(s) => s,
+            BlockItem::Expr(e) => Stmt::Expr(e),
+            BlockItem::Defer { .. } => unreachable!(),
+        })
+        .collect();
     Block {
         stmts,
-        tail_expr,
-        span: block_span(node),
+        tail_expr: Some(Box::new(wrapped)),
+        span: block_span,
     }
+}
+
+fn lower_block(node: &SyntaxNode) -> Block {
+    lower_block_items(node, block_span(node))
 }
 
 /// Span of a brace `Block` node, matching the parser's brace-to-brace span
@@ -808,6 +965,7 @@ fn is_stmt_node(k: SyntaxKind) -> bool {
             | YieldStmt
             | NextStmt
             | RaiseStmt
+            | DeferStmt
             | ExprStmt
     )
 }
@@ -1094,22 +1252,7 @@ fn lower_block_arg(node: &SyntaxNode) -> Expr {
 }
 
 fn lower_block_like(node: &SyntaxNode) -> Block {
-    let stmt_nodes: Vec<SyntaxNode> = node.children().filter(|n| is_stmt_node(n.kind())).collect();
-    let mut stmts = Vec::new();
-    let mut tail_expr = None;
-    let last = stmt_nodes.len().saturating_sub(1);
-    for (i, n) in stmt_nodes.iter().enumerate() {
-        if i == last && n.kind() == ExprStmt {
-            tail_expr = first_expr(n).map(Box::new);
-        } else if let Some(s) = lower_stmt(n) {
-            stmts.push(s);
-        }
-    }
-    Block {
-        stmts,
-        tail_expr,
-        span: span_of(node),
-    }
+    lower_block_items(node, span_of(node))
 }
 
 fn lower_closure(node: &SyntaxNode, span: Span) -> Expr {

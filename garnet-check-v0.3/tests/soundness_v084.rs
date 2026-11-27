@@ -257,3 +257,170 @@ def main() {
         r3.errors
     );
 }
+
+#[test]
+fn safe_fn_allows_lexical_defer_but_rejects_try_rescue_and_bare_try() {
+    // Both `defer expr` and `defer { ... }` are legal in `@safe fn`.
+    let allowed = r#"
+@safe
+@caps()
+fn helper(x: Int) -> Int {
+    x + 1
+}
+
+@safe
+@caps()
+fn safe_with_defer(x: Int) -> Int {
+    defer helper(x)
+    defer {
+        let _y = helper(x)
+    }
+    x * 2
+}
+"#;
+    let m_ok = garnet_parser::parse_source(allowed).expect("parse safe defer");
+    let r_ok = check_module(&m_ok);
+    assert!(
+        r_ok.ok(),
+        "expected `@safe fn` with `defer` to pass check, got {:?}",
+        r_ok.errors
+    );
+
+    // `try { ... } rescue e { ... }` (with or without `ensure`) MUST still fail in `@safe fn`.
+    let with_rescue = r#"
+@safe
+@caps()
+fn bad_rescue(x: Int) -> Int {
+    try {
+        x
+    } rescue e {
+        0
+    } ensure {
+        let _c = x
+    }
+}
+"#;
+    let m_rescue = garnet_parser::parse_source(with_rescue).expect("parse try/rescue/ensure");
+    let r_rescue = check_module(&m_rescue);
+    assert!(
+        !r_rescue.ok()
+            && r_rescue
+                .errors
+                .iter()
+                .any(|e| matches!(e, CheckError::SafeModeViolation(msg) if msg.contains("try"))),
+        "expected try/rescue/ensure in @safe fn to fail, got {:?}",
+        r_rescue.errors
+    );
+
+    // Bare `try { ... }` without `ensure` MUST still fail in `@safe fn`.
+    let bare_try = r#"
+@safe
+@caps()
+fn bad_bare_try(x: Int) -> Int {
+    try {
+        x
+    }
+}
+"#;
+    let m_bare = garnet_parser::parse_source(bare_try).expect("parse bare try");
+    let r_bare = check_module(&m_bare);
+    assert!(
+        !r_bare.ok()
+            && r_bare
+                .errors
+                .iter()
+                .any(|e| matches!(e, CheckError::SafeModeViolation(msg) if msg.contains("try"))),
+        "expected bare try without ensure in @safe fn to fail, got {:?}",
+        r_bare.errors
+    );
+
+    // Safe-mode violations inside a `defer` body (`raise`, `var`, `try/rescue`) MUST still fail.
+    let bad_inside_defer = r#"
+@safe
+@caps()
+fn bad_defer_body() -> Int {
+    defer {
+        var illegal = 1
+        raise "nope"
+    }
+    0
+}
+"#;
+    let m_bad = garnet_parser::parse_source(bad_inside_defer).expect("parse bad defer body");
+    let r_bad = check_module(&m_bad);
+    assert!(
+        !r_bad.ok()
+            && r_bad
+                .errors
+                .iter()
+                .any(|e| matches!(e, CheckError::SafeModeViolation(msg) if msg.contains("var")))
+            && r_bad
+                .errors
+                .iter()
+                .any(|e| matches!(e, CheckError::SafeModeViolation(msg) if msg.contains("raise"))),
+        "expected var and raise inside defer body in @safe fn to fail, got {:?}",
+        r_bad.errors
+    );
+}
+
+#[test]
+fn caps_graph_propagates_capabilities_from_defer_in_managed_and_safe_fn() {
+    let undeclared_managed = r#"
+@caps()
+def main() {
+    defer fs::read_file("README.md")
+    0
+}
+"#;
+    let m1 = garnet_parser::parse_source(undeclared_managed).expect("parse managed defer");
+    let r1 = check_module(&m1);
+    assert!(
+        !r1.ok()
+            && r1
+                .errors
+                .iter()
+                .any(|e| matches!(e, CheckError::CapsCoverage { .. })),
+        "expected CapsCoverage for undeclared fs call in managed defer, got {:?}",
+        r1.errors
+    );
+
+    let undeclared_safe = r#"
+@safe
+@caps()
+fn cleanup_only() -> Int {
+    defer {
+        let _s = fs::read_file("README.md")
+    }
+    0
+}
+"#;
+    let m2 = garnet_parser::parse_source(undeclared_safe).expect("parse safe defer");
+    let r2 = check_module(&m2);
+    assert!(
+        !r2.ok()
+            && r2
+                .errors
+                .iter()
+                .any(|e| matches!(e, CheckError::CapsCoverage { .. })),
+        "expected CapsCoverage for undeclared fs call in @safe fn defer, got {:?}",
+        r2.errors
+    );
+
+    let declared_safe = r#"
+@safe
+@caps(fs)
+fn cleanup_ok(borrow path: String) -> Int {
+    defer {
+        let _s = fs::read_file(path)
+    }
+    0
+}
+"#;
+    let m3 = garnet_parser::parse_source(declared_safe).expect("parse declared safe defer");
+    let r3 = check_module(&m3);
+    assert!(
+        r3.ok(),
+        "expected declared @caps(fs) on @safe fn with defer to pass, got {:?}",
+        r3.errors
+    );
+}

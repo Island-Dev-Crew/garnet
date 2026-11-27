@@ -319,3 +319,203 @@ def main() {
         }
     }
 }
+
+#[test]
+fn be_f1_enforcement_traps_bypass_defer_on_interp_and_vm() {
+    let cases = [
+        (
+            "defer_caps_return_bypass",
+            r#"
+@caps(env)
+def peek() {
+    std::env::get("HOME")
+}
+
+@caps()
+def main() {
+    let f = peek
+    defer {
+        println("defer-ran")
+        return "bypassed"
+    }
+    f()
+}
+"#,
+            "capability:",
+        ),
+        (
+            "defer_safe_fn_caps_bypass",
+            r#"
+@caps(env)
+def peek() {
+    std::env::get("HOME")
+}
+
+@safe
+@caps()
+fn guarded(f: Any) -> String {
+    defer {
+        println("defer-ran")
+        return "bypassed"
+    }
+    f()
+}
+
+@caps()
+def main() {
+    guarded(peek)
+}
+"#,
+            "capability:",
+        ),
+        (
+            "defer_caps_break_bypass",
+            r#"
+@caps()
+def main() {
+    let mut out = "init"
+    loop {
+        defer {
+            println("defer-ran")
+            out = "bypassed"
+            break
+        }
+        memory::working(1)
+    }
+    out
+}
+"#,
+            "capability:",
+        ),
+        (
+            "defer_caps_raise_override",
+            r#"
+@caps()
+def main() {
+    try {
+        defer {
+            println("defer-ran")
+            raise :replacement
+        }
+        memory::working(1)
+    } rescue e {
+        "bypassed"
+    }
+}
+"#,
+            "capability:",
+        ),
+        (
+            "defer_max_depth_return_bypass",
+            r#"
+@max_depth(2)
+@caps()
+def deep(n) {
+    if n <= 0 { 0 } else { deep(n - 1) }
+}
+
+@caps()
+def main() {
+    defer {
+        println("defer-ran")
+        return "bypassed"
+    }
+    deep(10)
+}
+"#,
+            "@max_depth(2) exceeded",
+        ),
+    ];
+
+    let dir = tempfile::tempdir().expect("tempdir");
+    for (name, src, expected_stderr) in cases {
+        let prog = dir.path().join(format!("{name}.garnet"));
+        std::fs::write(&prog, src).expect("write");
+        for backend in ["--interp", "--vm"] {
+            let out = Command::new(garnet_bin())
+                .args(["run", backend])
+                .arg(&prog)
+                .output()
+                .expect("spawn garnet run");
+            let stdout = String::from_utf8_lossy(&out.stdout);
+            let stderr = String::from_utf8_lossy(&out.stderr);
+            assert!(
+                !out.status.success(),
+                "{name} on {backend} exited 0! stdout={stdout:?} stderr={stderr:?}"
+            );
+            assert!(
+                !stdout.contains("bypassed") && !stdout.contains("defer-ran"),
+                "{name} on {backend} ran or masked via defer! stdout={stdout:?} stderr={stderr:?}"
+            );
+            assert!(
+                stderr.contains(expected_stderr),
+                "{name} on {backend} stderr missing {expected_stderr:?}: {stderr:?}"
+            );
+        }
+    }
+}
+
+#[test]
+fn go_lexical_defer_lifo_works_across_interp_and_vm() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let prog = dir.path().join("defer_lifo.garnet");
+    std::fs::write(
+        &prog,
+        r#"
+@safe
+@caps()
+fn compute(x: Int) -> Int {
+    defer println("safe-1")
+    defer {
+        println("safe-2")
+    }
+    println("safe-body")
+    x + 1
+}
+
+@caps()
+def main() {
+    defer println("main-1")
+    defer {
+        println("main-2")
+    }
+    let v = compute(41)
+    println("main-body")
+    v
+}
+"#,
+    )
+    .expect("write");
+
+    for backend in ["--interp", "--vm"] {
+        let out = Command::new(garnet_bin())
+            .args(["run", backend])
+            .arg(&prog)
+            .output()
+            .expect("spawn garnet run");
+        let stdout = String::from_utf8_lossy(&out.stdout);
+        let stderr = String::from_utf8_lossy(&out.stderr);
+        assert!(
+            out.status.success(),
+            "defer LIFO failed on {backend}: stdout={stdout:?} stderr={stderr:?}"
+        );
+        let lines: Vec<&str> = stdout.lines().collect();
+        let expected_prefix = [
+            "safe-body",
+            "safe-2",
+            "safe-1",
+            "main-body",
+            "main-2",
+            "main-1",
+        ];
+        assert!(
+            lines.len() >= expected_prefix.len()
+                && lines[..expected_prefix.len()] == expected_prefix,
+            "unexpected LIFO order on {backend}: lines={lines:?}"
+        );
+        assert!(
+            stdout.contains("=> 42"),
+            "missing return value 42 on {backend}: stdout={stdout:?}"
+        );
+    }
+}

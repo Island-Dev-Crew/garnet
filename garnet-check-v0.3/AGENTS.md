@@ -12,7 +12,12 @@ Owns safe-mode validation, CapCaps propagation, borrow/safety checks, and depend
   arbitrary depth cutoff), and expression child (including `let`, `return`,
   assignment, match patterns and guards, closures, calls, and containers) so
   `try`/`rescue`/`raise` cannot hide in value, pattern, or arbitrarily nested
-  interpolated positions (FE-F4).
+  interpolated positions (FE-F4). Rescue-free `Expr::Try` with `ensure: Some(_)`
+  (the lexical desugaring target of Go-style `defer`) is permitted in `@safe fn`
+  as deterministic lexical teardown without exception catching; any non-empty
+  `rescues` or bare `try` without `ensure` remains a fatal `SafeModeViolation`,
+  and both `body` and `ensure` are still walked for safe-mode violations and
+  `@caps` propagation.
 - CapCaps propagation must remain transitive: callers inherit or declare authority needed by callees, including calls inside match patterns and arm guards, closure bodies, pipeline RHS targets (`|>`), and arbitrarily nested string-interpolation segments (`Expr::Match` arm `.pattern`/`.guard`, `Expr::Closure`, `BinOp::Pipeline`, `Expr::Str`, FE-F2b). `garnet-check-v0.3/tests/soundness_v084.rs` pins FE-F2b and FE-F4.
 - Transitivity holds across call-graph cycles (U-117, cured 2026-09-18).
   `caps_graph::transitive_caps` is an iterative Tarjan-SCC walk with
