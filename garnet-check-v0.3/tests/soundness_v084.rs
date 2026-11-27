@@ -608,17 +608,269 @@ fn defer_depth_budget_prevents_flat_defer_stack_overflow() {
         "300 sequential defers must be rejected by default depth budget"
     );
 
-    // Right at default budget boundary (255 defers + 1 block brace = depth 256):
+    // Right at default budget boundary (127 defers * 2 + 1 block brace = depth 255 <= 256):
     // must parse and check cleanly without overflowing the thread stack.
     let at_limit = format!(
         "@safe\n@caps()\nfn main() -> Int {{\n{}42\n}}\n",
-        "defer 0;\n".repeat(255)
+        "defer 0;\n".repeat(127)
     );
-    let module = garnet_parser::parse_source(&at_limit).expect("255 defers fits max_depth=256");
+    let module = garnet_parser::parse_source(&at_limit).expect("127 defers fits max_depth=256");
     let report = check_module(&module);
     assert!(
         report.ok(),
-        "255 defers at default budget limit must check cleanly, got {:?}",
+        "127 defers at default budget limit must check cleanly, got {:?}",
         report.errors
+    );
+
+    // One past default budget boundary (128 defers * 2 + 1 = depth 257 > 256):
+    let just_over = format!(
+        "@safe\n@caps()\nfn main() -> Int {{\n{}42\n}}\n",
+        "defer 0;\n".repeat(128)
+    );
+    assert!(
+        garnet_parser::parse_source(&just_over).is_err(),
+        "128 sequential defers must be rejected by default depth budget"
+    );
+}
+
+#[test]
+fn round2_borrow_and_bounds_edge_cases_are_sound_and_precise() {
+    // 1. Loop break/continue moves remain visible after the loop.
+    let loop_break_move = r#"
+@caps()
+fn take(own x: Array) -> Int { 0 }
+
+@safe
+@caps()
+fn main() -> Int {
+    let x = [1]
+    loop {
+        take(x)
+        break
+    }
+    println(x)
+    0
+}
+"#;
+    let r = check_module(&garnet_parser::parse_source(loop_break_move).unwrap());
+    assert!(
+        r.errors
+            .iter()
+            .any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("use-after-move"))),
+        "loop break move must be caught after loop, got {:?}",
+        r.errors
+    );
+
+    let for_continue_move = r#"
+@caps()
+fn take(own x: Array) -> Int { 0 }
+
+@safe
+@caps()
+fn main() -> Int {
+    let x = [1]
+    for n in [1] {
+        take(x)
+        continue
+    }
+    println(x)
+    0
+}
+"#;
+    let r = check_module(&garnet_parser::parse_source(for_continue_move).unwrap());
+    assert!(
+        r.errors
+            .iter()
+            .any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("use-after-move"))),
+        "for continue move must be caught after loop, got {:?}",
+        r.errors
+    );
+
+    // 2. Interpolated counter mutation inside defer is rejected.
+    let interp_counter_reset = r##"
+@caps()
+fn main() -> Int {
+    let mut i = 0
+    while i < 1 {
+        i += 1
+        defer "#{if true { i = 0; 0 } else { 0 }}"
+    }
+    42
+}
+"##;
+    let r = check_module(&garnet_parser::parse_source(interp_counter_reset).unwrap());
+    assert!(
+        r.errors
+            .iter()
+            .any(|e| matches!(e, CheckError::BoundedLoop(_))),
+        "interpolated counter reset in defer must fail BoundedLoop, got {:?}",
+        r.errors
+    );
+
+    // 3. Interpolated move inside LIFO defer is caught by borrow checker.
+    let interp_defer_move = r##"
+@caps()
+fn take(own x: Array) -> Int { 0 }
+
+@safe
+@caps()
+fn main() -> Int {
+    let x = [1]
+    defer println(x)
+    defer "#{take(x)}"
+    0
+}
+"##;
+    let r = check_module(&garnet_parser::parse_source(interp_defer_move).unwrap());
+    assert!(
+        r.errors
+            .iter()
+            .any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("use-after-move"))),
+        "interpolated move inside defer must be caught by earlier defer, got {:?}",
+        r.errors
+    );
+
+    // 4. Exceptional exit (`1 / 0`) before reassignment preserves move for defer.
+    let exceptional_exit_move = r#"
+@caps()
+fn take(own x: Array) -> Int { 0 }
+
+@safe
+@caps()
+fn main() -> Int {
+    let mut x = [1]
+    defer println(x)
+    take(x)
+    let _z = 1 / 0
+    x = [2]
+    0
+}
+"#;
+    let r = check_module(&garnet_parser::parse_source(exceptional_exit_move).unwrap());
+    assert!(
+        r.errors
+            .iter()
+            .any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("use-after-move"))),
+        "exceptional exit before reassignment must trigger use-after-move in defer, got {:?}",
+        r.errors
+    );
+
+    // 5. Deferred `continue` overriding `break` + unreachable `i += 1` is rejected.
+    let defer_continue_override = r#"
+@caps()
+fn main() -> Int {
+    let mut i = 0
+    while i < 1 {
+        defer { continue }
+        break
+        i += 1
+    }
+    0
+}
+"#;
+    let r = check_module(&garnet_parser::parse_source(defer_continue_override).unwrap());
+    assert!(
+        r.errors
+            .iter()
+            .any(|e| matches!(e, CheckError::BoundedLoop(_))),
+        "defer continue overriding break must fail BoundedLoop, got {:?}",
+        r.errors
+    );
+
+    // 6. Immediate-exit loops with harmless defer pass cleanly.
+    let loop_defer_break = r#"
+@caps()
+fn main() -> Int {
+    loop {
+        defer 0
+        break
+    }
+    while true {
+        defer 0
+        return 1
+    }
+    0
+}
+"#;
+    let r = check_module(&garnet_parser::parse_source(loop_defer_break).unwrap());
+    assert!(
+        r.ok(),
+        "immediate-exit loops with harmless defer should pass, got {:?}",
+        r.errors
+    );
+
+    // 7. Earlier returning path before defer registration does NOT contaminate later defer.
+    let earlier_return_before_defer = r#"
+@caps()
+fn take(own x: Array) -> Int { 0 }
+
+@safe
+@caps()
+fn main(cond: Bool) -> Int {
+    let x = [1]
+    if cond {
+        take(x)
+        return 0
+    }
+    defer println(x)
+    0
+}
+"#;
+    let r = check_module(&garnet_parser::parse_source(earlier_return_before_defer).unwrap());
+    assert!(
+        r.ok(),
+        "earlier returning path before defer registration must not contaminate later defer, got {:?}",
+        r.errors
+    );
+
+    // 8. Guaranteed cleanup reassignment clears move for code after `try/ensure`.
+    let cleanup_reinit = r#"
+@caps()
+fn take(own x: Array) -> Int { 0 }
+
+@safe
+@caps()
+fn main() -> Int {
+    let mut x = [1]
+    try {
+        take(x)
+    } ensure {
+        x = [2]
+    }
+    println(x)
+    0
+}
+"#;
+    let r = check_module(&garnet_parser::parse_source(cleanup_reinit).unwrap());
+    assert!(
+        r.ok(),
+        "guaranteed reassignment in ensure should clear move, got {:?}",
+        r.errors
+    );
+
+    // 9. Same-scope shadowing in a branch must not leak orphaned binding IDs to later bindings.
+    let orphaned_id_collision = r#"
+@caps()
+fn take(own x: Array) -> Int { 0 }
+
+@safe
+@caps()
+fn main(cond: Bool) -> Int {
+    if cond {
+        let x = [1]
+        take(x)
+        let x = [2]
+        0
+    }
+    let y = [3]
+    println(y)
+    0
+}
+"#;
+    let r = check_module(&garnet_parser::parse_source(orphaned_id_collision).unwrap());
+    assert!(
+        r.ok(),
+        "branch-local shadowed binding IDs must never collide with later declarations, got {:?}",
+        r.errors
     );
 }

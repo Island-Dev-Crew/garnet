@@ -102,14 +102,18 @@ pub fn check_token_nesting(tokens: &[Token], budget: ParseBudget) -> Result<(), 
                 budget.check_depth(depth, tok.span)?;
             }
             TokenKind::KwDefer => {
+                // Each `defer` synthesizes TWO AST nesting layers (`Expr::Try`
+                // plus its guarded `Block`), so charge 2 depth units per active
+                // `defer` in the enclosing block to keep downstream recursive
+                // checker/interpreter passes well inside thread stack limits.
                 if let Some(frame) = block_frames.last_mut() {
                     match frame {
                         BlockFrame::Brace(n) | BlockFrame::Do(n) => {
-                            *n = n.saturating_add(1);
+                            *n = n.saturating_add(2);
                         }
                     }
                 }
-                depth = depth.saturating_add(1);
+                depth = depth.saturating_add(2);
                 budget.check_depth(depth, tok.span)?;
             }
             TokenKind::RParen | TokenKind::RBracket => {
