@@ -830,12 +830,9 @@ fn check_if_expr(
     // unanimous re-initialization across all branches to clear an incoming move).
     // Without `else`, the implicit fallthrough preserves `snapshot.moved`.
     let has_else = else_block.is_some();
-    let mut merged_moved = if has_else {
-        HashMap::new()
-    } else {
-        snapshot.moved.clone()
-    };
+    let mut merged_moved = HashMap::new();
     let mut any_continues = !has_else;
+    let mut fallthrough_env = (*snapshot).clone();
     let mut merged_has_exit = snapshot.has_exit;
     let mut merged_exit_moved = snapshot.exit_moved.clone();
     let mut merged_has_break = snapshot.has_break;
@@ -856,24 +853,24 @@ fn check_if_expr(
     extend_prefer_newer(&mut merged_continue_moved, then_outcome.env.continue_moved);
 
     for (cond, block) in elsif_clauses {
-        let mut alt_env = (*snapshot).clone();
-        check_expr(cond, &mut alt_env, sigs, fn_name, diags, next_id);
-        let after_cond = alt_env.clone();
-        let branch_outcome = check_branch_block(block, &after_cond, sigs, fn_name, diags, next_id);
+        check_expr(cond, &mut fallthrough_env, sigs, fn_name, diags, next_id);
+        let branch_outcome =
+            check_branch_block(block, &fallthrough_env, sigs, fn_name, diags, next_id);
         if branch_outcome.continues {
             any_continues = true;
             extend_prefer_newer(&mut merged_moved, branch_outcome.env.moved);
-        } else if !has_else {
-            extend_prefer_newer(&mut merged_moved, after_cond.moved);
         }
-        merged_has_exit |= after_cond.has_exit | branch_outcome.env.has_exit;
-        extend_prefer_newer(&mut merged_exit_moved, after_cond.exit_moved);
+        merged_has_exit |= fallthrough_env.has_exit | branch_outcome.env.has_exit;
+        extend_prefer_newer(&mut merged_exit_moved, fallthrough_env.exit_moved.clone());
         extend_prefer_newer(&mut merged_exit_moved, branch_outcome.env.exit_moved);
-        merged_has_break |= after_cond.has_break | branch_outcome.env.has_break;
-        extend_prefer_newer(&mut merged_break_moved, after_cond.break_moved);
+        merged_has_break |= fallthrough_env.has_break | branch_outcome.env.has_break;
+        extend_prefer_newer(&mut merged_break_moved, fallthrough_env.break_moved.clone());
         extend_prefer_newer(&mut merged_break_moved, branch_outcome.env.break_moved);
-        merged_has_continue |= after_cond.has_continue | branch_outcome.env.has_continue;
-        extend_prefer_newer(&mut merged_continue_moved, after_cond.continue_moved);
+        merged_has_continue |= fallthrough_env.has_continue | branch_outcome.env.has_continue;
+        extend_prefer_newer(
+            &mut merged_continue_moved,
+            fallthrough_env.continue_moved.clone(),
+        );
         extend_prefer_newer(
             &mut merged_continue_moved,
             branch_outcome.env.continue_moved,
@@ -881,7 +878,7 @@ fn check_if_expr(
     }
 
     if let Some(b) = else_block {
-        let branch_outcome = check_branch_block(b, &snapshot, sigs, fn_name, diags, next_id);
+        let branch_outcome = check_branch_block(b, &fallthrough_env, sigs, fn_name, diags, next_id);
         if branch_outcome.continues {
             any_continues = true;
             extend_prefer_newer(&mut merged_moved, branch_outcome.env.moved);
@@ -895,6 +892,8 @@ fn check_if_expr(
             &mut merged_continue_moved,
             branch_outcome.env.continue_moved,
         );
+    } else {
+        extend_prefer_newer(&mut merged_moved, fallthrough_env.moved);
     }
 
     env.moved = if any_continues {

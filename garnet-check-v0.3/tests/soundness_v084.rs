@@ -986,4 +986,33 @@ fn main(cond: Bool) -> Int {
         "unanimous branch re-init in ensure should clear move, got {:?}",
         r.errors
     );
+
+    // R4-H1: `elsif` condition move persists into `else` fallthrough.
+    let elsif_cond_move_to_else = r#"
+@caps()
+fn take(own x: Array) -> Int { 0 }
+
+@safe
+@caps()
+fn main(cond: Bool) -> Int {
+    let x = [1]
+    if cond {
+        0
+    } elsif take(x) == 1 {
+        return 0
+    } else {
+        0
+    }
+    defer println(x)
+    0
+}
+"#;
+    let r = check_module(&garnet_parser::parse_source(elsif_cond_move_to_else).unwrap());
+    assert!(
+        r.errors
+            .iter()
+            .any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("use-after-move"))),
+        "elsif condition move must persist into else fallthrough and later defer, got {:?}",
+        r.errors
+    );
 }
