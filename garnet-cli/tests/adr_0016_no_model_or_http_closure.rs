@@ -378,7 +378,7 @@ fn parse_lock_packages(lock_text: &str) -> BTreeMap<PackageId, Vec<String>> {
                 .expect("Cargo.lock package source must be string")
                 .to_string()
         });
-        let deps = pkg
+        let mut edges = pkg
             .get("dependencies")
             .and_then(toml::Value::as_array)
             .map(|items| {
@@ -392,13 +392,20 @@ fn parse_lock_packages(lock_text: &str) -> BTreeMap<PackageId, Vec<String>> {
                     .collect::<Vec<_>>()
             })
             .unwrap_or_default();
+        if let Some(replace_val) = pkg.get("replace") {
+            let replace_spec = replace_val
+                .as_str()
+                .expect("Cargo.lock replace entry must be string")
+                .to_string();
+            edges.push(replace_spec);
+        }
         let id = PackageId {
             name,
             version,
             source,
         };
         assert!(
-            graph.insert(id.clone(), deps).is_none(),
+            graph.insert(id.clone(), edges).is_none(),
             "Cargo.lock must not contain duplicate package identity {id:?}"
         );
     }
@@ -440,6 +447,24 @@ fn parse_dep_spec(dep_spec: &str) -> (&str, Option<&str>, Option<&str>) {
     }
 }
 
+fn source_matches_qualifier(pkg_source: Option<&str>, dep_qualifier: &str) -> bool {
+    let Some(pkg_src) = pkg_source else {
+        return false;
+    };
+    if pkg_src == dep_qualifier {
+        return true;
+    }
+    // Cargo's lockfile encoder serializes dependency source qualifiers with
+    // `SourceId::without_precise()`, which strips the `#<rev>` commit fragment
+    // from `git+` sources while `[[package]].source` retains it.
+    if pkg_src.starts_with("git+") {
+        if let Some((without_precise, _)) = pkg_src.split_once('#') {
+            return without_precise == dep_qualifier;
+        }
+    }
+    false
+}
+
 fn resolve_dep_targets(
     dep_spec: &str,
     by_name: &BTreeMap<String, Vec<PackageId>>,
@@ -453,7 +478,7 @@ fn resolve_dep_targets(
     let matched: Vec<PackageId> = candidates
         .iter()
         .filter(|id| version.is_none_or(|ver| id.version == ver))
-        .filter(|id| source.is_none_or(|src| id.source.as_deref() == Some(src)))
+        .filter(|id| source.is_none_or(|src| source_matches_qualifier(id.source.as_deref(), src)))
         .cloned()
         .collect();
 
@@ -686,7 +711,9 @@ version = "0.1.0"
 #[test]
 fn closure_guard_preserves_source_identity_across_duplicate_name_and_version() {
     // Regression for same-(name, version) packages from different sources:
-    // regardless of lockfile entry order, a registry entry without deps must
+    // Cargo serializes git dependency qualifiers via `without_precise()`
+    // (omitting `#<rev>`), while `[[package]].source` retains `#<rev>`.
+    // Regardless of lockfile entry order, a registry entry without deps must
     // never overwrite a git entry that pulls in a forbidden HTTP client.
     let git_first = r#"
 version = 4
@@ -695,7 +722,7 @@ version = 4
 name = "garnet-cli"
 version = "0.8.4"
 dependencies = [
-    "middle 1.0.0 (git+https://example.invalid/middle#deadbeef)",
+    "middle 1.0.0 (git+https://example.invalid/middle)",
 ]
 
 [[package]]
@@ -724,7 +751,7 @@ version = 4
 name = "garnet-cli"
 version = "0.8.4"
 dependencies = [
-    "middle 1.0.0 (git+https://example.invalid/middle#deadbeef)",
+    "middle 1.0.0 (git+https://example.invalid/middle)",
 ]
 
 [[package]]
@@ -754,6 +781,91 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
             vec![("reqwest".to_string(), "HTTP client/transport")]
         );
     }
+
+    // Conversely, a compliant git-qualified dependency with no forbidden deps
+    // resolves cleanly without failing the qualifier lookup.
+    let compliant_git = r#"
+version = 4
+
+[[package]]
+name = "garnet-cli"
+version = "0.8.4"
+dependencies = [
+    "itoa 1.0.18 (git+https://example.invalid/itoa?branch=main)",
+]
+
+[[package]]
+name = "itoa"
+version = "1.0.18"
+source = "git+https://example.invalid/itoa?branch=main#0123456789abcdef"
+
+[[package]]
+name = "itoa"
+version = "1.0.18"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+    "reqwest 0.12.0",
+]
+
+[[package]]
+name = "reqwest"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+"#;
+
+    let compliant_closure = transitive_closure(compliant_git, "garnet-cli");
+    assert_eq!(
+        compliant_closure,
+        BTreeSet::from(["garnet-cli".to_string(), "itoa".to_string()])
+    );
+    assert!(find_forbidden_in_closure(&compliant_closure).is_empty());
+    assert!(find_unclassified_in_closure(&compliant_closure).is_empty());
+}
+
+#[test]
+fn closure_guard_follows_cargo_lock_replace_edges() {
+    // Regression for Cargo `[replace]`: Cargo emits `replace = "..."` instead
+    // of `dependencies = [...]` on the replaced package. The walker must follow
+    // `replace` edges so a forbidden transitive behind an allowlisted package
+    // cannot escape either the denylist or the allowlist.
+    let replaced_lock = r#"
+version = 4
+
+[[package]]
+name = "garnet-cli"
+version = "0.8.4"
+dependencies = [
+    "itoa 1.0.18 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "itoa"
+version = "1.0.18"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+replace = "itoa 1.0.18"
+
+[[package]]
+name = "itoa"
+version = "1.0.18"
+dependencies = [
+    "reqwest 0.12.0",
+]
+
+[[package]]
+name = "reqwest"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+"#;
+
+    let closure = transitive_closure(replaced_lock, "garnet-cli");
+    assert_eq!(
+        find_forbidden_in_closure(&closure),
+        vec![("reqwest".to_string(), "HTTP client/transport")]
+    );
+    assert_eq!(
+        find_unclassified_in_closure(&closure),
+        vec!["reqwest".to_string()]
+    );
 }
 
 #[test]
