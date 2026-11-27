@@ -43,9 +43,13 @@ extends #221's CST.
   and is now subsumed on spans. Existing AST consumers (interp, check, vm) keep using
   `parse_source` and are untouched; CST-first migration is the rest of RB-4b.
 - `parse_cst_with_budget_and_edition` (RB-4b.1) applies the parser's fail-fast
-  fences (source-bytes, token-nesting depth) error-TOLERANTLY — it records
-  `SyntaxError`s but always builds a round-trippable tree, so the rowan path
-  never silently accepts an input `parse_source` rejects. `parse_cst` is the
+  fences (source-bytes, token-nesting depth including per-block lexical `defer`
+  nesting) error-TOLERANTLY — it records `SyntaxError`s but always builds a
+  round-trippable tree, so the rowan path never silently accepts an input
+  `parse_source` rejects (including empty parenthesized expressions `()`).
+  `DeferStmt` nodes (`defer { ... }` and `defer expr`) lower via the same
+  iterative LIFO desugaring in `lower_block` and `lower_block_like` with
+  span-exact parity against `parse_source`. `parse_cst` is the
   default-budget+edition wrapper. Keep both fences in lockstep with
   `parse_source`; a new budget axis added to the parser must be mirrored here.
 - `SyntaxError` carries a `span` (a range over the offending token), not just a

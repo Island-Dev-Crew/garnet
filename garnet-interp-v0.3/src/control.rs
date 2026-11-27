@@ -64,6 +64,10 @@ pub fn eval_try(
         // Enforcement traps (capability refusals, `@max_depth` breaches) are
         // uncatchable and must not be rescued or overridden by `ensure` (BE-F1).
         Err(err @ RuntimeError::Trap(_)) => return Err(err),
+        // Rescue-free `try`/`ensure` (including lexically desugared `defer`)
+        // must preserve the exact non-trap error variant rather than coercing
+        // `DivByZero`/`IndexOOB`/`Type`/`Message` into `Raised(Str)`.
+        Err(err) if rescues.is_empty() => Err(err),
         Err(RuntimeError::Raised(ex_value)) => try_rescue(ex_value, rescues, env),
         Err(RuntimeError::Message(msg)) => {
             // Message-style errors can also be caught via untyped rescue.

@@ -248,10 +248,13 @@ fn span_exact_on_transparent_wrapper_constructs() {
     }
     assert!(diffs.is_empty(), "span divergence on: {diffs:?}");
 
-    // Malformed defer forms must agree on error verdict across parser and CST.
+    // Malformed defer forms (including empty parens `()` in brace and do/end
+    // blocks) must agree on error verdict across parser and CST.
     for bad in [
         "@caps()\ndef bad() { defer }\n",
         "@caps()\ndef bad() { let x = defer f() }\n",
+        "@caps()\ndef bad() { defer (); }\n",
+        "@caps()\ndef bad() { runner.run do defer () end }\n",
     ] {
         assert!(parse_source(bad).is_err(), "parser must reject: {bad}");
         assert!(
@@ -259,6 +262,17 @@ fn span_exact_on_transparent_wrapper_constructs() {
             "CST must record error for: {bad}"
         );
     }
+
+    // Flat defer chains exceeding default `max_depth` must also agree on error verdict.
+    let over_defer_budget = format!(
+        "@caps()\ndef main() {{\n{}42\n}}\n",
+        "defer 0;\n".repeat(300)
+    );
+    assert!(parse_source(&over_defer_budget).is_err());
+    assert!(
+        !parse_cst(&over_defer_budget).errors.is_empty(),
+        "default-budget CST must record depth error on flat defer chain"
+    );
 }
 
 /// The span projection recurses with the AST lowering, so `cst_to_ast` must

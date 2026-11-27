@@ -425,3 +425,40 @@ fn go_lexical_defer_runs_on_early_return_break_and_raise_skipping_unreached() {
         vec!["r1", "r2", "r1", "0", "1", "e2", "e1", "boom"]
     );
 }
+
+#[test]
+fn go_lexical_defer_preserves_original_runtime_error_variant() {
+    let without_defer = r#"
+        def main() {
+            if true {
+                1 / 0
+            }
+        }
+    "#;
+    let with_defer = r#"
+        def main() {
+            let mut ran = 0
+            if true {
+                defer { ran = 1 }
+                1 / 0
+            }
+        }
+    "#;
+    let mut i1 = Interpreter::new();
+    i1.load_source(without_defer).unwrap();
+    let e1 = i1.call("main", vec![]).unwrap_err();
+
+    let mut i2 = Interpreter::new();
+    i2.load_source(with_defer).unwrap();
+    let e2 = i2.call("main", vec![]).unwrap_err();
+
+    assert!(
+        matches!(e1, garnet_interp::RuntimeError::DivByZero),
+        "expected DivByZero without defer, got {e1:?}"
+    );
+    assert!(
+        matches!(e2, garnet_interp::RuntimeError::DivByZero),
+        "expected identical DivByZero with defer (not Raised), got {e2:?}"
+    );
+    assert_eq!(e1.to_string(), e2.to_string());
+}

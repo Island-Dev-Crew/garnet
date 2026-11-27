@@ -128,7 +128,7 @@ fn check_block_with_facts(
         check_stmt(statement, function_name, report, facts);
     }
     if let Some(tail) = &block.tail_expr {
-        check_expr(tail, function_name, report);
+        check_expr_with_facts(tail, function_name, report, facts);
     }
 }
 
@@ -205,14 +205,27 @@ fn check_stmt(
                 check_expr(value, function_name, report);
             }
         }
-        Stmt::Raise { value, .. } | Stmt::Expr(value) => {
+        Stmt::Raise { value, .. } => {
             check_expr(value, function_name, report);
+        }
+        Stmt::Expr(value) => {
+            check_expr_with_facts(value, function_name, report, facts);
         }
         Stmt::Continue { .. } => {}
     }
 }
 
 fn check_expr(expr: &Expr, function_name: &str, report: &mut BoundedLoopReport) {
+    let mut empty = IntFacts::new();
+    check_expr_with_facts(expr, function_name, report, &mut empty);
+}
+
+fn check_expr_with_facts(
+    expr: &Expr,
+    function_name: &str,
+    report: &mut BoundedLoopReport,
+    facts: &mut IntFacts,
+) {
     match expr {
         Expr::Binary { lhs, rhs, .. } => {
             check_expr(lhs, function_name, report);
@@ -249,12 +262,15 @@ fn check_expr(expr: &Expr, function_name: &str, report: &mut BoundedLoopReport) 
         } => {
             check_expr(condition, function_name, report);
             check_block(then_block, function_name, report);
+            clear_assigned_facts(facts, then_block);
             for (condition, block) in elsif_clauses {
                 check_expr(condition, function_name, report);
                 check_block(block, function_name, report);
+                clear_assigned_facts(facts, block);
             }
             if let Some(block) = else_block {
                 check_block(block, function_name, report);
+                clear_assigned_facts(facts, block);
             }
         }
         Expr::Match { subject, arms, .. } => {
@@ -264,6 +280,7 @@ fn check_expr(expr: &Expr, function_name: &str, report: &mut BoundedLoopReport) 
                     check_expr(guard, function_name, report);
                 }
                 check_block(&arm.body, function_name, report);
+                clear_assigned_facts(facts, &arm.body);
             }
         }
         Expr::Try {
@@ -272,12 +289,32 @@ fn check_expr(expr: &Expr, function_name: &str, report: &mut BoundedLoopReport) 
             ensure,
             ..
         } => {
-            check_block(body, function_name, report);
-            for rescue in rescues {
-                check_block(&rescue.body, function_name, report);
-            }
-            if let Some(ensure) = ensure {
-                check_block(ensure, function_name, report);
+            if rescues.is_empty() && ensure.is_some() {
+                // Rescue-free `try`/`ensure` (including lexically desugared
+                // `defer`) executes `body` immediately under the incoming
+                // counter facts, then runs `ensure` on exit. Propagate
+                // incoming facts into `body` (scoped copy so `body`-local
+                // declarations do not leak) and invalidate outer facts
+                // mutated by `body` before checking `ensure` and continuing.
+                let mut body_facts = facts.clone();
+                check_block_with_facts(body, function_name, report, &mut body_facts);
+                clear_assigned_facts(facts, body);
+                if let Some(ensure_block) = ensure {
+                    let mut ensure_facts = facts.clone();
+                    check_block_with_facts(ensure_block, function_name, report, &mut ensure_facts);
+                    clear_assigned_facts(facts, ensure_block);
+                }
+            } else {
+                check_block(body, function_name, report);
+                clear_assigned_facts(facts, body);
+                for rescue in rescues {
+                    check_block(&rescue.body, function_name, report);
+                    clear_assigned_facts(facts, &rescue.body);
+                }
+                if let Some(ensure_block) = ensure {
+                    check_block(ensure_block, function_name, report);
+                    clear_assigned_facts(facts, ensure_block);
+                }
             }
         }
         Expr::Closure { body, .. } => match body.as_ref() {
@@ -427,29 +464,297 @@ fn compare_ints(lhs: i64, rhs: i64, op: BinOp) -> Option<bool> {
 }
 
 fn counter_step_for_body(body: &Block, var: &str) -> Option<i64> {
-    let mut step = 0_i64;
-    for statement in &body.stmts {
-        if let Some(delta) = counter_step_for_statement(statement, var)? {
-            step = step.checked_add(delta)?;
-        }
-    }
+    let step = counter_step_for_block_delta(body, var)?;
     (step != 0).then_some(step)
 }
 
-fn counter_step_for_statement(statement: &Stmt, var: &str) -> Option<Option<i64>> {
-    match statement {
-        Stmt::Assign {
-            target: Expr::Ident(name, _),
-            op,
-            value,
+fn counter_step_for_block_delta(body: &Block, var: &str) -> Option<i64> {
+    let mut step = 0_i64;
+    let mut shadowed = false;
+    for statement in &body.stmts {
+        if shadowed {
+            continue;
+        }
+        match statement {
+            Stmt::Let(decl) => {
+                if expr_mutates_var(&decl.value, var) {
+                    return None;
+                }
+                if decl.name == var {
+                    shadowed = true;
+                }
+            }
+            Stmt::Var(decl) => {
+                if expr_mutates_var(&decl.value, var) {
+                    return None;
+                }
+                if decl.name == var {
+                    shadowed = true;
+                }
+            }
+            Stmt::Const(decl) => {
+                if expr_mutates_var(&decl.value, var) {
+                    return None;
+                }
+                if decl.name == var {
+                    shadowed = true;
+                }
+            }
+            Stmt::Assign {
+                target: Expr::Ident(name, _),
+                op,
+                value,
+                ..
+            } if name == var => {
+                if expr_mutates_var(value, var) {
+                    return None;
+                }
+                let delta = match (op, value) {
+                    (AssignOp::PlusEq, Expr::Int(delta, _)) if *delta > 0 => *delta,
+                    (AssignOp::MinusEq, Expr::Int(delta, _)) if *delta > 0 => -*delta,
+                    _ => return None,
+                };
+                step = step.checked_add(delta)?;
+            }
+            Stmt::Assign { target, value, .. } => {
+                if target_is_ident(target, var)
+                    || expr_mutates_var(target, var)
+                    || expr_mutates_var(value, var)
+                {
+                    return None;
+                }
+            }
+            Stmt::Expr(expr) => {
+                if let Some(delta) = counter_step_for_expr(expr, var)? {
+                    step = step.checked_add(delta)?;
+                }
+            }
+            Stmt::While {
+                condition, body, ..
+            } => {
+                if expr_mutates_var(condition, var) || block_mutates_var(body, var) {
+                    return None;
+                }
+            }
+            Stmt::For {
+                var: loop_var,
+                iter,
+                body,
+                ..
+            } => {
+                if expr_mutates_var(iter, var) || (loop_var != var && block_mutates_var(body, var))
+                {
+                    return None;
+                }
+            }
+            Stmt::Loop { body, .. } => {
+                if block_mutates_var(body, var) {
+                    return None;
+                }
+            }
+            Stmt::Break { value, .. }
+            | Stmt::Return { value, .. }
+            | Stmt::Yield { value, .. }
+            | Stmt::Next { value, .. } => {
+                if value.as_ref().is_some_and(|e| expr_mutates_var(e, var)) {
+                    return None;
+                }
+            }
+            Stmt::Raise { value, .. } => {
+                if expr_mutates_var(value, var) {
+                    return None;
+                }
+            }
+            Stmt::Continue { .. } => {}
+        }
+    }
+    if !shadowed {
+        if let Some(tail) = &body.tail_expr {
+            if let Some(delta) = counter_step_for_expr(tail, var)? {
+                step = step.checked_add(delta)?;
+            }
+        }
+    }
+    Some(step)
+}
+
+fn counter_step_for_expr(expr: &Expr, var: &str) -> Option<Option<i64>> {
+    match expr {
+        Expr::Try {
+            body,
+            rescues,
+            ensure: Some(ensure_block),
             ..
-        } if name == var => match (op, value) {
-            (AssignOp::PlusEq, Expr::Int(delta, _)) if *delta > 0 => Some(Some(*delta)),
-            (AssignOp::MinusEq, Expr::Int(delta, _)) if *delta > 0 => Some(Some(-*delta)),
-            _ => None,
-        },
-        Stmt::Assign { target, .. } if target_is_ident(target, var) => None,
-        _ => Some(None),
+        } if rescues.is_empty() => {
+            // Any mutation of the loop counter in `defer`/`ensure` invalidates
+            // the progress proof (prevents `defer { i = 0 }` infinite loops).
+            if block_mutates_var(ensure_block, var) {
+                return None;
+            }
+            let delta = counter_step_for_block_delta(body, var)?;
+            Some(Some(delta))
+        }
+        other => {
+            if expr_mutates_var(other, var) {
+                None
+            } else {
+                Some(None)
+            }
+        }
+    }
+}
+
+fn block_mutates_var(block: &Block, var: &str) -> bool {
+    for statement in &block.stmts {
+        match statement {
+            Stmt::Let(decl) => {
+                if expr_mutates_var(&decl.value, var) {
+                    return true;
+                }
+                if decl.name == var {
+                    return false;
+                }
+            }
+            Stmt::Var(decl) => {
+                if expr_mutates_var(&decl.value, var) {
+                    return true;
+                }
+                if decl.name == var {
+                    return false;
+                }
+            }
+            Stmt::Const(decl) => {
+                if expr_mutates_var(&decl.value, var) {
+                    return true;
+                }
+                if decl.name == var {
+                    return false;
+                }
+            }
+            Stmt::Assign { target, value, .. } => {
+                if target_is_ident(target, var)
+                    || expr_mutates_var(target, var)
+                    || expr_mutates_var(value, var)
+                {
+                    return true;
+                }
+            }
+            Stmt::While {
+                condition, body, ..
+            } => {
+                if expr_mutates_var(condition, var) || block_mutates_var(body, var) {
+                    return true;
+                }
+            }
+            Stmt::For {
+                var: loop_var,
+                iter,
+                body,
+                ..
+            } => {
+                if expr_mutates_var(iter, var) || (loop_var != var && block_mutates_var(body, var))
+                {
+                    return true;
+                }
+            }
+            Stmt::Loop { body, .. } => {
+                if block_mutates_var(body, var) {
+                    return true;
+                }
+            }
+            Stmt::Break { value, .. }
+            | Stmt::Return { value, .. }
+            | Stmt::Yield { value, .. }
+            | Stmt::Next { value, .. } => {
+                if value.as_ref().is_some_and(|e| expr_mutates_var(e, var)) {
+                    return true;
+                }
+            }
+            Stmt::Raise { value, .. } | Stmt::Expr(value) => {
+                if expr_mutates_var(value, var) {
+                    return true;
+                }
+            }
+            Stmt::Continue { .. } => {}
+        }
+    }
+    block
+        .tail_expr
+        .as_deref()
+        .is_some_and(|tail| expr_mutates_var(tail, var))
+}
+
+fn expr_mutates_var(expr: &Expr, var: &str) -> bool {
+    match expr {
+        Expr::Binary { lhs, rhs, .. } => expr_mutates_var(lhs, var) || expr_mutates_var(rhs, var),
+        Expr::Unary { expr, .. } | Expr::Cast { expr, .. } | Expr::Spawn { expr, .. } => {
+            expr_mutates_var(expr, var)
+        }
+        Expr::Call { callee, args, .. } => {
+            expr_mutates_var(callee, var) || args.iter().any(|a| expr_mutates_var(a, var))
+        }
+        Expr::Method { receiver, args, .. } => {
+            expr_mutates_var(receiver, var) || args.iter().any(|a| expr_mutates_var(a, var))
+        }
+        Expr::Field { receiver, .. } => expr_mutates_var(receiver, var),
+        Expr::Index {
+            receiver, index, ..
+        } => expr_mutates_var(receiver, var) || expr_mutates_var(index, var),
+        Expr::If {
+            condition,
+            then_block,
+            elsif_clauses,
+            else_block,
+            ..
+        } => {
+            expr_mutates_var(condition, var)
+                || block_mutates_var(then_block, var)
+                || elsif_clauses
+                    .iter()
+                    .any(|(c, b)| expr_mutates_var(c, var) || block_mutates_var(b, var))
+                || else_block
+                    .as_ref()
+                    .is_some_and(|b| block_mutates_var(b, var))
+        }
+        Expr::Match { subject, arms, .. } => {
+            expr_mutates_var(subject, var)
+                || arms.iter().any(|arm| {
+                    arm.guard.as_ref().is_some_and(|g| expr_mutates_var(g, var))
+                        || block_mutates_var(&arm.body, var)
+                })
+        }
+        Expr::Try {
+            body,
+            rescues,
+            ensure,
+            ..
+        } => {
+            block_mutates_var(body, var)
+                || rescues.iter().any(|r| block_mutates_var(&r.body, var))
+                || ensure.as_ref().is_some_and(|b| block_mutates_var(b, var))
+        }
+        Expr::Closure { params, body, .. } => {
+            if params.iter().any(|p| p.name == var) {
+                false
+            } else {
+                match body.as_ref() {
+                    ClosureBody::Block(b) => block_mutates_var(b, var),
+                    ClosureBody::Expr(e) => expr_mutates_var(e, var),
+                }
+            }
+        }
+        Expr::Array { elements, .. } => elements.iter().any(|e| expr_mutates_var(e, var)),
+        Expr::Map { entries, .. } => entries
+            .iter()
+            .any(|(k, v)| expr_mutates_var(k, var) || expr_mutates_var(v, var)),
+        Expr::Int(_, _)
+        | Expr::Float(_, _)
+        | Expr::Bool(_, _)
+        | Expr::Nil(_)
+        | Expr::Str(_, _)
+        | Expr::Symbol(_, _)
+        | Expr::Ident(_, _)
+        | Expr::Path(_, _) => false,
     }
 }
 
@@ -511,13 +816,10 @@ fn record_assignment_fact(facts: &mut IntFacts, target: &Expr, op: AssignOp, val
 }
 
 fn clear_assigned_facts(facts: &mut IntFacts, block: &Block) {
-    for statement in &block.stmts {
-        if let Stmt::Assign {
-            target: Expr::Ident(name, _),
-            ..
-        } = statement
-        {
-            facts.remove(name);
+    let tracked: Vec<String> = facts.keys().cloned().collect();
+    for name in tracked {
+        if block_mutates_var(block, &name) {
+            facts.remove(&name);
         }
     }
 }

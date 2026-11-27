@@ -159,12 +159,39 @@ fn method_signature(method: &FnDef) -> MethodSignature {
     }
 }
 
-#[derive(Default, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+enum BindingKey {
+    Local(usize),
+    Unbound(String),
+}
+
+#[derive(Clone)]
 struct Env {
-    /// Set of bindings that have been moved out of and may not be used.
-    moved: HashMap<String, MoveRecord>,
+    /// Lexical scope stack mapping binding names to unique local binding IDs.
+    scopes: Vec<HashMap<String, usize>>,
+    /// Next unique local binding ID.
+    next_id: usize,
+    /// Moved places `(root_binding_key, subpath)` on the continuing path.
+    moved: HashMap<(BindingKey, Vec<String>), MoveRecord>,
+    /// Moved places observed on any nonlocal exit (`return`, `break`,
+    /// `continue`, `raise`) inside the current region. Used so `ensure`/`defer`
+    /// sees moves performed on early-exiting branches without poisoning
+    /// sequential code after a returning `if` branch.
+    exit_moved: HashMap<(BindingKey, Vec<String>), MoveRecord>,
     /// Simple declared type names for bindings when the parser gives us one.
-    types: HashMap<String, String>,
+    types: HashMap<BindingKey, String>,
+}
+
+impl Default for Env {
+    fn default() -> Self {
+        Self {
+            scopes: vec![HashMap::new()],
+            next_id: 0,
+            moved: HashMap::new(),
+            exit_moved: HashMap::new(),
+            types: HashMap::new(),
+        }
+    }
 }
 
 struct BranchOutcome {
@@ -173,64 +200,78 @@ struct BranchOutcome {
 }
 
 impl Env {
-    fn record_move(&mut self, binding: &str, callee: &str) {
+    fn push_scope(&mut self) {
+        self.scopes.push(HashMap::new());
+    }
+
+    fn pop_scope(&mut self) {
+        if self.scopes.len() <= 1 {
+            return;
+        }
+        let popped = self.scopes.pop().unwrap_or_default();
+        let popped_ids: HashSet<usize> = popped.values().copied().collect();
+        self.moved
+            .retain(|(key, _), _| !matches!(key, BindingKey::Local(id) if popped_ids.contains(id)));
+        self.exit_moved
+            .retain(|(key, _), _| !matches!(key, BindingKey::Local(id) if popped_ids.contains(id)));
+        self.types
+            .retain(|key, _| !matches!(key, BindingKey::Local(id) if popped_ids.contains(id)));
+    }
+
+    fn lookup_key(&self, binding: &str) -> BindingKey {
+        for scope in self.scopes.iter().rev() {
+            if let Some(&id) = scope.get(binding) {
+                return BindingKey::Local(id);
+            }
+        }
+        BindingKey::Unbound(binding.to_string())
+    }
+
+    fn declare_binding(&mut self, binding: &str, ty: Option<&TypeExpr>) {
+        let id = self.next_id;
+        self.next_id += 1;
+        if let Some(scope) = self.scopes.last_mut() {
+            scope.insert(binding.to_string(), id);
+        }
+        let key = BindingKey::Local(id);
+        match ty.and_then(simple_type_name) {
+            Some(name) => {
+                self.types.insert(key, name);
+            }
+            None => {
+                self.types.remove(&key);
+            }
+        }
+    }
+
+    fn record_move_place(&mut self, place: &[String], callee: &str) {
+        let Some((root, rest)) = place.split_first() else {
+            return;
+        };
+        let key = self.lookup_key(root);
+        let binding = format_place(place);
         self.moved.insert(
-            binding.to_string(),
+            (key, rest.to_vec()),
             MoveRecord {
-                binding: binding.to_string(),
+                binding,
                 callee: callee.to_string(),
             },
         );
     }
 
-    fn record_move_place(&mut self, place: &[String], callee: &str) {
-        let binding = format_place(place);
-        self.record_move(&binding, callee);
-    }
-
-    fn rebind(&mut self, binding: &str) {
-        self.rebind_place(&[binding.to_string()]);
-    }
-
     fn rebind_place(&mut self, place: &[String]) {
-        let binding = format_place(place);
-        let prefix = format!("{binding}.");
-        self.moved
-            .retain(|moved, _| moved != &binding && !moved.starts_with(&prefix));
+        let Some((root, rest)) = place.split_first() else {
+            return;
+        };
+        let key = self.lookup_key(root);
+        self.moved.retain(|(moved_key, moved_rest), _| {
+            moved_key != &key || !moved_rest.starts_with(rest)
+        });
     }
 
-    fn rebind_with_type(&mut self, binding: &str, ty: Option<&TypeExpr>) {
-        self.rebind(binding);
-        match ty.and_then(simple_type_name) {
-            Some(name) => {
-                self.types.insert(binding.to_string(), name);
-            }
-            None => {
-                self.types.remove(binding);
-            }
-        }
-    }
-
-    fn forget_type(&mut self, binding: &str) {
-        self.types.remove(binding);
-    }
-
-    fn restore_binding_from(&mut self, binding: &str, snapshot: &Env) {
-        let prefix = format!("{binding}.");
-        self.moved
-            .retain(|moved, _| moved != binding && !moved.starts_with(&prefix));
-        for (moved, record) in &snapshot.moved {
-            if moved == binding || moved.starts_with(&prefix) {
-                self.moved.insert(moved.clone(), record.clone());
-            }
-        }
-        match snapshot.types.get(binding) {
-            Some(ty) => {
-                self.types.insert(binding.to_string(), ty.clone());
-            }
-            None => {
-                self.types.remove(binding);
-            }
+    fn record_exit_moves(&mut self) {
+        for (k, v) in &self.moved {
+            self.exit_moved.insert(k.clone(), v.clone());
         }
     }
 
@@ -239,14 +280,18 @@ impl Env {
     }
 
     fn moved_record_for_place(&self, place: &[String]) -> Option<&MoveRecord> {
-        self.moved.iter().find_map(|(moved, record)| {
-            let moved_place = split_place(moved);
-            places_overlap(&moved_place, place).then_some(record)
-        })
+        let (root, rest) = place.split_first()?;
+        let key = self.lookup_key(root);
+        self.moved
+            .iter()
+            .find_map(|((moved_key, moved_rest), record)| {
+                (moved_key == &key && places_overlap(moved_rest, rest)).then_some(record)
+            })
     }
 
     fn type_of(&self, binding: &str) -> Option<&str> {
-        self.types.get(binding).map(String::as_str)
+        let key = self.lookup_key(binding);
+        self.types.get(&key).map(String::as_str)
     }
 }
 
@@ -292,10 +337,6 @@ fn format_place(place: &[String]) -> String {
     place.join(".")
 }
 
-fn split_place(place: &str) -> Vec<String> {
-    place.split('.').map(ToOwned::to_owned).collect()
-}
-
 fn places_overlap(left: &[String], right: &[String]) -> bool {
     left == right || left.starts_with(right) || right.starts_with(left)
 }
@@ -304,7 +345,7 @@ fn check_fn_body(f: &FnDef, sigs: &SignatureTables, diags: &mut Vec<CheckError>)
     let mut env = Env::default();
     // Pre-bind the function's parameters as live (not moved).
     for p in &f.params {
-        env.rebind_with_type(&p.name, p.ty.as_ref());
+        env.declare_binding(&p.name, p.ty.as_ref());
     }
     let _ = check_branch_block(&f.body, &env, sigs, &f.name, diags);
 }
@@ -317,21 +358,28 @@ fn check_branch_block(
     diags: &mut Vec<CheckError>,
 ) -> BranchOutcome {
     let mut branch_env = base.clone();
+    branch_env.push_scope();
+    let mut continues = true;
     for stmt in &block.stmts {
         check_stmt(stmt, &mut branch_env, sigs, fn_name, diags);
-        if matches!(stmt, Stmt::Return { .. }) {
-            return BranchOutcome {
-                env: branch_env,
-                continues: false,
-            };
+        if matches!(
+            stmt,
+            Stmt::Return { .. } | Stmt::Break { .. } | Stmt::Continue { .. } | Stmt::Raise { .. }
+        ) {
+            branch_env.record_exit_moves();
+            continues = false;
+            break;
         }
     }
-    if let Some(tail) = &block.tail_expr {
-        check_expr(tail, &mut branch_env, sigs, fn_name, diags);
+    if continues {
+        if let Some(tail) = &block.tail_expr {
+            check_expr(tail, &mut branch_env, sigs, fn_name, diags);
+        }
     }
+    branch_env.pop_scope();
     BranchOutcome {
         env: branch_env,
-        continues: true,
+        continues,
     }
 }
 
@@ -345,15 +393,15 @@ fn check_stmt(
     match stmt {
         Stmt::Let(decl) => {
             check_expr(&decl.value, env, sigs, fn_name, diags);
-            env.rebind_with_type(&decl.name, decl.ty.as_ref());
+            env.declare_binding(&decl.name, decl.ty.as_ref());
         }
         Stmt::Var(decl) => {
             check_expr(&decl.value, env, sigs, fn_name, diags);
-            env.rebind_with_type(&decl.name, decl.ty.as_ref());
+            env.declare_binding(&decl.name, decl.ty.as_ref());
         }
         Stmt::Const(decl) => {
             check_expr(&decl.value, env, sigs, fn_name, diags);
-            env.rebind_with_type(&decl.name, decl.ty.as_ref());
+            env.declare_binding(&decl.name, decl.ty.as_ref());
         }
         Stmt::Assign { target, value, .. } => {
             check_expr(value, env, sigs, fn_name, diags);
@@ -372,6 +420,7 @@ fn check_stmt(
                 *env = outcome.env;
             } else {
                 *env = snapshot;
+                env.exit_moved.extend(outcome.env.exit_moved);
             }
         }
         Stmt::For {
@@ -380,14 +429,15 @@ fn check_stmt(
             check_expr(iter, env, sigs, fn_name, diags);
             let snapshot = env.clone();
             let mut body_base = snapshot.clone();
-            body_base.rebind(var);
-            body_base.forget_type(var);
-            let outcome = check_branch_block(body, &body_base, sigs, fn_name, diags);
+            body_base.push_scope();
+            body_base.declare_binding(var, None);
+            let mut outcome = check_branch_block(body, &body_base, sigs, fn_name, diags);
+            outcome.env.pop_scope();
             if outcome.continues {
                 *env = outcome.env;
-                env.restore_binding_from(var, &snapshot);
             } else {
                 *env = snapshot;
+                env.exit_moved.extend(outcome.env.exit_moved);
             }
         }
         Stmt::Loop { body, .. } => {
@@ -397,6 +447,7 @@ fn check_stmt(
                 *env = outcome.env;
             } else {
                 *env = snapshot;
+                env.exit_moved.extend(outcome.env.exit_moved);
             }
         }
         Stmt::Break { value, .. }
@@ -506,15 +557,19 @@ fn check_expr(
             check_expr(condition, env, sigs, fn_name, diags);
             let snapshot = env.clone();
             let mut merged_moved = snapshot.moved.clone();
+            let mut merged_exit_moved = snapshot.exit_moved.clone();
 
             // Each branch is checked independently against a snapshot of
             // env. Conservative: moves from branches that may continue are
-            // merged after the if. A branch that returns from the function
-            // cannot poison later code on paths that still continue.
+            // merged into `moved` after the if; moves from nonlocal-exiting
+            // branches are always propagated in `exit_moved` so enclosing
+            // `ensure`/`defer` cleanups observe them without poisoning
+            // sequential code after a returning branch.
             let then_outcome = check_branch_block(then_block, &snapshot, sigs, fn_name, diags);
             if then_outcome.continues {
                 merged_moved.extend(then_outcome.env.moved);
             }
+            merged_exit_moved.extend(then_outcome.env.exit_moved);
 
             for (cond, block) in elsif_clauses {
                 let mut alt_env = snapshot.clone();
@@ -526,6 +581,8 @@ fn check_expr(
                 } else {
                     merged_moved.extend(after_cond.moved);
                 }
+                merged_exit_moved.extend(after_cond.exit_moved);
+                merged_exit_moved.extend(branch_outcome.env.exit_moved);
             }
 
             if let Some(b) = else_block {
@@ -533,36 +590,39 @@ fn check_expr(
                 if branch_outcome.continues {
                     merged_moved.extend(branch_outcome.env.moved);
                 }
+                merged_exit_moved.extend(branch_outcome.env.exit_moved);
             }
 
             env.moved = merged_moved;
+            env.exit_moved = merged_exit_moved;
         }
         Expr::Match { subject, arms, .. } => {
             check_expr(subject, env, sigs, fn_name, diags);
             let snapshot = env.clone();
             let mut merged_moved = snapshot.moved.clone();
+            let mut merged_exit_moved = snapshot.exit_moved.clone();
             for arm in arms {
-                let mut arm_env = snapshot.clone();
-                let mut pattern_bindings = HashSet::new();
-                bind_pattern(&arm.pattern, &mut arm_env, &mut pattern_bindings);
+                let mut arm_base = snapshot.clone();
+                arm_base.push_scope();
+                bind_pattern(&arm.pattern, &mut arm_base);
                 if let Some(g) = &arm.guard {
-                    check_expr(g, &mut arm_env, sigs, fn_name, diags);
+                    check_expr(g, &mut arm_base, sigs, fn_name, diags);
                 }
-                let mut guard_env = arm_env.clone();
-                let arm_outcome = check_branch_block(&arm.body, &arm_env, sigs, fn_name, diags);
-                let arm_continues = arm_outcome.continues;
-                arm_env = arm_outcome.env;
-                for binding in &pattern_bindings {
-                    guard_env.restore_binding_from(binding, &snapshot);
-                    arm_env.restore_binding_from(binding, &snapshot);
-                }
-                if arm_continues {
-                    merged_moved.extend(arm_env.moved);
+                let mut guard_env = arm_base.clone();
+                let mut arm_outcome =
+                    check_branch_block(&arm.body, &arm_base, sigs, fn_name, diags);
+                guard_env.pop_scope();
+                arm_outcome.env.pop_scope();
+                if arm_outcome.continues {
+                    merged_moved.extend(arm_outcome.env.moved);
                 } else if arm.guard.is_some() {
                     merged_moved.extend(guard_env.moved);
                 }
+                merged_exit_moved.extend(guard_env.exit_moved);
+                merged_exit_moved.extend(arm_outcome.env.exit_moved);
             }
             env.moved = merged_moved;
+            env.exit_moved = merged_exit_moved;
         }
         Expr::Try {
             body,
@@ -570,31 +630,54 @@ fn check_expr(
             ensure,
             ..
         } => {
-            for s in &body.stmts {
-                check_stmt(s, env, sigs, fn_name, diags);
+            let outer_snapshot = env.clone();
+            // Evaluate `body` in its own lexical scope so body-local shadowing
+            // (`let x = ...`) never clears moved state on outer bindings seen
+            // by `ensure` (and `defer`).
+            let body_outcome = check_branch_block(body, &outer_snapshot, sigs, fn_name, diags);
+
+            let mut after_body_moved = outer_snapshot.moved.clone();
+            if body_outcome.continues {
+                after_body_moved = body_outcome.env.moved.clone();
             }
-            if let Some(tail) = &body.tail_expr {
-                check_expr(tail, env, sigs, fn_name, diags);
-            }
+            let mut after_body_exit = outer_snapshot.exit_moved.clone();
+            after_body_exit.extend(body_outcome.env.exit_moved.clone());
+
+            let mut ensure_visible_moved = after_body_moved.clone();
+            ensure_visible_moved.extend(body_outcome.env.exit_moved.clone());
+
             for r in rescues {
+                let mut rescue_base = outer_snapshot.clone();
+                rescue_base.push_scope();
                 if let Some(name) = &r.name {
-                    env.rebind(name);
+                    rescue_base.declare_binding(name, None);
                 }
-                for s in &r.body.stmts {
-                    check_stmt(s, env, sigs, fn_name, diags);
+                let mut rescue_outcome =
+                    check_branch_block(&r.body, &rescue_base, sigs, fn_name, diags);
+                rescue_outcome.env.pop_scope();
+                if rescue_outcome.continues {
+                    after_body_moved.extend(rescue_outcome.env.moved.clone());
+                    ensure_visible_moved.extend(rescue_outcome.env.moved);
                 }
-                if let Some(tail) = &r.body.tail_expr {
-                    check_expr(tail, env, sigs, fn_name, diags);
-                }
+                after_body_exit.extend(rescue_outcome.env.exit_moved.clone());
+                ensure_visible_moved.extend(rescue_outcome.env.exit_moved);
             }
-            if let Some(e) = ensure {
-                for s in &e.stmts {
-                    check_stmt(s, env, sigs, fn_name, diags);
+
+            if let Some(ensure_block) = ensure {
+                let mut ensure_base = outer_snapshot.clone();
+                ensure_base.moved = ensure_visible_moved;
+                ensure_base.exit_moved = after_body_exit.clone();
+                let ensure_outcome =
+                    check_branch_block(ensure_block, &ensure_base, sigs, fn_name, diags);
+                if ensure_outcome.continues {
+                    after_body_moved.extend(ensure_outcome.env.moved.clone());
+                    after_body_exit.extend(ensure_outcome.env.moved);
                 }
-                if let Some(tail) = &e.tail_expr {
-                    check_expr(tail, env, sigs, fn_name, diags);
-                }
+                after_body_exit.extend(ensure_outcome.env.exit_moved);
             }
+
+            env.moved = after_body_moved;
+            env.exit_moved = after_body_exit;
         }
         Expr::Closure { .. } | Expr::Spawn { .. } => {
             // Closure / spawn bodies are deferred to v0.4: they capture the
@@ -621,21 +704,19 @@ fn check_expr(
     }
 }
 
-fn bind_pattern(pattern: &Pattern, env: &mut Env, bindings: &mut HashSet<String>) {
+fn bind_pattern(pattern: &Pattern, env: &mut Env) {
     match pattern {
         Pattern::Ident(name, _) => {
-            bindings.insert(name.clone());
-            env.rebind(name);
-            env.forget_type(name);
+            env.declare_binding(name, None);
         }
         Pattern::Tuple(items, _) => {
             for p in items {
-                bind_pattern(p, env, bindings);
+                bind_pattern(p, env);
             }
         }
         Pattern::Enum(_, items, _) => {
             for p in items {
-                bind_pattern(p, env, bindings);
+                bind_pattern(p, env);
             }
         }
         Pattern::Literal(_, _) | Pattern::Wildcard(_) | Pattern::Rest(_) => {}

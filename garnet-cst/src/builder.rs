@@ -1149,7 +1149,9 @@ impl<'a> Builder<'a> {
             TokenKind::LParen => {
                 self.start(ParenExpr);
                 self.bump(); // (
-                if !matches!(self.nth(0), TokenKind::RParen) {
+                if matches!(self.nth(0), TokenKind::RParen) {
+                    self.error("expression");
+                } else {
                     self.parse_expr();
                 }
                 self.expect(is_rparen, "')'");
