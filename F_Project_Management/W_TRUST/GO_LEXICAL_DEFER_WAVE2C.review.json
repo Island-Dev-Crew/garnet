@@ -1,0 +1,32 @@
+{
+  "author_emails": [
+    "email:275140286+islanddevcrew@users.noreply.github.com"
+  ],
+  "author_ids": [
+    275140286
+  ],
+  "base_commit": "cd627a2b7735d7c83d8823ac8afcfb0188c0e407",
+  "blocking_findings": [],
+  "content_digest": "sha256:90166b38ea98c17742c764ef9c603ffc0ada52a45d09ce173d7bfd2576a970ac",
+  "head_repository": "Island-Dev-Crew/garnet",
+  "head_repository_id": 1218183013,
+  "pull_request_id": 5534394192,
+  "pull_request_number": 636,
+  "repository": "Island-Dev-Crew/garnet",
+  "repository_id": 1218183013,
+  "review_scope": "Content proof binds exactly reviewed_head ee38f4ea1777347606a9f49d1ec535afdbb72314 (tree d6d19a4614ce0edb1406793b1de91b7a65f6ab7d) on base cd627a2b7735d7c83d8823ac8afcfb0188c0e407 and does not extend or backdate reviewed_head coverage. Touched trust-kernel paths: garnet-check-v0.3/src/borrow.rs, garnet-check-v0.3/src/bounds.rs, garnet-check-v0.3/src/lib.rs, garnet-interp-v0.3/src/control.rs (content digest sha256:90166b38ea98c17742c764ef9c603ffc0ada52a45d09ce173d7bfd2576a970ac). SCOPE: Implements North Star Wave 2C Go-style lexical `defer` (`defer expr` and `defer { ... }`) in both `def` and `@safe fn` while preserving BE-F1 uncatchable enforcement-trap bypass: (1) adds `TokenKind::KwDefer`, `SyntaxKind::DeferKw`/`DeferStmt`, LSP keyword highlighting, EBNF `defer-stmt`, iterative right-to-left LIFO desugaring to rescue-free `Expr::Try { body, rescues: [], ensure: Some(cleanup), span }` in brace and `do..end` blocks with 100% span-exact AST<->CST parity, empty-paren `()` CST error-verdict parity, and 2-unit per-defer depth accounting in `check_token_nesting`; (2) permits rescue-free `Expr::Try { rescues: [], ensure: Some(_) }` in `@safe fn` (`garnet-check-v0.3/src/lib.rs`) while continuing to reject `rescue` clauses and bare `try` without `ensure` and walking both `body` and `ensure` for FE-F4, FE-F2b/`caps_graph`, and S96 linear-effect checks; (3) hardens `garnet-check-v0.3/src/borrow.rs` (lexical `ScopeFrame`/`BindingKey` IDs, monotonic `move_id` transfer across `ensure`, separate `exit_moved`/`break_moved`/`continue_moved` tracking, fallible-op exit snapshots, `Expr::Str` interpolation walks, `elsif` fallthrough propagation, and unanimous branch re-initialization) and `garnet-check-v0.3/src/bounds.rs` (rejects deferred/interpolated counter mutations and deferred/conditional `continue` while preserving bounded and immediate-exit loops under harmless `defer`); (4) preserves BE-F1 trap bypass on `--interp` and `--vm` and preserves original non-trap `RuntimeError` variants when `rescues.is_empty()` (`garnet-interp-v0.3/src/control.rs`); (5) rematerializes reproducible playground WASM (`docs/playground/pkg/`) with pinned Node v22.22.2 and refreshes `W_PLAY_BROWSER_PROOF.json` + `ops/lane2a/evidence/30-playground-browser.png`. CROSS-FAMILY SEAT: OpenAI Codex (`gpt-6-astra`, read-only) executed 5 adversarial rounds: R1 (`fbab2890`, REJECT 4H/3M/1L) -> R2 (`7b4f617b`, REJECT 5H/4M/0L) -> R3 (`4cfc6da8`, REJECT 2H/2M/0L) -> R4 (`eef78097`, REJECT 1H/0M/0L) -> R5 (`ee38f4ea1777347606a9f49d1ec535afdbb72314`, VERDICT: CONFIRM, 0H/0M/0L, 61/61 focused + regression checks passing on native and committed WASM). IMPLEMENTER CHECKS: `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings`, `cargo test --workspace --locked` (2,510 passed, 0 failed, 6 ignored), `garnet_wasm_readiness.py --gate` (`blockers: []`, `browser_ready: true`), `xtask truth --check`, `check-agent-contracts.py` (25/25), `garnet_text_byte_policy_status.py --gate`, and `check_dogfood_pr_body.py` all passed. AUTHORS: Every commit carries the GitHub noreply identity for IslandDevCrew (ID 275140286). MERGE AUTHORITY: This premerge record is reviewer evidence only; exact-head authenticated GitHub approval by IDC-Trust-Review (ID 306739987) and Jon's merge remain required.",
+  "review_state": "APPROVED",
+  "reviewed_head": "ee38f4ea1777347606a9f49d1ec535afdbb72314",
+  "reviewed_tree": "d6d19a4614ce0edb1406793b1de91b7a65f6ab7d",
+  "reviewer_id": 306739987,
+  "reviewer_login": "IDC-Trust-Review",
+  "schema": "garnet.trust_kernel_review_record/v2",
+  "state": "premerge",
+  "touched_paths": [
+    "garnet-check-v0.3/src/borrow.rs",
+    "garnet-check-v0.3/src/bounds.rs",
+    "garnet-check-v0.3/src/lib.rs",
+    "garnet-interp-v0.3/src/control.rs"
+  ],
+  "verdict": "pass"
+}
