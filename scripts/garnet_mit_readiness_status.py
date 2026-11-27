@@ -357,11 +357,9 @@ def _vm_scaffold_present(proof: garnet_proof_benchmark_status.ProofBenchmarkStat
     )
 
 
-def _compiler_agent_llm_tier_present() -> bool:
+def _compiler_agent_llm_tier_retired_by_adr_0016() -> bool:
     required = [
-        ROOT / "garnet-suggest-llm" / "Cargo.toml",
-        ROOT / "garnet-suggest-llm" / "src" / "lib.rs",
-        ROOT / "garnet-suggest-llm" / "src" / "llm.rs",
+        ROOT / "garnet-cli" / "tests" / "adr_0016_no_model_or_http_closure.rs",
         ROOT / "scripts" / "check_determinism_no_llm.py",
         ROOT / "scripts" / "test_check_determinism_no_llm.py",
         ROOT
@@ -390,7 +388,9 @@ def _compiler_agent_llm_tier_present() -> bool:
         / "main.garnet"
         for idx in range(1, 11)
     ]
-    return all(path.exists() for path in required + snapshots)
+    return not (ROOT / "garnet-suggest-llm").exists() and all(
+        path.exists() for path in required + snapshots
+    )
 
 
 def _official_packages_seed_present() -> bool:
@@ -1930,36 +1930,31 @@ def read_status() -> MitReadinessStatus:
         ObjectiveLane(
             id="compiler_agent_llm_tier",
             label="Compiler-as-agent LLM tier (S19)",
-            status=(
-                "feature-gated-source-ready"
-                if _compiler_agent_llm_tier_present()
-                else "planned"
-            ),
-            completion_percent=85.0 if _compiler_agent_llm_tier_present() else 0.0,
+            status="planned",
+            completion_percent=0.0,
             evidence=(
-                "`garnet-suggest-llm/` provides the feature-gated S19 source tier: "
-                "deterministic suggestions run first, provider-compatible Anthropic/OpenAI/Ollama "
-                "clients use an explicit `LlmTransport` boundary, LLM findings are tagged "
-                "`@stability(non-deterministic)`, and `.garnet-cache/llm-suggest-log.jsonl` "
-                "records prompt hashes, model identity, raw response text, emitted suggestions, "
-                "timestamp, and warnings. `scripts/check_determinism_no_llm.py` guards the "
-                "determinism workflow from `--llm`; `benchmarks/paper_vi_exp3_compiler_as_agent/` "
-                "ships the harness-only Paper VI Exp 3 scaffold with ten snapshots. This is not "
-                "a shipped end-to-end CLI claim until the `garnet-cli` handoff wires "
-                "`garnet check --suggest --llm`."
+                "Removed under ADR 0016 (D-42): the unlinked `garnet-suggest-llm/` "
+                "staging crate is deleted so models stay out of the trust path. "
+                "`garnet-cli/tests/adr_0016_no_model_or_http_closure.rs` proves no "
+                "crate in `garnet-cli`'s transitive dependency closure links an HTTP "
+                "client, an ML runtime, or `garnet-suggest-llm`; "
+                "`scripts/check_determinism_no_llm.py` continues to guard the "
+                "determinism workflow from `--llm`; and "
+                "`benchmarks/paper_vi_exp3_compiler_as_agent/` remains a harness-only "
+                "scaffold with ten snapshots."
             )
-            if _compiler_agent_llm_tier_present()
-            else "No committed S19 LLM suggestion crate, determinism guard, or Exp 3 harness is present yet.",
-            blocked_by=[]
-            if _compiler_agent_llm_tier_present()
-            else ["S19 feature-gated source tier"],
-            deferred=[
-                "`garnet-cli` integration for `garnet check --suggest --llm` is a read-only-crate handoff",
-                "Shared `garnet-lang/llm` package trait waits on S18 after S17 merges",
-                "Streaming, tool/function calling, vision, and provider-specific edge features are v0.8+",
-                "Running Paper VI Exp 3 to produce h3a/h3b/h3c results is v0.7.1",
+            if _compiler_agent_llm_tier_retired_by_adr_0016()
+            else "ADR 0016 (D-42) retirement boundary is incomplete.",
+            blocked_by=[
+                "ADR 0016 prerequisites (pilot evidence, recorded demand, RFC + maintainer ruling, offline-determinism proof)"
             ]
-            if _compiler_agent_llm_tier_present()
+            if _compiler_agent_llm_tier_retired_by_adr_0016()
+            else ["ADR 0016 (D-42) removal and closure guard"],
+            deferred=[
+                "In-language model calls stay unimplemented until ADR 0016 prerequisites hold",
+                "Running Paper VI Exp 3 to produce h3a/h3b/h3c results remains deferred",
+            ]
+            if _compiler_agent_llm_tier_retired_by_adr_0016()
             else [],
         ),
         ObjectiveLane(

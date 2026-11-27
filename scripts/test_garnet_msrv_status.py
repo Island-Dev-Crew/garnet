@@ -35,8 +35,8 @@ class GarnetMsrvStatusTests(unittest.TestCase):
         status = msrv.read_status(ROOT)
         self.assertTrue(status.ok, status.findings)
         self.assertEqual(status.msrv, "1.95")
-        self.assertEqual(status.workspace_member_count, 16)
-        self.assertEqual(status.workspace_members_inheriting, 16)
+        self.assertEqual(status.workspace_member_count, 15)
+        self.assertEqual(status.workspace_members_inheriting, 15)
         self.assertEqual(status.excluded_manifests_declaring, 2)
 
     def test_gate_output_is_machine_readable(self) -> None:

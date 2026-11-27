@@ -1,7 +1,12 @@
 # ADR 0016 — Models stay out of the trust path; a model call inside a program is accepted, not implemented
 
-**Status.** Accepted (2026-10-04). Not implemented: nothing of the model call is
-built until every condition below holds and an RFC for the capability kind passes.
+**Status.** Accepted (2026-10-04); D-42 implemented (2026-11-27).
+`garnet-suggest-llm` is removed from the workspace and
+`garnet-cli/tests/adr_0016_no_model_or_http_closure.rs` proves no crate in
+`garnet-cli`'s dependency closure links an HTTP client, an ML runtime, or
+`garnet-suggest-llm`. The separate in-language model call remains accepted,
+not implemented until every condition below holds and an RFC for the
+capability kind passes.
 
 ## Context
 
@@ -40,9 +45,10 @@ nothing links (D-42), and its only transport is the test `RecordingTransport`.
     rule 2;
   - a test shows that check, diff-caps, verify and the agent loop's run stage
     produce the same bytes with the network off.
-- `garnet-suggest-llm` is removed under D-42, in the same PR as a test that no
-  crate in `garnet-cli`'s dependency closure links an HTTP client, an ML runtime or
-  that crate.
+- `garnet-suggest-llm` is removed under D-42, in the same PR as a test
+  (`garnet-cli/tests/adr_0016_no_model_or_http_closure.rs`) that no crate in
+  `garnet-cli`'s dependency closure links an HTTP client, an ML runtime or
+  that crate. (Implemented 2026-11-27.)
 
 ## Alternatives rejected
 

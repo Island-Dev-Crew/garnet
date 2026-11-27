@@ -1286,13 +1286,17 @@ class GarnetMitReadinessStatusTests(unittest.TestCase):
         )
         self.assertIn("compiler_agent_llm_tier", lanes)
         self.assertEqual(
-            "feature-gated-source-ready",
+            "planned",
             lanes["compiler_agent_llm_tier"]["status"],
         )
-        self.assertEqual(85.0, lanes["compiler_agent_llm_tier"]["completion_percent"])
-        self.assertIn("garnet-suggest-llm", lanes["compiler_agent_llm_tier"]["evidence"])
+        self.assertEqual(0.0, lanes["compiler_agent_llm_tier"]["completion_percent"])
+        self.assertIn("ADR 0016", lanes["compiler_agent_llm_tier"]["evidence"])
         self.assertIn(
-            "garnet-cli",
+            "adr_0016_no_model_or_http_closure.rs",
+            lanes["compiler_agent_llm_tier"]["evidence"],
+        )
+        self.assertIn(
+            "ADR 0016",
             " ".join(lanes["compiler_agent_llm_tier"]["deferred"]),
         )
         self.assertIn("garnet_promo_video_status.py", lanes["promo_video"]["evidence"])
