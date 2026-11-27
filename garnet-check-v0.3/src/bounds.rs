@@ -938,18 +938,114 @@ fn expr_has_continue(expr: &Expr) -> bool {
 }
 
 fn block_has_continue_or_loop(block: &Block) -> bool {
-    if block_has_continue(block) {
-        return true;
-    }
     for stmt in &block.stmts {
-        if matches!(
-            stmt,
-            Stmt::While { .. } | Stmt::For { .. } | Stmt::Loop { .. }
-        ) {
+        if stmt_has_continue_or_loop(stmt) {
             return true;
         }
     }
-    false
+    block
+        .tail_expr
+        .as_deref()
+        .is_some_and(expr_has_continue_or_loop)
+}
+
+fn stmt_has_continue_or_loop(stmt: &Stmt) -> bool {
+    match stmt {
+        Stmt::Continue { .. } | Stmt::While { .. } | Stmt::For { .. } | Stmt::Loop { .. } => true,
+        Stmt::Let(d) => expr_has_continue_or_loop(&d.value),
+        Stmt::Var(d) => expr_has_continue_or_loop(&d.value),
+        Stmt::Const(d) => expr_has_continue_or_loop(&d.value),
+        Stmt::Assign { target, value, .. } => {
+            expr_has_continue_or_loop(target) || expr_has_continue_or_loop(value)
+        }
+        Stmt::Break { value, .. }
+        | Stmt::Return { value, .. }
+        | Stmt::Yield { value, .. }
+        | Stmt::Next { value, .. } => value.as_ref().is_some_and(expr_has_continue_or_loop),
+        Stmt::Raise { value, .. } | Stmt::Expr(value) => expr_has_continue_or_loop(value),
+    }
+}
+
+fn expr_has_continue_or_loop(expr: &Expr) -> bool {
+    match expr {
+        Expr::Binary { lhs, rhs, .. } => {
+            expr_has_continue_or_loop(lhs) || expr_has_continue_or_loop(rhs)
+        }
+        Expr::Unary { expr, .. } | Expr::Cast { expr, .. } | Expr::Spawn { expr, .. } => {
+            expr_has_continue_or_loop(expr)
+        }
+        Expr::Call { callee, args, .. } => {
+            expr_has_continue_or_loop(callee) || args.iter().any(expr_has_continue_or_loop)
+        }
+        Expr::Method { receiver, args, .. } => {
+            expr_has_continue_or_loop(receiver) || args.iter().any(expr_has_continue_or_loop)
+        }
+        Expr::Field { receiver, .. } => expr_has_continue_or_loop(receiver),
+        Expr::Index {
+            receiver, index, ..
+        } => expr_has_continue_or_loop(receiver) || expr_has_continue_or_loop(index),
+        Expr::If {
+            condition,
+            then_block,
+            elsif_clauses,
+            else_block,
+            ..
+        } => {
+            expr_has_continue_or_loop(condition)
+                || block_has_continue_or_loop(then_block)
+                || elsif_clauses
+                    .iter()
+                    .any(|(c, b)| expr_has_continue_or_loop(c) || block_has_continue_or_loop(b))
+                || else_block.as_ref().is_some_and(block_has_continue_or_loop)
+        }
+        Expr::Match { subject, arms, .. } => {
+            expr_has_continue_or_loop(subject)
+                || arms.iter().any(|arm| {
+                    arm.guard.as_ref().is_some_and(expr_has_continue_or_loop)
+                        || block_has_continue_or_loop(&arm.body)
+                })
+        }
+        Expr::Try {
+            body,
+            rescues,
+            ensure,
+            ..
+        } => {
+            block_has_continue_or_loop(body)
+                || rescues.iter().any(|r| block_has_continue_or_loop(&r.body))
+                || ensure.as_ref().is_some_and(block_has_continue_or_loop)
+        }
+        Expr::Closure { .. } => false,
+        Expr::Array { elements, .. } => elements.iter().any(expr_has_continue_or_loop),
+        Expr::Map { entries, .. } => entries
+            .iter()
+            .any(|(k, v)| expr_has_continue_or_loop(k) || expr_has_continue_or_loop(v)),
+        Expr::Str(lit, _) => {
+            for part in &lit.parts {
+                if let garnet_parser::token::StrPart::Interp(src) = part {
+                    let wrapped = format!("def __interp__() {{ {src} }}");
+                    let Ok(module) = garnet_parser::parse_source(&wrapped) else {
+                        return true;
+                    };
+                    for item in &module.items {
+                        if let Item::Fn(f) = item {
+                            if block_has_continue_or_loop(&f.body) {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+            false
+        }
+        Expr::Int(_, _)
+        | Expr::Float(_, _)
+        | Expr::Bool(_, _)
+        | Expr::Nil(_)
+        | Expr::Symbol(_, _)
+        | Expr::Ident(_, _)
+        | Expr::Path(_, _) => false,
+    }
 }
 
 fn target_is_ident(expr: &Expr, expected: &str) -> bool {
@@ -959,12 +1055,26 @@ fn target_is_ident(expr: &Expr, expected: &str) -> bool {
 fn block_exits_before_next_turn(block: &Block) -> bool {
     for statement in &block.stmts {
         match statement {
-            Stmt::Break { .. } | Stmt::Return { .. } | Stmt::Raise { .. } => return true,
+            Stmt::Break { value, .. } | Stmt::Return { value, .. } => {
+                return !value.as_ref().is_some_and(expr_has_continue_or_loop);
+            }
+            Stmt::Raise { value, .. } => return !expr_has_continue_or_loop(value),
             Stmt::Continue { .. } | Stmt::While { .. } | Stmt::For { .. } | Stmt::Loop { .. } => {
                 return false;
             }
-            Stmt::Expr(expr) if expr_exits_before_next_turn(expr) => return true,
-            _ => {}
+            Stmt::Expr(expr) => {
+                if expr_exits_before_next_turn(expr) {
+                    return true;
+                }
+                if expr_has_continue_or_loop(expr) {
+                    return false;
+                }
+            }
+            other => {
+                if stmt_has_continue_or_loop(other) {
+                    return false;
+                }
+            }
         }
     }
     block

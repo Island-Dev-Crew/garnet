@@ -40,6 +40,7 @@ const INDEX_PLACE_SEGMENT: &str = "[*]";
 pub struct MoveRecord {
     pub binding: String,
     pub callee: String,
+    move_id: usize,
 }
 
 /// Map from function name -> ordered ownership kinds for its parameters.
@@ -270,17 +271,20 @@ impl Env {
         }
     }
 
-    fn record_move_place(&mut self, place: &[String], callee: &str) {
+    fn record_move_place(&mut self, place: &[String], callee: &str, next_id: &mut usize) {
         let Some((root, rest)) = place.split_first() else {
             return;
         };
         let key = self.lookup_key(root);
         let binding = format_place(place);
+        let move_id = *next_id;
+        *next_id += 1;
         self.moved.insert(
             (key, rest.to_vec()),
             MoveRecord {
                 binding,
                 callee: callee.to_string(),
+                move_id,
             },
         );
     }
@@ -404,6 +408,20 @@ fn check_fn_body(f: &FnDef, sigs: &SignatureTables, diags: &mut Vec<CheckError>)
     let _ = check_branch_block(&f.body, &env, sigs, &f.name, diags, &mut next_id);
 }
 
+fn extend_prefer_newer(
+    dst: &mut HashMap<(BindingKey, Vec<String>), MoveRecord>,
+    src: HashMap<(BindingKey, Vec<String>), MoveRecord>,
+) {
+    for (k, v) in src {
+        match dst.get(&k) {
+            Some(existing) if existing.move_id >= v.move_id => {}
+            _ => {
+                dst.insert(k, v);
+            }
+        }
+    }
+}
+
 fn check_branch_block(
     block: &Block,
     base: &Env,
@@ -416,7 +434,7 @@ fn check_branch_block(
     branch_env.push_scope();
     let mut continues = true;
     for stmt in &block.stmts {
-        check_stmt(stmt, &mut branch_env, sigs, fn_name, diags, next_id);
+        let stmt_continues = check_stmt(stmt, &mut branch_env, sigs, fn_name, diags, next_id);
         match stmt {
             Stmt::Return { .. } | Stmt::Raise { .. } => {
                 branch_env.record_exit_moves();
@@ -433,12 +451,16 @@ fn check_branch_block(
                 continues = false;
                 break;
             }
+            _ if !stmt_continues => {
+                continues = false;
+                break;
+            }
             _ => {}
         }
     }
     if continues {
         if let Some(tail) = &block.tail_expr {
-            check_expr(tail, &mut branch_env, sigs, fn_name, diags, next_id);
+            continues = check_expr(tail, &mut branch_env, sigs, fn_name, diags, next_id);
         }
     }
     branch_env.pop_scope();
@@ -455,24 +477,27 @@ fn check_stmt(
     fn_name: &str,
     diags: &mut Vec<CheckError>,
     next_id: &mut usize,
-) {
+) -> bool {
     match stmt {
         Stmt::Let(decl) => {
-            check_expr(&decl.value, env, sigs, fn_name, diags, next_id);
+            let cont = check_expr(&decl.value, env, sigs, fn_name, diags, next_id);
             env.declare_binding(&decl.name, decl.ty.as_ref(), next_id);
+            cont
         }
         Stmt::Var(decl) => {
-            check_expr(&decl.value, env, sigs, fn_name, diags, next_id);
+            let cont = check_expr(&decl.value, env, sigs, fn_name, diags, next_id);
             env.declare_binding(&decl.name, decl.ty.as_ref(), next_id);
+            cont
         }
         Stmt::Const(decl) => {
-            check_expr(&decl.value, env, sigs, fn_name, diags, next_id);
+            let cont = check_expr(&decl.value, env, sigs, fn_name, diags, next_id);
             env.declare_binding(&decl.name, decl.ty.as_ref(), next_id);
+            cont
         }
         Stmt::Assign {
             target, op, value, ..
         } => {
-            check_expr(value, env, sigs, fn_name, diags, next_id);
+            let cont = check_expr(value, env, sigs, fn_name, diags, next_id);
             if *op != garnet_parser::ast::AssignOp::Eq {
                 env.record_exit_moves();
             }
@@ -483,6 +508,7 @@ fn check_stmt(
                 }
                 env.rebind_place(&place);
             }
+            cont
         }
         Stmt::While {
             condition, body, ..
@@ -494,13 +520,14 @@ fn check_stmt(
             let outcome = check_branch_block(body, &body_base, sigs, fn_name, diags, next_id);
             let mut after_moved = snapshot.moved.clone();
             if outcome.continues {
-                after_moved.extend(outcome.env.moved);
+                extend_prefer_newer(&mut after_moved, outcome.env.moved);
             }
-            after_moved.extend(outcome.env.break_moved);
-            after_moved.extend(outcome.env.continue_moved);
+            extend_prefer_newer(&mut after_moved, outcome.env.break_moved);
+            extend_prefer_newer(&mut after_moved, outcome.env.continue_moved);
             env.moved = after_moved;
             env.has_exit |= outcome.env.has_exit;
-            env.exit_moved.extend(outcome.env.exit_moved);
+            extend_prefer_newer(&mut env.exit_moved, outcome.env.exit_moved);
+            true
         }
         Stmt::For {
             iter, body, var, ..
@@ -516,13 +543,14 @@ fn check_stmt(
             outcome.env.pop_scope();
             let mut after_moved = snapshot.moved.clone();
             if outcome.continues {
-                after_moved.extend(outcome.env.moved);
+                extend_prefer_newer(&mut after_moved, outcome.env.moved);
             }
-            after_moved.extend(outcome.env.break_moved);
-            after_moved.extend(outcome.env.continue_moved);
+            extend_prefer_newer(&mut after_moved, outcome.env.break_moved);
+            extend_prefer_newer(&mut after_moved, outcome.env.continue_moved);
             env.moved = after_moved;
             env.has_exit |= outcome.env.has_exit;
-            env.exit_moved.extend(outcome.env.exit_moved);
+            extend_prefer_newer(&mut env.exit_moved, outcome.env.exit_moved);
+            true
         }
         Stmt::Loop { body, .. } => {
             let snapshot = env.clone();
@@ -531,13 +559,14 @@ fn check_stmt(
             let outcome = check_branch_block(body, &body_base, sigs, fn_name, diags, next_id);
             let mut after_moved = snapshot.moved.clone();
             if outcome.continues {
-                after_moved.extend(outcome.env.moved);
+                extend_prefer_newer(&mut after_moved, outcome.env.moved);
             }
-            after_moved.extend(outcome.env.break_moved);
-            after_moved.extend(outcome.env.continue_moved);
+            extend_prefer_newer(&mut after_moved, outcome.env.break_moved);
+            extend_prefer_newer(&mut after_moved, outcome.env.continue_moved);
             env.moved = after_moved;
             env.has_exit |= outcome.env.has_exit;
-            env.exit_moved.extend(outcome.env.exit_moved);
+            extend_prefer_newer(&mut env.exit_moved, outcome.env.exit_moved);
+            true
         }
         Stmt::Break { value, .. }
         | Stmt::Return { value, .. }
@@ -546,9 +575,13 @@ fn check_stmt(
             if let Some(e) = value {
                 check_expr(e, env, sigs, fn_name, diags, next_id);
             }
+            true
         }
-        Stmt::Raise { value, .. } => check_expr(value, env, sigs, fn_name, diags, next_id),
-        Stmt::Continue { .. } => {}
+        Stmt::Raise { value, .. } => {
+            check_expr(value, env, sigs, fn_name, diags, next_id);
+            true
+        }
+        Stmt::Continue { .. } => true,
         Stmt::Expr(e) => check_expr(e, env, sigs, fn_name, diags, next_id),
     }
 }
@@ -560,7 +593,7 @@ fn check_expr(
     fn_name: &str,
     diags: &mut Vec<CheckError>,
     next_id: &mut usize,
-) {
+) -> bool {
     match expr {
         Expr::Ident(name, _) => {
             if let Some(rec) = env.is_moved(name) {
@@ -569,6 +602,7 @@ fn check_expr(
                     rec.binding, rec.callee
                 )));
             }
+            true
         }
         Expr::Call { callee, args, .. } => {
             // First evaluate every argument expression for inner moves.
@@ -579,12 +613,13 @@ fn check_expr(
             if let Expr::Ident(callee_name, _) = callee.as_ref() {
                 if let Some(kinds) = sigs.functions.get(callee_name) {
                     let pairs: Vec<_> = args.iter().zip(kinds.iter().copied()).collect();
-                    apply_ownership(callee_name, &pairs, env, fn_name, diags);
+                    apply_ownership(callee_name, &pairs, env, fn_name, diags, next_id);
                 }
             } else {
                 check_expr(callee, env, sigs, fn_name, diags, next_id);
             }
             env.record_exit_moves();
+            true
         }
         Expr::Method {
             receiver,
@@ -600,9 +635,10 @@ fn check_expr(
                 let mut pairs = Vec::with_capacity(args.len() + 1);
                 pairs.push((receiver.as_ref(), signature.receiver));
                 pairs.extend(args.iter().zip(signature.args.iter().copied()));
-                apply_ownership(method, &pairs, env, fn_name, diags);
+                apply_ownership(method, &pairs, env, fn_name, diags, next_id);
             }
             env.record_exit_moves();
+            true
         }
         Expr::Field { receiver, .. } => {
             if let Some(place) = place_path(expr) {
@@ -617,6 +653,7 @@ fn check_expr(
                 check_expr(receiver, env, sigs, fn_name, diags, next_id);
             }
             env.record_exit_moves();
+            true
         }
         Expr::Index {
             receiver, index, ..
@@ -634,10 +671,12 @@ fn check_expr(
                 check_expr(receiver, env, sigs, fn_name, diags, next_id);
             }
             env.record_exit_moves();
+            true
         }
         Expr::Cast { expr, .. } => {
             check_expr(expr, env, sigs, fn_name, diags, next_id);
             env.record_exit_moves();
+            true
         }
         Expr::Binary { op, lhs, rhs, .. } => {
             check_expr(lhs, env, sigs, fn_name, diags, next_id);
@@ -653,6 +692,7 @@ fn check_expr(
             ) {
                 env.record_exit_moves();
             }
+            true
         }
         Expr::Unary { op, expr, .. } => {
             check_expr(expr, env, sigs, fn_name, diags, next_id);
@@ -662,6 +702,7 @@ fn check_expr(
             ) {
                 env.record_exit_moves();
             }
+            true
         }
         Expr::If {
             condition,
@@ -669,63 +710,60 @@ fn check_expr(
             elsif_clauses,
             else_block,
             ..
-        } => {
-            check_if_expr(
-                condition,
-                then_block,
-                elsif_clauses,
-                else_block.as_ref(),
-                env,
-                sigs,
-                fn_name,
-                diags,
-                next_id,
-            );
-        }
+        } => check_if_expr(
+            condition,
+            then_block,
+            elsif_clauses,
+            else_block.as_ref(),
+            env,
+            sigs,
+            fn_name,
+            diags,
+            next_id,
+        ),
         Expr::Match { subject, arms, .. } => {
             check_match_expr(subject, arms, env, sigs, fn_name, diags, next_id);
+            true
         }
         Expr::Try {
             body,
             rescues,
             ensure,
             ..
-        } => {
-            check_try_expr(
-                body,
-                rescues,
-                ensure.as_ref(),
-                env,
-                sigs,
-                fn_name,
-                diags,
-                next_id,
-            );
-        }
-        Expr::Closure { .. } | Expr::Spawn { .. } => {
-            // Closure / spawn bodies are deferred to v0.4: they capture the
-            // surrounding environment and require a richer flow analysis.
-        }
+        } => check_try_expr(
+            body,
+            rescues,
+            ensure.as_ref(),
+            env,
+            sigs,
+            fn_name,
+            diags,
+            next_id,
+        ),
+        Expr::Closure { .. } | Expr::Spawn { .. } => true,
         Expr::Array { elements, .. } => {
             for e in elements {
                 check_expr(e, env, sigs, fn_name, diags, next_id);
             }
+            true
         }
         Expr::Map { entries, .. } => {
             for (k, v) in entries {
                 check_expr(k, env, sigs, fn_name, diags, next_id);
                 check_expr(v, env, sigs, fn_name, diags, next_id);
             }
+            true
         }
         Expr::Str(lit, _) => {
             check_interp_expr(lit, env, sigs, fn_name, diags, next_id);
+            true
         }
         Expr::Int(_, _)
         | Expr::Float(_, _)
         | Expr::Bool(_, _)
         | Expr::Nil(_)
         | Expr::Symbol(_, _)
-        | Expr::Path(_, _) => {}
+        | Expr::Path(_, _) => true,
     }
 }
 
@@ -784,10 +822,20 @@ fn check_if_expr(
     fn_name: &str,
     diags: &mut Vec<CheckError>,
     next_id: &mut usize,
-) {
+) -> bool {
     check_expr(condition, env, sigs, fn_name, diags, next_id);
     let snapshot = Box::new(env.clone());
-    let mut merged_moved = snapshot.moved.clone();
+    // When `else` is present, execution must take one of the explicit branches,
+    // so only continuing branches contribute to the merged moved map (allowing
+    // unanimous re-initialization across all branches to clear an incoming move).
+    // Without `else`, the implicit fallthrough preserves `snapshot.moved`.
+    let has_else = else_block.is_some();
+    let mut merged_moved = if has_else {
+        HashMap::new()
+    } else {
+        snapshot.moved.clone()
+    };
+    let mut any_continues = !has_else;
     let mut merged_has_exit = snapshot.has_exit;
     let mut merged_exit_moved = snapshot.exit_moved.clone();
     let mut merged_has_break = snapshot.has_break;
@@ -797,14 +845,15 @@ fn check_if_expr(
 
     let then_outcome = check_branch_block(then_block, &snapshot, sigs, fn_name, diags, next_id);
     if then_outcome.continues {
-        merged_moved.extend(then_outcome.env.moved);
+        any_continues = true;
+        extend_prefer_newer(&mut merged_moved, then_outcome.env.moved);
     }
     merged_has_exit |= then_outcome.env.has_exit;
-    merged_exit_moved.extend(then_outcome.env.exit_moved);
+    extend_prefer_newer(&mut merged_exit_moved, then_outcome.env.exit_moved);
     merged_has_break |= then_outcome.env.has_break;
-    merged_break_moved.extend(then_outcome.env.break_moved);
+    extend_prefer_newer(&mut merged_break_moved, then_outcome.env.break_moved);
     merged_has_continue |= then_outcome.env.has_continue;
-    merged_continue_moved.extend(then_outcome.env.continue_moved);
+    extend_prefer_newer(&mut merged_continue_moved, then_outcome.env.continue_moved);
 
     for (cond, block) in elsif_clauses {
         let mut alt_env = (*snapshot).clone();
@@ -812,41 +861,54 @@ fn check_if_expr(
         let after_cond = alt_env.clone();
         let branch_outcome = check_branch_block(block, &after_cond, sigs, fn_name, diags, next_id);
         if branch_outcome.continues {
-            merged_moved.extend(branch_outcome.env.moved);
-        } else {
-            merged_moved.extend(after_cond.moved);
+            any_continues = true;
+            extend_prefer_newer(&mut merged_moved, branch_outcome.env.moved);
+        } else if !has_else {
+            extend_prefer_newer(&mut merged_moved, after_cond.moved);
         }
         merged_has_exit |= after_cond.has_exit | branch_outcome.env.has_exit;
-        merged_exit_moved.extend(after_cond.exit_moved);
-        merged_exit_moved.extend(branch_outcome.env.exit_moved);
+        extend_prefer_newer(&mut merged_exit_moved, after_cond.exit_moved);
+        extend_prefer_newer(&mut merged_exit_moved, branch_outcome.env.exit_moved);
         merged_has_break |= after_cond.has_break | branch_outcome.env.has_break;
-        merged_break_moved.extend(after_cond.break_moved);
-        merged_break_moved.extend(branch_outcome.env.break_moved);
+        extend_prefer_newer(&mut merged_break_moved, after_cond.break_moved);
+        extend_prefer_newer(&mut merged_break_moved, branch_outcome.env.break_moved);
         merged_has_continue |= after_cond.has_continue | branch_outcome.env.has_continue;
-        merged_continue_moved.extend(after_cond.continue_moved);
-        merged_continue_moved.extend(branch_outcome.env.continue_moved);
+        extend_prefer_newer(&mut merged_continue_moved, after_cond.continue_moved);
+        extend_prefer_newer(
+            &mut merged_continue_moved,
+            branch_outcome.env.continue_moved,
+        );
     }
 
     if let Some(b) = else_block {
         let branch_outcome = check_branch_block(b, &snapshot, sigs, fn_name, diags, next_id);
         if branch_outcome.continues {
-            merged_moved.extend(branch_outcome.env.moved);
+            any_continues = true;
+            extend_prefer_newer(&mut merged_moved, branch_outcome.env.moved);
         }
         merged_has_exit |= branch_outcome.env.has_exit;
-        merged_exit_moved.extend(branch_outcome.env.exit_moved);
+        extend_prefer_newer(&mut merged_exit_moved, branch_outcome.env.exit_moved);
         merged_has_break |= branch_outcome.env.has_break;
-        merged_break_moved.extend(branch_outcome.env.break_moved);
+        extend_prefer_newer(&mut merged_break_moved, branch_outcome.env.break_moved);
         merged_has_continue |= branch_outcome.env.has_continue;
-        merged_continue_moved.extend(branch_outcome.env.continue_moved);
+        extend_prefer_newer(
+            &mut merged_continue_moved,
+            branch_outcome.env.continue_moved,
+        );
     }
 
-    env.moved = merged_moved;
+    env.moved = if any_continues {
+        merged_moved
+    } else {
+        snapshot.moved
+    };
     env.has_exit = merged_has_exit;
     env.exit_moved = merged_exit_moved;
     env.has_break = merged_has_break;
     env.break_moved = merged_break_moved;
     env.has_continue = merged_has_continue;
     env.continue_moved = merged_continue_moved;
+    any_continues
 }
 
 #[inline(never)]
@@ -881,19 +943,19 @@ fn check_match_expr(
         guard_env.pop_scope();
         arm_outcome.env.pop_scope();
         if arm_outcome.continues {
-            merged_moved.extend(arm_outcome.env.moved);
+            extend_prefer_newer(&mut merged_moved, arm_outcome.env.moved);
         } else if arm.guard.is_some() {
-            merged_moved.extend(guard_env.moved);
+            extend_prefer_newer(&mut merged_moved, guard_env.moved);
         }
         merged_has_exit |= guard_env.has_exit | arm_outcome.env.has_exit;
-        merged_exit_moved.extend(guard_env.exit_moved);
-        merged_exit_moved.extend(arm_outcome.env.exit_moved);
+        extend_prefer_newer(&mut merged_exit_moved, guard_env.exit_moved);
+        extend_prefer_newer(&mut merged_exit_moved, arm_outcome.env.exit_moved);
         merged_has_break |= guard_env.has_break | arm_outcome.env.has_break;
-        merged_break_moved.extend(guard_env.break_moved);
-        merged_break_moved.extend(arm_outcome.env.break_moved);
+        extend_prefer_newer(&mut merged_break_moved, guard_env.break_moved);
+        extend_prefer_newer(&mut merged_break_moved, arm_outcome.env.break_moved);
         merged_has_continue |= guard_env.has_continue | arm_outcome.env.has_continue;
-        merged_continue_moved.extend(guard_env.continue_moved);
-        merged_continue_moved.extend(arm_outcome.env.continue_moved);
+        extend_prefer_newer(&mut merged_continue_moved, guard_env.continue_moved);
+        extend_prefer_newer(&mut merged_continue_moved, arm_outcome.env.continue_moved);
     }
     env.moved = merged_moved;
     env.has_exit = merged_has_exit;
@@ -930,7 +992,7 @@ fn check_try_expr(
     fn_name: &str,
     diags: &mut Vec<CheckError>,
     next_id: &mut usize,
-) {
+) -> bool {
     let mut state = Box::new(TryFrameState {
         outer_snapshot: env.clone(),
         continuing_moved: HashMap::new(),
@@ -960,18 +1022,20 @@ fn check_try_expr(
     state.local_has_continue = body_outcome.env.has_continue;
     state.local_continue = body_outcome.env.continue_moved;
 
-    state
-        .ensure_visible_moved
-        .extend(state.continuing_moved.clone());
-    state.ensure_visible_moved.extend(state.local_exit.clone());
-    state.ensure_visible_moved.extend(state.local_break.clone());
-    state
-        .ensure_visible_moved
-        .extend(state.local_continue.clone());
+    extend_prefer_newer(
+        &mut state.ensure_visible_moved,
+        state.continuing_moved.clone(),
+    );
+    extend_prefer_newer(&mut state.ensure_visible_moved, state.local_exit.clone());
+    extend_prefer_newer(&mut state.ensure_visible_moved, state.local_break.clone());
+    extend_prefer_newer(
+        &mut state.ensure_visible_moved,
+        state.local_continue.clone(),
+    );
 
     for r in rescues {
         let mut rescue_base = state.outer_snapshot.clone();
-        rescue_base.moved.extend(state.local_exit.clone());
+        extend_prefer_newer(&mut rescue_base.moved, state.local_exit.clone());
         rescue_base.clear_exits();
         rescue_base.push_scope();
         if let Some(name) = &r.name {
@@ -982,32 +1046,36 @@ fn check_try_expr(
         rescue_outcome.env.pop_scope();
         if rescue_outcome.continues {
             any_continues = true;
-            state
-                .continuing_moved
-                .extend(rescue_outcome.env.moved.clone());
-            state.ensure_visible_moved.extend(rescue_outcome.env.moved);
+            extend_prefer_newer(
+                &mut state.continuing_moved,
+                rescue_outcome.env.moved.clone(),
+            );
+            extend_prefer_newer(&mut state.ensure_visible_moved, rescue_outcome.env.moved);
         }
         state.local_has_exit |= rescue_outcome.env.has_exit;
-        state
-            .local_exit
-            .extend(rescue_outcome.env.exit_moved.clone());
+        extend_prefer_newer(&mut state.local_exit, rescue_outcome.env.exit_moved.clone());
         state.local_has_break |= rescue_outcome.env.has_break;
-        state
-            .local_break
-            .extend(rescue_outcome.env.break_moved.clone());
+        extend_prefer_newer(
+            &mut state.local_break,
+            rescue_outcome.env.break_moved.clone(),
+        );
         state.local_has_continue |= rescue_outcome.env.has_continue;
-        state
-            .local_continue
-            .extend(rescue_outcome.env.continue_moved.clone());
-        state
-            .ensure_visible_moved
-            .extend(rescue_outcome.env.exit_moved);
-        state
-            .ensure_visible_moved
-            .extend(rescue_outcome.env.break_moved);
-        state
-            .ensure_visible_moved
-            .extend(rescue_outcome.env.continue_moved);
+        extend_prefer_newer(
+            &mut state.local_continue,
+            rescue_outcome.env.continue_moved.clone(),
+        );
+        extend_prefer_newer(
+            &mut state.ensure_visible_moved,
+            rescue_outcome.env.exit_moved,
+        );
+        extend_prefer_newer(
+            &mut state.ensure_visible_moved,
+            rescue_outcome.env.break_moved,
+        );
+        extend_prefer_newer(
+            &mut state.ensure_visible_moved,
+            rescue_outcome.env.continue_moved,
+        );
     }
 
     let mut ensure_continues = true;
@@ -1019,6 +1087,9 @@ fn check_try_expr(
             check_branch_block(ensure_block, &ensure_base, sigs, fn_name, diags, next_id);
         ensure_continues = ensure_outcome.continues;
         if ensure_outcome.continues {
+            // A key is cleared if it was in `ensure_base.moved` and absent after
+            // `ensure`; a key is newly moved if it was not in `ensure_base.moved`
+            // OR received a fresh `move_id` (e.g. `x = [2]; take(x)`).
             let cleared: HashSet<_> = ensure_base
                 .moved
                 .keys()
@@ -1029,7 +1100,12 @@ fn check_try_expr(
                 .env
                 .moved
                 .iter()
-                .filter(|(k, _)| !ensure_base.moved.contains_key(*k))
+                .filter(|(k, v)| {
+                    ensure_base
+                        .moved
+                        .get(*k)
+                        .is_none_or(|old| old.move_id != v.move_id)
+                })
                 .map(|(k, v)| (k.clone(), v.clone()))
                 .collect();
             let apply_ensure_delta = |map: &mut HashMap<(BindingKey, Vec<String>), MoveRecord>| {
@@ -1052,29 +1128,29 @@ fn check_try_expr(
             }
         }
         state.local_has_exit |= ensure_outcome.env.has_exit;
-        state.local_exit.extend(ensure_outcome.env.exit_moved);
+        extend_prefer_newer(&mut state.local_exit, ensure_outcome.env.exit_moved);
         state.local_has_break |= ensure_outcome.env.has_break;
-        state.local_break.extend(ensure_outcome.env.break_moved);
+        extend_prefer_newer(&mut state.local_break, ensure_outcome.env.break_moved);
         state.local_has_continue |= ensure_outcome.env.has_continue;
-        state
-            .local_continue
-            .extend(ensure_outcome.env.continue_moved);
+        extend_prefer_newer(&mut state.local_continue, ensure_outcome.env.continue_moved);
     }
 
-    env.moved = if any_continues && ensure_continues {
+    let try_continues = any_continues && ensure_continues;
+    env.moved = if try_continues {
         state.continuing_moved
     } else {
         state.outer_snapshot.moved
     };
     env.has_exit = state.outer_snapshot.has_exit | state.local_has_exit;
     env.exit_moved = state.outer_snapshot.exit_moved;
-    env.exit_moved.extend(state.local_exit);
+    extend_prefer_newer(&mut env.exit_moved, state.local_exit);
     env.has_break = state.outer_snapshot.has_break | state.local_has_break;
     env.break_moved = state.outer_snapshot.break_moved;
-    env.break_moved.extend(state.local_break);
+    extend_prefer_newer(&mut env.break_moved, state.local_break);
     env.has_continue = state.outer_snapshot.has_continue | state.local_has_continue;
     env.continue_moved = state.outer_snapshot.continue_moved;
-    env.continue_moved.extend(state.local_continue);
+    extend_prefer_newer(&mut env.continue_moved, state.local_continue);
+    try_continues
 }
 
 fn bind_pattern(pattern: &Pattern, env: &mut Env, next_id: &mut usize) {
@@ -1117,13 +1193,14 @@ fn apply_ownership(
     env: &mut Env,
     fn_name: &str,
     diags: &mut Vec<CheckError>,
+    next_id: &mut usize,
 ) {
     detect_drop_discipline_violations(callee, pairs, fn_name, diags);
     detect_aliasing_violations(callee, pairs, fn_name, diags);
     for (arg, kind) in pairs {
         if matches!(kind, Some(Ownership::Own)) {
             if let Some(place) = place_path(arg) {
-                env.record_move_place(&place, callee);
+                env.record_move_place(&place, callee, next_id);
             }
         }
     }

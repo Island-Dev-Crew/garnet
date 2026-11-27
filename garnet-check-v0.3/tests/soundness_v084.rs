@@ -874,3 +874,116 @@ fn main(cond: Bool) -> Int {
         r.errors
     );
 }
+
+#[test]
+fn round3_borrow_and_bounds_regressions_are_closed() {
+    // R3-H1: cleanup reinitialization followed by another move must keep x moved.
+    let reinit_then_move = r#"
+@caps()
+fn take(own x: Array) -> Int { 0 }
+
+@safe
+@caps()
+fn main(cond: Bool) -> Int {
+    let mut x = [1]
+    try {
+        if cond {
+            take(x)
+            return 0
+        }
+        0
+    } ensure {
+        x = [2]
+        take(x)
+    }
+    println(x)
+    0
+}
+"#;
+    let r = check_module(&garnet_parser::parse_source(reinit_then_move).unwrap());
+    assert!(
+        r.errors
+            .iter()
+            .any(|e| matches!(e, CheckError::SafeModeViolation(m) if m.contains("use-after-move"))),
+        "ensure re-init followed by fresh move must report use-after-move, got {:?}",
+        r.errors
+    );
+
+    // R3-H2: conditional `continue` before `break` under `defer 0` must be rejected.
+    let cond_continue_before_break = r#"
+@safe
+@caps()
+fn main() -> Int {
+    loop {
+        defer 0
+        if true {
+            continue
+        }
+        break
+    }
+    0
+}
+"#;
+    let r = check_module(&garnet_parser::parse_source(cond_continue_before_break).unwrap());
+    assert!(
+        r.errors
+            .iter()
+            .any(|e| matches!(e, CheckError::BoundedLoop(_))),
+        "conditional continue before break under defer must fail BoundedLoop, got {:?}",
+        r.errors
+    );
+
+    // R3-M3: defer inside returning branch must not contaminate later defer.
+    let defer_in_returning_branch = r#"
+@caps()
+fn take(own x: Array) -> Int { 0 }
+
+@safe
+@caps()
+fn main(cond: Bool) -> Int {
+    let x = [1]
+    if cond {
+        take(x)
+        defer 0
+        return 0
+    }
+    defer println(x)
+    0
+}
+"#;
+    let r = check_module(&garnet_parser::parse_source(defer_in_returning_branch).unwrap());
+    assert!(
+        r.ok(),
+        "returning branch with its own defer must not contaminate later defer, got {:?}",
+        r.errors
+    );
+
+    // R3-M4: unanimous branch re-initialization inside ensure clears move.
+    let branch_reinit_in_ensure = r#"
+@caps()
+fn take(own x: Array) -> Int { 0 }
+
+@safe
+@caps()
+fn main(cond: Bool) -> Int {
+    let mut x = [1]
+    try {
+        take(x)
+    } ensure {
+        if cond {
+            x = [2]
+        } else {
+            x = [3]
+        }
+    }
+    println(x)
+    0
+}
+"#;
+    let r = check_module(&garnet_parser::parse_source(branch_reinit_in_ensure).unwrap());
+    assert!(
+        r.ok(),
+        "unanimous branch re-init in ensure should clear move, got {:?}",
+        r.errors
+    );
+}
