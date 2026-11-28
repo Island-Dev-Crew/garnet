@@ -79,7 +79,7 @@ python3 -I scripts/garnet_trust_kernel_review_status.py --base origin/main --hea
 
 ### Workspace Structure
 
-The repository is organized as a Rust Cargo workspace with **16 workspace crates** (plus **2 paused Studio apps** held outside the active release path), totaling **~110.5K Rust LOC** and **2,483+ passing Rust tests** under MSRV `1.95.0`:
+The repository is organized as a Rust Cargo workspace with **15 workspace crates** (plus **2 held Studio apps** paused outside the active release path), totaling **~110.5K Rust LOC** and **2,483+ passing Rust tests** under MSRV `1.95.0`:
 
 ```text
 .
@@ -99,7 +99,6 @@ The repository is organized as a Rust Cargo workspace with **16 workspace crates
 ├── garnet-prim-macros/         # proc-macros for primitive metadata & registration
 ├── garnet-registry-stub/       # local package registry stub & fixtures
 ├── xtask/                      # repo automation: truth manifest checks & determinism harness
-├── garnet-suggest-llm/         # slated for ADR-0016 D-42 retirement (models stay out of the trust path)
 └── apps/
     ├── garnet-studio/          # paused/held desktop Studio app (excluded from root workspace)
     └── garnet-studio-macos/    # paused/held macOS Studio wrapper
