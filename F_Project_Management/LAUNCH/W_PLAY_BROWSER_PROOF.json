@@ -1,8 +1,8 @@
 {
   "schema": "garnet.w-play.browser-proof/1",
-  "captured_at": "2026-11-27T22:39:30.401Z",
+  "captured_at": "2026-11-28T00:35:47.052Z",
   "verdict": "pass",
-  "duration_ms": 7614,
+  "duration_ms": 7397,
   "execution": {
     "engine": "playwright-browser-page",
     "browser": "158.0.8127.37",
@@ -11,8 +11,8 @@
     "service_workers": "blocked"
   },
   "git": {
-    "tested_commit": "5862b5a2867cb45dbcca6211b1e82e7073e9bf34",
-    "tested_tree": "4777f7ee8e9481dda0dc2006f1774d1f4c0c313c",
+    "tested_commit": "da8d9020893e48f9b2584cf6f9b4f99ac2686ade",
+    "tested_tree": "1b0b89c11ece31ca8c8aaee0cb72e7434a281f8c",
     "runtime_inputs_clean": true
   },
   "host": {
@@ -22,21 +22,21 @@
   },
   "package": {
     "schema": "garnet.playground.wasm-package/1",
-    "source_tree_sha256": "6ff102a1f0053b2f48f3790d4df8c9e53913f06789cd3f815297bc53d20e4e0b",
+    "source_tree_sha256": "b0c48a592e685e634e7df9a8350e0b98d6cd8a7c4be191e7e59db1fb09d550bb",
     "artifacts": {
       "garnet_wasm.js": {
         "bytes": 6581,
         "sha256": "bf72509961525b4eb2e0702f41da61b4e8087ceee98787b7a046d83a85791a6d"
       },
       "garnet_wasm_bg.wasm": {
-        "bytes": 2243341,
-        "sha256": "3bdf94f5527a564cb698ff440c77b8528d3627c874f42293bfbfd884a1dbe25e"
+        "bytes": 2298955,
+        "sha256": "c1ed4022bd9f9adc6da9443e44c3a2beb7a14da775376e12e7a286812482f680"
       }
     }
   },
   "runtime_inputs": {
     "schema": "garnet.w-play.runtime-inputs/1",
-    "sha256": "abddd55467e69a1a3f720a7cfe57e6ffd0ef4e1442a05e86243dd1f06d67f33e",
+    "sha256": "909a9bef339fa9c9a61137f723753f580b653abb1691078dbd8c5da8babd7886",
     "files": {
       "apps/garnet-studio/package-lock.json": {
         "bytes": 44280,
@@ -135,12 +135,12 @@
         "sha256": "bf72509961525b4eb2e0702f41da61b4e8087ceee98787b7a046d83a85791a6d"
       },
       "docs/playground/pkg/garnet_wasm_bg.wasm": {
-        "bytes": 2243341,
-        "sha256": "3bdf94f5527a564cb698ff440c77b8528d3627c874f42293bfbfd884a1dbe25e"
+        "bytes": 2298955,
+        "sha256": "c1ed4022bd9f9adc6da9443e44c3a2beb7a14da775376e12e7a286812482f680"
       },
       "docs/playground/pkg/provenance.json": {
         "bytes": 8633,
-        "sha256": "da0c0d3c37032008f5b5acb03d6e1da0e9d95e84166ebb0d8169d7f3c66a3a28"
+        "sha256": "a6ae2eb20ca8f5cbc18584eea534f7a86ef67cc89b9cb132345cc85348c198ab"
       },
       "docs/assets/dev_tools_market_growth_v2_1.png": {
         "bytes": 51317,
