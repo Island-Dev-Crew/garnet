@@ -68,6 +68,13 @@ Owns the `garnet` binary, subcommand routing, template embedding, deterministic 
   written is named on stderr and the loop exits 2. `decision.md` is written
   last: every mention of an artifact that could not be written is marked
   "(not written)", and the missing ones are listed.
+- **ADR 0016 (Models stay out of the trust path — D-42):** `garnet-suggest-llm`
+  is removed from the workspace, and
+  `garnet-cli/tests/adr_0016_no_model_or_http_closure.rs` proves (with full
+  `(name, version, source)` lockfile identity, explicit denylist, and a
+  fail-closed reviewed closure allowlist) that no crate in `garnet-cli`'s
+  transitive `Cargo.lock` dependency closure links an HTTP client, an ML
+  runtime, `garnet-suggest-llm`, or an unclassified crate.
 - **ADR 0017 (No track record lightens review):** `garnet-cli/src/strategies.rs`
   only synthesizes scrutiny-adding `warn_repeated_<error_kind>` heuristics and
   never synthesizes `skip_check_if_unchanged_since_last_ok`. `garnet-cli/src/provenance.rs`

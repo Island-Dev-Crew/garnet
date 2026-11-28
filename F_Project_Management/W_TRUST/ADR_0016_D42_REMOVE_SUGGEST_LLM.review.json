@@ -1,0 +1,33 @@
+{
+  "author_emails": [
+    "email:275140286+islanddevcrew@users.noreply.github.com"
+  ],
+  "author_ids": [
+    275140286
+  ],
+  "base_commit": "cd627a2b7735d7c83d8823ac8afcfb0188c0e407",
+  "blocking_findings": [],
+  "content_digest": "sha256:af4703f111bd8cb5f3832f11ce44b11cc29c41b28640541f8016768561918782",
+  "head_repository": "Island-Dev-Crew/garnet",
+  "head_repository_id": 1218183013,
+  "pull_request_id": 5534113403,
+  "pull_request_number": 635,
+  "repository": "Island-Dev-Crew/garnet",
+  "repository_id": 1218183013,
+  "review_scope": "Content proof binds exactly reviewed_head 7bbec7fa61eb1791aa12e5aaef83f800ed1c1a5f (tree 88f2adb372eb19041b2bf17aa40fcf2dd691211c) on base cd627a2b7735d7c83d8823ac8afcfb0188c0e407 and does not extend or backdate reviewed_head coverage. Touched trust-kernel paths: Cargo.lock, scripts/check-agent-contracts.py, scripts/garnet_mit_readiness_status.py, scripts/test_garnet_mit_readiness_status.py, scripts/test_garnet_msrv_status.py (content digest sha256:af4703f111bd8cb5f3832f11ce44b11cc29c41b28640541f8016768561918782). SCOPE: Implements ADR 0016 (D-42 — Models stay out of the trust path): (1) deletes the unlinked garnet-suggest-llm/ workspace crate, removes it from root Cargo.toml and removes only the garnet-suggest-llm block from Cargo.lock with zero dependency bumps; (2) adds garnet-cli/tests/adr_0016_no_model_or_http_closure.rs (6 tests) proving garnet-suggest-llm is absent from the workspace and walking garnet-cli transitive Cargo.lock dependencies with full (name, version, source) identity, Cargo SourceId::without_precise() git qualifier matching, replace-edge traversal, an explicit HTTP-client/ML-runtime/suggest-llm denylist (including http_req), and a fail-closed reviewed closure allowlist (230 normalized crates); (3) updates live active surfaces — AGENTS.md, scripts/check-agent-contracts.py (24 contracts), scripts/test_garnet_msrv_status.py (15 workspace members), scripts/garnet_mit_readiness_status.py + scripts/test_garnet_mit_readiness_status.py + F_Project_Management/GARNET_v0_5_READINESS_BASELINE.json (compiler_agent_llm_tier moved to planned/0.0%, committed-truth pulse 91.9%), docs/truth.json + docs/status.html via xtask truth --skip-tests, F_Project_Management/ADR/0016-models-stay-out-of-the-trust-path.md, garnet-cli/AGENTS.md, CURRENT_STATE.md, C_Language_Specification/GARNET_LLM_SUGGEST.md, and CHANGELOG.md — while leaving ops/lane0/evidence/**, proofs/**, CONTRIBUTING.md, and historical W_TRUST/CHANGELOG records untouched; (4) rematerializes docs/playground/pkg/ (reproducible byte-identical WASM) and refreshes F_Project_Management/LAUNCH/W_PLAY_BROWSER_PROOF.json + ops/lane2a/evidence/30-playground-browser.png. CROSS-FAMILY SEAT: OpenAI Codex (gpt-6-astra, reasoning=high, read-only) performed Round 1 at 0ad15560 (CHANGES_REQUESTED, 0H/2M/0L: PackageId source identity + http_req/unclassified allowlist), Round 2 at d49c5aac (CHANGES_REQUESTED, 0H/2M/0L: Cargo without_precise git qualifiers + replace edges), and Round 3 at exact rebased HEAD 7bbec7fa61eb1791aa12e5aaef83f800ed1c1a5f -> VERDICT: CONFIRM (0H/0M/0L). IMPLEMENTER CHECKS: cargo fmt --all -- --check, cargo clippy --workspace --all-targets --locked -- -D warnings, cargo +1.95.0 check --workspace --all-targets --all-features --locked, cargo test --workspace --locked --no-fail-fast, adr_0016_no_model_or_http_closure (6/6), check-agent-contracts.py (24), garnet_msrv_status.py --gate (15/15), test_garnet_msrv_status.py (25/25), garnet_lane0_closeout_status.py --gate (PASS 22/22), garnet_text_byte_policy_status.py --gate, test_garnet_mit_readiness_status.py (43/43 + --check-no-regression), garnet_wasm_readiness.py --gate (blockers=[]), xtask truth --check, and check_dogfood_pr_body.py all passed. AUTHORS: Every commit carries the GitHub noreply identity for IslandDevCrew (ID 275140286). MERGE AUTHORITY: This premerge record is reviewer evidence only; exact-head authenticated GitHub approval by IDC-Trust-Review (ID 306739987) and Jon's merge remain required.",
+  "review_state": "APPROVED",
+  "reviewed_head": "7bbec7fa61eb1791aa12e5aaef83f800ed1c1a5f",
+  "reviewed_tree": "88f2adb372eb19041b2bf17aa40fcf2dd691211c",
+  "reviewer_id": 306739987,
+  "reviewer_login": "IDC-Trust-Review",
+  "schema": "garnet.trust_kernel_review_record/v2",
+  "state": "premerge",
+  "touched_paths": [
+    "Cargo.lock",
+    "scripts/check-agent-contracts.py",
+    "scripts/garnet_mit_readiness_status.py",
+    "scripts/test_garnet_mit_readiness_status.py",
+    "scripts/test_garnet_msrv_status.py"
+  ],
+  "verdict": "pass"
+}
