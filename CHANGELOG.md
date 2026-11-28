@@ -7,6 +7,10 @@ This file is updated in the same PR as the work it tracks (per the v0.5 slice
 contract). Lines added here are part of the calibrated record — if a
 slice ships labeled "partial," its CHANGELOG entry says so explicitly.
 
+## [Unreleased]
+
+- **ADR 0016 (D-42) — Remove unlinked `garnet-suggest-llm` crate and guard `garnet-cli` dependency closure:** Removed the unlinked `garnet-suggest-llm/` workspace crate, removed it from root `Cargo.toml`, `Cargo.lock`, `/AGENTS.md` Required Contract Index, and `scripts/check-agent-contracts.py`, updated `scripts/garnet_mit_readiness_status.py` (`compiler_agent_llm_tier` lane moved to `planned` / 0.0% per ADR 0016), `F_Project_Management/GARNET_v0_5_READINESS_BASELINE.json`, `CURRENT_STATE.md`, `C_Language_Specification/GARNET_LLM_SUGGEST.md`, and `F_Project_Management/ADR/0016-models-stay-out-of-the-trust-path.md`, and added `garnet-cli/tests/adr_0016_no_model_or_http_closure.rs` proving that no crate in `garnet-cli`'s transitive `Cargo.lock` dependency closure links an HTTP client, an ML runtime, or `garnet-suggest-llm`. The separate in-language model call remains accepted as a direction, not implemented until all four ADR 0016 conditions hold.
+
 ## [0.8.4] — 2026-11-23 (tag `v0.8.4` → `6da57732`)
 
 ### Released 0.8.4 — uncatchable enforcement traps, exhaustive checker coverage, and release-gated VSIX publishing (2026-11-23)

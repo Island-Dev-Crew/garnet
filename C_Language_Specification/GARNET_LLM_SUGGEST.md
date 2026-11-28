@@ -19,10 +19,10 @@ These are the deterministic control: stable, fast, no network, no model.
 
 Provider-backed suggestions — richer, context-aware advice behind the same
 `Suggestion` shape. This tier is **pending-infra**: no LLM provider is wired in
-this environment, and S69 does **not** call one or add a firing advisory. A
-feature-gated provider layer has since landed in `garnet-suggest-llm/` behind the
-`llm` Cargo feature; the default build keeps the crate inert, so the pending-infra
-status stands. It is
+this environment, and S69 does **not** call one or add a firing advisory. The
+earlier unlinked `garnet-suggest-llm/` staging crate was removed under ADR 0016
+(D-42) so models stay out of the trust path (`garnet-cli/tests/adr_0016_no_model_or_http_closure.rs`),
+so the pending-infra status stands. It is
 the open leg of the Paper VI scorecard:
 
 > "4 supported, 2 partial (downgraded to match proof), 0 refuted, **1 pending-infra**"
