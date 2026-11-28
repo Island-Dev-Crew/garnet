@@ -1,8 +1,8 @@
 {
   "schema": "garnet.w-play.browser-proof/1",
-  "captured_at": "2026-11-27T23:21:42.558Z",
+  "captured_at": "2026-11-28T00:23:31.424Z",
   "verdict": "pass",
-  "duration_ms": 7459,
+  "duration_ms": 7534,
   "execution": {
     "engine": "playwright-browser-page",
     "browser": "158.0.8127.37",
@@ -11,8 +11,8 @@
     "service_workers": "blocked"
   },
   "git": {
-    "tested_commit": "c1c2c267df0664feb0451ca7898489a6a86dc689",
-    "tested_tree": "cbbe3e47e8700c340cbbd3a537e9e47f7cc97400",
+    "tested_commit": "b3671ea7a9e088deef8d69860efdf8a1f30e6830",
+    "tested_tree": "888f0b1ea24135da196b1d098412f7be7e6b6a16",
     "runtime_inputs_clean": true
   },
   "host": {
@@ -22,7 +22,7 @@
   },
   "package": {
     "schema": "garnet.playground.wasm-package/1",
-    "source_tree_sha256": "572469fc79ab0fea482e1620db0717f391bec13e66afde78f78030e2c455d3d0",
+    "source_tree_sha256": "b0c48a592e685e634e7df9a8350e0b98d6cd8a7c4be191e7e59db1fb09d550bb",
     "artifacts": {
       "garnet_wasm.js": {
         "bytes": 6581,
@@ -36,7 +36,7 @@
   },
   "runtime_inputs": {
     "schema": "garnet.w-play.runtime-inputs/1",
-    "sha256": "d7ed5637114ba3f3aa70806a4001101fe28119efb279a38d66b6c315a419e228",
+    "sha256": "909a9bef339fa9c9a61137f723753f580b653abb1691078dbd8c5da8babd7886",
     "files": {
       "apps/garnet-studio/package-lock.json": {
         "bytes": 44280,
@@ -140,7 +140,7 @@
       },
       "docs/playground/pkg/provenance.json": {
         "bytes": 8633,
-        "sha256": "485a8732c04f7b043a7cc5fb77cea946aa0836703d55bbdc383d5197783490bd"
+        "sha256": "a6ae2eb20ca8f5cbc18584eea534f7a86ef67cc89b9cb132345cc85348c198ab"
       },
       "docs/assets/dev_tools_market_growth_v2_1.png": {
         "bytes": 51317,
@@ -264,7 +264,7 @@
       },
       "docs/status.html": {
         "bytes": 22370,
-        "sha256": "ecd261d31e896b62ac0e49093fad493087c58434b1754d9ccfebe9041ea2d9d4"
+        "sha256": "561f850635d9c50cfe281aec6f0776676f3caa6884d01589d7763d6ec14d1a11"
       },
       "docs/stdlib.html": {
         "bytes": 15850,
