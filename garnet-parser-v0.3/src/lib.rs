@@ -70,19 +70,70 @@ pub fn parse_source_with_budget_and_edition(
     Ok(Module { safe, items, span })
 }
 
-/// Verify bracket/brace/paren nesting depth against `budget` (RB-4b.1: made
-/// `pub` so the rowan CST path can apply the SAME depth fence as the
-/// recursive-descent parser). Pure check over the token stream; no mutation.
+/// Verify bracket/brace/paren nesting depth and per-block lexical `defer`
+/// nesting against `budget` (RB-4b.1: made `pub` so the rowan CST path can
+/// apply the SAME depth fence as the recursive-descent parser). Each `defer`
+/// lexically desugars into a nested rescue-free `Expr::Try` wrapping the
+/// remainder of its enclosing block, so counting active `defer`s per block
+/// against `budget.max_depth` prevents flat `defer` chains from overflowing
+/// recursive AST traversals. Pure check over the token stream; no mutation.
 pub fn check_token_nesting(tokens: &[Token], budget: ParseBudget) -> Result<(), ParseError> {
+    enum BlockFrame {
+        Brace(usize),
+        Do(usize),
+    }
+
     let mut depth = 0usize;
+    let mut block_frames: Vec<BlockFrame> = Vec::new();
     for tok in tokens {
         match tok.kind {
-            TokenKind::LParen | TokenKind::LBracket | TokenKind::LBrace => {
+            TokenKind::LParen | TokenKind::LBracket => {
                 depth = depth.saturating_add(1);
                 budget.check_depth(depth, tok.span)?;
             }
-            TokenKind::RParen | TokenKind::RBracket | TokenKind::RBrace => {
+            TokenKind::LBrace => {
+                block_frames.push(BlockFrame::Brace(0));
+                depth = depth.saturating_add(1);
+                budget.check_depth(depth, tok.span)?;
+            }
+            TokenKind::KwDo => {
+                block_frames.push(BlockFrame::Do(0));
+                depth = depth.saturating_add(1);
+                budget.check_depth(depth, tok.span)?;
+            }
+            TokenKind::KwDefer => {
+                // Each `defer` synthesizes TWO AST nesting layers (`Expr::Try`
+                // plus its guarded `Block`), so charge 2 depth units per active
+                // `defer` in the enclosing block to keep downstream recursive
+                // checker/interpreter passes well inside thread stack limits.
+                if let Some(frame) = block_frames.last_mut() {
+                    match frame {
+                        BlockFrame::Brace(n) | BlockFrame::Do(n) => {
+                            *n = n.saturating_add(2);
+                        }
+                    }
+                }
+                depth = depth.saturating_add(2);
+                budget.check_depth(depth, tok.span)?;
+            }
+            TokenKind::RParen | TokenKind::RBracket => {
                 depth = depth.saturating_sub(1);
+            }
+            TokenKind::RBrace => {
+                if matches!(block_frames.last(), Some(BlockFrame::Brace(_))) {
+                    if let Some(BlockFrame::Brace(defers)) = block_frames.pop() {
+                        depth = depth.saturating_sub(defers.saturating_add(1));
+                    }
+                } else {
+                    depth = depth.saturating_sub(1);
+                }
+            }
+            TokenKind::KwEnd => {
+                if matches!(block_frames.last(), Some(BlockFrame::Do(_))) {
+                    if let Some(BlockFrame::Do(defers)) = block_frames.pop() {
+                        depth = depth.saturating_sub(defers.saturating_add(1));
+                    }
+                }
             }
             _ => {}
         }

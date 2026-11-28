@@ -112,6 +112,7 @@ pub enum TokenKind {
     KwTry,
     KwRescue,
     KwEnsure,
+    KwDefer,
     KwRaise,
 
     // ── Ownership keywords (safe mode) ──
@@ -239,6 +240,7 @@ pub fn keyword_lookup(s: &str) -> Option<TokenKind> {
         "try" => Some(TokenKind::KwTry),
         "rescue" => Some(TokenKind::KwRescue),
         "ensure" => Some(TokenKind::KwEnsure),
+        "defer" => Some(TokenKind::KwDefer),
         "raise" => Some(TokenKind::KwRaise),
         "own" => Some(TokenKind::KwOwn),
         "borrow" => Some(TokenKind::KwBorrow),
@@ -312,6 +314,7 @@ pub fn describe_kind(kind: &TokenKind) -> &'static str {
         TokenKind::KwTry => "'try'",
         TokenKind::KwRescue => "'rescue'",
         TokenKind::KwEnsure => "'ensure'",
+        TokenKind::KwDefer => "'defer'",
         TokenKind::KwRaise => "'raise'",
         TokenKind::KwOwn => "'own'",
         TokenKind::KwBorrow => "'borrow'",

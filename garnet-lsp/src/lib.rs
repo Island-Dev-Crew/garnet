@@ -1136,6 +1136,7 @@ fn is_keyword_kind(kind: &TokenKind) -> bool {
             | TokenKind::KwTry
             | TokenKind::KwRescue
             | TokenKind::KwEnsure
+            | TokenKind::KwDefer
             | TokenKind::KwRaise
             | TokenKind::KwOwn
             | TokenKind::KwBorrow

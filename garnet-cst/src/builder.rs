@@ -817,6 +817,16 @@ impl<'a> Builder<'a> {
                 self.parse_expr();
                 self.wrap();
             }
+            TokenKind::KwDefer => {
+                self.start(DeferStmt);
+                self.bump();
+                if matches!(self.nth(0), TokenKind::LBrace) {
+                    self.parse_block();
+                } else {
+                    self.parse_expr();
+                }
+                self.wrap();
+            }
             _ => {
                 // expression, optionally an assignment statement
                 let cp = self.checkpoint();
@@ -1139,7 +1149,9 @@ impl<'a> Builder<'a> {
             TokenKind::LParen => {
                 self.start(ParenExpr);
                 self.bump(); // (
-                if !matches!(self.nth(0), TokenKind::RParen) {
+                if matches!(self.nth(0), TokenKind::RParen) {
+                    self.error("expression");
+                } else {
                     self.parse_expr();
                 }
                 self.expect(is_rparen, "')'");

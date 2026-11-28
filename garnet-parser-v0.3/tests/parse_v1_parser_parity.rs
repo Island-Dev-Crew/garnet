@@ -306,6 +306,100 @@ fn parses_ruby_unless_and_until_desugaring() {
 }
 
 #[test]
+fn parses_go_lexical_defer_in_lifo_order_for_expr_and_block_forms() {
+    let src = r#"
+        @caps()
+        def main() {
+            let mut log = []
+            defer log.push(1)
+            let mid = 10
+            defer {
+                log.push(2)
+            }
+            log.push(mid)
+            log
+        }
+    "#;
+    let module = parse_source(src).unwrap();
+    let Item::Fn(function) = &module.items[0] else {
+        panic!("expected function");
+    };
+    // Prefix before first `defer`: `let mut log = []`
+    assert_eq!(function.body.stmts.len(), 1);
+    // Outer `defer log.push(1)` becomes outer rescue-free `Expr::Try`
+    let Some(Expr::Try {
+        body: outer_body,
+        rescues: outer_rescues,
+        ensure: Some(outer_ensure),
+        ..
+    }) = function.body.tail_expr.as_deref()
+    else {
+        panic!("expected outer Try from first defer");
+    };
+    assert!(outer_rescues.is_empty());
+    assert!(outer_ensure.stmts.is_empty());
+    assert!(matches!(
+        outer_ensure.tail_expr.as_deref(),
+        Some(Expr::Method { method, .. }) if method == "push"
+    ));
+
+    // Between first and second defer: `let mid = 10`
+    assert_eq!(outer_body.stmts.len(), 1);
+    let Some(Expr::Try {
+        body: inner_body,
+        rescues: inner_rescues,
+        ensure: Some(inner_ensure),
+        ..
+    }) = outer_body.tail_expr.as_deref()
+    else {
+        panic!("expected inner Try from second defer");
+    };
+    assert!(inner_rescues.is_empty());
+    assert!(inner_ensure.stmts.is_empty());
+    assert!(matches!(
+        inner_ensure.tail_expr.as_deref(),
+        Some(Expr::Method { method, .. }) if method == "push"
+    ));
+    // Guarded tail after second defer: `log.push(mid)` statement + `log` tail expr
+    assert_eq!(inner_body.stmts.len(), 1);
+    assert!(matches!(
+        inner_body.tail_expr.as_deref(),
+        Some(Expr::Ident(name, _)) if name == "log"
+    ));
+}
+
+#[test]
+fn parses_defer_at_end_of_block_and_rejects_bare_defer() {
+    let src = r#"
+        @safe
+        @caps()
+        fn clean() -> Int {
+            let x = 1
+            defer cleanup(x)
+        }
+    "#;
+    let module = parse_source(src).unwrap();
+    let Item::Fn(function) = &module.items[0] else {
+        panic!("expected function");
+    };
+    assert_eq!(function.body.stmts.len(), 1);
+    assert!(matches!(
+        function.body.tail_expr.as_deref(),
+        Some(Expr::Try {
+            body,
+            rescues,
+            ensure: Some(_),
+            ..
+        }) if rescues.is_empty() && body.stmts.is_empty() && body.tail_expr.is_none()
+    ));
+
+    // Bare `defer` with no block or expression must fail to parse.
+    assert!(parse_source("@caps()\ndef bad() { defer }\n").is_err());
+    // `defer` is a statement, not an expression.
+    assert!(parse_source("@caps()\ndef bad() { let x = defer f() }\n").is_err());
+}
+
+#[test]
 fn preserves_dynamic_and_nonsendable_type_annotations() {
     let src = r#"
         @dynamic
