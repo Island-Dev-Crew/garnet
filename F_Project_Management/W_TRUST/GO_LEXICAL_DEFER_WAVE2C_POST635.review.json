@@ -1,0 +1,32 @@
+{
+  "author_emails": [
+    "email:275140286+islanddevcrew@users.noreply.github.com"
+  ],
+  "author_ids": [
+    275140286
+  ],
+  "base_commit": "0dd4f22de2d5a2bcb36a917ad7802539d5c6bf5e",
+  "blocking_findings": [],
+  "content_digest": "sha256:90166b38ea98c17742c764ef9c603ffc0ada52a45d09ce173d7bfd2576a970ac",
+  "head_repository": "Island-Dev-Crew/garnet",
+  "head_repository_id": 1218183013,
+  "pull_request_id": 5534394192,
+  "pull_request_number": 636,
+  "repository": "Island-Dev-Crew/garnet",
+  "repository_id": 1218183013,
+  "review_scope": "Append-only rolling trust successor record (preserving prior provenance `F_Project_Management/W_TRUST/GO_LEXICAL_DEFER_WAVE2C.review.json` unmodified) after forward merge of `origin/main` `0dd4f22de2d5a2bcb36a917ad7802539d5c6bf5e` (PR #635) into `feat/go-lexical-defer`. Content proof binds exactly reviewed_head 508b93a9d7ab1bc053cf23e78a5673185c09315b (tree 8326959dbf13ca803ad4068c8ecfc6417c3260e5) on base 0dd4f22de2d5a2bcb36a917ad7802539d5c6bf5e and does not extend or backdate reviewed_head coverage. Touched trust-kernel paths: garnet-check-v0.3/src/borrow.rs, garnet-check-v0.3/src/bounds.rs, garnet-check-v0.3/src/lib.rs, garnet-interp-v0.3/src/control.rs (content digest sha256:90166b38ea98c17742c764ef9c603ffc0ada52a45d09ce173d7bfd2576a970ac, byte-identical to Round 5 CONFIRM head ee38f4ea1777347606a9f49d1ec535afdbb72314). SCOPE: North Star Wave 2C Go-style lexical `defer` (`defer expr` and `defer { ... }`) in both `def` and `@safe fn` preserving BE-F1 uncatchable enforcement-trap bypass, synced cleanly onto post-PR-#635 `main` (`0dd4f22d`) with rematerialized reproducible `docs/playground/pkg/` (pinned Node v22.22.2) and refreshed `F_Project_Management/LAUNCH/W_PLAY_BROWSER_PROOF.json` + `ops/lane2a/evidence/30-playground-browser.png`. CROSS-FAMILY SEAT: OpenAI Codex (`gpt-6-astra`, read-only) completed Round 5 full verification at `ee38f4ea1777347606a9f49d1ec535afdbb72314` (`VERDICT: CONFIRM, 0H/0M/0L`) and Post-Merge Delta Confirmation at `508b93a9d7ab1bc053cf23e78a5673185c09315b` (`VERDICT: CONFIRM, 0H/0M/0L`, confirming all 4 trust-kernel files byte-identical, identical digest, zero conflict markers or merge regressions, valid 62/62 runtime-input browser proof, and `garnet_wasm_readiness.py --gate` `blockers: []`). IMPLEMENTER CHECKS: `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings`, `cargo test --workspace --locked` (2,515 passed, 0 failed, 6 ignored), `garnet_wasm_readiness.py --gate` (`blockers: []`, `browser_ready: true`), `check-agent-contracts.py` (24/24), `xtask truth --check`, `garnet_text_byte_policy_status.py --gate`, and `check_dogfood_pr_body.py` all passed. AUTHORS: Every commit carries the GitHub noreply identity for IslandDevCrew (ID 275140286). MERGE AUTHORITY: This premerge record is reviewer evidence only; exact-head authenticated GitHub approval by IDC-Trust-Review (ID 306739987) and Jon's merge remain required.",
+  "review_state": "APPROVED",
+  "reviewed_head": "508b93a9d7ab1bc053cf23e78a5673185c09315b",
+  "reviewed_tree": "8326959dbf13ca803ad4068c8ecfc6417c3260e5",
+  "reviewer_id": 306739987,
+  "reviewer_login": "IDC-Trust-Review",
+  "schema": "garnet.trust_kernel_review_record/v2",
+  "state": "premerge",
+  "touched_paths": [
+    "garnet-check-v0.3/src/borrow.rs",
+    "garnet-check-v0.3/src/bounds.rs",
+    "garnet-check-v0.3/src/lib.rs",
+    "garnet-interp-v0.3/src/control.rs"
+  ],
+  "verdict": "pass"
+}
