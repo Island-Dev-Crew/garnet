@@ -314,3 +314,151 @@ fn ruby_unless_and_until_work_in_managed_and_safe_modes() {
     // 40 + 2 + 3 = 45
     assert!(matches!(run(src, "main"), Value::Int(45)));
 }
+
+#[test]
+fn go_lexical_defer_lifo_on_normal_exit_and_safe_fn() {
+    let src = r#"
+        @safe
+        @caps()
+        fn run_safe(log: Array) -> Int {
+            defer log.push("safe-1")
+            defer {
+                log.push("safe-2")
+            }
+            log.push("safe-body")
+            77
+        }
+
+        def main() {
+            let mut log = []
+            let ret = if true {
+                let first = "a"
+                defer log.push(first)
+                let second = "b"
+                defer {
+                    log.push(second)
+                }
+                let s = run_safe(log)
+                log.push("body")
+                s
+            }
+            [ret, log]
+        }
+    "#;
+    let r = run(src, "main");
+    let Value::Array(outer) = r else {
+        panic!("expected array result, got {r:?}");
+    };
+    let outer = outer.borrow();
+    assert!(matches!(outer[0], Value::Int(77)));
+    let Value::Array(log) = &outer[1] else {
+        panic!("expected log array");
+    };
+    let entries: Vec<String> = log.borrow().iter().map(|v| v.display()).collect();
+    assert_eq!(
+        entries,
+        vec!["safe-body", "safe-2", "safe-1", "body", "b", "a"]
+    );
+}
+
+#[test]
+fn go_lexical_defer_runs_on_early_return_break_and_raise_skipping_unreached() {
+    let src = r#"
+        def early_ret(log, flag) {
+            defer log.push("r1")
+            if flag {
+                return 10
+            }
+            defer log.push("r2")
+            20
+        }
+
+        def loop_break(log) {
+            for i in 0..4 {
+                defer log.push(i)
+                if i == 1 {
+                    break
+                }
+            }
+        }
+
+        def raising_fn(log) {
+            defer log.push("e1")
+            defer {
+                log.push("e2")
+            }
+            raise "boom"
+        }
+
+        def main() {
+            let mut log = []
+            let v1 = early_ret(log, true)
+            let v2 = early_ret(log, false)
+            loop_break(log)
+            let caught = try {
+                raising_fn(log)
+            } rescue e {
+                log.push(e)
+                99
+            }
+            [v1, v2, caught, log]
+        }
+    "#;
+    let r = run(src, "main");
+    let Value::Array(outer) = r else {
+        panic!("expected array result, got {r:?}");
+    };
+    let outer = outer.borrow();
+    assert!(matches!(outer[0], Value::Int(10)));
+    assert!(matches!(outer[1], Value::Int(20)));
+    assert!(matches!(outer[2], Value::Int(99)));
+    let Value::Array(log) = &outer[3] else {
+        panic!("expected log array");
+    };
+    let entries: Vec<String> = log.borrow().iter().map(|v| v.display()).collect();
+    // early_ret(true): only r1 ran (r2 never reached)
+    // early_ret(false): r2 then r1 (LIFO)
+    // loop_break: 0 then 1
+    // raising_fn: e2 then e1 (LIFO), then rescue pushes "boom"
+    assert_eq!(
+        entries,
+        vec!["r1", "r2", "r1", "0", "1", "e2", "e1", "boom"]
+    );
+}
+
+#[test]
+fn go_lexical_defer_preserves_original_runtime_error_variant() {
+    let without_defer = r#"
+        def main() {
+            if true {
+                1 / 0
+            }
+        }
+    "#;
+    let with_defer = r#"
+        def main() {
+            let mut ran = 0
+            if true {
+                defer { ran = 1 }
+                1 / 0
+            }
+        }
+    "#;
+    let mut i1 = Interpreter::new();
+    i1.load_source(without_defer).unwrap();
+    let e1 = i1.call("main", vec![]).unwrap_err();
+
+    let mut i2 = Interpreter::new();
+    i2.load_source(with_defer).unwrap();
+    let e2 = i2.call("main", vec![]).unwrap_err();
+
+    assert!(
+        matches!(e1, garnet_interp::RuntimeError::DivByZero),
+        "expected DivByZero without defer, got {e1:?}"
+    );
+    assert!(
+        matches!(e2, garnet_interp::RuntimeError::DivByZero),
+        "expected identical DivByZero with defer (not Raised), got {e2:?}"
+    );
+    assert_eq!(e1.to_string(), e2.to_string());
+}

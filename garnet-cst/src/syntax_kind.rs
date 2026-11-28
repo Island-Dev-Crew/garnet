@@ -122,6 +122,7 @@ syntax_kinds! {
     TryKw,
     RescueKw,
     EnsureKw,
+    DeferKw,
     RaiseKw,
 
     // ── Keyword tokens (ownership) ──
@@ -246,6 +247,7 @@ syntax_kinds! {
     YieldStmt,
     NextStmt,
     RaiseStmt,
+    DeferStmt,
 
     // ── Composite nodes: expressions ──
     IfExpr,
@@ -373,6 +375,7 @@ impl SyntaxKind {
             TokenKind::KwTry => SyntaxKind::TryKw,
             TokenKind::KwRescue => SyntaxKind::RescueKw,
             TokenKind::KwEnsure => SyntaxKind::EnsureKw,
+            TokenKind::KwDefer => SyntaxKind::DeferKw,
             TokenKind::KwRaise => SyntaxKind::RaiseKw,
             TokenKind::KwOwn => SyntaxKind::OwnKw,
             TokenKind::KwBorrow => SyntaxKind::BorrowKw,

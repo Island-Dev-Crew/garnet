@@ -9,6 +9,19 @@ Owns Mini-Spec v1.0 lexing, parsing, AST shape, grammar examples, and parser tes
 - Keep grammar behavior aligned with `C_Language_Specification/GARNET_v0_3_Formal_Grammar_EBNF.md` and Mini-Spec v1.0.
 - Preserve diagnostic span quality when changing lexer or parser code.
 - Do not silently accept syntax that the spec does not describe unless the spec is updated in the same change.
+- **Lexical `defer` (`defer { ... }` and `defer expr`):** `defer` is a statement
+  keyword valid inside brace blocks (`{ ... }`) and trailing `do ... end` blocks.
+  Block parsing (`grammar/stmts.rs::fold_block_items`) lexically desugars every
+  `defer` iteratively right-to-left into nested rescue-free
+  `Expr::Try { body, rescues: [], ensure: Some(cleanup), span }` wrapping the
+  remainder of the block so registered cleanups execute in Go-style LIFO order
+  at block exit (normal exit, `return`, `break`, `continue`, or `raise`), while
+  unreached `defer`s never run and `BE-F1` enforcement traps bypass cleanup.
+  Because each `defer` adds two synthesized AST nesting levels (`Expr::Try` +
+  guarded `Block`) for the remainder of its enclosing block,
+  `check_token_nesting` accounts for 2 depth units per active per-block `defer`
+  against `ParseBudget::max_depth` (shared by `garnet-cst`) so flat `defer`
+  chains fail closed before recursive downstream passes can overflow the stack.
 - Examples under this crate are parser fixtures, not product demos.
 - **Editions gate the lexical surface ONLY** (`edition.rs`, S32). The AST,
   checker, interpreter, and capability manifest are **edition-invariant by

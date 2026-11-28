@@ -40,6 +40,7 @@ const INDEX_PLACE_SEGMENT: &str = "[*]";
 pub struct MoveRecord {
     pub binding: String,
     pub callee: String,
+    move_id: usize,
 }
 
 /// Map from function name -> ordered ownership kinds for its parameters.
@@ -159,12 +160,60 @@ fn method_signature(method: &FnDef) -> MethodSignature {
     }
 }
 
-#[derive(Default, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+enum BindingKey {
+    Local(usize),
+    Unbound(String),
+}
+
+#[derive(Clone, Default)]
+struct ScopeFrame {
+    /// Current visible name -> local binding ID in this lexical scope.
+    bindings: HashMap<String, usize>,
+    /// Every local binding ID ever allocated while this scope frame was active
+    /// (including IDs subsequently shadowed in the same scope) so `pop_scope`
+    /// never leaves orphaned IDs behind.
+    owned_ids: Vec<usize>,
+}
+
+#[derive(Clone)]
 struct Env {
-    /// Set of bindings that have been moved out of and may not be used.
-    moved: HashMap<String, MoveRecord>,
+    /// Lexical scope stack mapping binding names to unique local binding IDs.
+    scopes: Vec<ScopeFrame>,
+    /// Moved places `(root_binding_key, subpath)` on the continuing path.
+    moved: HashMap<(BindingKey, Vec<String>), MoveRecord>,
+    /// Whether any function/exceptional exit (`return`, `raise`, fallible op)
+    /// is reachable inside the current region.
+    has_exit: bool,
+    /// Moved places observed on any function/exceptional exit inside the
+    /// current region.
+    exit_moved: HashMap<(BindingKey, Vec<String>), MoveRecord>,
+    /// Whether any `break` is reachable inside the current region.
+    has_break: bool,
+    /// Moved places observed on any `break` inside the current region.
+    break_moved: HashMap<(BindingKey, Vec<String>), MoveRecord>,
+    /// Whether any `continue` is reachable inside the current region.
+    has_continue: bool,
+    /// Moved places observed on any `continue` inside the current region.
+    continue_moved: HashMap<(BindingKey, Vec<String>), MoveRecord>,
     /// Simple declared type names for bindings when the parser gives us one.
-    types: HashMap<String, String>,
+    types: HashMap<BindingKey, String>,
+}
+
+impl Default for Env {
+    fn default() -> Self {
+        Self {
+            scopes: vec![ScopeFrame::default()],
+            moved: HashMap::new(),
+            has_exit: false,
+            exit_moved: HashMap::new(),
+            has_break: false,
+            break_moved: HashMap::new(),
+            has_continue: false,
+            continue_moved: HashMap::new(),
+            types: HashMap::new(),
+        }
+    }
 }
 
 struct BranchOutcome {
@@ -173,64 +222,110 @@ struct BranchOutcome {
 }
 
 impl Env {
-    fn record_move(&mut self, binding: &str, callee: &str) {
+    fn push_scope(&mut self) {
+        self.scopes.push(ScopeFrame::default());
+    }
+
+    fn pop_scope(&mut self) {
+        if self.scopes.len() <= 1 {
+            return;
+        }
+        let popped = self.scopes.pop().unwrap_or_default();
+        let popped_ids: HashSet<usize> = popped.owned_ids.into_iter().collect();
+        self.moved
+            .retain(|(key, _), _| !matches!(key, BindingKey::Local(id) if popped_ids.contains(id)));
+        self.exit_moved
+            .retain(|(key, _), _| !matches!(key, BindingKey::Local(id) if popped_ids.contains(id)));
+        self.break_moved
+            .retain(|(key, _), _| !matches!(key, BindingKey::Local(id) if popped_ids.contains(id)));
+        self.continue_moved
+            .retain(|(key, _), _| !matches!(key, BindingKey::Local(id) if popped_ids.contains(id)));
+        self.types
+            .retain(|key, _| !matches!(key, BindingKey::Local(id) if popped_ids.contains(id)));
+    }
+
+    fn lookup_key(&self, binding: &str) -> BindingKey {
+        for frame in self.scopes.iter().rev() {
+            if let Some(&id) = frame.bindings.get(binding) {
+                return BindingKey::Local(id);
+            }
+        }
+        BindingKey::Unbound(binding.to_string())
+    }
+
+    fn declare_binding(&mut self, binding: &str, ty: Option<&TypeExpr>, next_id: &mut usize) {
+        let id = *next_id;
+        *next_id += 1;
+        if let Some(frame) = self.scopes.last_mut() {
+            frame.bindings.insert(binding.to_string(), id);
+            frame.owned_ids.push(id);
+        }
+        let key = BindingKey::Local(id);
+        match ty.and_then(simple_type_name) {
+            Some(name) => {
+                self.types.insert(key, name);
+            }
+            None => {
+                self.types.remove(&key);
+            }
+        }
+    }
+
+    fn record_move_place(&mut self, place: &[String], callee: &str, next_id: &mut usize) {
+        let Some((root, rest)) = place.split_first() else {
+            return;
+        };
+        let key = self.lookup_key(root);
+        let binding = format_place(place);
+        let move_id = *next_id;
+        *next_id += 1;
         self.moved.insert(
-            binding.to_string(),
+            (key, rest.to_vec()),
             MoveRecord {
-                binding: binding.to_string(),
+                binding,
                 callee: callee.to_string(),
+                move_id,
             },
         );
     }
 
-    fn record_move_place(&mut self, place: &[String], callee: &str) {
-        let binding = format_place(place);
-        self.record_move(&binding, callee);
-    }
-
-    fn rebind(&mut self, binding: &str) {
-        self.rebind_place(&[binding.to_string()]);
-    }
-
     fn rebind_place(&mut self, place: &[String]) {
-        let binding = format_place(place);
-        let prefix = format!("{binding}.");
-        self.moved
-            .retain(|moved, _| moved != &binding && !moved.starts_with(&prefix));
+        let Some((root, rest)) = place.split_first() else {
+            return;
+        };
+        let key = self.lookup_key(root);
+        self.moved.retain(|(moved_key, moved_rest), _| {
+            moved_key != &key || !moved_rest.starts_with(rest)
+        });
     }
 
-    fn rebind_with_type(&mut self, binding: &str, ty: Option<&TypeExpr>) {
-        self.rebind(binding);
-        match ty.and_then(simple_type_name) {
-            Some(name) => {
-                self.types.insert(binding.to_string(), name);
-            }
-            None => {
-                self.types.remove(binding);
-            }
+    fn clear_exits(&mut self) {
+        self.has_exit = false;
+        self.exit_moved.clear();
+        self.has_break = false;
+        self.break_moved.clear();
+        self.has_continue = false;
+        self.continue_moved.clear();
+    }
+
+    fn record_exit_moves(&mut self) {
+        self.has_exit = true;
+        for (k, v) in &self.moved {
+            self.exit_moved.insert(k.clone(), v.clone());
         }
     }
 
-    fn forget_type(&mut self, binding: &str) {
-        self.types.remove(binding);
+    fn record_break_moves(&mut self) {
+        self.has_break = true;
+        for (k, v) in &self.moved {
+            self.break_moved.insert(k.clone(), v.clone());
+        }
     }
 
-    fn restore_binding_from(&mut self, binding: &str, snapshot: &Env) {
-        let prefix = format!("{binding}.");
-        self.moved
-            .retain(|moved, _| moved != binding && !moved.starts_with(&prefix));
-        for (moved, record) in &snapshot.moved {
-            if moved == binding || moved.starts_with(&prefix) {
-                self.moved.insert(moved.clone(), record.clone());
-            }
-        }
-        match snapshot.types.get(binding) {
-            Some(ty) => {
-                self.types.insert(binding.to_string(), ty.clone());
-            }
-            None => {
-                self.types.remove(binding);
-            }
+    fn record_continue_moves(&mut self) {
+        self.has_continue = true;
+        for (k, v) in &self.moved {
+            self.continue_moved.insert(k.clone(), v.clone());
         }
     }
 
@@ -239,14 +334,18 @@ impl Env {
     }
 
     fn moved_record_for_place(&self, place: &[String]) -> Option<&MoveRecord> {
-        self.moved.iter().find_map(|(moved, record)| {
-            let moved_place = split_place(moved);
-            places_overlap(&moved_place, place).then_some(record)
-        })
+        let (root, rest) = place.split_first()?;
+        let key = self.lookup_key(root);
+        self.moved
+            .iter()
+            .find_map(|((moved_key, moved_rest), record)| {
+                (moved_key == &key && places_overlap(moved_rest, rest)).then_some(record)
+            })
     }
 
     fn type_of(&self, binding: &str) -> Option<&str> {
-        self.types.get(binding).map(String::as_str)
+        let key = self.lookup_key(binding);
+        self.types.get(&key).map(String::as_str)
     }
 }
 
@@ -275,14 +374,17 @@ fn check_place_operands(
     sigs: &SignatureTables,
     fn_name: &str,
     diags: &mut Vec<CheckError>,
+    next_id: &mut usize,
 ) {
     match expr {
-        Expr::Field { receiver, .. } => check_place_operands(receiver, env, sigs, fn_name, diags),
+        Expr::Field { receiver, .. } => {
+            check_place_operands(receiver, env, sigs, fn_name, diags, next_id);
+        }
         Expr::Index {
             receiver, index, ..
         } => {
-            check_place_operands(receiver, env, sigs, fn_name, diags);
-            check_expr(index, env, sigs, fn_name, diags);
+            check_place_operands(receiver, env, sigs, fn_name, diags, next_id);
+            check_expr(index, env, sigs, fn_name, diags, next_id);
         }
         _ => {}
     }
@@ -292,21 +394,32 @@ fn format_place(place: &[String]) -> String {
     place.join(".")
 }
 
-fn split_place(place: &str) -> Vec<String> {
-    place.split('.').map(ToOwned::to_owned).collect()
-}
-
 fn places_overlap(left: &[String], right: &[String]) -> bool {
     left == right || left.starts_with(right) || right.starts_with(left)
 }
 
 fn check_fn_body(f: &FnDef, sigs: &SignatureTables, diags: &mut Vec<CheckError>) {
     let mut env = Env::default();
+    let mut next_id = 0usize;
     // Pre-bind the function's parameters as live (not moved).
     for p in &f.params {
-        env.rebind_with_type(&p.name, p.ty.as_ref());
+        env.declare_binding(&p.name, p.ty.as_ref(), &mut next_id);
     }
-    let _ = check_branch_block(&f.body, &env, sigs, &f.name, diags);
+    let _ = check_branch_block(&f.body, &env, sigs, &f.name, diags, &mut next_id);
+}
+
+fn extend_prefer_newer(
+    dst: &mut HashMap<(BindingKey, Vec<String>), MoveRecord>,
+    src: HashMap<(BindingKey, Vec<String>), MoveRecord>,
+) {
+    for (k, v) in src {
+        match dst.get(&k) {
+            Some(existing) if existing.move_id >= v.move_id => {}
+            _ => {
+                dst.insert(k, v);
+            }
+        }
+    }
 }
 
 fn check_branch_block(
@@ -315,23 +428,45 @@ fn check_branch_block(
     sigs: &SignatureTables,
     fn_name: &str,
     diags: &mut Vec<CheckError>,
+    next_id: &mut usize,
 ) -> BranchOutcome {
     let mut branch_env = base.clone();
+    branch_env.push_scope();
+    let mut continues = true;
     for stmt in &block.stmts {
-        check_stmt(stmt, &mut branch_env, sigs, fn_name, diags);
-        if matches!(stmt, Stmt::Return { .. }) {
-            return BranchOutcome {
-                env: branch_env,
-                continues: false,
-            };
+        let stmt_continues = check_stmt(stmt, &mut branch_env, sigs, fn_name, diags, next_id);
+        match stmt {
+            Stmt::Return { .. } | Stmt::Raise { .. } => {
+                branch_env.record_exit_moves();
+                continues = false;
+                break;
+            }
+            Stmt::Break { .. } => {
+                branch_env.record_break_moves();
+                continues = false;
+                break;
+            }
+            Stmt::Continue { .. } => {
+                branch_env.record_continue_moves();
+                continues = false;
+                break;
+            }
+            _ if !stmt_continues => {
+                continues = false;
+                break;
+            }
+            _ => {}
         }
     }
-    if let Some(tail) = &block.tail_expr {
-        check_expr(tail, &mut branch_env, sigs, fn_name, diags);
+    if continues {
+        if let Some(tail) = &block.tail_expr {
+            continues = check_expr(tail, &mut branch_env, sigs, fn_name, diags, next_id);
+        }
     }
+    branch_env.pop_scope();
     BranchOutcome {
         env: branch_env,
-        continues: true,
+        continues,
     }
 }
 
@@ -341,75 +476,113 @@ fn check_stmt(
     sigs: &SignatureTables,
     fn_name: &str,
     diags: &mut Vec<CheckError>,
-) {
+    next_id: &mut usize,
+) -> bool {
     match stmt {
         Stmt::Let(decl) => {
-            check_expr(&decl.value, env, sigs, fn_name, diags);
-            env.rebind_with_type(&decl.name, decl.ty.as_ref());
+            let cont = check_expr(&decl.value, env, sigs, fn_name, diags, next_id);
+            env.declare_binding(&decl.name, decl.ty.as_ref(), next_id);
+            cont
         }
         Stmt::Var(decl) => {
-            check_expr(&decl.value, env, sigs, fn_name, diags);
-            env.rebind_with_type(&decl.name, decl.ty.as_ref());
+            let cont = check_expr(&decl.value, env, sigs, fn_name, diags, next_id);
+            env.declare_binding(&decl.name, decl.ty.as_ref(), next_id);
+            cont
         }
         Stmt::Const(decl) => {
-            check_expr(&decl.value, env, sigs, fn_name, diags);
-            env.rebind_with_type(&decl.name, decl.ty.as_ref());
+            let cont = check_expr(&decl.value, env, sigs, fn_name, diags, next_id);
+            env.declare_binding(&decl.name, decl.ty.as_ref(), next_id);
+            cont
         }
-        Stmt::Assign { target, value, .. } => {
-            check_expr(value, env, sigs, fn_name, diags);
+        Stmt::Assign {
+            target, op, value, ..
+        } => {
+            let cont = check_expr(value, env, sigs, fn_name, diags, next_id);
+            if *op != garnet_parser::ast::AssignOp::Eq {
+                env.record_exit_moves();
+            }
             if let Some(place) = place_path(target) {
-                check_place_operands(target, env, sigs, fn_name, diags);
+                check_place_operands(target, env, sigs, fn_name, diags, next_id);
+                if matches!(target, Expr::Index { .. } | Expr::Field { .. }) {
+                    env.record_exit_moves();
+                }
                 env.rebind_place(&place);
             }
+            cont
         }
         Stmt::While {
             condition, body, ..
         } => {
-            check_expr(condition, env, sigs, fn_name, diags);
+            check_expr(condition, env, sigs, fn_name, diags, next_id);
             let snapshot = env.clone();
-            let outcome = check_branch_block(body, &snapshot, sigs, fn_name, diags);
+            let mut body_base = snapshot.clone();
+            body_base.clear_exits();
+            let outcome = check_branch_block(body, &body_base, sigs, fn_name, diags, next_id);
+            let mut after_moved = snapshot.moved.clone();
             if outcome.continues {
-                *env = outcome.env;
-            } else {
-                *env = snapshot;
+                extend_prefer_newer(&mut after_moved, outcome.env.moved);
             }
+            extend_prefer_newer(&mut after_moved, outcome.env.break_moved);
+            extend_prefer_newer(&mut after_moved, outcome.env.continue_moved);
+            env.moved = after_moved;
+            env.has_exit |= outcome.env.has_exit;
+            extend_prefer_newer(&mut env.exit_moved, outcome.env.exit_moved);
+            true
         }
         Stmt::For {
             iter, body, var, ..
         } => {
-            check_expr(iter, env, sigs, fn_name, diags);
+            check_expr(iter, env, sigs, fn_name, diags, next_id);
+            env.record_exit_moves();
             let snapshot = env.clone();
             let mut body_base = snapshot.clone();
-            body_base.rebind(var);
-            body_base.forget_type(var);
-            let outcome = check_branch_block(body, &body_base, sigs, fn_name, diags);
+            body_base.clear_exits();
+            body_base.push_scope();
+            body_base.declare_binding(var, None, next_id);
+            let mut outcome = check_branch_block(body, &body_base, sigs, fn_name, diags, next_id);
+            outcome.env.pop_scope();
+            let mut after_moved = snapshot.moved.clone();
             if outcome.continues {
-                *env = outcome.env;
-                env.restore_binding_from(var, &snapshot);
-            } else {
-                *env = snapshot;
+                extend_prefer_newer(&mut after_moved, outcome.env.moved);
             }
+            extend_prefer_newer(&mut after_moved, outcome.env.break_moved);
+            extend_prefer_newer(&mut after_moved, outcome.env.continue_moved);
+            env.moved = after_moved;
+            env.has_exit |= outcome.env.has_exit;
+            extend_prefer_newer(&mut env.exit_moved, outcome.env.exit_moved);
+            true
         }
         Stmt::Loop { body, .. } => {
             let snapshot = env.clone();
-            let outcome = check_branch_block(body, &snapshot, sigs, fn_name, diags);
+            let mut body_base = snapshot.clone();
+            body_base.clear_exits();
+            let outcome = check_branch_block(body, &body_base, sigs, fn_name, diags, next_id);
+            let mut after_moved = snapshot.moved.clone();
             if outcome.continues {
-                *env = outcome.env;
-            } else {
-                *env = snapshot;
+                extend_prefer_newer(&mut after_moved, outcome.env.moved);
             }
+            extend_prefer_newer(&mut after_moved, outcome.env.break_moved);
+            extend_prefer_newer(&mut after_moved, outcome.env.continue_moved);
+            env.moved = after_moved;
+            env.has_exit |= outcome.env.has_exit;
+            extend_prefer_newer(&mut env.exit_moved, outcome.env.exit_moved);
+            true
         }
         Stmt::Break { value, .. }
         | Stmt::Return { value, .. }
         | Stmt::Yield { value, .. }
         | Stmt::Next { value, .. } => {
             if let Some(e) = value {
-                check_expr(e, env, sigs, fn_name, diags);
+                check_expr(e, env, sigs, fn_name, diags, next_id);
             }
+            true
         }
-        Stmt::Raise { value, .. } => check_expr(value, env, sigs, fn_name, diags),
-        Stmt::Continue { .. } => {}
-        Stmt::Expr(e) => check_expr(e, env, sigs, fn_name, diags),
+        Stmt::Raise { value, .. } => {
+            check_expr(value, env, sigs, fn_name, diags, next_id);
+            true
+        }
+        Stmt::Continue { .. } => true,
+        Stmt::Expr(e) => check_expr(e, env, sigs, fn_name, diags, next_id),
     }
 }
 
@@ -419,7 +592,8 @@ fn check_expr(
     sigs: &SignatureTables,
     fn_name: &str,
     diags: &mut Vec<CheckError>,
-) {
+    next_id: &mut usize,
+) -> bool {
     match expr {
         Expr::Ident(name, _) => {
             if let Some(rec) = env.is_moved(name) {
@@ -428,21 +602,24 @@ fn check_expr(
                     rec.binding, rec.callee
                 )));
             }
+            true
         }
         Expr::Call { callee, args, .. } => {
             // First evaluate every argument expression for inner moves.
             for a in args {
-                check_expr(a, env, sigs, fn_name, diags);
+                check_expr(a, env, sigs, fn_name, diags, next_id);
             }
             // Then resolve the callee and apply ownership to identifier args.
             if let Expr::Ident(callee_name, _) = callee.as_ref() {
                 if let Some(kinds) = sigs.functions.get(callee_name) {
                     let pairs: Vec<_> = args.iter().zip(kinds.iter().copied()).collect();
-                    apply_ownership(callee_name, &pairs, env, fn_name, diags);
+                    apply_ownership(callee_name, &pairs, env, fn_name, diags, next_id);
                 }
             } else {
-                check_expr(callee, env, sigs, fn_name, diags);
+                check_expr(callee, env, sigs, fn_name, diags, next_id);
             }
+            env.record_exit_moves();
+            true
         }
         Expr::Method {
             receiver,
@@ -450,20 +627,22 @@ fn check_expr(
             args,
             ..
         } => {
-            check_expr(receiver, env, sigs, fn_name, diags);
+            check_expr(receiver, env, sigs, fn_name, diags, next_id);
             for a in args {
-                check_expr(a, env, sigs, fn_name, diags);
+                check_expr(a, env, sigs, fn_name, diags, next_id);
             }
             if let Some(signature) = method_signature_for_receiver(receiver, method, env, sigs) {
                 let mut pairs = Vec::with_capacity(args.len() + 1);
                 pairs.push((receiver.as_ref(), signature.receiver));
                 pairs.extend(args.iter().zip(signature.args.iter().copied()));
-                apply_ownership(method, &pairs, env, fn_name, diags);
+                apply_ownership(method, &pairs, env, fn_name, diags, next_id);
             }
+            env.record_exit_moves();
+            true
         }
         Expr::Field { receiver, .. } => {
             if let Some(place) = place_path(expr) {
-                check_place_operands(receiver, env, sigs, fn_name, diags);
+                check_place_operands(receiver, env, sigs, fn_name, diags, next_id);
                 if let Some(rec) = env.moved_record_for_place(&place) {
                     diags.push(CheckError::SafeModeViolation(format!(
                         "use-after-move: in `{fn_name}`, `{}` was moved into `{}` and cannot be used again",
@@ -471,15 +650,17 @@ fn check_expr(
                     )));
                 }
             } else {
-                check_expr(receiver, env, sigs, fn_name, diags);
+                check_expr(receiver, env, sigs, fn_name, diags, next_id);
             }
+            env.record_exit_moves();
+            true
         }
         Expr::Index {
             receiver, index, ..
         } => {
-            check_expr(index, env, sigs, fn_name, diags);
+            check_expr(index, env, sigs, fn_name, diags, next_id);
             if let Some(place) = place_path(expr) {
-                check_place_operands(receiver, env, sigs, fn_name, diags);
+                check_place_operands(receiver, env, sigs, fn_name, diags, next_id);
                 if let Some(rec) = env.moved_record_for_place(&place) {
                     diags.push(CheckError::SafeModeViolation(format!(
                         "use-after-move: in `{fn_name}`, `{}` was moved into `{}` and cannot be used again",
@@ -487,155 +668,503 @@ fn check_expr(
                     )));
                 }
             } else {
-                check_expr(receiver, env, sigs, fn_name, diags);
+                check_expr(receiver, env, sigs, fn_name, diags, next_id);
             }
+            env.record_exit_moves();
+            true
         }
-        Expr::Cast { expr, .. } => check_expr(expr, env, sigs, fn_name, diags),
-        Expr::Binary { lhs, rhs, .. } => {
-            check_expr(lhs, env, sigs, fn_name, diags);
-            check_expr(rhs, env, sigs, fn_name, diags);
+        Expr::Cast { expr, .. } => {
+            check_expr(expr, env, sigs, fn_name, diags, next_id);
+            env.record_exit_moves();
+            true
         }
-        Expr::Unary { expr, .. } => check_expr(expr, env, sigs, fn_name, diags),
+        Expr::Binary { op, lhs, rhs, .. } => {
+            check_expr(lhs, env, sigs, fn_name, diags, next_id);
+            check_expr(rhs, env, sigs, fn_name, diags, next_id);
+            if matches!(
+                op,
+                garnet_parser::ast::BinOp::Add
+                    | garnet_parser::ast::BinOp::Sub
+                    | garnet_parser::ast::BinOp::Mul
+                    | garnet_parser::ast::BinOp::Div
+                    | garnet_parser::ast::BinOp::Mod
+                    | garnet_parser::ast::BinOp::Pipeline
+            ) {
+                env.record_exit_moves();
+            }
+            true
+        }
+        Expr::Unary { op, expr, .. } => {
+            check_expr(expr, env, sigs, fn_name, diags, next_id);
+            if matches!(
+                op,
+                garnet_parser::ast::UnOp::Neg | garnet_parser::ast::UnOp::Question
+            ) {
+                env.record_exit_moves();
+            }
+            true
+        }
         Expr::If {
             condition,
             then_block,
             elsif_clauses,
             else_block,
             ..
-        } => {
-            check_expr(condition, env, sigs, fn_name, diags);
-            let snapshot = env.clone();
-            let mut merged_moved = snapshot.moved.clone();
-
-            // Each branch is checked independently against a snapshot of
-            // env. Conservative: moves from branches that may continue are
-            // merged after the if. A branch that returns from the function
-            // cannot poison later code on paths that still continue.
-            let then_outcome = check_branch_block(then_block, &snapshot, sigs, fn_name, diags);
-            if then_outcome.continues {
-                merged_moved.extend(then_outcome.env.moved);
-            }
-
-            for (cond, block) in elsif_clauses {
-                let mut alt_env = snapshot.clone();
-                check_expr(cond, &mut alt_env, sigs, fn_name, diags);
-                let after_cond = alt_env.clone();
-                let branch_outcome = check_branch_block(block, &after_cond, sigs, fn_name, diags);
-                if branch_outcome.continues {
-                    merged_moved.extend(branch_outcome.env.moved);
-                } else {
-                    merged_moved.extend(after_cond.moved);
-                }
-            }
-
-            if let Some(b) = else_block {
-                let branch_outcome = check_branch_block(b, &snapshot, sigs, fn_name, diags);
-                if branch_outcome.continues {
-                    merged_moved.extend(branch_outcome.env.moved);
-                }
-            }
-
-            env.moved = merged_moved;
-        }
+        } => check_if_expr(
+            condition,
+            then_block,
+            elsif_clauses,
+            else_block.as_ref(),
+            env,
+            sigs,
+            fn_name,
+            diags,
+            next_id,
+        ),
         Expr::Match { subject, arms, .. } => {
-            check_expr(subject, env, sigs, fn_name, diags);
-            let snapshot = env.clone();
-            let mut merged_moved = snapshot.moved.clone();
-            for arm in arms {
-                let mut arm_env = snapshot.clone();
-                let mut pattern_bindings = HashSet::new();
-                bind_pattern(&arm.pattern, &mut arm_env, &mut pattern_bindings);
-                if let Some(g) = &arm.guard {
-                    check_expr(g, &mut arm_env, sigs, fn_name, diags);
-                }
-                let mut guard_env = arm_env.clone();
-                let arm_outcome = check_branch_block(&arm.body, &arm_env, sigs, fn_name, diags);
-                let arm_continues = arm_outcome.continues;
-                arm_env = arm_outcome.env;
-                for binding in &pattern_bindings {
-                    guard_env.restore_binding_from(binding, &snapshot);
-                    arm_env.restore_binding_from(binding, &snapshot);
-                }
-                if arm_continues {
-                    merged_moved.extend(arm_env.moved);
-                } else if arm.guard.is_some() {
-                    merged_moved.extend(guard_env.moved);
-                }
-            }
-            env.moved = merged_moved;
+            check_match_expr(subject, arms, env, sigs, fn_name, diags, next_id);
+            true
         }
         Expr::Try {
             body,
             rescues,
             ensure,
             ..
-        } => {
-            for s in &body.stmts {
-                check_stmt(s, env, sigs, fn_name, diags);
-            }
-            if let Some(tail) = &body.tail_expr {
-                check_expr(tail, env, sigs, fn_name, diags);
-            }
-            for r in rescues {
-                if let Some(name) = &r.name {
-                    env.rebind(name);
-                }
-                for s in &r.body.stmts {
-                    check_stmt(s, env, sigs, fn_name, diags);
-                }
-                if let Some(tail) = &r.body.tail_expr {
-                    check_expr(tail, env, sigs, fn_name, diags);
-                }
-            }
-            if let Some(e) = ensure {
-                for s in &e.stmts {
-                    check_stmt(s, env, sigs, fn_name, diags);
-                }
-                if let Some(tail) = &e.tail_expr {
-                    check_expr(tail, env, sigs, fn_name, diags);
-                }
-            }
-        }
-        Expr::Closure { .. } | Expr::Spawn { .. } => {
-            // Closure / spawn bodies are deferred to v0.4: they capture the
-            // surrounding environment and require a richer flow analysis.
-        }
+        } => check_try_expr(
+            body,
+            rescues,
+            ensure.as_ref(),
+            env,
+            sigs,
+            fn_name,
+            diags,
+            next_id,
+        ),
+        Expr::Closure { .. } | Expr::Spawn { .. } => true,
         Expr::Array { elements, .. } => {
             for e in elements {
-                check_expr(e, env, sigs, fn_name, diags);
+                check_expr(e, env, sigs, fn_name, diags, next_id);
             }
+            true
         }
         Expr::Map { entries, .. } => {
             for (k, v) in entries {
-                check_expr(k, env, sigs, fn_name, diags);
-                check_expr(v, env, sigs, fn_name, diags);
+                check_expr(k, env, sigs, fn_name, diags, next_id);
+                check_expr(v, env, sigs, fn_name, diags, next_id);
             }
+            true
+        }
+        Expr::Str(lit, _) => {
+            check_interp_expr(lit, env, sigs, fn_name, diags, next_id);
+            true
         }
         Expr::Int(_, _)
         | Expr::Float(_, _)
         | Expr::Bool(_, _)
         | Expr::Nil(_)
-        | Expr::Str(_, _)
         | Expr::Symbol(_, _)
-        | Expr::Path(_, _) => {}
+        | Expr::Path(_, _) => true,
     }
 }
 
-fn bind_pattern(pattern: &Pattern, env: &mut Env, bindings: &mut HashSet<String>) {
+fn check_interp_expr(
+    lit: &garnet_parser::ast::StringLit,
+    env: &mut Env,
+    sigs: &SignatureTables,
+    fn_name: &str,
+    diags: &mut Vec<CheckError>,
+    next_id: &mut usize,
+) {
+    let parts: Vec<String> = lit
+        .parts
+        .iter()
+        .filter_map(|p| match p {
+            garnet_parser::token::StrPart::Interp(src) => Some(src.clone()),
+            garnet_parser::token::StrPart::Lit(_) => None,
+        })
+        .collect();
+    if parts.is_empty() {
+        return;
+    }
+    env.record_exit_moves();
+    for src in parts {
+        let wrapped = format!("def __interp__() {{ {src} }}");
+        if let Ok(module) = garnet_parser::parse_source(&wrapped) {
+            for item in &module.items {
+                if let Item::Fn(f) = item {
+                    let outcome = check_branch_block(&f.body, env, sigs, fn_name, diags, next_id);
+                    if outcome.continues {
+                        *env = outcome.env;
+                    } else {
+                        env.has_exit |= outcome.env.has_exit;
+                        env.exit_moved.extend(outcome.env.exit_moved);
+                        env.has_break |= outcome.env.has_break;
+                        env.break_moved.extend(outcome.env.break_moved);
+                        env.has_continue |= outcome.env.has_continue;
+                        env.continue_moved.extend(outcome.env.continue_moved);
+                    }
+                    env.record_exit_moves();
+                }
+            }
+        }
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
+#[inline(never)]
+fn check_if_expr(
+    condition: &Expr,
+    then_block: &Block,
+    elsif_clauses: &[(Expr, Block)],
+    else_block: Option<&Block>,
+    env: &mut Env,
+    sigs: &SignatureTables,
+    fn_name: &str,
+    diags: &mut Vec<CheckError>,
+    next_id: &mut usize,
+) -> bool {
+    check_expr(condition, env, sigs, fn_name, diags, next_id);
+    let snapshot = Box::new(env.clone());
+    // When `else` is present, execution must take one of the explicit branches,
+    // so only continuing branches contribute to the merged moved map (allowing
+    // unanimous re-initialization across all branches to clear an incoming move).
+    // Without `else`, the implicit fallthrough preserves `snapshot.moved`.
+    let has_else = else_block.is_some();
+    let mut merged_moved = HashMap::new();
+    let mut any_continues = !has_else;
+    let mut fallthrough_env = (*snapshot).clone();
+    let mut merged_has_exit = snapshot.has_exit;
+    let mut merged_exit_moved = snapshot.exit_moved.clone();
+    let mut merged_has_break = snapshot.has_break;
+    let mut merged_break_moved = snapshot.break_moved.clone();
+    let mut merged_has_continue = snapshot.has_continue;
+    let mut merged_continue_moved = snapshot.continue_moved.clone();
+
+    let then_outcome = check_branch_block(then_block, &snapshot, sigs, fn_name, diags, next_id);
+    if then_outcome.continues {
+        any_continues = true;
+        extend_prefer_newer(&mut merged_moved, then_outcome.env.moved);
+    }
+    merged_has_exit |= then_outcome.env.has_exit;
+    extend_prefer_newer(&mut merged_exit_moved, then_outcome.env.exit_moved);
+    merged_has_break |= then_outcome.env.has_break;
+    extend_prefer_newer(&mut merged_break_moved, then_outcome.env.break_moved);
+    merged_has_continue |= then_outcome.env.has_continue;
+    extend_prefer_newer(&mut merged_continue_moved, then_outcome.env.continue_moved);
+
+    for (cond, block) in elsif_clauses {
+        check_expr(cond, &mut fallthrough_env, sigs, fn_name, diags, next_id);
+        let branch_outcome =
+            check_branch_block(block, &fallthrough_env, sigs, fn_name, diags, next_id);
+        if branch_outcome.continues {
+            any_continues = true;
+            extend_prefer_newer(&mut merged_moved, branch_outcome.env.moved);
+        }
+        merged_has_exit |= fallthrough_env.has_exit | branch_outcome.env.has_exit;
+        extend_prefer_newer(&mut merged_exit_moved, fallthrough_env.exit_moved.clone());
+        extend_prefer_newer(&mut merged_exit_moved, branch_outcome.env.exit_moved);
+        merged_has_break |= fallthrough_env.has_break | branch_outcome.env.has_break;
+        extend_prefer_newer(&mut merged_break_moved, fallthrough_env.break_moved.clone());
+        extend_prefer_newer(&mut merged_break_moved, branch_outcome.env.break_moved);
+        merged_has_continue |= fallthrough_env.has_continue | branch_outcome.env.has_continue;
+        extend_prefer_newer(
+            &mut merged_continue_moved,
+            fallthrough_env.continue_moved.clone(),
+        );
+        extend_prefer_newer(
+            &mut merged_continue_moved,
+            branch_outcome.env.continue_moved,
+        );
+    }
+
+    if let Some(b) = else_block {
+        let branch_outcome = check_branch_block(b, &fallthrough_env, sigs, fn_name, diags, next_id);
+        if branch_outcome.continues {
+            any_continues = true;
+            extend_prefer_newer(&mut merged_moved, branch_outcome.env.moved);
+        }
+        merged_has_exit |= branch_outcome.env.has_exit;
+        extend_prefer_newer(&mut merged_exit_moved, branch_outcome.env.exit_moved);
+        merged_has_break |= branch_outcome.env.has_break;
+        extend_prefer_newer(&mut merged_break_moved, branch_outcome.env.break_moved);
+        merged_has_continue |= branch_outcome.env.has_continue;
+        extend_prefer_newer(
+            &mut merged_continue_moved,
+            branch_outcome.env.continue_moved,
+        );
+    } else {
+        extend_prefer_newer(&mut merged_moved, fallthrough_env.moved);
+    }
+
+    env.moved = if any_continues {
+        merged_moved
+    } else {
+        snapshot.moved
+    };
+    env.has_exit = merged_has_exit;
+    env.exit_moved = merged_exit_moved;
+    env.has_break = merged_has_break;
+    env.break_moved = merged_break_moved;
+    env.has_continue = merged_has_continue;
+    env.continue_moved = merged_continue_moved;
+    any_continues
+}
+
+#[inline(never)]
+fn check_match_expr(
+    subject: &Expr,
+    arms: &[garnet_parser::ast::MatchArm],
+    env: &mut Env,
+    sigs: &SignatureTables,
+    fn_name: &str,
+    diags: &mut Vec<CheckError>,
+    next_id: &mut usize,
+) {
+    check_expr(subject, env, sigs, fn_name, diags, next_id);
+    let snapshot = Box::new(env.clone());
+    let mut merged_moved = snapshot.moved.clone();
+    let mut merged_has_exit = snapshot.has_exit;
+    let mut merged_exit_moved = snapshot.exit_moved.clone();
+    let mut merged_has_break = snapshot.has_break;
+    let mut merged_break_moved = snapshot.break_moved.clone();
+    let mut merged_has_continue = snapshot.has_continue;
+    let mut merged_continue_moved = snapshot.continue_moved.clone();
+    for arm in arms {
+        let mut arm_base = (*snapshot).clone();
+        arm_base.push_scope();
+        bind_pattern(&arm.pattern, &mut arm_base, next_id);
+        if let Some(g) = &arm.guard {
+            check_expr(g, &mut arm_base, sigs, fn_name, diags, next_id);
+        }
+        let mut guard_env = arm_base.clone();
+        let mut arm_outcome =
+            check_branch_block(&arm.body, &arm_base, sigs, fn_name, diags, next_id);
+        guard_env.pop_scope();
+        arm_outcome.env.pop_scope();
+        if arm_outcome.continues {
+            extend_prefer_newer(&mut merged_moved, arm_outcome.env.moved);
+        } else if arm.guard.is_some() {
+            extend_prefer_newer(&mut merged_moved, guard_env.moved);
+        }
+        merged_has_exit |= guard_env.has_exit | arm_outcome.env.has_exit;
+        extend_prefer_newer(&mut merged_exit_moved, guard_env.exit_moved);
+        extend_prefer_newer(&mut merged_exit_moved, arm_outcome.env.exit_moved);
+        merged_has_break |= guard_env.has_break | arm_outcome.env.has_break;
+        extend_prefer_newer(&mut merged_break_moved, guard_env.break_moved);
+        extend_prefer_newer(&mut merged_break_moved, arm_outcome.env.break_moved);
+        merged_has_continue |= guard_env.has_continue | arm_outcome.env.has_continue;
+        extend_prefer_newer(&mut merged_continue_moved, guard_env.continue_moved);
+        extend_prefer_newer(&mut merged_continue_moved, arm_outcome.env.continue_moved);
+    }
+    env.moved = merged_moved;
+    env.has_exit = merged_has_exit;
+    env.exit_moved = merged_exit_moved;
+    env.has_break = merged_has_break;
+    env.break_moved = merged_break_moved;
+    env.has_continue = merged_has_continue;
+    env.continue_moved = merged_continue_moved;
+}
+
+/// Heap-allocated working state for `check_try_expr` so deep `defer` chains
+/// (up to `ParseBudget::max_depth`) keep stack frames minimal even in debug
+/// builds.
+struct TryFrameState {
+    outer_snapshot: Env,
+    continuing_moved: HashMap<(BindingKey, Vec<String>), MoveRecord>,
+    local_has_exit: bool,
+    local_exit: HashMap<(BindingKey, Vec<String>), MoveRecord>,
+    local_has_break: bool,
+    local_break: HashMap<(BindingKey, Vec<String>), MoveRecord>,
+    local_has_continue: bool,
+    local_continue: HashMap<(BindingKey, Vec<String>), MoveRecord>,
+    ensure_visible_moved: HashMap<(BindingKey, Vec<String>), MoveRecord>,
+}
+
+#[allow(clippy::too_many_arguments)]
+#[inline(never)]
+fn check_try_expr(
+    body: &Block,
+    rescues: &[garnet_parser::ast::RescueClause],
+    ensure: Option<&Block>,
+    env: &mut Env,
+    sigs: &SignatureTables,
+    fn_name: &str,
+    diags: &mut Vec<CheckError>,
+    next_id: &mut usize,
+) -> bool {
+    let mut state = Box::new(TryFrameState {
+        outer_snapshot: env.clone(),
+        continuing_moved: HashMap::new(),
+        local_has_exit: false,
+        local_exit: HashMap::new(),
+        local_has_break: false,
+        local_break: HashMap::new(),
+        local_has_continue: false,
+        local_continue: HashMap::new(),
+        ensure_visible_moved: HashMap::new(),
+    });
+
+    let mut body_base = state.outer_snapshot.clone();
+    body_base.clear_exits();
+
+    let body_outcome = check_branch_block(body, &body_base, sigs, fn_name, diags, next_id);
+    drop(body_base);
+
+    let mut any_continues = body_outcome.continues;
+    if body_outcome.continues {
+        state.continuing_moved = body_outcome.env.moved;
+    }
+    state.local_has_exit = body_outcome.env.has_exit;
+    state.local_exit = body_outcome.env.exit_moved;
+    state.local_has_break = body_outcome.env.has_break;
+    state.local_break = body_outcome.env.break_moved;
+    state.local_has_continue = body_outcome.env.has_continue;
+    state.local_continue = body_outcome.env.continue_moved;
+
+    extend_prefer_newer(
+        &mut state.ensure_visible_moved,
+        state.continuing_moved.clone(),
+    );
+    extend_prefer_newer(&mut state.ensure_visible_moved, state.local_exit.clone());
+    extend_prefer_newer(&mut state.ensure_visible_moved, state.local_break.clone());
+    extend_prefer_newer(
+        &mut state.ensure_visible_moved,
+        state.local_continue.clone(),
+    );
+
+    for r in rescues {
+        let mut rescue_base = state.outer_snapshot.clone();
+        extend_prefer_newer(&mut rescue_base.moved, state.local_exit.clone());
+        rescue_base.clear_exits();
+        rescue_base.push_scope();
+        if let Some(name) = &r.name {
+            rescue_base.declare_binding(name, None, next_id);
+        }
+        let mut rescue_outcome =
+            check_branch_block(&r.body, &rescue_base, sigs, fn_name, diags, next_id);
+        rescue_outcome.env.pop_scope();
+        if rescue_outcome.continues {
+            any_continues = true;
+            extend_prefer_newer(
+                &mut state.continuing_moved,
+                rescue_outcome.env.moved.clone(),
+            );
+            extend_prefer_newer(&mut state.ensure_visible_moved, rescue_outcome.env.moved);
+        }
+        state.local_has_exit |= rescue_outcome.env.has_exit;
+        extend_prefer_newer(&mut state.local_exit, rescue_outcome.env.exit_moved.clone());
+        state.local_has_break |= rescue_outcome.env.has_break;
+        extend_prefer_newer(
+            &mut state.local_break,
+            rescue_outcome.env.break_moved.clone(),
+        );
+        state.local_has_continue |= rescue_outcome.env.has_continue;
+        extend_prefer_newer(
+            &mut state.local_continue,
+            rescue_outcome.env.continue_moved.clone(),
+        );
+        extend_prefer_newer(
+            &mut state.ensure_visible_moved,
+            rescue_outcome.env.exit_moved,
+        );
+        extend_prefer_newer(
+            &mut state.ensure_visible_moved,
+            rescue_outcome.env.break_moved,
+        );
+        extend_prefer_newer(
+            &mut state.ensure_visible_moved,
+            rescue_outcome.env.continue_moved,
+        );
+    }
+
+    let mut ensure_continues = true;
+    if let Some(ensure_block) = ensure {
+        let mut ensure_base = state.outer_snapshot.clone();
+        ensure_base.moved = std::mem::take(&mut state.ensure_visible_moved);
+        ensure_base.clear_exits();
+        let ensure_outcome =
+            check_branch_block(ensure_block, &ensure_base, sigs, fn_name, diags, next_id);
+        ensure_continues = ensure_outcome.continues;
+        if ensure_outcome.continues {
+            // A key is cleared if it was in `ensure_base.moved` and absent after
+            // `ensure`; a key is newly moved if it was not in `ensure_base.moved`
+            // OR received a fresh `move_id` (e.g. `x = [2]; take(x)`).
+            let cleared: HashSet<_> = ensure_base
+                .moved
+                .keys()
+                .filter(|k| !ensure_outcome.env.moved.contains_key(*k))
+                .cloned()
+                .collect();
+            let newly_moved: Vec<_> = ensure_outcome
+                .env
+                .moved
+                .iter()
+                .filter(|(k, v)| {
+                    ensure_base
+                        .moved
+                        .get(*k)
+                        .is_none_or(|old| old.move_id != v.move_id)
+                })
+                .map(|(k, v)| (k.clone(), v.clone()))
+                .collect();
+            let apply_ensure_delta = |map: &mut HashMap<(BindingKey, Vec<String>), MoveRecord>| {
+                map.retain(|k, _| !cleared.contains(k));
+                for (k, v) in &newly_moved {
+                    map.insert(k.clone(), v.clone());
+                }
+            };
+            if any_continues {
+                apply_ensure_delta(&mut state.continuing_moved);
+            }
+            if state.local_has_exit {
+                apply_ensure_delta(&mut state.local_exit);
+            }
+            if state.local_has_break {
+                apply_ensure_delta(&mut state.local_break);
+            }
+            if state.local_has_continue {
+                apply_ensure_delta(&mut state.local_continue);
+            }
+        }
+        state.local_has_exit |= ensure_outcome.env.has_exit;
+        extend_prefer_newer(&mut state.local_exit, ensure_outcome.env.exit_moved);
+        state.local_has_break |= ensure_outcome.env.has_break;
+        extend_prefer_newer(&mut state.local_break, ensure_outcome.env.break_moved);
+        state.local_has_continue |= ensure_outcome.env.has_continue;
+        extend_prefer_newer(&mut state.local_continue, ensure_outcome.env.continue_moved);
+    }
+
+    let try_continues = any_continues && ensure_continues;
+    env.moved = if try_continues {
+        state.continuing_moved
+    } else {
+        state.outer_snapshot.moved
+    };
+    env.has_exit = state.outer_snapshot.has_exit | state.local_has_exit;
+    env.exit_moved = state.outer_snapshot.exit_moved;
+    extend_prefer_newer(&mut env.exit_moved, state.local_exit);
+    env.has_break = state.outer_snapshot.has_break | state.local_has_break;
+    env.break_moved = state.outer_snapshot.break_moved;
+    extend_prefer_newer(&mut env.break_moved, state.local_break);
+    env.has_continue = state.outer_snapshot.has_continue | state.local_has_continue;
+    env.continue_moved = state.outer_snapshot.continue_moved;
+    extend_prefer_newer(&mut env.continue_moved, state.local_continue);
+    try_continues
+}
+
+fn bind_pattern(pattern: &Pattern, env: &mut Env, next_id: &mut usize) {
     match pattern {
         Pattern::Ident(name, _) => {
-            bindings.insert(name.clone());
-            env.rebind(name);
-            env.forget_type(name);
+            env.declare_binding(name, None, next_id);
         }
         Pattern::Tuple(items, _) => {
             for p in items {
-                bind_pattern(p, env, bindings);
+                bind_pattern(p, env, next_id);
             }
         }
         Pattern::Enum(_, items, _) => {
             for p in items {
-                bind_pattern(p, env, bindings);
+                bind_pattern(p, env, next_id);
             }
         }
         Pattern::Literal(_, _) | Pattern::Wildcard(_) | Pattern::Rest(_) => {}
@@ -663,13 +1192,14 @@ fn apply_ownership(
     env: &mut Env,
     fn_name: &str,
     diags: &mut Vec<CheckError>,
+    next_id: &mut usize,
 ) {
     detect_drop_discipline_violations(callee, pairs, fn_name, diags);
     detect_aliasing_violations(callee, pairs, fn_name, diags);
     for (arg, kind) in pairs {
         if matches!(kind, Some(Ownership::Own)) {
             if let Some(place) = place_path(arg) {
-                env.record_move_place(&place, callee);
+                env.record_move_place(&place, callee, next_id);
             }
         }
     }

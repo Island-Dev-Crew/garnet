@@ -209,6 +209,34 @@ fn span_exact_on_transparent_wrapper_constructs() {
             "ruby_until_loop",
             "@caps()\ndef f() { let mut i = 0\n until i == 3 { i = i + 1 }\n i }\n",
         ),
+        (
+            "defer_expr_stmt",
+            "@caps()\ndef f() {\n  let mut log = []\n  defer log.push(1)\n  log.push(2)\n  log\n}\n",
+        ),
+        (
+            "defer_block_stmt",
+            "@caps()\ndef f() {\n  let mut x = 0\n  defer {\n    x = x + 1\n  }\n  x\n}\n",
+        ),
+        (
+            "defer_multiple_lifo",
+            "@caps()\ndef f() {\n  let a = 1\n  defer close(a)\n  let b = 2\n  defer { close(b) }\n  a + b\n}\n",
+        ),
+        (
+            "defer_as_last_item",
+            "@safe\n@caps()\nfn f() -> Int {\n  let x = 1\n  defer release(x)\n}\n",
+        ),
+        (
+            "defer_parenthesized_expr",
+            "@caps()\ndef f() {\n  defer (cleanup())\n  42\n}\n",
+        ),
+        (
+            "defer_inside_do_block",
+            "@caps()\ndef f() {\n  runner.run do |x|\n    defer close(x)\n    x + 1\n  end\n}\n",
+        ),
+        (
+            "defer_nested_in_defer_block",
+            "@caps()\ndef f() {\n  defer {\n    defer inner()\n    outer()\n  }\n  work()\n}\n",
+        ),
     ];
     let mut diffs = Vec::new();
     for (label, src) in cases {
@@ -219,6 +247,32 @@ fn span_exact_on_transparent_wrapper_constructs() {
         }
     }
     assert!(diffs.is_empty(), "span divergence on: {diffs:?}");
+
+    // Malformed defer forms (including empty parens `()` in brace and do/end
+    // blocks) must agree on error verdict across parser and CST.
+    for bad in [
+        "@caps()\ndef bad() { defer }\n",
+        "@caps()\ndef bad() { let x = defer f() }\n",
+        "@caps()\ndef bad() { defer (); }\n",
+        "@caps()\ndef bad() { runner.run do defer () end }\n",
+    ] {
+        assert!(parse_source(bad).is_err(), "parser must reject: {bad}");
+        assert!(
+            !parse_cst(bad).errors.is_empty(),
+            "CST must record error for: {bad}"
+        );
+    }
+
+    // Flat defer chains exceeding default `max_depth` must also agree on error verdict.
+    let over_defer_budget = format!(
+        "@caps()\ndef main() {{\n{}42\n}}\n",
+        "defer 0;\n".repeat(300)
+    );
+    assert!(parse_source(&over_defer_budget).is_err());
+    assert!(
+        !parse_cst(&over_defer_budget).errors.is_empty(),
+        "default-budget CST must record depth error on flat defer chain"
+    );
 }
 
 /// The span projection recurses with the AST lowering, so `cst_to_ast` must

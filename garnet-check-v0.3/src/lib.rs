@@ -11,7 +11,10 @@
 //! 1. **Mode tagging.** Every module and every function is tagged Managed or
 //!    Safe based on `@safe` annotations (§8.3).
 //! 2. **Syntactic safe-mode restrictions.** `@safe` modules MUST NOT use
-//!    `var`, `try`/`rescue`/`ensure`, or `raise` (Mini-Spec §7.3).
+//!    `var`, `try`/`rescue` (or bare `try` without `ensure`), or `raise`
+//!    (Mini-Spec §7.3). Rescue-free `ensure` (including lexically desugared
+//!    `defer`) is permitted as deterministic lexical teardown without
+//!    exception catching.
 //! 3. **Safe-mode function discipline.** Every safe-mode (`fn`) function must
 //!    declare parameter types and a return type.
 //! 4. **Annotation placement sanity.** `@max_depth(N)` / `@fan_out(K)` must
@@ -688,7 +691,12 @@ fn walk_expr_for_safe_violations(
             ensure,
             ..
         } => {
-            if effective_safe {
+            // Rescue-free `ensure` (including lexically desugared `defer`) is
+            // deterministic lexical teardown without exception catching, so
+            // `@safe fn` permits it while still rejecting any `rescue` clause
+            // or bare `try` without `ensure`. Both `body` and `ensure` are
+            // still walked for safe-mode violations below.
+            if effective_safe && (!rescues.is_empty() || ensure.is_none()) {
                 report.errors.push(CheckError::SafeModeViolation(format!(
                     "safe function '{}' uses `try`/`rescue`; use Result<T, E> and `?` instead",
                     fn_name
